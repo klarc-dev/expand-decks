@@ -99,6 +99,15 @@ export const Presentations: CollectionConfig = {
       ],
     },
     {
+      name: 'draftFromBrief',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '/components/DraftFromBriefButton#default',
+        },
+      },
+    },
+    {
       name: 'slides',
       type: 'blocks',
       label: 'Diapositives',
