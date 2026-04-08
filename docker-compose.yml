@@ -1,38 +1,67 @@
 services:
   postgres:
     image: postgres:16-alpine
+    pull_policy: always
+    restart: always
+    mem_limit: 512m
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - /home/joachim/docker/expand-decks/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 30s
+    networks:
+      expand-decks:
+        aliases:
+          - postgres
 
   payload:
     build: .
+    pull_policy: always
+    restart: always
+    mem_limit: 1g
     command: ["pnpm", "start"]
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-1}
+      NEXT_TELEMETRY_DISABLED: "1"
     volumes:
-      - media_data:/app/media
+      - /home/joachim/docker/expand-decks/media:/app/media
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.http.middlewares.hsts-expand-decks.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.hsts-expand-decks.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.hsts-expand-decks.headers.stsPreload=true"
+    networks:
+      coolify:
+        aliases:
+          - expand-decks
+      expand-decks:
+        aliases:
+          - payload
 
   payload-worker:
     build: .
+    pull_policy: always
+    restart: always
+    mem_limit: 2g
     command: ["pnpm", "run", "jobs:run"]
     depends_on:
       postgres:
@@ -40,11 +69,15 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      NEXT_TELEMETRY_DISABLED: ${NEXT_TELEMETRY_DISABLED:-1}
+      NEXT_TELEMETRY_DISABLED: "1"
     volumes:
-      - media_data:/app/media
+      - /home/joachim/docker/expand-decks/media:/app/media
+    networks:
+      expand-decks:
+        aliases:
+          - payload-worker
 
-volumes:
-  pg_data:
-  media_data:
+networks:
+  coolify:
+    external: true
+  expand-decks:
