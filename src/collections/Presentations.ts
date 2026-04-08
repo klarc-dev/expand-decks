@@ -12,6 +12,7 @@ import { OfficesBlock } from '../blocks/OfficesBlock';
 import { CtaBlock } from '../blocks/CtaBlock';
 import { EndBlock } from '../blocks/EndBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
+import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
 export const Presentations: CollectionConfig = {
   slug: 'presentations',
@@ -25,6 +26,9 @@ export const Presentations: CollectionConfig = {
     read: isLoggedIn,
     update: isAdminOrSelf,
     delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [afterPresentationChange],
   },
   fields: [
     {

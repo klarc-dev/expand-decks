@@ -10,19 +10,22 @@
     "payload": "payload",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
+    "jobs:run": "payload jobs:run --queue default",
     "test": "vitest run"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.68",
+    "@ai-stack/payloadcms": "3.2.26",
     "@payloadcms/db-postgres": "3.80.0",
     "@payloadcms/next": "3.80.0",
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/translations": "3.80.0",
+    "gray-matter": "^4.0.3",
     "next": "15.3.3",
     "payload": "3.80.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "sharp": "^0.33.0",
-    "gray-matter": "^4.0.3"
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,4 +1,6 @@
 import type { CollectionConfig } from 'payload';
+import { lexicalEditor } from '@payloadcms/richtext-lexical';
+import { PayloadAiPluginLexicalEditorFeature } from '@ai-stack/payloadcms';
 
 import { isAdmin, isAdminOrAuthor, isLoggedIn } from '../access/roles';
 
@@ -54,6 +56,12 @@ export const Clients: CollectionConfig = {
       type: 'richText',
       label: 'Notes',
       admin: { description: 'Notes internes sur le client' },
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          PayloadAiPluginLexicalEditorFeature(),
+        ],
+      }),
     },
   ],
 };
