@@ -1,0 +1,11 @@
+node_modules
+slidev-workspace/node_modules
+.next
+.env
+.env.local
+.git
+media
+docs
+_reusable
+*.log
+local.db
