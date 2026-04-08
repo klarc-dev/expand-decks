@@ -12,6 +12,7 @@ import { Users } from './collections/Users';
 import { Presentations } from './collections/Presentations';
 import { Clients } from './collections/Clients';
 import { Media } from './collections/Media';
+import { ShareLinks } from './collections/ShareLinks';
 import { buildSlidesTask } from './jobs/buildSlides';
 
 const filename = fileURLToPath(import.meta.url);
@@ -23,8 +24,16 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    livePreview: {
+      url: '/preview',
+      collections: ['presentations'],
+      breakpoints: [
+        { name: 'slide', label: '16:9 Slide', width: 960, height: 540 },
+        { name: 'full', label: 'Pleine largeur', width: 1280, height: 720 },
+      ],
+    },
   },
-  collections: [Users, Presentations, Clients, Media],
+  collections: [Users, Presentations, Clients, Media, ShareLinks],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
