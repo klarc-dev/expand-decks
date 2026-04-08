@@ -8,6 +8,9 @@ import { fr } from '@payloadcms/translations/languages/fr';
 import { en } from '@payloadcms/translations/languages/en';
 
 import { Users } from './collections/Users';
+import { Presentations } from './collections/Presentations';
+import { Clients } from './collections/Clients';
+import { Media } from './collections/Media';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -19,7 +22,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users],
+  collections: [Users, Presentations, Clients, Media],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
