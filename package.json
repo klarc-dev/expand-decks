@@ -9,7 +9,8 @@
     "start": "next start",
     "payload": "payload",
     "generate:types": "payload generate:types",
-    "generate:importmap": "payload generate:importmap"
+    "generate:importmap": "payload generate:importmap",
+    "test": "vitest run"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.80.0",

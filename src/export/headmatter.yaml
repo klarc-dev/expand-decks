@@ -1,0 +1,17 @@
+theme: default
+colorSchema: light
+aspectRatio: 16/9
+canvasWidth: 1280
+fonts:
+  sans: Inter
+  serif: Fraunces
+  provider: google
+transition: slide-left
+mdc: true
+defaults:
+  layout: default
+htmlAttrs:
+  lang: fr
+drawings:
+  persist: false
+download: true

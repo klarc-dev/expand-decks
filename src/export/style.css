@@ -1,0 +1,374 @@
+/* ============================================
+   Klarc Brand System
+   Primary  : #02585C (teal)
+   Secondary: #F5A3B0 (rose)
+   ============================================ */
+
+:root {
+  --k-teal:        #02585C;
+  --k-teal-600:    #034A4E;
+  --k-teal-700:    #023C3F;
+  --k-teal-900:    #021A1B;
+  --k-teal-50:     #ECF7F7;
+  --k-teal-100:    #D4ECEC;
+  --k-rose:        #F5A3B0;
+  --k-rose-soft:   #FBE2E6;
+  --k-ink:         #0F2A2B;
+  --k-ink-soft:    #4A6365;
+  --k-paper:       #FAFBFB;
+  --k-line:        rgba(2, 88, 92, 0.12);
+}
+
+/* Typography ----------------------------------- */
+.slidev-layout {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  color: var(--k-ink);
+  background: var(--k-paper);
+  letter-spacing: -0.01em;
+}
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3 {
+  font-family: 'Fraunces', 'Inter', serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--k-teal);
+}
+
+.slidev-layout h1 {
+  font-size: 3.2rem;
+  line-height: 1.05;
+}
+
+.slidev-layout h2 {
+  font-size: 2.1rem;
+  line-height: 1.1;
+}
+
+.slidev-layout p, .slidev-layout li {
+  color: var(--k-ink-soft);
+  line-height: 1.55;
+}
+
+/* Dark variant for cover / section -------------- */
+.k-dark {
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(245,163,176,0.22), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(2,88,92,0.55), transparent 60%),
+    linear-gradient(135deg, #02585C 0%, #023C3F 100%) !important;
+  color: #fff !important;
+}
+
+.k-dark h1, .k-dark h2, .k-dark h3 {
+  color: #fff;
+}
+
+.k-dark p, .k-dark li, .k-dark .muted {
+  color: rgba(255,255,255,0.72);
+}
+
+/* Components ----------------------------------- */
+.k-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--k-teal);
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--k-line);
+  border-radius: 999px;
+  background: var(--k-teal-50);
+}
+
+.k-dark .k-eyebrow {
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.k-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--k-rose);
+}
+
+.k-logo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.6rem;
+  letter-spacing: -0.03em;
+  color: var(--k-teal);
+}
+
+.k-dark .k-logo { color: #fff; }
+
+.k-logo::after {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--k-rose);
+  display: inline-block;
+}
+
+.k-card {
+  background: #fff;
+  border: 1px solid var(--k-line);
+  border-radius: 18px;
+  padding: 1.4rem 1.4rem 1.3rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.k-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--k-teal), var(--k-rose));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.k-card:hover::before { opacity: 1; }
+.k-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -15px rgba(2,88,92,0.25); }
+
+.k-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  color: var(--k-teal);
+}
+
+.k-card p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--k-ink-soft);
+  line-height: 1.45;
+}
+
+.k-card .k-num {
+  font-family: 'Fraunces', serif;
+  font-size: 0.75rem;
+  color: var(--k-rose);
+  display: block;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.1em;
+}
+
+.k-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.k-stat .val {
+  font-family: 'Fraunces', serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--k-teal);
+  font-weight: 500;
+}
+
+.k-dark .k-stat .val { color: #fff; }
+
+.k-stat .lbl {
+  font-size: 0.82rem;
+  color: var(--k-ink-soft);
+  letter-spacing: 0.02em;
+}
+
+.k-dark .k-stat .lbl { color: rgba(255,255,255,0.7); }
+
+.k-divider {
+  width: 40px;
+  height: 2px;
+  background: var(--k-rose);
+  border: 0;
+  margin: 1rem 0;
+}
+
+.k-quote {
+  font-family: 'Fraunces', serif;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  color: var(--k-ink);
+  font-style: italic;
+}
+
+.k-quote::before {
+  content: '\201C';
+  font-size: 3rem;
+  color: var(--k-rose);
+  line-height: 0;
+  vertical-align: -0.4em;
+  margin-right: 0.2rem;
+}
+
+.k-author {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-style: normal;
+  color: var(--k-teal);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.k-author span {
+  color: var(--k-ink-soft);
+  font-weight: 400;
+}
+
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.6rem;
+  background: var(--k-teal);
+  color: #fff;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.k-dark .k-btn {
+  background: #fff;
+  color: var(--k-teal);
+}
+
+.k-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.6rem;
+  color: var(--k-teal);
+  border: 1px solid var(--k-line);
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.k-dark .k-btn-ghost {
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* Grids ---------------------------------------- */
+.k-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.k-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+}
+
+.k-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.2rem;
+}
+
+/* Footer bar ----------------------------------- */
+.k-foot {
+  position: absolute;
+  left: 2.2rem; right: 2.2rem; bottom: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--k-ink-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--k-line);
+}
+
+.k-dark .k-foot {
+  color: rgba(255,255,255,0.5);
+  border-color: rgba(255,255,255,0.15);
+}
+
+/* Cover flourish -------------------------------- */
+.k-hero-big {
+  font-family: 'Fraunces', serif;
+  font-size: 6rem;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 400;
+  color: #fff;
+}
+
+.k-hero-big em {
+  font-style: italic;
+  color: var(--k-rose);
+  font-weight: 300;
+}
+
+.k-hero-sub {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.75);
+  max-width: 36rem;
+  line-height: 1.55;
+}
+
+/* Section divider ------------------------------- */
+.k-section-num {
+  font-family: 'Fraunces', serif;
+  font-size: 5rem;
+  color: var(--k-rose);
+  line-height: 1;
+  font-style: italic;
+}
+
+/* CSS-only entrance animations (avoid v-motion in nested HTML blocks) */
+@keyframes k-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.k-anim-1, .k-anim-2, .k-anim-3, .k-anim-4 {
+  animation: k-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.k-anim-1 { animation-delay: 100ms; }
+.k-anim-2 { animation-delay: 220ms; }
+.k-anim-3 { animation-delay: 380ms; }
+.k-anim-4 { animation-delay: 520ms; }
+
+/* Cover surface fix — prevent default slide padding from clipping */
+.k-cover {
+  padding: 3.5rem 4rem !important;
+}
+
+/* Split layout — replaces two-cols so footer can sit at slide root */
+.k-split {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+/* Inline label (used in service detail slides) */
+.k-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--k-teal);
+  font-weight: 500;
+  display: block;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--k-line);
+}
