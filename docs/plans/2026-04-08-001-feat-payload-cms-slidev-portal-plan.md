@@ -1,7 +1,7 @@
 ---
 title: "feat: Payload CMS presentation portal with Slidev export"
 type: feat
-status: active
+status: completed
 date: 2026-04-08
 origin: PRD.md
 ---
