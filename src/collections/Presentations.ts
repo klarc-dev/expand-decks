@@ -20,6 +20,9 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'client', 'status', 'updatedAt'],
+    livePreview: {
+      url: '/preview',
+    },
   },
   access: {
     create: isAdminOrSelf,

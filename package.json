@@ -17,15 +17,18 @@
     "@ai-sdk/anthropic": "3.0.68",
     "@ai-stack/payloadcms": "3.2.26",
     "@payloadcms/db-postgres": "3.80.0",
+    "@payloadcms/live-preview-react": "3.80.0",
     "@payloadcms/next": "3.80.0",
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/translations": "3.80.0",
+    "ai": "^6.0.154",
     "gray-matter": "^4.0.3",
     "next": "15.3.3",
     "payload": "3.80.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "sharp": "^0.33.0"
+    "sharp": "^0.33.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
