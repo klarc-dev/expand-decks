@@ -1,19 +1,21 @@
 import { execFile as execFileCb } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import type { TaskConfig } from 'payload';
 
-import { buildSlidesMd } from '../export/buildSlidesMd.js';
+import { buildSlidesMd } from '../export/buildSlidesMd';
 
 const execFile = promisify(execFileCb);
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const SLUG_RE = /^[a-z0-9-]{1,64}$/;
-const SLIDEV_WORKSPACE = resolve(import.meta.dirname, '../../slidev-workspace');
-const EXPORT_DIR = resolve(import.meta.dirname, '../export');
-const MEDIA_DIR = resolve(import.meta.dirname, '../../media');
+const SLIDEV_WORKSPACE = resolve(__dirname, '../../slidev-workspace');
+const EXPORT_DIR = resolve(__dirname, '../export');
+const MEDIA_DIR = resolve(__dirname, '../../media');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { renderCardGrid, type CardGridBlockData } from './blocks/cardGrid';
 import { renderCover, type CoverBlockData } from './blocks/cover';
@@ -49,9 +50,11 @@ let headmatterCache: string | null = null;
 
 function loadHeadmatter(): string {
   if (headmatterCache) return headmatterCache;
-  const yamlPath = join(import.meta.dirname, 'headmatter.yaml');
-  headmatterCache = readFileSync(yamlPath, 'utf-8').trim();
-  return headmatterCache;
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const yamlPath = join(__dirname, 'headmatter.yaml');
+  const content = readFileSync(yamlPath, 'utf-8').trim();
+  headmatterCache = content;
+  return content;
 }
 
 /**
