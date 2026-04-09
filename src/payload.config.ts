@@ -44,12 +44,14 @@ export default buildConfig({
   // to Lexical RichText fields in enabled collections (e.g. Clients.notes).
   // Block fields using text/textarea are unaffected — only Lexical editors get AI actions.
   plugins: [
-    payloadAiPlugin({
-      collections: {
-        presentations: true,
-        clients: true,
-      },
-    }),
+    // Temporarily disabled — AI plugin crashes the admin client-side render
+    // Re-enable when @ai-stack/payloadcms fixes the initialization error
+    // payloadAiPlugin({
+    //   collections: {
+    //     presentations: true,
+    //     clients: true,
+    //   },
+    // }),
   ],
   i18n: {
     supportedLanguages: { fr, en },
