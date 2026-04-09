@@ -6,9 +6,9 @@ import { importMap } from './admin/importMap';
 import React from 'react';
 import type { ServerFunctionClient } from 'payload';
 
-// Pre-compiled Payload admin SCSS — imported as static CSS to ensure
-// theme variables (--font-body, --theme-bg, etc.) survive Next.js CSS optimization.
-// Regenerate with: npx sass --no-source-map --style=compressed node_modules/@payloadcms/ui/dist/scss/app.scss src/app/\(payload\)/payload-admin.css
+// Payload's production CSS — copied from @payloadcms/next/dist/prod/styles.css
+// to ensure all admin styles (variables, layouts, components) survive Next.js CSS optimization.
+// Regenerated automatically by the prebuild script.
 import './payload-admin.css';
 
 type Args = {
