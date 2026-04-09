@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.68",
+    "@ai-sdk/openai": "^3.0.52",
     "@ai-stack/payloadcms": "3.2.26",
     "@payloadcms/db-postgres": "3.80.0",
     "@payloadcms/live-preview-react": "3.80.0",
