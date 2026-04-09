@@ -32,6 +32,9 @@ importers:
       '@payloadcms/translations':
         specifier: 3.81.0
         version: 3.81.0
+      '@payloadcms/ui':
+        specifier: 3.81.0
+        version: 3.81.0(@types/react@19.2.14)(monaco-editor@0.55.1)(next@15.3.3(@opentelemetry/api@1.9.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.99.0))(payload@3.81.0(graphql@16.13.2)(typescript@5.9.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
       ai:
         specifier: ^6.0.154
         version: 6.0.154(zod@4.3.6)
