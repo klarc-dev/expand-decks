@@ -18,7 +18,11 @@ RUN pnpm install
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
+# Payload needs these at build time for config compilation (values don't matter)
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
+ENV PAYLOAD_SECRET=build-time-secret-not-used-at-runtime
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN pnpm payload generate:importmap && pnpm build
 
 # -- Stage: production --
 FROM node:20-bookworm-slim AS production
