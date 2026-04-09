@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "sass --no-source-map --style=compressed node_modules/@payloadcms/ui/dist/scss/app.scss src/app/\\(payload\\)/payload-admin.css",
     "build": "next build",
     "start": "next start",
     "payload": "payload",
