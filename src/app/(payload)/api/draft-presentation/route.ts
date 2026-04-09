@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { getPayload } from 'payload';
 import config from '@payload-config';
-import { anthropic } from '@ai-sdk/anthropic';
+import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
@@ -264,9 +264,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
     }
 
-    // Generate slides via Claude structured output
+    // Generate slides via Claude (through LiteLLM proxy)
+    const llm = createOpenAI({
+      baseURL: process.env.OPENAI_BASE_URL || 'https://llm.klarc.eu/v1',
+      apiKey: process.env.OPENAI_API_KEY || '',
+    });
     const { object } = await generateObject({
-      model: anthropic('claude-sonnet-4-5'),
+      model: llm('openrouter/anthropic/claude-sonnet-4.6'),
       schema: slidesArraySchema,
       system: SYSTEM_PROMPT,
       prompt: brief,
