@@ -3232,58 +3232,174 @@
           "notNull": false,
           "default": "'[paragraph] - Write a concise introduction (2-3 sentences) that outlines the main topic.\n[horizontalrule] - Insert a horizontal rule to separate the introduction from the main content.\n[list] - Create a list with 3-5 items. Each list item should contain:\n   a. [heading] - A brief, descriptive heading (up to 5 words)\n   b. [paragraph] - A short explanation or elaboration (1-2 sentences)\n[horizontalrule] - Insert another horizontal rule to separate the main content from the conclusion.\n[paragraph] - Compose a brief conclusion (2-3 sentences) summarizing the key points.\n[quote] - Include a relevant quote from a famous person, directly related to the topic. Format: \"Quote text.\" - Author Name'"
         },
-        "anth_c_text_settings_model": {
-          "name": "anth_c_text_settings_model",
-          "type": "enum_plugin_ai_instructions_anth_c_text_settings_model",
+        "oai_text_settings_model": {
+          "name": "oai_text_settings_model",
+          "type": "enum_plugin_ai_instructions_oai_text_settings_model",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'claude-3-5-sonnet-latest'"
+          "default": "'gpt-4o-mini'"
         },
-        "anth_c_text_settings_max_tokens": {
-          "name": "anth_c_text_settings_max_tokens",
+        "oai_text_settings_max_tokens": {
+          "name": "oai_text_settings_max_tokens",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false,
           "default": 5000
         },
-        "anth_c_text_settings_temperature": {
-          "name": "anth_c_text_settings_temperature",
+        "oai_text_settings_temperature": {
+          "name": "oai_text_settings_temperature",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false,
           "default": 0.7
         },
-        "anth_c_text_settings_extract_attachments": {
-          "name": "anth_c_text_settings_extract_attachments",
+        "oai_text_settings_extract_attachments": {
+          "name": "oai_text_settings_extract_attachments",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
-        "anth_c_object_settings_model": {
-          "name": "anth_c_object_settings_model",
-          "type": "enum_plugin_ai_instructions_anth_c_object_settings_model",
+        "dalle_e_settings_version": {
+          "name": "dalle_e_settings_version",
+          "type": "enum_plugin_ai_instructions_dalle_e_settings_version",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'claude-3-5-sonnet-latest'"
+          "default": "'dall-e-3'"
         },
-        "anth_c_object_settings_max_tokens": {
-          "name": "anth_c_object_settings_max_tokens",
+        "dalle_e_settings_size": {
+          "name": "dalle_e_settings_size",
+          "type": "enum_plugin_ai_instructions_dalle_e_settings_size",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'1024x1024'"
+        },
+        "dalle_e_settings_style": {
+          "name": "dalle_e_settings_style",
+          "type": "enum_plugin_ai_instructions_dalle_e_settings_style",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'natural'"
+        },
+        "dalle_e_settings_enable_prompt_optimization": {
+          "name": "dalle_e_settings_enable_prompt_optimization",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gpt_image_1_settings_version": {
+          "name": "gpt_image_1_settings_version",
+          "type": "enum_plugin_ai_instructions_gpt_image_1_settings_version",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'gpt-image-1'"
+        },
+        "gpt_image_1_settings_size": {
+          "name": "gpt_image_1_settings_size",
+          "type": "enum_plugin_ai_instructions_gpt_image_1_settings_size",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'auto'"
+        },
+        "gpt_image_1_settings_quality": {
+          "name": "gpt_image_1_settings_quality",
+          "type": "enum_plugin_ai_instructions_gpt_image_1_settings_quality",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'auto'"
+        },
+        "gpt_image_1_settings_output_format": {
+          "name": "gpt_image_1_settings_output_format",
+          "type": "enum_plugin_ai_instructions_gpt_image_1_settings_output_format",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'png'"
+        },
+        "gpt_image_1_settings_output_compression": {
+          "name": "gpt_image_1_settings_output_compression",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 100
+        },
+        "gpt_image_1_settings_background": {
+          "name": "gpt_image_1_settings_background",
+          "type": "enum_plugin_ai_instructions_gpt_image_1_settings_background",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'white'"
+        },
+        "gpt_image_1_settings_moderation": {
+          "name": "gpt_image_1_settings_moderation",
+          "type": "enum_plugin_ai_instructions_gpt_image_1_settings_moderation",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'auto'"
+        },
+        "oai_tts_settings_voice": {
+          "name": "oai_tts_settings_voice",
+          "type": "enum_plugin_ai_instructions_oai_tts_settings_voice",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'alloy'"
+        },
+        "oai_tts_settings_model": {
+          "name": "oai_tts_settings_model",
+          "type": "enum_plugin_ai_instructions_oai_tts_settings_model",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'tts-1'"
+        },
+        "oai_tts_settings_response_format": {
+          "name": "oai_tts_settings_response_format",
+          "type": "enum_plugin_ai_instructions_oai_tts_settings_response_format",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'mp3'"
+        },
+        "oai_tts_settings_speed": {
+          "name": "oai_tts_settings_speed",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "oai_object_settings_model": {
+          "name": "oai_object_settings_model",
+          "type": "enum_plugin_ai_instructions_oai_object_settings_model",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'gpt-4o'"
+        },
+        "oai_object_settings_max_tokens": {
+          "name": "oai_object_settings_max_tokens",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false,
           "default": 5000
         },
-        "anth_c_object_settings_temperature": {
-          "name": "anth_c_object_settings_temperature",
+        "oai_object_settings_temperature": {
+          "name": "oai_object_settings_temperature",
           "type": "numeric",
           "primaryKey": false,
           "notNull": false,
           "default": 0.7
         },
-        "anth_c_object_settings_extract_attachments": {
-          "name": "anth_c_object_settings_extract_attachments",
+        "oai_object_settings_extract_attachments": {
+          "name": "oai_object_settings_extract_attachments",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
@@ -4537,34 +4653,150 @@
       "name": "enum_plugin_ai_instructions_model_id",
       "schema": "public",
       "values": [
-        "ANTH-C-text",
-        "ANTH-C-object"
+        "Oai-text",
+        "dall-e",
+        "gpt-image-1",
+        "tts",
+        "Oai-object"
       ]
     },
-    "public.enum_plugin_ai_instructions_anth_c_text_settings_model": {
-      "name": "enum_plugin_ai_instructions_anth_c_text_settings_model",
+    "public.enum_plugin_ai_instructions_oai_text_settings_model": {
+      "name": "enum_plugin_ai_instructions_oai_text_settings_model",
       "schema": "public",
       "values": [
-        "claude-opus-4-1",
-        "claude-opus-4-0",
-        "claude-sonnet-4-0",
-        "claude-3-opus-latest",
-        "claude-3-5-haiku-latest",
-        "claude-3-5-sonnet-latest",
-        "claude-3-7-sonnet-latest"
+        "gpt-5",
+        "gpt-5-mini",
+        "gpt-5-nano",
+        "gpt-4.1",
+        "gpt-4o",
+        "gpt-4-turbo",
+        "gpt-4o-mini",
+        "gpt-3.5-turbo"
       ]
     },
-    "public.enum_plugin_ai_instructions_anth_c_object_settings_model": {
-      "name": "enum_plugin_ai_instructions_anth_c_object_settings_model",
+    "public.enum_plugin_ai_instructions_dalle_e_settings_version": {
+      "name": "enum_plugin_ai_instructions_dalle_e_settings_version",
       "schema": "public",
       "values": [
-        "claude-opus-4-1",
-        "claude-opus-4-0",
-        "claude-sonnet-4-0",
-        "claude-3-opus-latest",
-        "claude-3-5-haiku-latest",
-        "claude-3-5-sonnet-latest",
-        "claude-3-7-sonnet-latest"
+        "dall-e-3",
+        "dall-e-2"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_dalle_e_settings_size": {
+      "name": "enum_plugin_ai_instructions_dalle_e_settings_size",
+      "schema": "public",
+      "values": [
+        "256x256",
+        "512x512",
+        "1024x1024",
+        "1792x1024",
+        "1024x1792"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_dalle_e_settings_style": {
+      "name": "enum_plugin_ai_instructions_dalle_e_settings_style",
+      "schema": "public",
+      "values": [
+        "vivid",
+        "natural"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_gpt_image_1_settings_version": {
+      "name": "enum_plugin_ai_instructions_gpt_image_1_settings_version",
+      "schema": "public",
+      "values": [
+        "gpt-image-1"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_gpt_image_1_settings_size": {
+      "name": "enum_plugin_ai_instructions_gpt_image_1_settings_size",
+      "schema": "public",
+      "values": [
+        "1024x1024",
+        "1024x1536",
+        "1536x1024",
+        "auto"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_gpt_image_1_settings_quality": {
+      "name": "enum_plugin_ai_instructions_gpt_image_1_settings_quality",
+      "schema": "public",
+      "values": [
+        "low",
+        "medium",
+        "high",
+        "auto"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_gpt_image_1_settings_output_format": {
+      "name": "enum_plugin_ai_instructions_gpt_image_1_settings_output_format",
+      "schema": "public",
+      "values": [
+        "png",
+        "jpeg",
+        "webp"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_gpt_image_1_settings_background": {
+      "name": "enum_plugin_ai_instructions_gpt_image_1_settings_background",
+      "schema": "public",
+      "values": [
+        "white",
+        "transparent"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_gpt_image_1_settings_moderation": {
+      "name": "enum_plugin_ai_instructions_gpt_image_1_settings_moderation",
+      "schema": "public",
+      "values": [
+        "auto",
+        "low"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_oai_tts_settings_voice": {
+      "name": "enum_plugin_ai_instructions_oai_tts_settings_voice",
+      "schema": "public",
+      "values": [
+        "alloy",
+        "echo",
+        "fable",
+        "onyx",
+        "nova",
+        "shimmer"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_oai_tts_settings_model": {
+      "name": "enum_plugin_ai_instructions_oai_tts_settings_model",
+      "schema": "public",
+      "values": [
+        "tts-1",
+        "tts-1-hd"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_oai_tts_settings_response_format": {
+      "name": "enum_plugin_ai_instructions_oai_tts_settings_response_format",
+      "schema": "public",
+      "values": [
+        "mp3",
+        "opus",
+        "aac",
+        "flac",
+        "wav",
+        "pcm"
+      ]
+    },
+    "public.enum_plugin_ai_instructions_oai_object_settings_model": {
+      "name": "enum_plugin_ai_instructions_oai_object_settings_model",
+      "schema": "public",
+      "values": [
+        "gpt-5",
+        "gpt-5-mini",
+        "gpt-5-nano",
+        "gpt-4.1",
+        "gpt-4o",
+        "gpt-4-turbo",
+        "gpt-4o-mini",
+        "gpt-3.5-turbo"
       ]
     },
     "public.enum_payload_jobs_log_task_slug": {
@@ -4602,6 +4834,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "bc313511-fa71-4902-b856-411d2e1c1e20",
+  "id": "396a88d8-8027-4212-a267-3a333145ee3d",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

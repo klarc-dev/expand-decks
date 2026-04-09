@@ -12,9 +12,21 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_presentations_language" AS ENUM('fr', 'en');
   CREATE TYPE "public"."enum_presentations_last_build_status" AS ENUM('idle', 'building', 'success', 'failed');
   CREATE TYPE "public"."enum_plugin_ai_instructions_field_type" AS ENUM('text', 'textarea', 'upload', 'richText');
-  CREATE TYPE "public"."enum_plugin_ai_instructions_model_id" AS ENUM('ANTH-C-text', 'ANTH-C-object');
-  CREATE TYPE "public"."enum_plugin_ai_instructions_anth_c_text_settings_model" AS ENUM('claude-opus-4-1', 'claude-opus-4-0', 'claude-sonnet-4-0', 'claude-3-opus-latest', 'claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest', 'claude-3-7-sonnet-latest');
-  CREATE TYPE "public"."enum_plugin_ai_instructions_anth_c_object_settings_model" AS ENUM('claude-opus-4-1', 'claude-opus-4-0', 'claude-sonnet-4-0', 'claude-3-opus-latest', 'claude-3-5-haiku-latest', 'claude-3-5-sonnet-latest', 'claude-3-7-sonnet-latest');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_model_id" AS ENUM('Oai-text', 'dall-e', 'gpt-image-1', 'tts', 'Oai-object');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_oai_text_settings_model" AS ENUM('gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1', 'gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini', 'gpt-3.5-turbo');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_dalle_e_settings_version" AS ENUM('dall-e-3', 'dall-e-2');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_dalle_e_settings_size" AS ENUM('256x256', '512x512', '1024x1024', '1792x1024', '1024x1792');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_dalle_e_settings_style" AS ENUM('vivid', 'natural');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_version" AS ENUM('gpt-image-1');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_size" AS ENUM('1024x1024', '1024x1536', '1536x1024', 'auto');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_quality" AS ENUM('low', 'medium', 'high', 'auto');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_output_format" AS ENUM('png', 'jpeg', 'webp');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_background" AS ENUM('white', 'transparent');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_moderation" AS ENUM('auto', 'low');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_oai_tts_settings_voice" AS ENUM('alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_oai_tts_settings_model" AS ENUM('tts-1', 'tts-1-hd');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_oai_tts_settings_response_format" AS ENUM('mp3', 'opus', 'aac', 'flac', 'wav', 'pcm');
+  CREATE TYPE "public"."enum_plugin_ai_instructions_oai_object_settings_model" AS ENUM('gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1', 'gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini', 'gpt-3.5-turbo');
   CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'buildSlides');
   CREATE TYPE "public"."enum_payload_jobs_log_state" AS ENUM('failed', 'succeeded');
   CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'buildSlides');
@@ -324,14 +336,29 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   [horizontalrule] - Insert another horizontal rule to separate the main content from the conclusion.
   [paragraph] - Compose a brief conclusion (2-3 sentences) summarizing the key points.
   [quote] - Include a relevant quote from a famous person, directly related to the topic. Format: "Quote text." - Author Name',
-  	"anth_c_text_settings_model" "enum_plugin_ai_instructions_anth_c_text_settings_model" DEFAULT 'claude-3-5-sonnet-latest',
-  	"anth_c_text_settings_max_tokens" numeric DEFAULT 5000,
-  	"anth_c_text_settings_temperature" numeric DEFAULT 0.7,
-  	"anth_c_text_settings_extract_attachments" boolean,
-  	"anth_c_object_settings_model" "enum_plugin_ai_instructions_anth_c_object_settings_model" DEFAULT 'claude-3-5-sonnet-latest',
-  	"anth_c_object_settings_max_tokens" numeric DEFAULT 5000,
-  	"anth_c_object_settings_temperature" numeric DEFAULT 0.7,
-  	"anth_c_object_settings_extract_attachments" boolean,
+  	"oai_text_settings_model" "enum_plugin_ai_instructions_oai_text_settings_model" DEFAULT 'gpt-4o-mini',
+  	"oai_text_settings_max_tokens" numeric DEFAULT 5000,
+  	"oai_text_settings_temperature" numeric DEFAULT 0.7,
+  	"oai_text_settings_extract_attachments" boolean,
+  	"dalle_e_settings_version" "enum_plugin_ai_instructions_dalle_e_settings_version" DEFAULT 'dall-e-3',
+  	"dalle_e_settings_size" "enum_plugin_ai_instructions_dalle_e_settings_size" DEFAULT '1024x1024',
+  	"dalle_e_settings_style" "enum_plugin_ai_instructions_dalle_e_settings_style" DEFAULT 'natural',
+  	"dalle_e_settings_enable_prompt_optimization" boolean,
+  	"gpt_image_1_settings_version" "enum_plugin_ai_instructions_gpt_image_1_settings_version" DEFAULT 'gpt-image-1',
+  	"gpt_image_1_settings_size" "enum_plugin_ai_instructions_gpt_image_1_settings_size" DEFAULT 'auto',
+  	"gpt_image_1_settings_quality" "enum_plugin_ai_instructions_gpt_image_1_settings_quality" DEFAULT 'auto',
+  	"gpt_image_1_settings_output_format" "enum_plugin_ai_instructions_gpt_image_1_settings_output_format" DEFAULT 'png',
+  	"gpt_image_1_settings_output_compression" numeric DEFAULT 100,
+  	"gpt_image_1_settings_background" "enum_plugin_ai_instructions_gpt_image_1_settings_background" DEFAULT 'white',
+  	"gpt_image_1_settings_moderation" "enum_plugin_ai_instructions_gpt_image_1_settings_moderation" DEFAULT 'auto',
+  	"oai_tts_settings_voice" "enum_plugin_ai_instructions_oai_tts_settings_voice" DEFAULT 'alloy',
+  	"oai_tts_settings_model" "enum_plugin_ai_instructions_oai_tts_settings_model" DEFAULT 'tts-1',
+  	"oai_tts_settings_response_format" "enum_plugin_ai_instructions_oai_tts_settings_response_format" DEFAULT 'mp3',
+  	"oai_tts_settings_speed" numeric DEFAULT 1,
+  	"oai_object_settings_model" "enum_plugin_ai_instructions_oai_object_settings_model" DEFAULT 'gpt-4o',
+  	"oai_object_settings_max_tokens" numeric DEFAULT 5000,
+  	"oai_object_settings_temperature" numeric DEFAULT 0.7,
+  	"oai_object_settings_extract_attachments" boolean,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
@@ -614,8 +641,20 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_presentations_last_build_status";
   DROP TYPE "public"."enum_plugin_ai_instructions_field_type";
   DROP TYPE "public"."enum_plugin_ai_instructions_model_id";
-  DROP TYPE "public"."enum_plugin_ai_instructions_anth_c_text_settings_model";
-  DROP TYPE "public"."enum_plugin_ai_instructions_anth_c_object_settings_model";
+  DROP TYPE "public"."enum_plugin_ai_instructions_oai_text_settings_model";
+  DROP TYPE "public"."enum_plugin_ai_instructions_dalle_e_settings_version";
+  DROP TYPE "public"."enum_plugin_ai_instructions_dalle_e_settings_size";
+  DROP TYPE "public"."enum_plugin_ai_instructions_dalle_e_settings_style";
+  DROP TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_version";
+  DROP TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_size";
+  DROP TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_quality";
+  DROP TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_output_format";
+  DROP TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_background";
+  DROP TYPE "public"."enum_plugin_ai_instructions_gpt_image_1_settings_moderation";
+  DROP TYPE "public"."enum_plugin_ai_instructions_oai_tts_settings_voice";
+  DROP TYPE "public"."enum_plugin_ai_instructions_oai_tts_settings_model";
+  DROP TYPE "public"."enum_plugin_ai_instructions_oai_tts_settings_response_format";
+  DROP TYPE "public"."enum_plugin_ai_instructions_oai_object_settings_model";
   DROP TYPE "public"."enum_payload_jobs_log_task_slug";
   DROP TYPE "public"."enum_payload_jobs_log_state";
   DROP TYPE "public"."enum_payload_jobs_task_slug";`)
