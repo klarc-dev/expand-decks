@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const SectionBlock: Block = {
   slug: 'section',
   labels: { singular: 'Section', plural: 'Sections' },
+  imageURL: '/block-previews/section.svg',
   fields: [
     {
       name: 'number',

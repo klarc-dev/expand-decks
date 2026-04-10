@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const OfficesBlock: Block = {
   slug: 'offices',
   labels: { singular: 'Bureaux', plural: 'Bureaux' },
+  imageURL: '/block-previews/offices.svg',
   fields: [
     {
       name: 'eyebrow',

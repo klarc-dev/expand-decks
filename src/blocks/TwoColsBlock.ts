@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const TwoColsBlock: Block = {
   slug: 'twoCols',
   labels: { singular: 'Deux colonnes', plural: 'Deux colonnes' },
+  imageURL: '/block-previews/twoCols.svg',
   fields: [
     {
       name: 'eyebrow',

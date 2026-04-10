@@ -5,6 +5,7 @@ import { isAdminField } from '../access/roles';
 export const MarkdownBlock: Block = {
   slug: 'markdown',
   labels: { singular: 'Markdown (avanc\u00e9)', plural: 'Blocs Markdown' },
+  imageURL: '/block-previews/markdown.svg',
   fields: [
     {
       name: 'layout',

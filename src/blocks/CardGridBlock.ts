@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const CardGridBlock: Block = {
   slug: 'cardGrid',
   labels: { singular: 'Grille de cartes', plural: 'Grilles de cartes' },
+  imageURL: '/block-previews/cardGrid.svg',
   fields: [
     {
       name: 'eyebrow',

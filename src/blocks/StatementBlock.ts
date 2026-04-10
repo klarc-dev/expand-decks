@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const StatementBlock: Block = {
   slug: 'statement',
   labels: { singular: 'Affirmation', plural: 'Affirmations' },
+  imageURL: '/block-previews/statement.svg',
   fields: [
     {
       name: 'eyebrow',

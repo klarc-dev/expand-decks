@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const CtaBlock: Block = {
   slug: 'cta',
   labels: { singular: 'Appel \u00e0 l\u2019action', plural: 'Appels \u00e0 l\u2019action' },
+  imageURL: '/block-previews/cta.svg',
   fields: [
     {
       name: 'eyebrow',

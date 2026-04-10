@@ -3,6 +3,7 @@ import type { Block } from 'payload';
 export const EndBlock: Block = {
   slug: 'end',
   labels: { singular: 'Diapositive de fin', plural: 'Diapositives de fin' },
+  imageURL: '/block-previews/end.svg',
   fields: [
     {
       name: 'wordmark',

@@ -3,7 +3,7 @@ import type { Block } from 'payload';
 export const CoverBlock: Block = {
   slug: 'cover',
   labels: { singular: 'Couverture', plural: 'Couvertures' },
-  imageURL: '/api/media/block-icons/cover.svg',
+  imageURL: '/block-previews/cover.svg',
   fields: [
     {
       name: 'eyebrow',
