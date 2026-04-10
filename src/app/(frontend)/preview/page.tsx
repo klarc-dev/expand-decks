@@ -65,6 +65,7 @@ export default function PreviewPage() {
   const { data, isLoading } = useLivePreview<PresentationData>({
     initialData: EMPTY_PRESENTATION,
     serverURL: typeof window !== 'undefined' ? window.location.origin : '',
+    depth: 2,
   });
 
   if (isLoading) {
