@@ -26,7 +26,7 @@ services:
     pull_policy: always
     restart: always
     mem_limit: 1g
-    command: ["sh", "-c", "sleep 5 && pnpm payload migrate && pnpm start"]
+    command: ["sh", "-c", "sleep 5 && pnpm payload migrate && pnpm payload run src/seed.ts && pnpm start"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +37,8 @@ services:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
