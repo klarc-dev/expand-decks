@@ -42,24 +42,153 @@ export const Presentations: CollectionConfig = {
       admin: { description: 'Titre de la présentation (ex. "Klarc — L\'innovation à 360°")' },
     },
     {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      unique: true,
-      label: 'Identifiant',
-      admin: { description: 'URL unique (lettres minuscules, chiffres et tirets, max 64 caractères)' },
-      validate: (value: string | null | undefined) => {
-        if (!value) return 'L\'identifiant est requis';
-        if (!/^[a-z0-9-]{1,64}$/.test(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
-        return true;
-      },
-    },
-    {
-      name: 'client',
-      type: 'relationship',
-      relationTo: 'clients',
-      label: 'Client',
-      admin: { description: 'Client associé à cette présentation' },
+      type: 'tabs',
+      tabs: [
+        {
+          label: 'Contenu',
+          description: 'Rédigez le contenu de la présentation.',
+          fields: [
+            {
+              name: 'draftFromBrief',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: '/components/DraftFromBriefButton#default',
+                },
+              },
+            },
+            {
+              name: 'slides',
+              type: 'blocks',
+              label: 'Diapositives',
+              admin: { description: 'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.' },
+              blocks: [
+                CoverBlock,
+                SectionBlock,
+                StatementBlock,
+                TwoColsBlock,
+                CardGridBlock,
+                StatsBlock,
+                TestimonialsBlock,
+                OfficesBlock,
+                CtaBlock,
+                EndBlock,
+                MarkdownBlock,
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Métadonnées',
+          description: 'Informations de classement et de publication.',
+          fields: [
+            {
+              name: 'slug',
+              type: 'text',
+              required: true,
+              unique: true,
+              label: 'Identifiant',
+              admin: { description: 'URL unique (lettres minuscules, chiffres et tirets, max 64 caractères)' },
+              validate: (value: string | null | undefined) => {
+                if (!value) return 'L\'identifiant est requis';
+                if (!/^[a-z0-9-]{1,64}$/.test(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
+                return true;
+              },
+            },
+            {
+              name: 'client',
+              type: 'relationship',
+              relationTo: 'clients',
+              label: 'Client',
+              admin: { description: 'Client associé à cette présentation' },
+            },
+            {
+              name: 'tags',
+              type: 'select',
+              hasMany: true,
+              label: 'Tags',
+              admin: { description: 'Catégories de la présentation' },
+              options: [
+                { label: 'Pitch', value: 'pitch' },
+                { label: 'Formation', value: 'formation' },
+                { label: 'Client', value: 'client' },
+              ],
+            },
+            {
+              name: 'language',
+              type: 'select',
+              required: true,
+              defaultValue: 'fr',
+              label: 'Langue',
+              admin: { description: 'Langue du contenu de la présentation' },
+              options: [
+                { label: 'Français', value: 'fr' },
+                { label: 'Anglais', value: 'en' },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'Sortie',
+          description: 'Artefacts générés automatiquement par le build (disponibles après publication).',
+          fields: [
+            {
+              name: 'lastBuildStatus',
+              type: 'select',
+              defaultValue: 'idle',
+              label: 'Statut du dernier build',
+              admin: {
+                description: 'État du dernier processus de génération',
+                readOnly: true,
+              },
+              options: [
+                { label: 'En attente', value: 'idle' },
+                { label: 'En cours', value: 'building' },
+                { label: 'Réussi', value: 'success' },
+                { label: 'Échoué', value: 'failed' },
+              ],
+            },
+            {
+              name: 'spaUrl',
+              type: 'text',
+              label: 'URL de la présentation web',
+              admin: {
+                description: 'Lien vers la version web interactive (généré automatiquement)',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'pdfFile',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Fichier PDF',
+              admin: {
+                description: 'PDF généré automatiquement par le système de build',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'coverImage',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Image de couverture',
+              admin: {
+                description: 'Miniature générée à partir de la première diapositive',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'lastBuildError',
+              type: 'textarea',
+              label: 'Erreur du dernier build',
+              admin: {
+                description: 'Détails de l\'erreur en cas d\'échec du build',
+                readOnly: true,
+              },
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'status',
@@ -67,123 +196,15 @@ export const Presentations: CollectionConfig = {
       required: true,
       defaultValue: 'draft',
       label: 'Statut',
-      admin: { description: 'État de publication de la présentation' },
+      admin: {
+        description: 'État de publication',
+        position: 'sidebar',
+      },
       options: [
         { label: 'Brouillon', value: 'draft' },
         { label: 'Publiée', value: 'published' },
         { label: 'Archivée', value: 'archived' },
       ],
-    },
-    {
-      name: 'tags',
-      type: 'select',
-      hasMany: true,
-      label: 'Tags',
-      admin: { description: 'Catégories de la présentation' },
-      options: [
-        { label: 'Pitch', value: 'pitch' },
-        { label: 'Formation', value: 'formation' },
-        { label: 'Client', value: 'client' },
-      ],
-    },
-    {
-      name: 'language',
-      type: 'select',
-      required: true,
-      defaultValue: 'fr',
-      label: 'Langue',
-      admin: { description: 'Langue du contenu de la présentation' },
-      options: [
-        { label: 'Français', value: 'fr' },
-        { label: 'Anglais', value: 'en' },
-      ],
-    },
-    {
-      name: 'draftFromBrief',
-      type: 'ui',
-      admin: {
-        components: {
-          Field: '/components/DraftFromBriefButton#default',
-        },
-      },
-    },
-    {
-      name: 'slides',
-      type: 'blocks',
-      label: 'Diapositives',
-      admin: { description: 'Contenu de la présentation, une diapositive par bloc' },
-      blocks: [
-        CoverBlock,
-        SectionBlock,
-        StatementBlock,
-        TwoColsBlock,
-        CardGridBlock,
-        StatsBlock,
-        TestimonialsBlock,
-        OfficesBlock,
-        CtaBlock,
-        EndBlock,
-        MarkdownBlock,
-      ],
-    },
-    {
-      name: 'pdfFile',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Fichier PDF',
-      admin: {
-        description: 'PDF généré automatiquement par le système de build',
-        readOnly: true,
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'spaUrl',
-      type: 'text',
-      label: 'URL de la présentation web',
-      admin: {
-        description: 'Lien vers la version web interactive (généré automatiquement)',
-        readOnly: true,
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'coverImage',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Image de couverture',
-      admin: {
-        description: 'Miniature générée à partir de la première diapositive',
-        readOnly: true,
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'lastBuildStatus',
-      type: 'select',
-      defaultValue: 'idle',
-      label: 'Statut du dernier build',
-      admin: {
-        description: 'État du dernier processus de génération',
-        readOnly: true,
-        position: 'sidebar',
-      },
-      options: [
-        { label: 'En attente', value: 'idle' },
-        { label: 'En cours', value: 'building' },
-        { label: 'Réussi', value: 'success' },
-        { label: 'Échoué', value: 'failed' },
-      ],
-    },
-    {
-      name: 'lastBuildError',
-      type: 'textarea',
-      label: 'Erreur du dernier build',
-      admin: {
-        description: 'Détails de l\'erreur en cas d\'échec du build',
-        readOnly: true,
-        position: 'sidebar',
-      },
     },
     {
       name: 'createdBy',
