@@ -34,6 +34,34 @@ export default buildConfig({
     },
   },
   collections: [Users, Presentations, Clients, Media, ShareLinks],
+  onInit: async (payload) => {
+    const email = process.env.SEED_ADMIN_EMAIL;
+    const password = process.env.SEED_ADMIN_PASSWORD;
+    if (!email || !password) return;
+    try {
+      const existing = await payload.find({
+        collection: 'users',
+        where: { email: { equals: email } },
+        limit: 1,
+      });
+      if (existing.docs.length > 0) {
+        await payload.update({
+          collection: 'users',
+          id: existing.docs[0].id,
+          data: { password, role: 'admin' },
+        });
+        payload.logger.info(`[seed] Updated admin user ${email}`);
+      } else {
+        await payload.create({
+          collection: 'users',
+          data: { email, password, role: 'admin' },
+        });
+        payload.logger.info(`[seed] Created admin user ${email}`);
+      }
+    } catch (err) {
+      payload.logger.error({ err }, '[seed] Failed to upsert admin user');
+    }
+  },
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
