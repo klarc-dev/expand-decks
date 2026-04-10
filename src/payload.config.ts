@@ -24,6 +24,12 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      graphics: {
+        Icon: '/components/KlarcIcon#KlarcIcon',
+        Logo: '/components/KlarcLogo#KlarcLogo',
+      },
+    },
     livePreview: {
       url: '/preview',
       collections: ['presentations'],
