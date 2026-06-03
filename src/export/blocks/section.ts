@@ -1,4 +1,4 @@
-import { escape, md } from '../utils';
+import { escape, md, surfaceClass, wrapSlide, type SlideImage } from '../utils';
 
 export type SectionBlockData = {
   blockType: 'section';
@@ -6,35 +6,43 @@ export type SectionBlockData = {
   title: string;
   subtitle?: string | null;
   surface?: 'dark' | 'light' | null;
+  image?: { url: string } | null;
+  imagePosition?: 'right' | 'left' | null;
 };
 
 export function renderSection(block: SectionBlockData): string {
-  const isDark = block.surface !== 'light';
-  const classAttr = isDark ? 'relative k-dark' : 'relative';
+  const image: SlideImage | null = block.image?.url
+    ? { url: block.image.url, position: block.imagePosition ?? 'right' }
+    : null;
 
   const number = block.number
     ? `\n<div class="k-section-num mb-4">${escape(block.number)}</div>`
     : '';
 
+  // With image: left-align in the content half rather than centering across
+  // the full slide.
+  const subtitleAlign = image ? 'max-w-2xl' : 'max-w-3xl mx-auto';
   const subtitle = block.subtitle
-    ? `\n\n<p class="text-xl opacity-75 max-w-3xl mx-auto leading-relaxed">\n${md(block.subtitle)}\n</p>`
+    ? `\n\n<p class="text-xl opacity-75 ${subtitleAlign} leading-relaxed">\n${md(block.subtitle)}\n</p>`
     : '';
 
-  return `---
-layout: center
-class: ${classAttr}
----
+  const wrapperClass = image
+    ? 'max-w-3xl px-12'
+    : 'text-center max-w-5xl px-12';
 
-<div class="text-center max-w-5xl px-12">
+  const body = `<div class="${wrapperClass}">
 ${number}
-<h1
-  v-motion
-  :initial="{ scale: 0.95, opacity: 0 }"
-  :enter="{ scale: 1, opacity: 1, transition: { duration: 700 } }"
-  class="text-6xl mb-8"
->
+<h1 class="text-6xl mb-8">
 ${md(block.title)}
 </h1>${subtitle}
 
 </div>`;
+
+  return wrapSlide({
+    layout: 'center',
+    classAttr: surfaceClass(block.surface),
+    hideChrome: true,
+    image,
+    body,
+  });
 }

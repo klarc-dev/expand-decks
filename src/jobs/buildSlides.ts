@@ -1,5 +1,12 @@
 import { execFile as execFileCb } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -89,6 +96,23 @@ export const buildSlidesTask: TaskConfig<any> = {
 
       // 4. Create temp workdir
       workdir = mkdtempSync(join(tmpdir(), 'slidev-build-'));
+
+      // Symlink slidev-workspace's node_modules so Slidev can resolve
+      // @slidev/theme-default and the rest of its deps from cwd. Without this,
+      // slidev errors with "theme @slidev/theme-default was not found".
+      symlinkSync(
+        join(SLIDEV_WORKSPACE, 'node_modules'),
+        join(workdir, 'node_modules'),
+        'dir',
+      );
+
+      // Symlink media/ so frontmatter `image: /media/<file>` references resolve
+      // when Slidev fetches assets via Vite's static fs.
+      try {
+        symlinkSync(MEDIA_DIR, join(workdir, 'media'), 'dir');
+      } catch {
+        // media/ may not exist yet on first build — not critical
+      }
 
       // Write slides.md
       writeFileSync(join(workdir, 'slides.md'), slidesMd, 'utf-8');

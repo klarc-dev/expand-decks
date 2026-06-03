@@ -1,4 +1,4 @@
-import { escape, md, vMotion } from '../utils';
+import { escape, md, wrapSlide } from '../utils';
 
 export type CardGridBlockData = {
   blockType: 'cardGrid';
@@ -15,7 +15,6 @@ export type CardGridBlockData = {
 
 export function renderCardGrid(block: CardGridBlockData): string {
   const cols = block.columns ?? '4';
-  const gridClass = `k-grid-${cols}`;
 
   const eyebrow = block.eyebrow
     ? `\n    <div class="k-eyebrow mb-4">${escape(block.eyebrow)}</div>`
@@ -26,23 +25,14 @@ export function renderCardGrid(block: CardGridBlockData): string {
     : '';
 
   const cards = (block.cards ?? [])
-    .map((card, i) => {
-      const num = card.number
-        ? `\n  <span class="k-num">${escape(card.number)}</span>`
-        : '';
-      const desc = card.description
-        ? `\n  <p>${md(card.description)}</p>`
-        : '';
-      return `<div class="k-card" ${vMotion(i)}>${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
+    .map((card) => {
+      const num = card.number ? `\n  <span class="k-num">${escape(card.number)}</span>` : '';
+      const desc = card.description ? `\n  <p>${md(card.description)}</p>` : '';
+      return `<div class="k-card">${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
     })
     .join('\n\n');
 
-  return `---
-layout: default
-class: relative
----
-
-<div class="px-14 pt-24">
+  const body = `<div class="px-14 pt-24">
 
 <div class="flex items-end justify-between mb-10">
   <div>${eyebrow}
@@ -50,11 +40,13 @@ class: relative
   </div>${sidebar}
 </div>
 
-<div class="${gridClass}">
+<div class="k-grid-${cols}">
 
 ${cards}
 
 </div>
 
 </div>`;
+
+  return wrapSlide({ body });
 }

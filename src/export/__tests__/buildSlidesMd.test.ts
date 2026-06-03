@@ -6,9 +6,9 @@ import { parseDeck } from '../parse';
 const HEADMATTER = `colorSchema: light
 aspectRatio: 16/9
 fonts:
-  sans: Inter
-  serif: Fraunces
-  provider: google`;
+  sans: Roboto
+  provider: google
+  local: Gilroy`;
 
 function build(slides: Presentation['slides']): string {
   return buildSlidesMd({ title: 'Test Deck', slides }, { headmatter: HEADMATTER });
@@ -29,7 +29,7 @@ describe('buildSlidesMd()', () => {
     const slides: Presentation['slides'] = [
       { blockType: 'cover', title: 'Deterministic' },
       { blockType: 'section', title: 'Section', number: '01' },
-      { blockType: 'end', wordmark: 'Brand' },
+      { blockType: 'cta', title: 'Thank you' },
     ];
     const a = build(slides);
     const b = build(slides);
@@ -71,7 +71,7 @@ describe('buildSlidesMd()', () => {
           { number: '02', title: 'B', description: 'Desc' },
         ],
       },
-      { blockType: 'end', wordmark: 'Brand' },
+      { blockType: 'cta', title: 'Thank you' },
     ];
 
     const md = build(slides);
@@ -110,27 +110,22 @@ describe('buildSlidesMd()', () => {
         stats: [{ value: '42', label: 'Things' }],
       },
       {
-        blockType: 'testimonials',
+        blockType: 'quotes',
         title: 'Quotes',
         quotes: [{ quote: 'Great', authorName: 'John', authorRole: 'CEO' }],
       },
       {
-        blockType: 'offices',
-        title: 'Offices',
-        offices: [{ name: 'Lyon', region: 'RA', specialties: 'Bio' }],
-      },
-      {
         blockType: 'cta',
-        title: 'CTA',
+        title: 'Thank you',
+        subtitle: 'Questions?',
         primaryAction: 'Go',
-        contactRows: [{ label: 'Web', value: 'site.com' }],
+        footerNote: 'site.example',
       },
       { blockType: 'markdown', layout: 'center', content: '# Raw' },
-      { blockType: 'end', wordmark: 'Brand', tagline: 'Tagline' },
     ];
 
     const md = build(slides);
     const parsed = parseDeck(md);
-    expect(parsed.slides.length).toBe(11);
+    expect(parsed.slides.length).toBe(9);
   });
 });

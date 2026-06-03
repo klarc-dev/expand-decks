@@ -8,6 +8,12 @@ export const Users: CollectionConfig = {
   },
   fields: [
     {
+      name: 'name',
+      type: 'text',
+      label: 'Nom',
+      admin: { description: 'Nom affiché (rempli automatiquement via Google)' },
+    },
+    {
       name: 'role',
       type: 'select',
       required: true,

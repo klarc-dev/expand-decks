@@ -6,13 +6,14 @@ import { postgresAdapter } from '@payloadcms/db-postgres';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { fr } from '@payloadcms/translations/languages/fr';
 import { en } from '@payloadcms/translations/languages/en';
-import { payloadAiPlugin } from '@ai-stack/payloadcms';
+import { authPlugin } from 'payload-auth-plugin';
+import { GoogleAuthProvider } from 'payload-auth-plugin/providers';
 
 import { Users } from './collections/Users';
 import { Presentations } from './collections/Presentations';
-import { Clients } from './collections/Clients';
 import { Media } from './collections/Media';
 import { ShareLinks } from './collections/ShareLinks';
+import { Accounts } from './collections/Accounts';
 import { buildSlidesTask } from './jobs/buildSlides';
 
 const filename = fileURLToPath(import.meta.url);
@@ -29,6 +30,7 @@ export default buildConfig({
         Icon: '/components/KlarcIcon#KlarcIcon',
         Logo: '/components/KlarcLogo#KlarcLogo',
       },
+      afterLogin: ['/components/GoogleLoginButton#default'],
     },
     livePreview: {
       url: '/preview',
@@ -39,7 +41,25 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Users, Presentations, Clients, Media, ShareLinks],
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
+  collections: [Users, Presentations, Media, ShareLinks, Accounts],
+  plugins: [
+    authPlugin({
+      name: 'auth',
+      providers: [
+        GoogleAuthProvider({
+          client_id: process.env.GOOGLE_CLIENT_ID!,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
+      ],
+      usersCollectionSlug: 'users',
+      accountsCollectionSlug: 'accounts',
+      allowOAuthAutoSignUp: true,
+      useAdmin: true,
+      successRedirectPath: '/admin',
+      errorRedirectPath: '/admin/login',
+    }),
+  ],
   onInit: async (payload) => {
     const email = process.env.SEED_ADMIN_EMAIL;
     const password = process.env.SEED_ADMIN_PASSWORD;
@@ -74,19 +94,6 @@ export default buildConfig({
     },
   }),
   editor: lexicalEditor(),
-  // payload-ai adds Compose/Proofread/Translate/Rephrase toolbar buttons
-  // to Lexical RichText fields in enabled collections (e.g. Clients.notes).
-  // Block fields using text/textarea are unaffected — only Lexical editors get AI actions.
-  plugins: [
-    // Temporarily disabled — AI plugin crashes the admin client-side render
-    // Re-enable when @ai-stack/payloadcms fixes the initialization error
-    // payloadAiPlugin({
-    //   collections: {
-    //     presentations: true,
-    //     clients: true,
-    //   },
-    // }),
-  ],
   i18n: {
     supportedLanguages: { fr, en },
     fallbackLanguage: 'fr',

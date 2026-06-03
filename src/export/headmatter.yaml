@@ -3,9 +3,9 @@ colorSchema: light
 aspectRatio: 16/9
 canvasWidth: 1280
 fonts:
-  sans: Inter
-  serif: Fraunces
+  sans: Roboto
   provider: google
+  local: Gilroy
 transition: slide-left
 mdc: true
 defaults:

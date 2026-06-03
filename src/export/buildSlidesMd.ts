@@ -5,14 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { renderCardGrid, type CardGridBlockData } from './blocks/cardGrid';
 import { renderCover, type CoverBlockData } from './blocks/cover';
 import { renderCta, type CtaBlockData } from './blocks/cta';
-import { renderEnd, type EndBlockData } from './blocks/end';
 import { renderMarkdown, type MarkdownBlockData } from './blocks/markdown';
-import { renderOffices, type OfficesBlockData } from './blocks/offices';
+import { renderQuotes, type QuotesBlockData } from './blocks/quotes';
 import { renderSection, type SectionBlockData } from './blocks/section';
 import { renderStatement, type StatementBlockData } from './blocks/statement';
 import { renderStats, type StatsBlockData } from './blocks/stats';
-import { renderTestimonials, type TestimonialsBlockData } from './blocks/testimonials';
 import { renderTwoCols, type TwoColsBlockData } from './blocks/twoCols';
+import { resetDefs } from './utils';
 
 export type SlideBlock =
   | CoverBlockData
@@ -21,10 +20,8 @@ export type SlideBlock =
   | TwoColsBlockData
   | CardGridBlockData
   | StatsBlockData
-  | TestimonialsBlockData
-  | OfficesBlockData
+  | QuotesBlockData
   | CtaBlockData
-  | EndBlockData
   | MarkdownBlockData;
 
 export type Presentation = {
@@ -39,10 +36,8 @@ const RENDERERS: Record<string, (block: never) => string> = {
   twoCols: renderTwoCols as (block: never) => string,
   cardGrid: renderCardGrid as (block: never) => string,
   stats: renderStats as (block: never) => string,
-  testimonials: renderTestimonials as (block: never) => string,
-  offices: renderOffices as (block: never) => string,
+  quotes: renderQuotes as (block: never) => string,
   cta: renderCta as (block: never) => string,
-  end: renderEnd as (block: never) => string,
   markdown: renderMarkdown as (block: never) => string,
 };
 
@@ -74,10 +69,14 @@ export function buildSlidesMd(
     if (!renderer) {
       throw new Error(`Unknown block type: ${block.blockType}`);
     }
+    resetDefs();
     return renderer(block as never);
   });
 
-  // Headmatter is wrapped in --- fences, then each slide is separated by ---
+  // Each renderer's output already begins with `---` (its own frontmatter
+  // open), which doubles as the Slidev slide separator. Joining with a blank
+  // line is sufficient — adding another `---` would produce `---\n---\n` which
+  // Slidev parses as an empty frontmatter block followed by content.
   const parts = [`---\ntitle: "${presentation.title}"\n${headmatter}\n---`, ...slidesMd];
-  return parts.join('\n\n---\n') + '\n';
+  return parts.join('\n\n') + '\n';
 }

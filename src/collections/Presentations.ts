@@ -7,10 +7,8 @@ import { StatementBlock } from '../blocks/StatementBlock';
 import { TwoColsBlock } from '../blocks/TwoColsBlock';
 import { CardGridBlock } from '../blocks/CardGridBlock';
 import { StatsBlock } from '../blocks/StatsBlock';
-import { TestimonialsBlock } from '../blocks/TestimonialsBlock';
-import { OfficesBlock } from '../blocks/OfficesBlock';
+import { QuotesBlock } from '../blocks/QuotesBlock';
 import { CtaBlock } from '../blocks/CtaBlock';
-import { EndBlock } from '../blocks/EndBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
@@ -69,10 +67,8 @@ export const Presentations: CollectionConfig = {
                 TwoColsBlock,
                 CardGridBlock,
                 StatsBlock,
-                TestimonialsBlock,
-                OfficesBlock,
+                QuotesBlock,
                 CtaBlock,
-                EndBlock,
                 MarkdownBlock,
               ],
             },
@@ -96,23 +92,11 @@ export const Presentations: CollectionConfig = {
               },
             },
             {
-              name: 'client',
-              type: 'relationship',
-              relationTo: 'clients',
-              label: 'Client',
-              admin: { description: 'Client associé à cette présentation' },
-            },
-            {
               name: 'tags',
-              type: 'select',
+              type: 'text',
               hasMany: true,
               label: 'Tags',
-              admin: { description: 'Catégories de la présentation' },
-              options: [
-                { label: 'Pitch', value: 'pitch' },
-                { label: 'Formation', value: 'formation' },
-                { label: 'Client', value: 'client' },
-              ],
+              admin: { description: 'Mots-clés libres pour classer la présentation' },
             },
             {
               name: 'language',

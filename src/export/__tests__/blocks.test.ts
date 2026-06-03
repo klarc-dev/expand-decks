@@ -3,13 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { renderCardGrid } from '../blocks/cardGrid';
 import { renderCover } from '../blocks/cover';
 import { renderCta } from '../blocks/cta';
-import { renderEnd } from '../blocks/end';
 import { renderMarkdown } from '../blocks/markdown';
-import { renderOffices } from '../blocks/offices';
+import { renderQuotes } from '../blocks/quotes';
 import { renderSection } from '../blocks/section';
 import { renderStatement } from '../blocks/statement';
 import { renderStats } from '../blocks/stats';
-import { renderTestimonials } from '../blocks/testimonials';
 import { renderTwoCols } from '../blocks/twoCols';
 import { escape, md } from '../utils';
 
@@ -118,6 +116,37 @@ describe('renderCover()', () => {
     expect(result).not.toContain('k-hero-sub');
     expect(result).not.toContain('k-btn');
   });
+
+  it('emits image-right frontmatter when image is set', () => {
+    const result = renderCover({
+      blockType: 'cover',
+      title: 'With photo',
+      image: { url: '/media/photo.jpg' },
+    });
+    expect(result).toContain('layout: image-right');
+    expect(result).toContain('image: /media/photo.jpg');
+    expect(result).not.toContain('absolute inset-0');
+  });
+
+  it('emits image-left when imagePosition is left', () => {
+    const result = renderCover({
+      blockType: 'cover',
+      title: 'With photo',
+      image: { url: '/media/photo.jpg' },
+      imagePosition: 'left',
+    });
+    expect(result).toContain('layout: image-left');
+  });
+
+  it('keeps layout: cover with absolute positioning when no image', () => {
+    const result = renderCover({
+      blockType: 'cover',
+      title: 'No image',
+    });
+    expect(result).toContain('layout: cover');
+    expect(result).toContain('absolute inset-0');
+    expect(result).not.toContain('image:');
+  });
 });
 
 describe('renderSection()', () => {
@@ -138,16 +167,27 @@ describe('renderSection()', () => {
     expect(result).toContain('k-section-num');
     expect(result).toContain('02');
   });
+
+  it('emits image-right and drops centering when image is set', () => {
+    const result = renderSection({
+      blockType: 'section',
+      title: 'Section with photo',
+      image: { url: '/media/photo.jpg' },
+    });
+    expect(result).toContain('layout: image-right');
+    expect(result).toContain('image: /media/photo.jpg');
+    expect(result).not.toContain('text-center max-w-5xl');
+  });
 });
 
 describe('renderStatement()', () => {
-  it('produces layout: center with v-motion', () => {
+  it('produces layout: center', () => {
     const result = renderStatement({
       blockType: 'statement',
       title: 'Statement',
     });
     expect(result).toContain('layout: center');
-    expect(result).toContain('v-motion');
+    expect(result).toContain('Statement');
   });
 
   it('omits body when not provided', () => {
@@ -182,6 +222,21 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('Desc 1');
     expect(result).toContain('Card 2');
   });
+
+  it('emits image-right and drops k-split + rightCards when image is set', () => {
+    const result = renderTwoCols({
+      blockType: 'twoCols',
+      title: 'TwoCols with photo',
+      intro: 'Some intro',
+      image: { url: '/media/photo.jpg' },
+      rightCards: [{ title: 'Should be ignored', description: 'And so should this' }],
+    });
+    expect(result).toContain('layout: image-right');
+    expect(result).toContain('image: /media/photo.jpg');
+    expect(result).not.toContain('k-split');
+    expect(result).not.toContain('Should be ignored');
+    expect(result).toContain('Some intro');
+  });
 });
 
 describe('renderCardGrid()', () => {
@@ -202,7 +257,7 @@ describe('renderCardGrid()', () => {
     expect(result).toContain('k-grid-3');
   });
 
-  it('computes v-motion delays for each card', () => {
+  it('renders all cards with their numbers and titles', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',
       title: 'Grid',
@@ -215,12 +270,12 @@ describe('renderCardGrid()', () => {
         { number: '06', title: 'F', description: 'Desc F' },
       ],
     });
-    expect(result).toContain('delay: 100');
-    expect(result).toContain('delay: 200');
-    expect(result).toContain('delay: 300');
-    expect(result).toContain('delay: 400');
-    expect(result).toContain('delay: 500');
-    expect(result).toContain('delay: 600');
+    for (const n of ['01', '02', '03', '04', '05', '06']) {
+      expect(result).toContain(`>${n}<`);
+    }
+    for (const t of ['A', 'B', 'C', 'D', 'E', 'F']) {
+      expect(result).toContain(`>${t}<`);
+    }
   });
 });
 
@@ -233,7 +288,7 @@ describe('renderStats()', () => {
     expect(result).toContain('k-dark');
   });
 
-  it('renders stat items with v-motion', () => {
+  it('renders each stat value and label', () => {
     const result = renderStats({
       blockType: 'stats',
       title: 'Stats',
@@ -242,17 +297,18 @@ describe('renderStats()', () => {
         { value: '360', label: 'Couverture' },
       ],
     });
-    expect(result).toContain('v-motion');
-    expect(result).toContain('delay: 100');
-    expect(result).toContain('delay: 200');
+    expect(result).toContain('>4<');
+    expect(result).toContain('Expertises');
+    expect(result).toContain('>360<');
+    expect(result).toContain('Couverture');
   });
 });
 
-describe('renderTestimonials()', () => {
+describe('renderQuotes()', () => {
   it('renders quotes with author info', () => {
-    const result = renderTestimonials({
-      blockType: 'testimonials',
-      title: 'Testimonials',
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Quotes',
       quotes: [
         { quote: 'Great service', authorName: 'John', authorRole: 'CEO' },
       ],
@@ -263,69 +319,37 @@ describe('renderTestimonials()', () => {
   });
 });
 
-describe('renderOffices()', () => {
-  it('renders office cards with region and specialties', () => {
-    const result = renderOffices({
-      blockType: 'offices',
-      title: 'Offices',
-      offices: [
-        { name: 'Lyon', region: 'Rhone-Alpes', label: 'HQ', specialties: 'Biotech' },
-      ],
-    });
-    expect(result).toContain('Lyon');
-    expect(result).toContain('Rhone-Alpes');
-    expect(result).toContain('Biotech');
-  });
-});
-
 describe('renderCta()', () => {
   it('renders with dark surface and buttons', () => {
     const result = renderCta({
       blockType: 'cta',
-      title: 'Contact Us',
-      primaryAction: 'Call Now',
-      secondaryAction: '+33 1 23 45 67',
+      title: 'Thank you',
+      primaryAction: 'Get in touch',
+      secondaryAction: 'Learn more',
     });
     expect(result).toContain('k-dark');
     expect(result).toContain('k-btn');
-    expect(result).toContain('Call Now');
+    expect(result).toContain('Get in touch');
     expect(result).toContain('k-btn-ghost');
   });
 
-  it('renders contact rows', () => {
+  it('renders subtitle and footer note (closing slide mode)', () => {
     const result = renderCta({
       blockType: 'cta',
-      title: 'CTA',
-      contactRows: [
-        { label: 'Web', value: 'example.com' },
-        { label: 'Phone', value: '+33 1 23' },
-      ],
+      title: 'Thank you',
+      subtitle: 'Questions?',
+      footerNote: 'site.example',
     });
-    expect(result).toContain('Web');
-    expect(result).toContain('example.com');
-    expect(result).toContain('grid-cols-2');
-  });
-});
-
-describe('renderEnd()', () => {
-  it('renders with dark surface and v-motion on wordmark', () => {
-    const result = renderEnd({
-      blockType: 'end',
-      wordmark: 'Klarc',
-      tagline: 'Innovation.',
-      footerNote: 'Thanks',
-    });
-    expect(result).toContain('k-dark');
-    expect(result).toContain('v-motion');
-    expect(result).toContain('Klarc');
-    expect(result).toContain('Innovation.');
-    expect(result).toContain('Thanks');
+    expect(result).toContain('Thank you');
+    expect(result).toContain('Questions?');
+    expect(result).toContain('site.example');
   });
 
   it('handles all-empty optional fields', () => {
-    const result = renderEnd({ blockType: 'end' });
+    const result = renderCta({ blockType: 'cta', title: 'Title' });
     expect(result).toContain('layout: center');
-    expect(result).not.toContain('k-logo');
+    expect(result).toContain('Title');
+    expect(result).not.toContain('k-btn');
   });
 });
 

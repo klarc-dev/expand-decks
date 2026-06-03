@@ -91,7 +91,7 @@ const DraftFromBriefButton: React.FC = () => {
         id="draft-brief"
         value={brief}
         onChange={(e) => setBrief(e.target.value)}
-        placeholder="Ex : Pitch de 10 slides pour Klarc sur la stratégie PI biotech — présenter l'approche 360° du cabinet, les chiffres clés, 3 témoignages clients et un appel à l'action"
+        placeholder="Ex : Présentation de 10 slides sur le sujet X — introduction, 3 sections principales, chiffres clés, citations, conclusion"
         disabled={loading}
         rows={3}
         style={{

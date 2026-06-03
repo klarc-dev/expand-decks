@@ -34,5 +34,10 @@ export const MarkdownBlock: Block = {
         description: 'Contenu brut de la diapositive en syntaxe Slidev/Markdown',
       },
     },
+    {
+      name: 'preview',
+      type: 'ui',
+      admin: { components: { Field: '/components/SlidePreview#default' } },
+    },
   ],
 };

@@ -30,5 +30,10 @@ export const StatementBlock: Block = {
       label: 'Pied de page',
       admin: { description: 'Légende ou note en bas de la diapositive' },
     },
+    {
+      name: 'preview',
+      type: 'ui',
+      admin: { components: { Field: '/components/SlidePreview#default' } },
+    },
   ],
 };

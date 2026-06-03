@@ -51,5 +51,10 @@ export const StatsBlock: Block = {
         },
       ],
     },
+    {
+      name: 'preview',
+      type: 'ui',
+      admin: { components: { Field: '/components/SlidePreview#default' } },
+    },
   ],
 };

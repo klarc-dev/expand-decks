@@ -10,10 +10,8 @@ import { renderStatement } from '@/export/blocks/statement';
 import { renderTwoCols } from '@/export/blocks/twoCols';
 import { renderCardGrid } from '@/export/blocks/cardGrid';
 import { renderStats } from '@/export/blocks/stats';
-import { renderTestimonials } from '@/export/blocks/testimonials';
-import { renderOffices } from '@/export/blocks/offices';
+import { renderQuotes } from '@/export/blocks/quotes';
 import { renderCta } from '@/export/blocks/cta';
-import { renderEnd } from '@/export/blocks/end';
 import { renderMarkdown } from '@/export/blocks/markdown';
 
 import '@/export/style.css';
@@ -25,10 +23,8 @@ const RENDERERS: Record<string, (block: never) => string> = {
   twoCols: renderTwoCols as (block: never) => string,
   cardGrid: renderCardGrid as (block: never) => string,
   stats: renderStats as (block: never) => string,
-  testimonials: renderTestimonials as (block: never) => string,
-  offices: renderOffices as (block: never) => string,
+  quotes: renderQuotes as (block: never) => string,
   cta: renderCta as (block: never) => string,
-  end: renderEnd as (block: never) => string,
   markdown: renderMarkdown as (block: never) => string,
 };
 
@@ -114,7 +110,7 @@ const styles = {
     background: '#1a1a2e',
     minHeight: '100vh',
     alignItems: 'center',
-    fontFamily: "'Inter', system-ui, sans-serif",
+    fontFamily: "'Roboto', system-ui, sans-serif",
   },
   slideWrapper: {
     position: 'relative' as const,
@@ -127,7 +123,7 @@ const styles = {
     left: '0.5rem',
     fontSize: '0.75rem',
     color: 'rgba(255,255,255,0.5)',
-    fontFamily: "'Inter', monospace",
+    fontFamily: "'Roboto Mono', monospace",
   },
   slide: {
     aspectRatio: '16 / 9',

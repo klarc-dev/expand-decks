@@ -48,5 +48,31 @@ export const CoverBlock: Block = {
         { label: 'Dégradé', value: 'gradient' },
       ],
     },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Image',
+      admin: { description: 'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left)' },
+    },
+    {
+      name: 'imagePosition',
+      type: 'select',
+      label: 'Position de l’image',
+      defaultValue: 'right',
+      admin: {
+        description: 'Côté où l’image s’affiche quand une image est renseignée',
+        condition: (_, siblingData) => Boolean(siblingData?.image),
+      },
+      options: [
+        { label: 'Droite', value: 'right' },
+        { label: 'Gauche', value: 'left' },
+      ],
+    },
+    {
+      name: 'preview',
+      type: 'ui',
+      admin: { components: { Field: '/components/SlidePreview#default' } },
+    },
   ],
 };

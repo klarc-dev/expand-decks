@@ -80,11 +80,10 @@ const statsSchema = z.object({
     .optional(),
 });
 
-const testimonialsSchema = z.object({
-  blockType: z.literal('testimonials'),
+const quotesSchema = z.object({
+  blockType: z.literal('quotes'),
   eyebrow: z.string().optional(),
   title: z.string(),
-  rating: z.string().optional(),
   quotes: z
     .array(
       z.object({
@@ -96,43 +95,13 @@ const testimonialsSchema = z.object({
     .optional(),
 });
 
-const officesSchema = z.object({
-  blockType: z.literal('offices'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  subtitle: z.string().optional(),
-  offices: z
-    .array(
-      z.object({
-        name: z.string(),
-        region: z.string().optional(),
-        label: z.string().optional(),
-        specialties: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
 const ctaSchema = z.object({
   blockType: z.literal('cta'),
   eyebrow: z.string().optional(),
   title: z.string(),
+  subtitle: z.string().optional(),
   primaryAction: z.string().optional(),
   secondaryAction: z.string().optional(),
-  contactRows: z
-    .array(
-      z.object({
-        label: z.string(),
-        value: z.string(),
-      }),
-    )
-    .optional(),
-});
-
-const endSchema = z.object({
-  blockType: z.literal('end'),
-  wordmark: z.string().optional(),
-  tagline: z.string().optional(),
   footerNote: z.string().optional(),
 });
 
@@ -143,95 +112,66 @@ const slideBlockSchema = z.discriminatedUnion('blockType', [
   twoColsSchema,
   cardGridSchema,
   statsSchema,
-  testimonialsSchema,
-  officesSchema,
+  quotesSchema,
   ctaSchema,
-  endSchema,
 ]);
 
 const slidesArraySchema = z.object({
   slides: z.array(slideBlockSchema).min(3).max(20),
 });
 
-const SYSTEM_PROMPT = `Tu es un expert en création de présentations professionnelles pour le cabinet de conseil Expand. Tu génères des diapositives structurées à partir d'un brief en langage naturel.
+const SYSTEM_PROMPT = `Tu génères des diapositives structurées à partir d'un brief en langage naturel.
 
-Tu dois retourner un tableau de blocs (slides) typés. Chaque bloc a un champ "blockType" qui détermine sa structure.
+Tu retournes un tableau de blocs (slides) typés. Chaque bloc a un champ "blockType" qui détermine sa mise en page. Ces blocs sont purement des LAYOUTS : ils ne portent aucune logique métier, seulement une structure visuelle réutilisable.
 
-Types de blocs disponibles :
+Layouts disponibles :
 
-1. **cover** — Diapositive de couverture (toujours la première)
+1. **cover** — Diapositive d'ouverture
    - eyebrow: accroche courte au-dessus du titre
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
-   - footerLeft: texte en bas à gauche
-   - footerRight: texte en bas à droite
+   - footerLeft / footerRight: textes en bas de slide
    - surface: "dark" | "light" | "gradient"
 
 2. **section** — Intercalaire de section
-   - number: numéro de section (ex. "01")
-   - title: titre de la section (obligatoire)
-   - subtitle: description complémentaire
+   - number: numéro (ex. "01")
+   - title: titre (obligatoire)
+   - subtitle: description
    - surface: "dark" | "light"
 
 3. **statement** — Affirmation ou citation mise en avant
-   - eyebrow: accroche
-   - title: citation ou affirmation principale (obligatoire)
-   - body: texte développant l'affirmation
-   - footer: légende ou note
+   - eyebrow, title (obligatoire), body, footer
 
-4. **twoCols** — Mise en page deux colonnes avec cartes
-   - eyebrow: accroche (ex. "01 · Conseil financier")
-   - title: titre principal (obligatoire)
-   - intro: paragraphe d'introduction (colonne gauche)
-   - leftFooter: texte ou statistique en bas de la colonne gauche
-   - rightCards: tableau de cartes [{title, description}]
+4. **twoCols** — Deux colonnes avec cartes à droite
+   - eyebrow, title (obligatoire), intro, leftFooter
+   - rightCards: [{title, description}]
 
 5. **cardGrid** — Grille de cartes numérotées
-   - eyebrow: accroche
-   - title: titre principal (obligatoire)
-   - sidebarText: texte optionnel sur le côté
+   - eyebrow, title (obligatoire), sidebarText
    - columns: "2" | "3" | "4"
-   - cards: tableau [{number, title, description}]
+   - cards: [{number, title, description}]
 
-6. **stats** — Chiffres clés
-   - eyebrow: accroche
-   - title: titre principal (obligatoire)
-   - surface: "dark" | "light"
-   - stats: tableau [{value, label}]
+6. **stats** — Chiffres clés en grille
+   - eyebrow, title (obligatoire), surface
+   - stats: [{value, label}]
 
-7. **testimonials** — Témoignages clients
-   - eyebrow: accroche
-   - title: titre (obligatoire)
-   - rating: note globale (ex. "5/5 · 28 avis")
-   - quotes: tableau [{quote, authorName, authorRole}]
+7. **quotes** — Grille de citations
+   - eyebrow, title (obligatoire)
+   - quotes: [{quote, authorName, authorRole}]
 
-8. **offices** — Implantations géographiques
-   - eyebrow: accroche
-   - title: titre (obligatoire)
-   - subtitle: description
-   - offices: tableau [{name, region, label, specialties}]
-
-9. **cta** — Appel à l'action
-   - eyebrow: question d'amorce
-   - title: titre principal (obligatoire)
-   - primaryAction: texte du bouton principal
-   - secondaryAction: texte du lien secondaire
-   - contactRows: tableau [{label, value}]
-
-10. **end** — Diapositive de fin
-    - wordmark: nom ou logo textuel
-    - tagline: slogan
-    - footerNote: texte en bas
+8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
+   - eyebrow, title (obligatoire), subtitle
+   - primaryAction / secondaryAction: libellés de boutons
+   - footerNote: petit texte en bas
 
 Règles :
 - Commence TOUJOURS par un bloc "cover"
-- Termine TOUJOURS par un bloc "end"
-- Utilise des sections ("section") pour structurer le contenu
-- Varie les types de blocs pour rendre la présentation dynamique
-- Tout le contenu DOIT être en français sauf indication contraire
+- Termine TOUJOURS par un bloc "cta"
+- Utilise "section" pour structurer le contenu en parties
+- Varie les layouts pour rendre la présentation dynamique
+- Reste dans la langue du brief (français par défaut si ambigu)
 - Génère entre 8 et 15 diapositives selon la complexité du brief
-- Les textes doivent être professionnels, concis et percutants
-- N'utilise PAS le bloc "markdown" (réservé aux administrateurs)`;
+- Les textes doivent être concis et percutants`;
 
 export async function POST(req: NextRequest) {
   try {

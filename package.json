@@ -28,6 +28,7 @@
     "gray-matter": "^4.0.3",
     "next": "15.3.3",
     "payload": "3.82.0",
+    "payload-auth-plugin": "^0.7.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "sass": "^1.99.0",
