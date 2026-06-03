@@ -65,7 +65,10 @@ services:
     pull_policy: always
     restart: always
     mem_limit: 2g
-    command: ["pnpm", "run", "jobs:run"]
+    # long-lived scheduler: bare `jobs:run` is one-shot (exits 0, drains once)
+    # which under restart:always caused an endless ~60s flap loop. --cron keeps
+    # the process alive and runs the default queue every minute.
+    command: ["pnpm", "exec", "payload", "jobs:run", "--queue", "default", "--cron", "* * * * *"]
     depends_on:
       postgres:
         condition: service_healthy
