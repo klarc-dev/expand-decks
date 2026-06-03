@@ -124,12 +124,12 @@ const DraftFromBriefButton: React.FC = () => {
             fontSize: '14px',
           }}
         >
-          {loading ? 'Génération en cours\u2026' : 'Générer les slides'}
+          {loading ? 'Génération en cours…' : 'Générer les slides'}
         </button>
 
         {loading && (
           <span style={{ fontSize: '13px', color: 'var(--theme-elevation-500)' }}>
-            Claude rédige votre présentation, cela peut prendre 15-30 secondes\u2026
+            Claude rédige votre présentation, cela peut prendre 15-30 secondes…
           </span>
         )}
       </div>
