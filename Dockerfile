@@ -1,6 +1,9 @@
 # -- Stage: base --
 FROM node:20-bookworm-slim AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Pin pnpm to the lockfile's version. pnpm@latest rolled to 11.x which requires
+# Node >=22.13 (uses node:sqlite) and crashes on this node:20 base -> frozen
+# install fails. 10.33.2 matches pnpm-lock.yaml (lockfileVersion 9.0).
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 WORKDIR /app
 
 # -- Stage: deps --
@@ -35,7 +38,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto fonts-noto-cjk fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Pin pnpm to the lockfile's version. pnpm@latest rolled to 11.x which requires
+# Node >=22.13 (uses node:sqlite) and crashes on this node:20 base -> frozen
+# install fails. 10.33.2 matches pnpm-lock.yaml (lockfileVersion 9.0).
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 WORKDIR /app
 
 # Copy built Next.js app
