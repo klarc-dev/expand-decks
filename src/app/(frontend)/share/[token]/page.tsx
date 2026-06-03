@@ -1,11 +1,7 @@
-import { createHash } from 'node:crypto';
-
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
-function sha256(value: string): string {
-  return createHash('sha256').update(value).digest('hex');
-}
+import { resolveShareLink, isLive } from '@/lib/shareLinks';
 
 export default async function SharePage({
   params,
@@ -14,16 +10,8 @@ export default async function SharePage({
 }) {
   const { token } = await params;
   const payload = await getPayload({ config });
-  const hash = sha256(token);
 
-  const { docs } = await payload.find({
-    collection: 'share-links',
-    where: { tokenHash: { equals: hash } },
-    limit: 1,
-    overrideAccess: true,
-  });
-
-  const link = docs[0];
+  const link = await resolveShareLink(payload, token);
 
   if (!link) {
     return (
@@ -38,7 +26,7 @@ export default async function SharePage({
     );
   }
 
-  if (new Date(link.expiresAt) < new Date()) {
+  if (!isLive(link)) {
     return (
       <html lang="fr">
         <body style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', margin: 0, background: '#f5f5f5' }}>

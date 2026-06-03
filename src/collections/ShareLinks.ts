@@ -1,12 +1,9 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 
 import type { CollectionConfig } from 'payload';
 
 import { isAdminOrAuthor, isAdmin } from '../access/roles';
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value).digest('hex');
-}
+import { sha256 } from '../lib/shareLinks';
 
 export const ShareLinks: CollectionConfig = {
   slug: 'share-links',

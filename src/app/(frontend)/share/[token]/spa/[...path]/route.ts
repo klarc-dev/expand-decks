@@ -1,10 +1,11 @@
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import { NextResponse } from 'next/server';
+
+import { resolveShareLink, isLive } from '@/lib/shareLinks';
 
 const MEDIA_DIR = resolve(process.cwd(), 'media');
 
@@ -30,10 +31,6 @@ const MIME_TYPES: Record<string, string> = {
   '.pdf': 'application/pdf',
 };
 
-function sha256(value: string): string {
-  return createHash('sha256').update(value).digest('hex');
-}
-
 // NOTE: In production, add Next.js middleware rate limiting (e.g. 20 req/min/IP)
 // on the /share/ route prefix to prevent brute-force token guessing.
 
@@ -44,24 +41,11 @@ export async function GET(
   const { token, path: pathSegments } = await params;
 
   const payload = await getPayload({ config });
-  const hash = sha256(token);
 
-  const { docs } = await payload.find({
-    collection: 'share-links',
-    where: { tokenHash: { equals: hash } },
-    limit: 1,
-    overrideAccess: true,
-    depth: 1,
-  });
+  const link = await resolveShareLink(payload, token, 1);
 
-  const link = docs[0];
-
-  if (!link) {
+  if (!link || !isLive(link)) {
     return new NextResponse('Forbidden', { status: 403 });
-  }
-
-  if (new Date(link.expiresAt) < new Date()) {
-    return new NextResponse('Forbidden — link expired', { status: 403 });
   }
 
   // Resolve presentation slug
