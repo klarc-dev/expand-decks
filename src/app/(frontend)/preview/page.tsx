@@ -3,55 +3,19 @@
 import React from 'react';
 import { useLivePreview } from '@payloadcms/live-preview-react';
 
-import type { SlideBlock } from '@/export/buildSlidesMd';
-import { renderCover } from '@/export/blocks/cover';
-import { renderSection } from '@/export/blocks/section';
-import { renderStatement } from '@/export/blocks/statement';
-import { renderTwoCols } from '@/export/blocks/twoCols';
-import { renderCardGrid } from '@/export/blocks/cardGrid';
-import { renderStats } from '@/export/blocks/stats';
-import { renderQuotes } from '@/export/blocks/quotes';
-import { renderCta } from '@/export/blocks/cta';
-import { renderMarkdown } from '@/export/blocks/markdown';
+import { renderBlockPreview } from '@/export/preview';
+import type { SlideBlock } from '@/export/renderers';
 
 import '@/export/style.css';
-
-const RENDERERS: Record<string, (block: never) => string> = {
-  cover: renderCover as (block: never) => string,
-  section: renderSection as (block: never) => string,
-  statement: renderStatement as (block: never) => string,
-  twoCols: renderTwoCols as (block: never) => string,
-  cardGrid: renderCardGrid as (block: never) => string,
-  stats: renderStats as (block: never) => string,
-  quotes: renderQuotes as (block: never) => string,
-  cta: renderCta as (block: never) => string,
-  markdown: renderMarkdown as (block: never) => string,
-};
 
 type PresentationData = {
   title: string;
   slides?: SlideBlock[];
 };
 
-/** Strip the per-slide frontmatter (---\nlayout: ...\n---) leaving only the HTML. */
-function stripSlideFrontmatter(slideMd: string): string {
-  return slideMd.replace(/^---\n[\s\S]*?\n---\n*/, '');
-}
-
-/** Extract the layout name from per-slide frontmatter (e.g. "cover", "default"). */
-function extractLayout(slideMd: string): string {
-  const match = slideMd.match(/^---\n[\s\S]*?layout:\s*(\S+)/);
-  return match?.[1] ?? 'default';
-}
-
 function renderSlides(slides: SlideBlock[]): { html: string; layout: string }[] {
   return slides
-    .map((block) => {
-      const renderer = RENDERERS[block.blockType];
-      if (!renderer) return null;
-      const md = renderer(block as never);
-      return { html: stripSlideFrontmatter(md), layout: extractLayout(md) };
-    })
+    .map(renderBlockPreview)
     .filter((s): s is { html: string; layout: string } => s !== null);
 }
 
