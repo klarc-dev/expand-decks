@@ -1,16 +1,13 @@
 import type { Block } from 'payload';
 
+import { eyebrowField, previewField, surfaceField } from './_shared';
+
 export const StatsBlock: Block = {
   slug: 'stats',
   labels: { singular: 'Statistiques', plural: 'Statistiques' },
   imageURL: '/block-previews/stats.svg',
   fields: [
-    {
-      name: 'eyebrow',
-      type: 'text',
-      label: 'Accroche',
-      admin: { description: 'Texte court au-dessus du titre' },
-    },
+    eyebrowField(),
     {
       name: 'title',
       type: 'text',
@@ -18,17 +15,7 @@ export const StatsBlock: Block = {
       label: 'Titre',
       admin: { description: 'Titre principal de la diapositive' },
     },
-    {
-      name: 'surface',
-      type: 'select',
-      label: 'Surface',
-      defaultValue: 'dark',
-      admin: { description: 'Apparence de fond de la diapositive' },
-      options: [
-        { label: 'Sombre', value: 'dark' },
-        { label: 'Clair', value: 'light' },
-      ],
-    },
+    surfaceField(),
     {
       name: 'stats',
       type: 'array',
@@ -40,7 +27,7 @@ export const StatsBlock: Block = {
           type: 'text',
           required: true,
           label: 'Valeur',
-          admin: { description: 'Chiffre ou donnée (ex. "360\u00b0", "4")' },
+          admin: { description: 'Chiffre ou donnée (ex. "360°", "4")' },
         },
         {
           name: 'label',
@@ -51,10 +38,6 @@ export const StatsBlock: Block = {
         },
       ],
     },
-    {
-      name: 'preview',
-      type: 'ui',
-      admin: { components: { Field: '/components/SlidePreview#default' } },
-    },
+    previewField,
   ],
 };

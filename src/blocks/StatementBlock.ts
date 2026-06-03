@@ -1,16 +1,13 @@
 import type { Block } from 'payload';
 
+import { eyebrowField, previewField } from './_shared';
+
 export const StatementBlock: Block = {
   slug: 'statement',
   labels: { singular: 'Affirmation', plural: 'Affirmations' },
   imageURL: '/block-previews/statement.svg',
   fields: [
-    {
-      name: 'eyebrow',
-      type: 'text',
-      label: 'Accroche',
-      admin: { description: 'Texte court au-dessus du titre' },
-    },
+    eyebrowField(),
     {
       name: 'title',
       type: 'text',
@@ -22,7 +19,7 @@ export const StatementBlock: Block = {
       name: 'body',
       type: 'textarea',
       label: 'Corps',
-      admin: { description: 'Texte développant l\u2019affirmation' },
+      admin: { description: 'Texte développant l’affirmation' },
     },
     {
       name: 'footer',
@@ -30,10 +27,6 @@ export const StatementBlock: Block = {
       label: 'Pied de page',
       admin: { description: 'Légende ou note en bas de la diapositive' },
     },
-    {
-      name: 'preview',
-      type: 'ui',
-      admin: { components: { Field: '/components/SlidePreview#default' } },
-    },
+    previewField,
   ],
 };

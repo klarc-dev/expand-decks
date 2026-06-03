@@ -1,4 +1,4 @@
-import { escape, md, surfaceClass, wrapSlide } from '../utils';
+import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
 export type StatsBlockData = {
   blockType: 'stats';
@@ -15,9 +15,7 @@ export function renderStats(block: StatsBlockData): string {
   const stats = block.stats ?? [];
   const statCount = stats.length || 4;
 
-  const eyebrow = block.eyebrow
-    ? `\n<div class="k-eyebrow mb-10">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-10');
 
   const items = stats
     .map((stat) => {

@@ -6,14 +6,22 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
+const eyebrowZod = z.string().optional();
+const surfaceZod = (gradient: boolean) =>
+  (gradient
+    ? z.enum(['dark', 'light', 'gradient'])
+    : z.enum(['dark', 'light'])
+  ).optional();
+
+// image/imagePosition are intentionally omitted from AI drafting — they require an uploaded media id, not an LLM-generated value; authors add images in the admin.
 const coverSchema = z.object({
   blockType: z.literal('cover'),
-  eyebrow: z.string().optional(),
+  eyebrow: eyebrowZod,
   title: z.string(),
   subtitle: z.string().optional(),
   footerLeft: z.string().optional(),
   footerRight: z.string().optional(),
-  surface: z.enum(['dark', 'light', 'gradient']).optional(),
+  surface: surfaceZod(true),
 });
 
 const sectionSchema = z.object({
@@ -21,7 +29,7 @@ const sectionSchema = z.object({
   number: z.string().optional(),
   title: z.string(),
   subtitle: z.string().optional(),
-  surface: z.enum(['dark', 'light']).optional(),
+  surface: surfaceZod(false),
 });
 
 const statementSchema = z.object({
@@ -32,6 +40,7 @@ const statementSchema = z.object({
   footer: z.string().optional(),
 });
 
+// image/imagePosition are intentionally omitted from AI drafting — they require an uploaded media id, not an LLM-generated value; authors add images in the admin.
 const twoColsSchema = z.object({
   blockType: z.literal('twoCols'),
   eyebrow: z.string().optional(),
@@ -67,9 +76,9 @@ const cardGridSchema = z.object({
 
 const statsSchema = z.object({
   blockType: z.literal('stats'),
-  eyebrow: z.string().optional(),
+  eyebrow: eyebrowZod,
   title: z.string(),
-  surface: z.enum(['dark', 'light']).optional(),
+  surface: surfaceZod(false),
   stats: z
     .array(
       z.object({
@@ -105,6 +114,7 @@ const ctaSchema = z.object({
   footerNote: z.string().optional(),
 });
 
+// markdown is intentionally excluded — it is an admin-only escape-hatch block, not AI-draftable.
 const slideBlockSchema = z.discriminatedUnion('blockType', [
   coverSchema,
   sectionSchema,

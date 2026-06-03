@@ -1,16 +1,13 @@
 import type { Block } from 'payload';
 
+import { eyebrowField, previewField } from './_shared';
+
 export const CardGridBlock: Block = {
   slug: 'cardGrid',
   labels: { singular: 'Grille de cartes', plural: 'Grilles de cartes' },
   imageURL: '/block-previews/cardGrid.svg',
   fields: [
-    {
-      name: 'eyebrow',
-      type: 'text',
-      label: 'Accroche',
-      admin: { description: 'Texte court au-dessus du titre' },
-    },
+    eyebrowField(),
     {
       name: 'title',
       type: 'text',
@@ -63,10 +60,6 @@ export const CardGridBlock: Block = {
         },
       ],
     },
-    {
-      name: 'preview',
-      type: 'ui',
-      admin: { components: { Field: '/components/SlidePreview#default' } },
-    },
+    previewField,
   ],
 };

@@ -1,4 +1,4 @@
-import { escape, md, wrapSlide, type SlideImage } from '../utils';
+import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
 export type TwoColsBlockData = {
   blockType: 'twoCols';
@@ -19,9 +19,7 @@ export function renderTwoCols(block: TwoColsBlockData): string {
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
 
-  const eyebrow = block.eyebrow
-    ? `\n<div class="k-eyebrow mb-6">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-6');
 
   // Use <div> not <p>: intro often contains markdown lists / multi-paragraphs
   // which Vue's HTML parser refuses inside a <p> (block content auto-closes the

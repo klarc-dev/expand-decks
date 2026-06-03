@@ -1,4 +1,4 @@
-import { escape, md, wrapSlide } from '../utils';
+import { escape, eyebrow as renderEyebrow, md, wrapSlide } from '../utils';
 
 export type StatementBlockData = {
   blockType: 'statement';
@@ -9,9 +9,7 @@ export type StatementBlockData = {
 };
 
 export function renderStatement(block: StatementBlockData): string {
-  const eyebrow = block.eyebrow
-    ? `\n<div class="k-eyebrow mb-8">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow);
 
   const bodyText = block.body
     ? `\n\n<p class="text-xl leading-relaxed max-w-3xl">\n${md(block.body)}\n</p>`

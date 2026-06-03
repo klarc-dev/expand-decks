@@ -1,16 +1,13 @@
 import type { Block } from 'payload';
 
+import { eyebrowField, imageFields, previewField } from './_shared';
+
 export const TwoColsBlock: Block = {
   slug: 'twoCols',
   labels: { singular: 'Deux colonnes', plural: 'Deux colonnes' },
   imageURL: '/block-previews/twoCols.svg',
   fields: [
-    {
-      name: 'eyebrow',
-      type: 'text',
-      label: 'Accroche',
-      admin: { description: 'Texte court au-dessus du titre (ex. "01 \u00b7 Conseil financier")' },
-    },
+    eyebrowField('Texte court au-dessus du titre (ex. "01 · Conseil financier")'),
     {
       name: 'title',
       type: 'text',
@@ -22,7 +19,7 @@ export const TwoColsBlock: Block = {
       name: 'intro',
       type: 'textarea',
       label: 'Introduction',
-      admin: { description: 'Paragraphe d\u2019introduction dans la colonne gauche' },
+      admin: { description: 'Paragraphe d’introduction dans la colonne gauche' },
     },
     {
       name: 'leftFooter',
@@ -34,7 +31,7 @@ export const TwoColsBlock: Block = {
       name: 'rightCards',
       type: 'array',
       label: 'Cartes (colonne droite)',
-      admin: { description: 'Liste de cartes affich\u00e9es dans la colonne droite' },
+      admin: { description: 'Liste de cartes affichées dans la colonne droite' },
       fields: [
         {
           name: 'title',
@@ -51,31 +48,7 @@ export const TwoColsBlock: Block = {
         },
       ],
     },
-    {
-      name: 'image',
-      type: 'upload',
-      relationTo: 'media',
-      label: 'Image',
-      admin: { description: 'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Remplace les rightCards si renseignée.' },
-    },
-    {
-      name: 'imagePosition',
-      type: 'select',
-      label: 'Position de l’image',
-      defaultValue: 'right',
-      admin: {
-        description: 'Côté où l’image s’affiche quand une image est renseignée',
-        condition: (_, siblingData) => Boolean(siblingData?.image),
-      },
-      options: [
-        { label: 'Droite', value: 'right' },
-        { label: 'Gauche', value: 'left' },
-      ],
-    },
-    {
-      name: 'preview',
-      type: 'ui',
-      admin: { components: { Field: '/components/SlidePreview#default' } },
-    },
+    ...imageFields('Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Remplace les rightCards si renseignée.'),
+    previewField,
   ],
 };

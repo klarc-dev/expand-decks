@@ -13,6 +13,10 @@ export function escape(text: string): string {
   return text.replace(HTML_ENTITY_RE, (ch) => HTML_ENTITIES[ch] ?? ch);
 }
 
+export function eyebrow(text: string | null | undefined, marginClass = 'mb-8'): string {
+  return text ? `\n<div class="k-eyebrow ${marginClass}">${escape(text)}</div>` : '';
+}
+
 let _slideDefs: string[] = [];
 
 export function resetDefs(): void {

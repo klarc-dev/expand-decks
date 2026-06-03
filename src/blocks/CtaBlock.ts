@@ -1,16 +1,13 @@
 import type { Block } from 'payload';
 
+import { eyebrowField, previewField } from './_shared';
+
 export const CtaBlock: Block = {
   slug: 'cta',
-  labels: { singular: 'Appel \u00e0 l\u2019action', plural: 'Appels \u00e0 l\u2019action' },
+  labels: { singular: 'Appel à l’action', plural: 'Appels à l’action' },
   imageURL: '/block-previews/cta.svg',
   fields: [
-    {
-      name: 'eyebrow',
-      type: 'text',
-      label: 'Accroche',
-      admin: { description: 'Texte court au-dessus du titre' },
-    },
+    eyebrowField(),
     {
       name: 'title',
       type: 'text',
@@ -22,7 +19,7 @@ export const CtaBlock: Block = {
       name: 'subtitle',
       type: 'text',
       label: 'Sous-titre',
-      admin: { description: 'Phrase d\u2019accroche sous le titre' },
+      admin: { description: 'Phrase d’accroche sous le titre' },
     },
     {
       name: 'primaryAction',
@@ -42,10 +39,6 @@ export const CtaBlock: Block = {
       label: 'Note de bas',
       admin: { description: 'Texte en bas de la diapositive (optionnel)' },
     },
-    {
-      name: 'preview',
-      type: 'ui',
-      admin: { components: { Field: '/components/SlidePreview#default' } },
-    },
+    previewField,
   ],
 };

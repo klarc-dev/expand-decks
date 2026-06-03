@@ -1,16 +1,13 @@
 import type { Block } from 'payload';
 
+import { eyebrowField, previewField } from './_shared';
+
 export const QuotesBlock: Block = {
   slug: 'quotes',
   labels: { singular: 'Citations', plural: 'Citations' },
   imageURL: '/block-previews/quotes.svg',
   fields: [
-    {
-      name: 'eyebrow',
-      type: 'text',
-      label: 'Accroche',
-      admin: { description: 'Texte court au-dessus du titre' },
-    },
+    eyebrowField(),
     {
       name: 'title',
       type: 'text',
@@ -36,20 +33,16 @@ export const QuotesBlock: Block = {
           type: 'text',
           required: true,
           label: 'Auteur',
-          admin: { description: 'Nom de l\u2019auteur cité' },
+          admin: { description: 'Nom de l’auteur cité' },
         },
         {
           name: 'authorRole',
           type: 'text',
-          label: 'Rôle de l\u2019auteur',
+          label: 'Rôle de l’auteur',
           admin: { description: 'Fonction ou contexte (optionnel)' },
         },
       ],
     },
-    {
-      name: 'preview',
-      type: 'ui',
-      admin: { components: { Field: '/components/SlidePreview#default' } },
-    },
+    previewField,
   ],
 };
