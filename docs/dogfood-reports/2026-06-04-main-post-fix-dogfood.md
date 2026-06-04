@@ -135,10 +135,10 @@ None — every issue found had a safe, contained autonomous fix.
 | Paper cut | Persona | Severity | Status |
 |---|---|---|---|
 | Red "required" error on the read-only token hash during failed validation | Author | Medium | **Fixed** (`f7378b4` — field hidden) |
-| AI-draft error surfaces raw provider internals ("LiteLLM Virtual Key expected…") instead of a friendlier message | Author | Low | Deferred — informative but leaks infra vocabulary |
-| Share-link doc title is the raw 64-char hash (breadcrumb/header) | Author/Admin | Low | Deferred — list view shows useful columns; a friendly title would need a schema/useAsTitle decision |
-| Expiration date input only commits via picker click; typed dates are easy to lose | Author | Low | Deferred — react-datepicker behavior; typing + Enter selects highlighted day instead of parsing |
-| Build feedback is poll-based: author must reload Sortie tab to see En cours→Réussi | Author | Low | Deferred — needs websocket/poll UI, product decision |
+| AI-draft error surfaces raw provider internals instead of a friendlier message | Author | Low | **Fixed** (`5f6b746` — readable French message first, provider detail secondary; verified in-browser) |
+| Share-link doc title is the raw 64-char hash (breadcrumb/header) | Author/Admin | Low | **Fixed** (`5f6b746` — generated label "Partage — <titre> (expire le <date>)" as useAsTitle; verified) |
+| Expiration date input only commits via picker click; typed dates are easy to lose | Author | Low | **Fixed** (`5f6b746` — defaults to +30 days; the common case needs no typing at all. Picker quirk itself is react-datepicker upstream) |
+| Build feedback is poll-based: author must reload Sortie tab to see En cours→Réussi | Author | Low | **Fixed** (`5f6b746` — BuildStatusField polls every 5s; live Réussi→En cours…→Réussi cycle observed without reload) |
 
 ## Learnings
 
@@ -152,7 +152,10 @@ None — every issue found had a safe, contained autonomous fix.
 
 **Ready.** 14/14 scenarios green (11 Pass, 3 Fixed with commits `35ab268`, `f5dfa41`, `7b97c15`, plus paper-cut fix `f7378b4`). 53/53 unit tests pass. Full authoring → AI-draft error path → publish → build → authed view → share lifecycle (create/rotate/expire) exercised in a real browser as Author, Admin, and anonymous Recipient.
 
-Remaining human verifications:
-- AI draft end-to-end with a real LiteLLM key (only the error path was testable).
-- Google OAuth login (needs real credentials).
-- 47 Dependabot vulnerabilities (1 critical) flagged on the repo — dependency upgrades not in this run's scope.
+Follow-up round (same day): all deferred items closed.
+- **Dependency vulnerabilities fixed** (`40ae784`): next 15.3.3 → 15.5.18 and pnpm overrides for protobufjs (critical), fast-uri, ws, uuid, qs, postcss, dompurify, @protobufjs/utf8 — 53/53 tests, tsc, and production build green on the new set. One low-severity alert (@ai-sdk/provider-utils) has **no patched upstream release** yet and cannot be fixed by version selection.
+- **All four paper cuts fixed** (`5f6b746`), each verified in-browser.
+
+Remaining human verifications (credential-gated, not code defects):
+- AI draft end-to-end with a real LiteLLM key — error path verified, success path needs a real key in `OPENAI_API_KEY`.
+- Google OAuth login — needs real Google credentials configured.
