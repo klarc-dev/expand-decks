@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+            // cdn.jsdelivr.net + blob: workers are required by the Monaco
+            // editor that Payload's code fields lazy-load from the CDN.
+            value:
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob:;",
           },
         ],
       },

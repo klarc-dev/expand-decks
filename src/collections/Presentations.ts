@@ -84,7 +84,29 @@ export const Presentations: CollectionConfig = {
               required: true,
               unique: true,
               label: 'Identifiant',
-              admin: { description: 'URL unique (lettres minuscules, chiffres et tirets, max 64 caractères)' },
+              admin: {
+                description:
+                  'URL unique (lettres minuscules, chiffres et tirets, max 64 caractères). Généré automatiquement à partir du titre si laissé vide.',
+              },
+              hooks: {
+                // Auto-slugify from the title so a first save never fails on
+                // an empty required field hidden in another tab.
+                beforeValidate: [
+                  ({ value, data }) => {
+                    if (value) return value;
+                    const title = (data as { title?: string } | undefined)?.title;
+                    if (!title) return value;
+                    return title
+                      .normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .replace(/^-+|-+$/g, '')
+                      .slice(0, 64)
+                      .replace(/-+$/g, '');
+                  },
+                ],
+              },
               validate: (value: string | null | undefined) => {
                 if (!value) return 'L\'identifiant est requis';
                 if (!/^[a-z0-9-]{1,64}$/.test(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';

@@ -31,8 +31,8 @@ export default async function SharePage({
       <html lang="fr">
         <body style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', margin: 0, background: '#f5f5f5' }}>
           <div style={{ textAlign: 'center' }}>
-            <h1 style={{ fontSize: '1.5rem', color: '#333' }}>Lien expire</h1>
-            <p style={{ color: '#666' }}>Ce lien de partage a expire. Veuillez en demander un nouveau.</p>
+            <h1 style={{ fontSize: '1.5rem', color: '#333' }}>Lien expiré</h1>
+            <p style={{ color: '#666' }}>Ce lien de partage a expiré. Veuillez en demander un nouveau.</p>
           </div>
         </body>
       </html>

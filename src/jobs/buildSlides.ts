@@ -131,8 +131,10 @@ export const buildSlidesTask: TaskConfig<any> = {
         // Fonts directory may not exist yet — not critical
       }
 
-      // 5. Build SPA
-      await runSlidev(['build', '--base', '/'], workdir);
+      // 5. Build SPA with a relative base so assets resolve wherever the dist
+      // is mounted (/spa/<slug>/ and /share/<token>/spa/). Pairs with
+      // `routerMode: hash` in headmatter.yaml.
+      await runSlidev(['build', '--base', './'], workdir);
 
       // 6. Export PDF
       await runSlidev(['export', '--format', 'pdf', '--output', 'slides.pdf'], workdir);
@@ -162,7 +164,10 @@ export const buildSlidesTask: TaskConfig<any> = {
         id: presentationId,
         data: {
           pdfFile: pdfMedia.id,
-          spaUrl: `/spa/${slug}/`,
+          // index.html explicitly: the dist uses relative asset URLs, which
+          // only resolve against a path ending in a filename or trailing
+          // slash (Next strips trailing slashes with a 308).
+          spaUrl: `/spa/${slug}/index.html`,
           lastBuildStatus: 'success',
           lastBuildError: '',
         },

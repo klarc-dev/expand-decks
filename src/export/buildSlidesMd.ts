@@ -46,6 +46,21 @@ export function buildSlidesMd(
   // open), which doubles as the Slidev slide separator. Joining with a blank
   // line is sufficient — adding another `---` would produce `---\n---\n` which
   // Slidev parses as an empty frontmatter block followed by content.
-  const parts = [`---\ntitle: "${presentation.title}"\n${headmatter}\n---`, ...slidesMd];
-  return parts.join('\n\n') + '\n';
+  //
+  // The first slide's frontmatter is merged into the headmatter block (as in
+  // a hand-written Slidev deck): a standalone headmatter block would become
+  // an empty phantom first slide in the built SPA / exported PDF.
+  const headOpen = `---\ntitle: "${presentation.title}"\n${headmatter}`;
+
+  if (slidesMd.length === 0) {
+    return `${headOpen}\n---\n`;
+  }
+
+  const [first, ...rest] = slidesMd;
+  const firstMatch = first!.match(/^---\n([\s\S]*?)\n---\n*/);
+  const firstFm = firstMatch ? firstMatch[1] : '';
+  const firstBody = firstMatch ? first!.slice(firstMatch[0].length) : first!;
+
+  const head = `${headOpen}\n${firstFm}\n---\n\n${firstBody}`;
+  return [head, ...rest].join('\n\n') + '\n';
 }

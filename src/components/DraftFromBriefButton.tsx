@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDocumentInfo } from '@payloadcms/ui';
 
 const DraftFromBriefButton: React.FC = () => {
   const [brief, setBrief] = useState('');
@@ -9,13 +10,11 @@ const DraftFromBriefButton: React.FC = () => {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Extract presentation ID from the URL: /admin/collections/presentations/{id}
-  const id =
-    typeof window !== 'undefined'
-      ? window.location.pathname.split('/collections/presentations/')[1]?.split('/')[0]
-      : undefined;
+  // SSR-safe document id (reading window.location here breaks hydration and
+  // the field silently never renders).
+  const { id } = useDocumentInfo();
 
-  const isNewDoc = !id || id === 'create';
+  const isNewDoc = !id;
 
   const handleGenerate = useCallback(async () => {
     if (!brief.trim() || !id) return;
@@ -28,7 +27,7 @@ const DraftFromBriefButton: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ presentationId: id, brief }),
+        body: JSON.stringify({ presentationId: String(id), brief }),
       });
 
       const data = await res.json();
@@ -49,8 +48,25 @@ const DraftFromBriefButton: React.FC = () => {
     }
   }, [brief, id, router]);
 
-  // Don't show on new documents (must save first)
-  if (isNewDoc) return null;
+  // On new documents the feature needs a saved id — keep it discoverable
+  // with a hint instead of disappearing entirely.
+  if (isNewDoc) {
+    return (
+      <div
+        style={{
+          padding: '12px 16px',
+          marginBottom: '20px',
+          border: '1px dashed var(--theme-elevation-150)',
+          borderRadius: '4px',
+          color: 'var(--theme-elevation-500)',
+          fontSize: '13px',
+        }}
+      >
+        Enregistrez d&apos;abord la présentation pour pouvoir générer les diapositives avec
+        l&apos;IA à partir d&apos;un brief.
+      </div>
+    );
+  }
 
   return (
     <div

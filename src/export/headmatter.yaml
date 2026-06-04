@@ -8,10 +8,16 @@ fonts:
   local: Gilroy
 transition: slide-left
 mdc: true
+# Hash routing + relative asset base (--base ./ in the build job) let the SPA
+# run from any path: /spa/<slug>/index.html and /share/<token>/spa/index.html.
+routerMode: hash
 defaults:
   layout: default
 htmlAttrs:
   lang: fr
 drawings:
   persist: false
-download: true
+# download must stay off: with the relative build base (--base ./) Slidev's
+# embedded print-export navigates to an invalid URL and fails the build. The
+# PDF is exported separately by the build job and attached to the Sortie tab.
+download: false

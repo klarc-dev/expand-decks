@@ -9,8 +9,10 @@ const HTML_ENTITIES: Record<string, string> = {
 const HTML_ENTITY_RE = /[&<>"']/g;
 const DEF_RE = /\{\{def:(.+?)\}\}/g;
 
-export function escape(text: string): string {
-  return text.replace(HTML_ENTITY_RE, (ch) => HTML_ENTITIES[ch] ?? ch);
+// Null-safe: freshly added admin blocks have empty required fields, and the
+// live preview renders them immediately — never crash on missing text.
+export function escape(text: string | null | undefined): string {
+  return (text ?? '').replace(HTML_ENTITY_RE, (ch) => HTML_ENTITIES[ch] ?? ch);
 }
 
 export function eyebrow(text: string | null | undefined, marginClass = 'mb-8'): string {
@@ -37,7 +39,7 @@ function consumeDefFooter(): string {
  * {{def:content}} which collects definitions for the slide-level footnote band
  * and emits a superscript reference inline.
  */
-export function md(text: string): string {
+export function md(text: string | null | undefined): string {
   const escaped = escape(text).replace(DEF_RE, (_, content) => {
     _slideDefs.push(content);
     return `\x00DEF${_slideDefs.length}\x00`;

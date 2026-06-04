@@ -12,7 +12,13 @@ export function renderBlockPreview(
 ): { html: string; layout: string } | null {
   const renderer = RENDERERS[(block as { blockType: string }).blockType];
   if (!renderer) return null;
-  const md = renderer(block as never);
+  let md: string;
+  try {
+    md = renderer(block as never);
+  } catch {
+    // A renderer bug must degrade to "no preview", never crash the admin.
+    return null;
+  }
   const html = md.replace(/^---\n[\s\S]*?\n---\n*/, '');
   const layout = md.match(/^---\n[\s\S]*?layout:\s*(\S+)/)?.[1] ?? 'default';
   return { html, layout };

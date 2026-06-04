@@ -1,9 +1,14 @@
 import { randomBytes } from 'node:crypto';
 
-import type { CollectionConfig } from 'payload';
+import type { CollectionConfig, PayloadRequest } from 'payload';
 
 import { isAdminOrAuthor, isAdmin } from '../access/roles';
 import { sha256 } from '../lib/shareLinks';
+
+const buildShareUrl = (token: string): string => {
+  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || '';
+  return `${baseUrl}/share/${token}`;
+};
 
 export const ShareLinks: CollectionConfig = {
   slug: 'share-links',
@@ -18,6 +23,54 @@ export const ShareLinks: CollectionConfig = {
     update: isAdmin,
     delete: isAdmin,
   },
+  endpoints: [
+    {
+      // Rotate the token and return the fresh share URL. The raw token is
+      // never stored (only its SHA-256), so this is the only way to obtain a
+      // working URL after creation. Rotating invalidates the previous URL.
+      path: '/:id/rotate',
+      method: 'post',
+      handler: async (req: PayloadRequest) => {
+        const user = req.user;
+        if (!user || (user.role !== 'admin' && user.role !== 'author')) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const id = req.routeParams?.id as string | undefined;
+        if (!id) {
+          return Response.json({ error: 'Missing id' }, { status: 400 });
+        }
+
+        let link;
+        try {
+          link = await req.payload.findByID({
+            collection: 'share-links',
+            id,
+            depth: 0,
+            overrideAccess: true,
+          });
+        } catch {
+          return Response.json({ error: 'Not found' }, { status: 404 });
+        }
+
+        const createdById =
+          typeof link.createdBy === 'object' ? link.createdBy?.id : link.createdBy;
+        if (user.role !== 'admin' && createdById !== user.id) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        const token = randomBytes(32).toString('base64url');
+        await req.payload.update({
+          collection: 'share-links',
+          id,
+          data: { tokenHash: sha256(token) },
+          overrideAccess: true,
+        });
+
+        return Response.json({ shareUrl: buildShareUrl(token) });
+      },
+    },
+  ],
   hooks: {
     beforeChange: [
       ({ data, req, operation }) => {
@@ -34,33 +87,32 @@ export const ShareLinks: CollectionConfig = {
     afterChange: [
       ({ doc, req, operation }) => {
         if (operation === 'create' && req.context.shareToken) {
-          const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || '';
           return {
             ...doc,
-            shareUrl: `${baseUrl}/share/${req.context.shareToken}`,
+            shareUrl: buildShareUrl(req.context.shareToken as string),
           };
         }
-        return doc;
-      },
-    ],
-    afterRead: [
-      ({ doc }) => {
-        const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || '';
-        // shareUrl is only meaningful in admin — the raw token is never stored,
-        // so we show a truncated hash as an identifier instead.
-        doc.shareUrlDisplay = `${baseUrl}/share/[token-hash:${doc.tokenHash?.slice(0, 8)}...]`;
         return doc;
       },
     ],
   },
   fields: [
     {
+      name: 'shareUrlField',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '/components/ShareUrlField#default',
+        },
+      },
+    },
+    {
       name: 'presentation',
       type: 'relationship',
       relationTo: 'presentations',
       required: true,
-      label: 'Presentation',
-      admin: { description: 'Presentation partagee via ce lien' },
+      label: 'Présentation',
+      admin: { description: 'Présentation partagée via ce lien' },
     },
     {
       name: 'tokenHash',
@@ -71,7 +123,7 @@ export const ShareLinks: CollectionConfig = {
       label: 'Hash du jeton',
       admin: {
         readOnly: true,
-        description: 'SHA-256 du jeton de partage (le jeton brut n\'est jamais stocke)',
+        description: 'SHA-256 du jeton de partage (le jeton brut n\'est jamais stocké)',
       },
     },
     {
@@ -85,11 +137,11 @@ export const ShareLinks: CollectionConfig = {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
-      label: 'Cree par',
+      label: 'Créé par',
       admin: {
         readOnly: true,
         position: 'sidebar',
-        description: 'Utilisateur ayant genere le lien',
+        description: 'Utilisateur ayant généré le lien',
       },
     },
     {
@@ -106,11 +158,11 @@ export const ShareLinks: CollectionConfig = {
     {
       name: 'lastViewedAt',
       type: 'date',
-      label: 'Derniere consultation',
+      label: 'Dernière consultation',
       admin: {
         readOnly: true,
         position: 'sidebar',
-        description: 'Date de la derniere consultation',
+        description: 'Date de la dernière consultation',
       },
     },
   ],

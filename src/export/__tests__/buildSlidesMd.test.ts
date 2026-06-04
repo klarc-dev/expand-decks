@@ -47,6 +47,21 @@ describe('buildSlidesMd()', () => {
     expect(parts.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('merges the first slide frontmatter into the headmatter block (no phantom empty first slide)', () => {
+    const result = build([
+      { blockType: 'cover', title: 'Hello' },
+      { blockType: 'section', title: 'Next' },
+    ]);
+    const firstFence = result.split('\n---\n')[0]!;
+    // Headmatter and the first slide's frontmatter share one fence — a
+    // standalone headmatter block would render as an empty first slide.
+    expect(firstFence).toContain('title: "Test Deck"');
+    expect(firstFence).toContain('layout: cover');
+    // No empty chunk between fences anywhere in the deck
+    const chunks = result.split(/^---\s*$/m);
+    expect(chunks.filter((c, i) => i > 0 && c.trim() === '')).toHaveLength(0);
+  });
+
   it('throws for unknown block type', () => {
     expect(() =>
       build([{ blockType: 'unknown' as never, title: 'Bad' } as never]),
