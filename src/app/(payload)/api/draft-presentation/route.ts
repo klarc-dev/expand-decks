@@ -184,7 +184,8 @@ Règles :
 - Utilise "section" pour structurer le contenu en parties
 - Varie les layouts pour rendre la présentation dynamique
 - Reste dans la langue du brief (français par défaut si ambigu)
-- Génère entre 8 et 15 diapositives selon la complexité du brief
+- Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
+- Sinon, génère entre 8 et 15 diapositives selon la complexité du brief
 - Les textes doivent être concis et percutants`;
 
 export async function POST(req: NextRequest) {
