@@ -48,6 +48,10 @@ const styles = {
     overflow: 'hidden',
     border: '1px solid var(--theme-elevation-150)',
     background: '#1a1a2e',
+    // Shrink to the scaled slide — without this the wrapper keeps the form
+    // column's full width and shows a dead dark band right of the preview.
+    width: 'calc(960px * var(--slide-scale, 0.5))',
+    maxWidth: '100%',
   },
   scaler: {
     width: '960px',
