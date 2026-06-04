@@ -3,6 +3,24 @@ import config from '@payload-config';
 
 import { resolveShareLink, isLive } from '@/lib/shareLinks';
 
+// The (frontend) layout owns the html/body shell; rendering another shell
+// here nests them — invalid DOM + React hydration mismatches.
+
+const messageStyles = {
+  wrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    fontFamily: 'system-ui, sans-serif',
+    margin: 0,
+    background: '#f5f5f5',
+  },
+  inner: { textAlign: 'center' as const },
+  title: { fontSize: '1.5rem', color: '#333' },
+  body: { color: '#666' },
+};
+
 export default async function SharePage({
   params,
 }: {
@@ -15,27 +33,23 @@ export default async function SharePage({
 
   if (!link) {
     return (
-      <html lang="fr">
-        <body style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', margin: 0, background: '#f5f5f5' }}>
-          <div style={{ textAlign: 'center' }}>
-            <h1 style={{ fontSize: '1.5rem', color: '#333' }}>Lien invalide</h1>
-            <p style={{ color: '#666' }}>Ce lien de partage n&apos;existe pas.</p>
-          </div>
-        </body>
-      </html>
+      <div style={messageStyles.wrapper}>
+        <div style={messageStyles.inner}>
+          <h1 style={messageStyles.title}>Lien invalide</h1>
+          <p style={messageStyles.body}>Ce lien de partage n&apos;existe pas.</p>
+        </div>
+      </div>
     );
   }
 
   if (!isLive(link)) {
     return (
-      <html lang="fr">
-        <body style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', margin: 0, background: '#f5f5f5' }}>
-          <div style={{ textAlign: 'center' }}>
-            <h1 style={{ fontSize: '1.5rem', color: '#333' }}>Lien expiré</h1>
-            <p style={{ color: '#666' }}>Ce lien de partage a expiré. Veuillez en demander un nouveau.</p>
-          </div>
-        </body>
-      </html>
+      <div style={messageStyles.wrapper}>
+        <div style={messageStyles.inner}>
+          <h1 style={messageStyles.title}>Lien expiré</h1>
+          <p style={messageStyles.body}>Ce lien de partage a expiré. Veuillez en demander un nouveau.</p>
+        </div>
+      </div>
     );
   }
 
@@ -51,15 +65,17 @@ export default async function SharePage({
   });
 
   return (
-    <html lang="fr">
-      <body style={{ margin: 0, overflow: 'hidden' }}>
-        <iframe
-          src={`/share/${token}/spa/index.html`}
-          style={{ width: '100vw', height: '100vh', border: 'none' }}
-          title="Presentation"
-          allow="fullscreen"
-        />
-      </body>
-    </html>
+    <iframe
+      src={`/share/${token}/spa/index.html`}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100vh',
+        border: 'none',
+      }}
+      title="Presentation"
+      allow="fullscreen"
+    />
   );
 }
