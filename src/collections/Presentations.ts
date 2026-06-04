@@ -139,6 +139,15 @@ export const Presentations: CollectionConfig = {
           description: 'Artefacts générés automatiquement par le build (disponibles après publication).',
           fields: [
             {
+              name: 'buildStatusLive',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: '/components/BuildStatusField#default',
+                },
+              },
+            },
+            {
               name: 'lastBuildStatus',
               type: 'select',
               defaultValue: 'idle',

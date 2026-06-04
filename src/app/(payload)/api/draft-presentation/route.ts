@@ -241,7 +241,16 @@ export async function POST(req: NextRequest) {
       slideCount: object.slides.length,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erreur inconnue';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Authors get a readable French message; the raw provider error (LiteLLM
+    // auth failures, model errors…) goes in `detail` for debugging.
+    const detail = error instanceof Error ? error.message : 'Erreur inconnue';
+    return NextResponse.json(
+      {
+        error:
+          'La génération a échoué : le service IA est indisponible ou mal configuré. Réessayez plus tard ou contactez un administrateur.',
+        detail,
+      },
+      { status: 500 },
+    );
   }
 }

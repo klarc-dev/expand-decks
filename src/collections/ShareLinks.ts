@@ -14,8 +14,8 @@ export const ShareLinks: CollectionConfig = {
   slug: 'share-links',
   labels: { singular: 'Lien de partage', plural: 'Liens de partage' },
   admin: {
-    useAsTitle: 'tokenHash',
-    defaultColumns: ['presentation', 'expiresAt', 'viewCount', 'createdAt'],
+    useAsTitle: 'label',
+    defaultColumns: ['label', 'presentation', 'expiresAt', 'viewCount', 'createdAt'],
   },
   access: {
     create: isAdminOrAuthor,
@@ -73,13 +73,35 @@ export const ShareLinks: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      ({ data, req, operation }) => {
+      async ({ data, req, operation }) => {
         if (operation === 'create') {
           const token = randomBytes(32).toString('base64url');
           data.tokenHash = sha256(token);
           data.createdBy = req.user?.id;
           // Attach raw token to request context so afterChange can read it
           req.context.shareToken = token;
+        }
+
+        // Friendly document title — the raw hash made breadcrumbs unreadable.
+        if (data.presentation) {
+          try {
+            const presId =
+              typeof data.presentation === 'object'
+                ? data.presentation.id
+                : data.presentation;
+            const pres = await req.payload.findByID({
+              collection: 'presentations',
+              id: presId,
+              depth: 0,
+              overrideAccess: true,
+            });
+            const expiry = data.expiresAt
+              ? new Date(data.expiresAt).toLocaleDateString('fr-FR')
+              : '';
+            data.label = `Partage — ${pres.title}${expiry ? ` (expire le ${expiry})` : ''}`;
+          } catch {
+            // Presentation lookup failing must never block the save.
+          }
         }
         return data;
       },
@@ -104,6 +126,16 @@ export const ShareLinks: CollectionConfig = {
         components: {
           Field: '/components/ShareUrlField#default',
         },
+      },
+    },
+    {
+      name: 'label',
+      type: 'text',
+      label: 'Libellé',
+      admin: {
+        // Generated in beforeChange from the presentation title + expiry.
+        hidden: true,
+        readOnly: true,
       },
     },
     {
@@ -134,7 +166,10 @@ export const ShareLinks: CollectionConfig = {
       type: 'date',
       required: true,
       label: 'Expiration',
-      admin: { description: 'Date et heure d\'expiration du lien' },
+      // 30 days by default so authors don't have to fight the date picker
+      // for the common case.
+      defaultValue: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      admin: { description: 'Date et heure d\'expiration du lien (30 jours par défaut)' },
     },
     {
       name: 'createdBy',

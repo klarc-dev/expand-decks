@@ -33,7 +33,8 @@ const DraftFromBriefButton: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Erreur lors de la génération');
+        const detail = data.detail && data.detail !== data.error ? ` (${data.detail})` : '';
+        setError((data.error || 'Erreur lors de la génération') + detail);
         return;
       }
 
