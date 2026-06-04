@@ -115,7 +115,11 @@ const ctaSchema = z.object({
 });
 
 // markdown is intentionally excluded — it is an admin-only escape-hatch block, not AI-draftable.
-const slideBlockSchema = z.discriminatedUnion('blockType', [
+// Plain z.union, not z.discriminatedUnion: the latter serializes to JSON
+// Schema `oneOf`, which OpenAI structured outputs rejects ("'oneOf' is not
+// permitted"); z.union produces the accepted `anyOf`. The blockType literal
+// in each member keeps validation equivalent.
+const slideBlockSchema = z.union([
   coverSchema,
   sectionSchema,
   statementSchema,
@@ -214,17 +218,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
     }
 
-    // Generate slides via Claude (through LiteLLM proxy)
+    // Generate slides via the configured OpenAI-compatible endpoint
+    // (OpenAI direct, or a LiteLLM/OpenRouter proxy — model name must match
+    // what that endpoint serves, hence OPENAI_MODEL).
     const llm = createOpenAI({
-      baseURL: process.env.OPENAI_BASE_URL || 'https://llm.klarc.eu/v1',
+      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
       apiKey: process.env.OPENAI_API_KEY || '',
     });
     const { object } = await generateObject({
-      model: llm('openrouter/anthropic/claude-sonnet-4.6'),
+      model: llm(process.env.OPENAI_MODEL || 'gpt-4o'),
       schema: slidesArraySchema,
       system: SYSTEM_PROMPT,
       prompt: brief,
       temperature: 0.7,
+      providerOptions: {
+        openai: {
+          // OpenAI strict mode rejects our schema (optional fields without
+          // null, length bounds). Non-strict still guides the model with the
+          // schema; Zod validates the result server-side either way.
+          strictJsonSchema: false,
+        },
+      },
     });
 
     // Write blocks to the presentation
