@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
       apiKey: process.env.OPENAI_API_KEY || '',
     });
     const { object } = await generateObject({
-      model: llm(process.env.OPENAI_MODEL || 'gpt-4o'),
+      model: llm(process.env.OPENAI_MODEL || 'gpt-5-mini'),
       schema: slidesArraySchema,
       system: SYSTEM_PROMPT,
       prompt: brief,
