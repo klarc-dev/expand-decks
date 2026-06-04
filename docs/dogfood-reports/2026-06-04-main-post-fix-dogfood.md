@@ -157,5 +157,5 @@ Follow-up round (same day): all deferred items closed.
 - **All four paper cuts fixed** (`5f6b746`), each verified in-browser.
 
 Remaining human verifications (credential-gated, not code defects):
-- AI draft end-to-end with a real LiteLLM key — error path verified, success path needs a real key in `OPENAI_API_KEY`.
+- ~~AI draft end-to-end~~ **Verified** with a real OpenAI key: brief → 7 typed blocks → build → rendered deck. Two OpenAI-compat fixes were needed (union serialization + non-strict schema mode).
 - Google OAuth login — needs real Google credentials configured.
