@@ -122,6 +122,9 @@ export const ShareLinks: CollectionConfig = {
       index: true,
       label: 'Hash du jeton',
       admin: {
+        // Internal value filled by the beforeChange hook — showing it only
+        // produced a red "required" error on a field authors cannot edit.
+        hidden: true,
         readOnly: true,
         description: 'SHA-256 du jeton de partage (le jeton brut n\'est jamais stocké)',
       },
