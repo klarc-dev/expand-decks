@@ -8,7 +8,7 @@
  * indices), so block renderers receive the same shape as a saved document.
  */
 export function formStateToBlockData(
-  fields: Record<string, { value?: unknown } | undefined>,
+  fields: Record<string, { value?: unknown; rows?: unknown } | undefined>,
   previewFieldPath: string,
 ): Record<string, unknown> {
   const parentPath = previewFieldPath.split('.').slice(0, -1).join('.');
@@ -38,7 +38,22 @@ export function formStateToBlockData(
 
     const last = segs[segs.length - 1]!;
     const lastSlot = Array.isArray(cur) ? Number(last) : last;
-    (cur as Record<string | number, unknown>)[lastSlot] = fields[key]?.value;
+    const target = cur as Record<string | number, unknown>;
+    const entry = fields[key];
+
+    // Array-parent entries (entry carries `rows`) hold a row count in
+    // `value`, not user data — materialize an empty array and let the rows'
+    // leaf keys fill it. Never clobber a container another key already built.
+    if (entry && Array.isArray(entry.rows)) {
+      if (typeof target[lastSlot] !== 'object' || target[lastSlot] === null) {
+        target[lastSlot] = [];
+      }
+      continue;
+    }
+    if (typeof target[lastSlot] === 'object' && target[lastSlot] !== null) {
+      continue;
+    }
+    target[lastSlot] = entry?.value;
   }
 
   return out;

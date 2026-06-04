@@ -35,6 +35,37 @@ describe('formStateToBlockData()', () => {
     });
   });
 
+  it('treats array-parent entries (row count + rows) as arrays, not scalars', () => {
+    const fields = {
+      'slides.0.blockType': f('stats'),
+      'slides.0.title': f('Numbers'),
+      'slides.0.stats': { value: 2, rows: [{ id: 'a' }, { id: 'b' }] },
+      'slides.0.stats.0.value': f('42'),
+      'slides.0.stats.0.label': f('Things'),
+      'slides.0.stats.1.value': f('7'),
+      'slides.0.stats.1.label': f('Others'),
+    };
+    expect(formStateToBlockData(fields, 'slides.0.preview')).toEqual({
+      blockType: 'stats',
+      title: 'Numbers',
+      stats: [
+        { value: '42', label: 'Things' },
+        { value: '7', label: 'Others' },
+      ],
+    });
+  });
+
+  it('materializes an empty array for a rowless array field (fresh block)', () => {
+    const fields = {
+      'slides.0.blockType': f('stats'),
+      'slides.0.stats': { value: 0, rows: [] },
+    };
+    expect(formStateToBlockData(fields, 'slides.0.preview')).toEqual({
+      blockType: 'stats',
+      stats: [],
+    });
+  });
+
   it('excludes the preview field itself and unrelated paths', () => {
     const fields = {
       'slides.0.blockType': f('statement'),
