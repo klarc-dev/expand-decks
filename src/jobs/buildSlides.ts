@@ -17,6 +17,11 @@ import type { TaskConfig } from 'payload';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import { SLUG_RE } from '../lib/slug';
 import { ARTIFACTS, MEDIA_DIR, spaDir, spaUrl } from '../lib/paths';
+import { COLLECTIONS } from '../lib/collections';
+import { BUILD_STATUS } from '../lib/status';
+import { CTX } from '../lib/context';
+
+export const BUILD_SLIDES_TASK = 'buildSlides' as const;
 
 const execFile = promisify(execFileCb);
 
@@ -47,7 +52,7 @@ async function runSlidev(
 }
 
 export const buildSlidesTask: TaskConfig<any> = {
-  slug: 'buildSlides',
+  slug: BUILD_SLIDES_TASK,
   label: 'Build Slidev Presentation',
   inputSchema: [
     {
@@ -73,15 +78,15 @@ export const buildSlidesTask: TaskConfig<any> = {
     try {
       // 1. Set status to building
       await req.payload.update({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
-        data: { lastBuildStatus: 'building', lastBuildError: '' },
-        context: { skipBuildQueue: true },
+        data: { lastBuildStatus: BUILD_STATUS.building, lastBuildError: '' },
+        context: { [CTX.skipBuildQueue]: true },
       });
 
       // 2. Fetch the full presentation
       const presentation = await req.payload.findByID({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
         depth: 0,
       });
@@ -142,7 +147,7 @@ export const buildSlidesTask: TaskConfig<any> = {
       // 7. Upload PDF to Payload Media
       const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
       const pdfMedia = await req.payload.create({
-        collection: 'media',
+        collection: COLLECTIONS.media,
         data: { alt: `${presentation.title} — PDF` },
         file: {
           data: pdfBuffer,
@@ -160,7 +165,7 @@ export const buildSlidesTask: TaskConfig<any> = {
 
       // 9. Patch presentation with build artifacts
       await req.payload.update({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
         data: {
           pdfFile: pdfMedia.id,
@@ -168,10 +173,10 @@ export const buildSlidesTask: TaskConfig<any> = {
           // only resolve against a path ending in a filename or trailing
           // slash (Next strips trailing slashes with a 308).
           spaUrl: spaUrl(slug),
-          lastBuildStatus: 'success',
+          lastBuildStatus: BUILD_STATUS.success,
           lastBuildError: '',
         },
-        context: { skipBuildQueue: true },
+        context: { [CTX.skipBuildQueue]: true },
       });
 
       return { output: { success: true } };
@@ -181,13 +186,13 @@ export const buildSlidesTask: TaskConfig<any> = {
         err instanceof Error ? err.message : String(err);
 
       await req.payload.update({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
         data: {
-          lastBuildStatus: 'failed',
+          lastBuildStatus: BUILD_STATUS.failed,
           lastBuildError: errorMessage.slice(0, 5000),
         },
-        context: { skipBuildQueue: true },
+        context: { [CTX.skipBuildQueue]: true },
       });
 
       throw err;

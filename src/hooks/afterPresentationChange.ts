@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 
 import type { CollectionAfterChangeHook } from 'payload';
 
+import { PRESENTATION_STATUS } from '../lib/status';
+import { CTX } from '../lib/context';
+import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
+
 function slidesHash(slides: unknown): string {
   return createHash('sha256').update(JSON.stringify(slides ?? [])).digest('hex');
 }
@@ -24,15 +28,15 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
   operation,
 }) => {
   // Skip if explicitly flagged (builder patching back results)
-  if (req.context?.skipBuildQueue) return doc;
+  if (req.context?.[CTX.skipBuildQueue]) return doc;
 
   // Only queue on create/update when status is published
   if (operation !== 'create' && operation !== 'update') return doc;
-  if (doc.status !== 'published') return doc;
+  if (doc.status !== PRESENTATION_STATUS.published) return doc;
 
   // On update: only queue if it's a fresh publish or slides content changed
   if (operation === 'update' && previousDoc) {
-    const wasPublished = previousDoc.status === 'published';
+    const wasPublished = previousDoc.status === PRESENTATION_STATUS.published;
     const contentChanged = slidesContentChanged(doc, previousDoc);
 
     // Already published and slides haven't changed — skip
@@ -41,7 +45,7 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
 
   // Cast needed until `payload generate:types` adds buildSlides to TypedJobs
   await (req.payload.jobs.queue as Function)({
-    task: 'buildSlides',
+    task: BUILD_SLIDES_TASK,
     input: { presentationId: doc.id as string },
     req,
   });

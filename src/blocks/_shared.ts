@@ -1,5 +1,7 @@
 import type { Field } from 'payload';
 
+import { COLLECTIONS } from '../lib/collections';
+
 export const previewField: Field = {
   name: 'preview',
   type: 'ui',
@@ -56,7 +58,7 @@ export const imageFields = (
   {
     name: 'image',
     type: 'upload',
-    relationTo: 'media',
+    relationTo: COLLECTIONS.media,
     label: 'Image',
     admin: { description },
   },

@@ -2,16 +2,18 @@ import { randomBytes } from 'node:crypto';
 
 import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdminOrAuthor, isAdmin } from '../access/roles';
+import { isAdminOrAuthor, isAdmin, userIsAdmin, userIsAdminOrAuthor } from '../access/roles';
 import { sha256 } from '../lib/shareLinks';
+import { COLLECTIONS } from '../lib/collections';
+import { CTX } from '../lib/context';
+import { SERVER_URL } from '../lib/env';
 
 const buildShareUrl = (token: string): string => {
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || '';
-  return `${baseUrl}/share/${token}`;
+  return `${SERVER_URL}/share/${token}`;
 };
 
 export const ShareLinks: CollectionConfig = {
-  slug: 'share-links',
+  slug: COLLECTIONS.shareLinks,
   labels: { singular: 'Lien de partage', plural: 'Liens de partage' },
   admin: {
     useAsTitle: 'label',
@@ -32,7 +34,7 @@ export const ShareLinks: CollectionConfig = {
       method: 'post',
       handler: async (req: PayloadRequest) => {
         const user = req.user;
-        if (!user || (user.role !== 'admin' && user.role !== 'author')) {
+        if (!user || !userIsAdminOrAuthor(user)) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
@@ -44,7 +46,7 @@ export const ShareLinks: CollectionConfig = {
         let link;
         try {
           link = await req.payload.findByID({
-            collection: 'share-links',
+            collection: COLLECTIONS.shareLinks,
             id,
             depth: 0,
             overrideAccess: true,
@@ -55,13 +57,13 @@ export const ShareLinks: CollectionConfig = {
 
         const createdById =
           typeof link.createdBy === 'object' ? link.createdBy?.id : link.createdBy;
-        if (user.role !== 'admin' && createdById !== user.id) {
+        if (!userIsAdmin(user) && createdById !== user.id) {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         const token = randomBytes(32).toString('base64url');
         await req.payload.update({
-          collection: 'share-links',
+          collection: COLLECTIONS.shareLinks,
           id,
           data: { tokenHash: sha256(token) },
           overrideAccess: true,
@@ -79,7 +81,7 @@ export const ShareLinks: CollectionConfig = {
           data.tokenHash = sha256(token);
           data.createdBy = req.user?.id;
           // Attach raw token to request context so afterChange can read it
-          req.context.shareToken = token;
+          req.context[CTX.shareToken] = token;
         }
 
         // Friendly document title — the raw hash made breadcrumbs unreadable.
@@ -90,7 +92,7 @@ export const ShareLinks: CollectionConfig = {
                 ? data.presentation.id
                 : data.presentation;
             const pres = await req.payload.findByID({
-              collection: 'presentations',
+              collection: COLLECTIONS.presentations,
               id: presId,
               depth: 0,
               overrideAccess: true,
@@ -108,10 +110,10 @@ export const ShareLinks: CollectionConfig = {
     ],
     afterChange: [
       ({ doc, req, operation }) => {
-        if (operation === 'create' && req.context.shareToken) {
+        if (operation === 'create' && req.context[CTX.shareToken]) {
           return {
             ...doc,
-            shareUrl: buildShareUrl(req.context.shareToken as string),
+            shareUrl: buildShareUrl(req.context[CTX.shareToken] as string),
           };
         }
         return doc;
@@ -141,7 +143,7 @@ export const ShareLinks: CollectionConfig = {
     {
       name: 'presentation',
       type: 'relationship',
-      relationTo: 'presentations',
+      relationTo: COLLECTIONS.presentations,
       required: true,
       label: 'Présentation',
       admin: { description: 'Présentation partagée via ce lien' },
@@ -174,7 +176,7 @@ export const ShareLinks: CollectionConfig = {
     {
       name: 'createdBy',
       type: 'relationship',
-      relationTo: 'users',
+      relationTo: COLLECTIONS.users,
       label: 'Créé par',
       admin: {
         readOnly: true,

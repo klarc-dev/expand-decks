@@ -2,6 +2,8 @@ import type { CollectionConfig } from 'payload';
 
 import { isAdmin, isAdminOrSelf, isLoggedIn } from '../access/roles';
 import { isValidSlug, SLUG_MAX } from '../lib/slug';
+import { COLLECTIONS } from '../lib/collections';
+import { BUILD_STATUS, PRESENTATION_STATUS } from '../lib/status';
 import { CoverBlock } from '../blocks/CoverBlock';
 import { SectionBlock } from '../blocks/SectionBlock';
 import { StatementBlock } from '../blocks/StatementBlock';
@@ -14,7 +16,7 @@ import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
 export const Presentations: CollectionConfig = {
-  slug: 'presentations',
+  slug: COLLECTIONS.presentations,
   labels: { singular: 'Présentation', plural: 'Présentations' },
   admin: {
     useAsTitle: 'title',
@@ -151,17 +153,17 @@ export const Presentations: CollectionConfig = {
             {
               name: 'lastBuildStatus',
               type: 'select',
-              defaultValue: 'idle',
+              defaultValue: BUILD_STATUS.idle,
               label: 'Statut du dernier build',
               admin: {
                 description: 'État du dernier processus de génération',
                 readOnly: true,
               },
               options: [
-                { label: 'En attente', value: 'idle' },
-                { label: 'En cours', value: 'building' },
-                { label: 'Réussi', value: 'success' },
-                { label: 'Échoué', value: 'failed' },
+                { label: 'En attente', value: BUILD_STATUS.idle },
+                { label: 'En cours', value: BUILD_STATUS.building },
+                { label: 'Réussi', value: BUILD_STATUS.success },
+                { label: 'Échoué', value: BUILD_STATUS.failed },
               ],
             },
             {
@@ -176,7 +178,7 @@ export const Presentations: CollectionConfig = {
             {
               name: 'pdfFile',
               type: 'upload',
-              relationTo: 'media',
+              relationTo: COLLECTIONS.media,
               label: 'Fichier PDF',
               admin: {
                 description: 'PDF généré automatiquement par le système de build',
@@ -186,7 +188,7 @@ export const Presentations: CollectionConfig = {
             {
               name: 'coverImage',
               type: 'upload',
-              relationTo: 'media',
+              relationTo: COLLECTIONS.media,
               label: 'Image de couverture',
               admin: {
                 description: 'Miniature générée à partir de la première diapositive',
@@ -210,22 +212,22 @@ export const Presentations: CollectionConfig = {
       name: 'status',
       type: 'select',
       required: true,
-      defaultValue: 'draft',
+      defaultValue: PRESENTATION_STATUS.draft,
       label: 'Statut',
       admin: {
         description: 'État de publication',
         position: 'sidebar',
       },
       options: [
-        { label: 'Brouillon', value: 'draft' },
-        { label: 'Publiée', value: 'published' },
-        { label: 'Archivée', value: 'archived' },
+        { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
+        { label: 'Publiée', value: PRESENTATION_STATUS.published },
+        { label: 'Archivée', value: PRESENTATION_STATUS.archived },
       ],
     },
     {
       name: 'createdBy',
       type: 'relationship',
-      relationTo: 'users',
+      relationTo: COLLECTIONS.users,
       label: 'Créé par',
       admin: {
         readOnly: true,

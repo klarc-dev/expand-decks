@@ -1,7 +1,10 @@
 import type { CollectionConfig } from 'payload';
 
+import { ROLES } from '../access/roles';
+import { COLLECTIONS } from '../lib/collections';
+
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: COLLECTIONS.users,
   auth: true,
   admin: {
     useAsTitle: 'email',
@@ -17,11 +20,11 @@ export const Users: CollectionConfig = {
       name: 'role',
       type: 'select',
       required: true,
-      defaultValue: 'author',
+      defaultValue: ROLES.author,
       options: [
-        { label: 'Administrateur', value: 'admin' },
-        { label: 'Auteur', value: 'author' },
-        { label: 'Lecteur', value: 'viewer' },
+        { label: 'Administrateur', value: ROLES.admin },
+        { label: 'Auteur', value: ROLES.author },
+        { label: 'Lecteur', value: ROLES.viewer },
       ],
     },
   ],

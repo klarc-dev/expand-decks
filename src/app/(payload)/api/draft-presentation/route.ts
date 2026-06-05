@@ -6,6 +6,9 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
+import { COLLECTIONS } from '@/lib/collections';
+import { CTX } from '@/lib/context';
+
 const eyebrowZod = z.string().optional();
 const surfaceZod = (gradient: boolean) =>
   (gradient
@@ -210,7 +213,7 @@ export async function POST(req: NextRequest) {
 
     // Verify the presentation exists and user has access
     const presentation = await payload.findByID({
-      collection: 'presentations',
+      collection: COLLECTIONS.presentations,
       id: presentationId,
       user,
     });
@@ -244,11 +247,11 @@ export async function POST(req: NextRequest) {
 
     // Write blocks to the presentation
     await payload.update({
-      collection: 'presentations',
+      collection: COLLECTIONS.presentations,
       id: presentationId,
       data: { slides: object.slides },
       user,
-      context: { skipBuildQueue: true },
+      context: { [CTX.skipBuildQueue]: true },
     });
 
     return NextResponse.json({

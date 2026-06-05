@@ -3,17 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import { useDocumentInfo } from '@payloadcms/ui';
 
+import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
+
 type BuildInfo = {
-  lastBuildStatus?: 'idle' | 'building' | 'success' | 'failed' | null;
+  lastBuildStatus?: BuildStatus | null;
   spaUrl?: string | null;
   lastBuildError?: string | null;
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  idle: { label: 'En attente', color: 'var(--theme-elevation-600)', bg: 'var(--theme-elevation-100)' },
-  building: { label: 'En cours…', color: '#8a6d00', bg: '#fff3bf' },
-  success: { label: 'Réussi', color: '#0b6b3a', bg: '#d3f9d8' },
-  failed: { label: 'Échoué', color: 'var(--theme-error-500)', bg: 'var(--theme-error-50)' },
+  [BUILD_STATUS.idle]: { label: 'En attente', color: 'var(--theme-elevation-600)', bg: 'var(--theme-elevation-100)' },
+  [BUILD_STATUS.building]: { label: 'En cours…', color: '#8a6d00', bg: '#fff3bf' },
+  [BUILD_STATUS.success]: { label: 'Réussi', color: '#0b6b3a', bg: '#d3f9d8' },
+  [BUILD_STATUS.failed]: { label: 'Échoué', color: 'var(--theme-error-500)', bg: 'var(--theme-error-50)' },
 };
 
 const POLL_MS = 5000;
@@ -53,8 +55,8 @@ const BuildStatusField: React.FC = () => {
 
   if (!id || !info) return null;
 
-  const status = info.lastBuildStatus ?? 'idle';
-  const meta = STATUS_LABELS[status] ?? STATUS_LABELS.idle!;
+  const status = info.lastBuildStatus ?? BUILD_STATUS.idle;
+  const meta = STATUS_LABELS[status] ?? STATUS_LABELS[BUILD_STATUS.idle]!;
 
   return (
     <div
@@ -83,12 +85,12 @@ const BuildStatusField: React.FC = () => {
       >
         {meta.label}
       </span>
-      {status === 'building' && (
+      {status === BUILD_STATUS.building && (
         <span style={{ fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
           mise à jour automatique toutes les 5 s
         </span>
       )}
-      {status === 'success' && info.spaUrl && (
+      {status === BUILD_STATUS.success && info.spaUrl && (
         <a
           href={info.spaUrl}
           target="_blank"
@@ -98,7 +100,7 @@ const BuildStatusField: React.FC = () => {
           Ouvrir la présentation web ↗
         </a>
       )}
-      {status === 'failed' && info.lastBuildError && (
+      {status === BUILD_STATUS.failed && info.lastBuildError && (
         <span
           style={{
             fontSize: '12px',

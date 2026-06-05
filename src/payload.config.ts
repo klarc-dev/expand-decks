@@ -15,6 +15,9 @@ import { Media } from './collections/Media';
 import { ShareLinks } from './collections/ShareLinks';
 import { Accounts } from './collections/Accounts';
 import { buildSlidesTask } from './jobs/buildSlides';
+import { COLLECTIONS } from './lib/collections';
+import { SERVER_URL } from './lib/env';
+import { ROLES } from './access/roles';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -34,14 +37,14 @@ export default buildConfig({
     },
     livePreview: {
       url: '/preview',
-      collections: ['presentations'],
+      collections: [COLLECTIONS.presentations],
       breakpoints: [
         { name: 'slide', label: '16:9 Slide', width: 960, height: 540 },
         { name: 'full', label: 'Pleine largeur', width: 1280, height: 720 },
       ],
     },
   },
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000',
+  serverURL: SERVER_URL,
   collections: [Users, Presentations, Media, ShareLinks, Accounts],
   plugins: [
     authPlugin({
@@ -52,8 +55,8 @@ export default buildConfig({
           client_secret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
       ],
-      usersCollectionSlug: 'users',
-      accountsCollectionSlug: 'accounts',
+      usersCollectionSlug: COLLECTIONS.users,
+      accountsCollectionSlug: COLLECTIONS.accounts,
       allowOAuthAutoSignUp: true,
       useAdmin: true,
       successRedirectPath: '/admin',
@@ -66,21 +69,21 @@ export default buildConfig({
     if (!email || !password) return;
     try {
       const existing = await payload.find({
-        collection: 'users',
+        collection: COLLECTIONS.users,
         where: { email: { equals: email } },
         limit: 1,
       });
       if (existing.docs.length > 0) {
         await payload.update({
-          collection: 'users',
+          collection: COLLECTIONS.users,
           id: existing.docs[0].id,
-          data: { password, role: 'admin' },
+          data: { password, role: ROLES.admin },
         });
         payload.logger.info(`[seed] Updated admin user ${email}`);
       } else {
         await payload.create({
-          collection: 'users',
-          data: { email, password, role: 'admin' },
+          collection: COLLECTIONS.users,
+          data: { email, password, role: ROLES.admin },
         });
         payload.logger.info(`[seed] Created admin user ${email}`);
       }
