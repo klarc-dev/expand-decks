@@ -1,3 +1,4 @@
+import { K } from '../classNames';
 import { escape, md, surfaceClass, wrapSlide, type SlideImage } from '../utils';
 
 export type SectionBlockData = {
@@ -16,7 +17,7 @@ export function renderSection(block: SectionBlockData): string {
     : null;
 
   const number = block.number
-    ? `\n<div class="k-section-num mb-4">${escape(block.number)}</div>`
+    ? `\n<div class="${K.sectionNum} mb-4">${escape(block.number)}</div>`
     : '';
 
   // With image: left-align in the content half rather than centering across

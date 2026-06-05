@@ -1,3 +1,4 @@
+import { K } from '../classNames';
 import { escape, md, wrapSlide, type SlideImage } from '../utils';
 
 export type CoverBlockData = {
@@ -21,15 +22,15 @@ export function renderCover(block: CoverBlockData): string {
     : null;
 
   const eyebrow = block.eyebrow
-    ? `\n      <div class="k-eyebrow mb-8">${escape(block.eyebrow)}</div>`
+    ? `\n      <div class="${K.eyebrow} mb-8">${escape(block.eyebrow)}</div>`
     : '';
 
   const subtitle = block.subtitle
-    ? `\n      <p class="k-hero-sub">${md(block.subtitle)}</p>`
+    ? `\n      <p class="${K.heroSub}">${md(block.subtitle)}</p>`
     : '';
 
   const footerLeft = block.footerLeft
-    ? `\n    <div class="flex gap-4">\n      <div class="k-btn">${escape(block.footerLeft)}</div>\n    </div>`
+    ? `\n    <div class="flex gap-4">\n      <div class="${K.btn}">${escape(block.footerLeft)}</div>\n    </div>`
     : '';
 
   const footerRight = block.footerRight
@@ -50,7 +51,7 @@ export function renderCover(block: CoverBlockData): string {
   const body = `<div class="${wrapperClass}">
   <div class="flex-1 flex items-center">
     <div class="max-w-4xl">${eyebrow}
-      <h1 class="k-hero-big mb-10">${md(block.title)}</h1>${subtitle}
+      <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}
     </div>
   </div>${footerRow}
 </div>`;

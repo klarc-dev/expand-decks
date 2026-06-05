@@ -6,6 +6,8 @@ const HTML_ENTITIES: Record<string, string> = {
   "'": '&#39;',
 };
 
+import { K } from './classNames';
+
 const HTML_ENTITY_RE = /[&<>"']/g;
 const DEF_RE = /\{\{def:(.+?)\}\}/g;
 
@@ -16,7 +18,7 @@ export function escape(text: string | null | undefined): string {
 }
 
 export function eyebrow(text: string | null | undefined, marginClass = 'mb-8'): string {
-  return text ? `\n<div class="k-eyebrow ${marginClass}">${escape(text)}</div>` : '';
+  return text ? `\n<div class="${K.eyebrow} ${marginClass}">${escape(text)}</div>` : '';
 }
 
 let _slideDefs: string[] = [];
@@ -28,10 +30,10 @@ export function resetDefs(): void {
 function consumeDefFooter(): string {
   if (_slideDefs.length === 0) return '';
   const items = _slideDefs
-    .map((d, i) => `<span class="k-def-item"><sup>${i + 1}</sup>${escape(d)}</span>`)
+    .map((d, i) => `<span class="${K.defItem}"><sup>${i + 1}</sup>${escape(d)}</span>`)
     .join('');
   _slideDefs = [];
-  return `\n\n<div class="k-def-footer">${items}</div>`;
+  return `\n\n<div class="${K.defFooter}">${items}</div>`;
 }
 
 /**
@@ -48,7 +50,7 @@ export function md(text: string | null | undefined): string {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="k-def-ref">${n}</sup>`);
+    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
 }
 
 export const STAGGER_DELAY_MS = 100;
@@ -59,7 +61,16 @@ export function vMotion(_index: number): string {
 export type Surface = 'dark' | 'light' | 'gradient';
 
 export function surfaceClass(surface?: Surface | null): string {
-  return surface === 'light' ? 'relative' : 'relative k-dark';
+  return surface === 'light' ? 'relative' : `relative ${K.dark}`;
+}
+
+/**
+ * Derive a grid utility class for a column count, clamped to the [2,4] range
+ * actually defined in style.css. There is no `.k-grid-1` rule, so a single
+ * item must still land in a styled 2-col grid rather than an unstyled element.
+ */
+export function gridClass(n: number): string {
+  return `k-grid-${Math.min(Math.max(n, 2), 4)}`;
 }
 
 export type SlideImage = {

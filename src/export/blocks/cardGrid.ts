@@ -1,4 +1,5 @@
-import { escape, md, wrapSlide } from '../utils';
+import { K } from '../classNames';
+import { escape, gridClass, md, wrapSlide } from '../utils';
 
 export type CardGridBlockData = {
   blockType: 'cardGrid';
@@ -14,10 +15,8 @@ export type CardGridBlockData = {
 };
 
 export function renderCardGrid(block: CardGridBlockData): string {
-  const cols = block.columns ?? '4';
-
   const eyebrow = block.eyebrow
-    ? `\n    <div class="k-eyebrow mb-4">${escape(block.eyebrow)}</div>`
+    ? `\n    <div class="${K.eyebrow} mb-4">${escape(block.eyebrow)}</div>`
     : '';
 
   const sidebar = block.sidebarText
@@ -26,9 +25,9 @@ export function renderCardGrid(block: CardGridBlockData): string {
 
   const cards = (block.cards ?? [])
     .map((card) => {
-      const num = card.number ? `\n  <span class="k-num">${escape(card.number)}</span>` : '';
+      const num = card.number ? `\n  <span class="${K.num}">${escape(card.number)}</span>` : '';
       const desc = card.description ? `\n  <p>${md(card.description)}</p>` : '';
-      return `<div class="k-card">${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
+      return `<div class="${K.card}">${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
     })
     .join('\n\n');
 
@@ -40,7 +39,7 @@ export function renderCardGrid(block: CardGridBlockData): string {
   </div>${sidebar}
 </div>
 
-<div class="k-grid-${cols}">
+<div class="${gridClass(Number(block.columns ?? '4'))}">
 
 ${cards}
 

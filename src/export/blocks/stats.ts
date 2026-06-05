@@ -1,3 +1,4 @@
+import { K } from '../classNames';
 import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
 export type StatsBlockData = {
@@ -19,7 +20,7 @@ export function renderStats(block: StatsBlockData): string {
 
   const items = stats
     .map((stat) => {
-      return `<div>\n  <div class="k-stat">\n    <span class="val">${escape(stat.value)}</span>\n    <span class="lbl">${escape(stat.label)}</span>\n  </div>\n</div>`;
+      return `<div>\n  <div class="${K.stat}">\n    <span class="val">${escape(stat.value)}</span>\n    <span class="lbl">${escape(stat.label)}</span>\n  </div>\n</div>`;
     })
     .join('\n\n');
 

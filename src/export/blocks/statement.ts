@@ -1,3 +1,4 @@
+import { K } from '../classNames';
 import { escape, eyebrow as renderEyebrow, md, wrapSlide } from '../utils';
 
 export type StatementBlockData = {
@@ -16,7 +17,7 @@ export function renderStatement(block: StatementBlockData): string {
     : '';
 
   const footer = block.footer
-    ? `\n\n<div class="k-foot">\n  <span>${escape(block.footer)}</span>\n</div>`
+    ? `\n\n<div class="${K.foot}">\n  <span>${escape(block.footer)}</span>\n</div>`
     : '';
 
   const body = `<div class="max-w-4xl px-12">

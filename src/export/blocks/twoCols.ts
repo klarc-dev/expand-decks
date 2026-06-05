@@ -1,3 +1,4 @@
+import { K } from '../classNames';
 import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
 export type TwoColsBlockData = {
@@ -25,7 +26,7 @@ export function renderTwoCols(block: TwoColsBlockData): string {
   // which Vue's HTML parser refuses inside a <p> (block content auto-closes the
   // paragraph, making the explicit </p> an unbalanced tag).
   const intro = block.intro
-    ? `\n\n<hr class="k-divider"/>\n\n<div class="text-base leading-relaxed mb-8 max-w-md">\n\n${md(block.intro)}\n\n</div>`
+    ? `\n\n<hr class="${K.divider}"/>\n\n<div class="text-base leading-relaxed mb-8 max-w-md">\n\n${md(block.intro)}\n\n</div>`
     : '';
 
   const leftFooter = block.leftFooter
@@ -53,13 +54,13 @@ ${eyebrow}
       const desc = card.description
         ? `\n\n<div>\n\n${md(card.description)}\n\n</div>`
         : '';
-      return `<div class="k-card">\n  <h3 class="text-sm">${escape(card.title)}</h3>${desc}\n</div>`;
+      return `<div class="${K.card}">\n  <h3 class="text-sm">${escape(card.title)}</h3>${desc}\n</div>`;
     })
     .join('\n\n');
 
   const rightCol = cards ? `\n<div class="space-y-3">\n\n${cards}\n\n</div>` : '';
 
-  const body = `<div class="k-split px-14 pt-28">
+  const body = `<div class="${K.split} px-14 pt-28">
 
 <div>
 ${eyebrow}
