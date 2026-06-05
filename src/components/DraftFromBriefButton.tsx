@@ -4,6 +4,14 @@ import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDocumentInfo } from '@payloadcms/ui';
 
+import {
+  dashedHintStyle,
+  errorBoxStyle,
+  mutedTextStyle,
+  panelStyle,
+  primaryButtonStyle,
+} from '@/components/adminUi/styles';
+
 const DraftFromBriefButton: React.FC = () => {
   const [brief, setBrief] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,16 +61,7 @@ const DraftFromBriefButton: React.FC = () => {
   // with a hint instead of disappearing entirely.
   if (isNewDoc) {
     return (
-      <div
-        style={{
-          padding: '12px 16px',
-          marginBottom: '20px',
-          border: '1px dashed var(--theme-elevation-150)',
-          borderRadius: '4px',
-          color: 'var(--theme-elevation-500)',
-          fontSize: '13px',
-        }}
-      >
+      <div style={dashedHintStyle}>
         Enregistrez d&apos;abord la présentation pour pouvoir générer les diapositives avec
         l&apos;IA à partir d&apos;un brief.
       </div>
@@ -70,15 +69,7 @@ const DraftFromBriefButton: React.FC = () => {
   }
 
   return (
-    <div
-      style={{
-        padding: '20px',
-        marginBottom: '20px',
-        border: '1px solid var(--theme-elevation-150)',
-        borderRadius: '4px',
-        backgroundColor: 'var(--theme-elevation-50)',
-      }}
-    >
+    <div style={{ ...panelStyle, padding: '20px' }}>
       <div style={{ marginBottom: '12px' }}>
         <label
           htmlFor="draft-brief"
@@ -91,14 +82,7 @@ const DraftFromBriefButton: React.FC = () => {
         >
           Générer les diapositives avec l&apos;IA
         </label>
-        <p
-          style={{
-            fontSize: '13px',
-            color: 'var(--theme-elevation-500)',
-            marginBottom: '12px',
-            marginTop: 0,
-          }}
-        >
+        <p style={{ ...mutedTextStyle, marginBottom: '12px', marginTop: 0 }}>
           Décrivez votre présentation et Claude générera les diapositives automatiquement. Les
           diapositives existantes seront remplacées.
         </p>
@@ -131,13 +115,9 @@ const DraftFromBriefButton: React.FC = () => {
           onClick={handleGenerate}
           disabled={loading || !brief.trim()}
           style={{
+            ...primaryButtonStyle(loading),
             padding: '10px 20px',
-            backgroundColor: loading ? 'var(--theme-elevation-200)' : 'var(--theme-success-500)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
             cursor: loading || !brief.trim() ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
             fontSize: '14px',
           }}
         >
@@ -145,27 +125,13 @@ const DraftFromBriefButton: React.FC = () => {
         </button>
 
         {loading && (
-          <span style={{ fontSize: '13px', color: 'var(--theme-elevation-500)' }}>
+          <span style={mutedTextStyle}>
             Claude rédige votre présentation, cela peut prendre 15-30 secondes…
           </span>
         )}
       </div>
 
-      {error && (
-        <div
-          style={{
-            marginTop: '12px',
-            padding: '10px',
-            backgroundColor: 'var(--theme-error-50)',
-            border: '1px solid var(--theme-error-500)',
-            borderRadius: '4px',
-            color: 'var(--theme-error-500)',
-            fontSize: '13px',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div style={errorBoxStyle}>{error}</div>}
     </div>
   );
 };
