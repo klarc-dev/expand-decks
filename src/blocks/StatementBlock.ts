@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, previewField } from './_shared';
+import { eyebrowField, previewField, titleField } from './_shared';
 
 export const StatementBlock: Block = {
   slug: 'statement',
@@ -8,13 +8,7 @@ export const StatementBlock: Block = {
   imageURL: '/block-previews/statement.svg',
   fields: [
     eyebrowField(),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Citation ou affirmation principale' },
-    },
+    titleField('Citation ou affirmation principale'),
     {
       name: 'body',
       type: 'textarea',

@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, previewField } from './_shared';
+import { eyebrowField, previewField, titleField } from './_shared';
 
 export const CtaBlock: Block = {
   slug: 'cta',
@@ -8,13 +8,7 @@ export const CtaBlock: Block = {
   imageURL: '/block-previews/cta.svg',
   fields: [
     eyebrowField(),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre principal centré (ex. "Merci", "Et maintenant ?")' },
-    },
+    titleField('Titre principal centré (ex. "Merci", "Et maintenant ?")'),
     {
       name: 'subtitle',
       type: 'text',

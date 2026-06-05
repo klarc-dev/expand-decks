@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, previewField } from './_shared';
+import { cardTitleDescFields, eyebrowField, previewField, titleField } from './_shared';
 
 export const CardGridBlock: Block = {
   slug: 'cardGrid',
@@ -8,13 +8,7 @@ export const CardGridBlock: Block = {
   imageURL: '/block-previews/cardGrid.svg',
   fields: [
     eyebrowField(),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre principal de la grille' },
-    },
+    titleField('Titre principal de la grille'),
     {
       name: 'sidebarText',
       type: 'textarea',
@@ -45,19 +39,7 @@ export const CardGridBlock: Block = {
           label: 'Numéro',
           admin: { description: 'Numéro ou identifiant de la carte (ex. "01")' },
         },
-        {
-          name: 'title',
-          type: 'text',
-          required: true,
-          label: 'Titre',
-          admin: { description: 'Titre de la carte' },
-        },
-        {
-          name: 'description',
-          type: 'textarea',
-          label: 'Description',
-          admin: { description: 'Contenu descriptif de la carte' },
-        },
+        ...cardTitleDescFields(),
       ],
     },
     previewField,

@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, previewField } from './_shared';
+import { eyebrowField, previewField, titleField } from './_shared';
 
 export const QuotesBlock: Block = {
   slug: 'quotes',
@@ -8,13 +8,7 @@ export const QuotesBlock: Block = {
   imageURL: '/block-previews/quotes.svg',
   fields: [
     eyebrowField(),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre de la diapositive' },
-    },
+    titleField('Titre de la diapositive'),
     {
       name: 'quotes',
       type: 'array',

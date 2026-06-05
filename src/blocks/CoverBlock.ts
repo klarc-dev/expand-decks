@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, imageFields, previewField, surfaceField } from './_shared';
+import { eyebrowField, imageFields, previewField, surfaceField, titleField } from './_shared';
 
 export const CoverBlock: Block = {
   slug: 'cover',
@@ -8,13 +8,7 @@ export const CoverBlock: Block = {
   imageURL: '/block-previews/cover.svg',
   fields: [
     eyebrowField('Texte court au-dessus du titre principal'),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre principal de la diapositive de couverture' },
-    },
+    titleField('Titre principal de la diapositive de couverture'),
     {
       name: 'subtitle',
       type: 'textarea',

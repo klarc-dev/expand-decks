@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, previewField, surfaceField } from './_shared';
+import { eyebrowField, previewField, surfaceField, titleField } from './_shared';
 
 export const StatsBlock: Block = {
   slug: 'stats',
@@ -8,13 +8,7 @@ export const StatsBlock: Block = {
   imageURL: '/block-previews/stats.svg',
   fields: [
     eyebrowField(),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre principal de la diapositive' },
-    },
+    titleField('Titre principal de la diapositive'),
     surfaceField(),
     {
       name: 'stats',

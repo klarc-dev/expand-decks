@@ -13,6 +13,30 @@ export const eyebrowField = (description = 'Texte court au-dessus du titre'): Fi
   admin: { description },
 });
 
+export const titleField = (description: string): Field => ({
+  name: 'title',
+  type: 'text',
+  required: true,
+  label: 'Titre',
+  admin: { description },
+});
+
+export const cardTitleDescFields = (): Field[] => ([
+  {
+    name: 'title',
+    type: 'text',
+    required: true,
+    label: 'Titre',
+    admin: { description: 'Titre de la carte' },
+  },
+  {
+    name: 'description',
+    type: 'textarea',
+    label: 'Description',
+    admin: { description: 'Contenu descriptif de la carte' },
+  },
+]);
+
 export const surfaceField = (opts?: { gradient?: boolean }): Field => ({
   name: 'surface',
   type: 'select',

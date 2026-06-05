@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { imageFields, previewField, surfaceField } from './_shared';
+import { imageFields, previewField, surfaceField, titleField } from './_shared';
 
 export const SectionBlock: Block = {
   slug: 'section',
@@ -13,13 +13,7 @@ export const SectionBlock: Block = {
       label: 'Numéro',
       admin: { description: 'Numéro de section affiché (ex. "02")' },
     },
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre de la section' },
-    },
+    titleField('Titre de la section'),
     {
       name: 'subtitle',
       type: 'textarea',

@@ -1,6 +1,6 @@
 import type { Block } from 'payload';
 
-import { eyebrowField, imageFields, previewField } from './_shared';
+import { cardTitleDescFields, eyebrowField, imageFields, previewField, titleField } from './_shared';
 
 export const TwoColsBlock: Block = {
   slug: 'twoCols',
@@ -8,13 +8,7 @@ export const TwoColsBlock: Block = {
   imageURL: '/block-previews/twoCols.svg',
   fields: [
     eyebrowField('Texte court au-dessus du titre (ex. "01 · Conseil financier")'),
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre principal de la diapositive' },
-    },
+    titleField('Titre principal de la diapositive'),
     {
       name: 'intro',
       type: 'textarea',
@@ -33,19 +27,7 @@ export const TwoColsBlock: Block = {
       label: 'Cartes (colonne droite)',
       admin: { description: 'Liste de cartes affichées dans la colonne droite' },
       fields: [
-        {
-          name: 'title',
-          type: 'text',
-          required: true,
-          label: 'Titre',
-          admin: { description: 'Titre de la carte' },
-        },
-        {
-          name: 'description',
-          type: 'textarea',
-          label: 'Description',
-          admin: { description: 'Contenu descriptif de la carte' },
-        },
+        ...cardTitleDescFields(),
       ],
     },
     ...imageFields('Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Remplace les rightCards si renseignée.'),
