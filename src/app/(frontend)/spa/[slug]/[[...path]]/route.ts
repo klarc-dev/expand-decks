@@ -5,8 +5,7 @@ import config from '@payload-config';
 import { NextResponse } from 'next/server';
 
 import { serveSpaFile } from '@/lib/spaFiles';
-
-const SLUG_RE = /^[a-z0-9-]{1,64}$/;
+import { SLUG_RE } from '@/lib/slug';
 
 /**
  * Auth-gated viewer for built presentation SPAs (the `spaUrl` shown in the

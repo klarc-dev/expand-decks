@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { ARTIFACTS } from '../lib/paths';
+
 import { RENDERERS, type SlideBlock } from './renderers';
 import { resetDefs } from './utils';
 
@@ -15,7 +17,7 @@ let headmatterCache: string | null = null;
 function loadHeadmatter(): string {
   if (headmatterCache) return headmatterCache;
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  const yamlPath = join(__dirname, 'headmatter.yaml');
+  const yamlPath = join(__dirname, ARTIFACTS.headmatter);
   const content = readFileSync(yamlPath, 'utf-8').trim();
   headmatterCache = content;
   return content;

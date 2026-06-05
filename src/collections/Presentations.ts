@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload';
 
 import { isAdmin, isAdminOrSelf, isLoggedIn } from '../access/roles';
+import { isValidSlug, SLUG_MAX } from '../lib/slug';
 import { CoverBlock } from '../blocks/CoverBlock';
 import { SectionBlock } from '../blocks/SectionBlock';
 import { StatementBlock } from '../blocks/StatementBlock';
@@ -102,14 +103,14 @@ export const Presentations: CollectionConfig = {
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/g, '-')
                       .replace(/^-+|-+$/g, '')
-                      .slice(0, 64)
+                      .slice(0, SLUG_MAX)
                       .replace(/-+$/g, '');
                   },
                 ],
               },
               validate: (value: string | null | undefined) => {
                 if (!value) return 'L\'identifiant est requis';
-                if (!/^[a-z0-9-]{1,64}$/.test(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
+                if (!isValidSlug(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
                 return true;
               },
             },

@@ -15,14 +15,14 @@ import { promisify } from 'node:util';
 import type { TaskConfig } from 'payload';
 
 import { buildSlidesMd } from '../export/buildSlidesMd';
+import { SLUG_RE } from '../lib/slug';
+import { ARTIFACTS, MEDIA_DIR, spaDir, spaUrl } from '../lib/paths';
 
 const execFile = promisify(execFileCb);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SLUG_RE = /^[a-z0-9-]{1,64}$/;
 const SLIDEV_WORKSPACE = resolve(__dirname, '../../slidev-workspace');
 const EXPORT_DIR = resolve(__dirname, '../export');
-const MEDIA_DIR = resolve(__dirname, '../../media');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -115,18 +115,18 @@ export const buildSlidesTask: TaskConfig<any> = {
       }
 
       // Write slides.md
-      writeFileSync(join(workdir, 'slides.md'), slidesMd, 'utf-8');
+      writeFileSync(join(workdir, ARTIFACTS.slidesMd), slidesMd, 'utf-8');
 
       // Copy style.css
-      cpSync(join(EXPORT_DIR, 'style.css'), join(workdir, 'style.css'));
+      cpSync(join(EXPORT_DIR, ARTIFACTS.styleCss), join(workdir, ARTIFACTS.styleCss));
 
       // Copy headmatter.yaml (for reference, already embedded in slides.md)
-      cpSync(join(EXPORT_DIR, 'headmatter.yaml'), join(workdir, 'headmatter.yaml'));
+      cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));
 
       // Copy fonts if they exist
-      const fontsDir = join(EXPORT_DIR, 'fonts');
+      const fontsDir = join(EXPORT_DIR, ARTIFACTS.fonts);
       try {
-        cpSync(fontsDir, join(workdir, 'fonts'), { recursive: true });
+        cpSync(fontsDir, join(workdir, ARTIFACTS.fonts), { recursive: true });
       } catch {
         // Fonts directory may not exist yet — not critical
       }
@@ -137,10 +137,10 @@ export const buildSlidesTask: TaskConfig<any> = {
       await runSlidev(['build', '--base', './'], workdir);
 
       // 6. Export PDF
-      await runSlidev(['export', '--format', 'pdf', '--output', 'slides.pdf'], workdir);
+      await runSlidev(['export', '--format', 'pdf', '--output', ARTIFACTS.pdf], workdir);
 
       // 7. Upload PDF to Payload Media
-      const pdfBuffer = readFileSync(join(workdir, 'slides.pdf'));
+      const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
       const pdfMedia = await req.payload.create({
         collection: 'media',
         data: { alt: `${presentation.title} — PDF` },
@@ -153,10 +153,10 @@ export const buildSlidesTask: TaskConfig<any> = {
       });
 
       // 8. Copy SPA dist to media/spa/<slug>/
-      const spaTargetDir = join(MEDIA_DIR, 'spa', slug);
+      const spaTargetDir = spaDir(slug);
       // Remove previous build if it exists
       rmSync(spaTargetDir, { recursive: true, force: true });
-      cpSync(join(workdir, 'dist'), spaTargetDir, { recursive: true });
+      cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
 
       // 9. Patch presentation with build artifacts
       await req.payload.update({
@@ -167,7 +167,7 @@ export const buildSlidesTask: TaskConfig<any> = {
           // index.html explicitly: the dist uses relative asset URLs, which
           // only resolve against a path ending in a filename or trailing
           // slash (Next strips trailing slashes with a 308).
-          spaUrl: `/spa/${slug}/index.html`,
+          spaUrl: spaUrl(slug),
           lastBuildStatus: 'success',
           lastBuildError: '',
         },
