@@ -1,13 +1,8 @@
+import type { StatementBlockData } from '../../blocks/spec/statement';
 import { K } from '../classNames';
 import { escape, eyebrow as renderEyebrow, md, wrapSlide } from '../utils';
 
-export type StatementBlockData = {
-  blockType: 'statement';
-  eyebrow?: string | null;
-  title: string;
-  body?: string | null;
-  footer?: string | null;
-};
+export type { StatementBlockData };
 
 export function renderStatement(block: StatementBlockData): string {
   const eyebrow = renderEyebrow(block.eyebrow);
