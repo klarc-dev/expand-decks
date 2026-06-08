@@ -130,14 +130,15 @@ function blockTypeForExplicitSlide(
   chunk: string,
   isLast: boolean,
 ): string {
+  const head = heading.toLowerCase();
   const text = `${heading}\n${chunk}`.toLowerCase();
   if (number === 1) return 'cover';
   if (isLast || /\bcta\b|appel à l.?action/.test(text)) return 'cta';
   if (/tableau|matrice|niveaux de confidentialité|échelle|socle contractuel/.test(text)) {
     return 'table';
   }
-  if (/section\s*:|cycle de vie/.test(text)) return 'cardGrid';
-  if (/arbre de décision|process en 3 temps|plan 90 jours|pertes évitables/.test(text)) return 'cardGrid';
+  if (/cycle de vie|process en \d+ temps|→.*→/.test(head)) return 'timeline';
+  if (/arbre de décision|plan 90 jours|pertes évitables/.test(text)) return 'cardGrid';
   if (/minimum vital|kpi|annuité/.test(text)) return 'stats';
   if (/socle contractuel|dataroom|offboarding|déclaration d'invention/.test(text)) {
     return 'twoCols';

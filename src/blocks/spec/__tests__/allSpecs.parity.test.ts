@@ -10,6 +10,7 @@ import { SectionBlock } from '../../SectionBlock';
 import { StatementBlock } from '../../StatementBlock';
 import { StatsBlock } from '../../StatsBlock';
 import { TableBlock } from '../../TableBlock';
+import { TimelineBlock } from '../../TimelineBlock';
 import { TwoColsBlock } from '../../TwoColsBlock';
 import { ALL_SPECS } from '../index';
 import { emitPayloadBlock } from '../emit/emitPayloadBlock';
@@ -122,6 +123,18 @@ const LEGACY_SLIDES_SCHEMA = z.object({
             .max(8)
             .optional(),
         }),
+        z.object({
+          blockType: z.literal('timeline'),
+          eyebrow: z.string().optional(),
+          title: z.string(),
+          surface: z.enum(['dark', 'light']).optional(),
+          steps: z
+            .array(z.object({ label: z.string(), description: z.string().optional() }))
+            .min(2)
+            .max(6)
+            .optional(),
+          footer: z.string().optional(),
+        }),
       ]),
     )
     .min(3)
@@ -180,11 +193,16 @@ Layouts disponibles :
    - columns: [{header}] — 2 à 5 colonnes
    - rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre
 
+10. **timeline** — Frise horizontale d’étapes ordonnées reliées par des flèches (cycle de vie, processus, parcours chronologique)
+   - eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)
+   - steps: [{label, description}] — 2 à 6 étapes, dans l’ordre, affichées de gauche à droite
+
 Règles :
 - Commence TOUJOURS par un bloc "cover"
 - Termine TOUJOURS par un bloc "cta"
 - Utilise "section" pour structurer le contenu en parties
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
+- Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes reliées de gauche à droite)
 - Varie les layouts pour rendre la présentation dynamique
 - Reste dans la langue du brief (français par défaut si ambigu)
 - Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
@@ -201,6 +219,7 @@ const BLOCKS = {
   quotes: QuotesBlock,
   cta: CtaBlock,
   table: TableBlock,
+  timeline: TimelineBlock,
   markdown: MarkdownBlock,
 } as const;
 
@@ -233,7 +252,7 @@ describe('ALL_SPECS parity', () => {
     expect(markdown?.promptMeta).toBeUndefined();
   });
 
-  it('keeps exactly the 9 AI-draftable layouts in the draft union', () => {
+  it('keeps exactly the 10 AI-draftable layouts in the draft union', () => {
     const draftable = ALL_SPECS.filter((s) => s.aiDraftable).map((s) => s.blockType);
     expect(draftable).toEqual([
       'cover',
@@ -245,6 +264,7 @@ describe('ALL_SPECS parity', () => {
       'quotes',
       'cta',
       'table',
+      'timeline',
     ]);
   });
 });

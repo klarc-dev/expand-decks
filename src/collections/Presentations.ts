@@ -13,6 +13,7 @@ import { StatsBlock } from '../blocks/StatsBlock';
 import { QuotesBlock } from '../blocks/QuotesBlock';
 import { CtaBlock } from '../blocks/CtaBlock';
 import { TableBlock } from '../blocks/TableBlock';
+import { TimelineBlock } from '../blocks/TimelineBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
@@ -74,6 +75,7 @@ export const Presentations: CollectionConfig = {
                 QuotesBlock,
                 CtaBlock,
                 TableBlock,
+                TimelineBlock,
                 MarkdownBlock,
               ],
             },
