@@ -102,6 +102,15 @@ export const optionalRender = <T extends z.ZodType>(inner: T) =>
 /** AI-facing optional (plain `.optional()`, no null) per strictJsonSchema:false. */
 export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
 
+// Render Zod for a rich-text (Lexical) field. The type-only import is erased at
+// compile time, so dsl.ts stays client-safe (zod only). The runtime z.custom is
+// a no-op validator — emission is driven by payloadMeta.type:'richText'; this
+// only shapes InferRender so *BlockData carries the Lexical editor state.
+export type LexicalRichText = import('@payloadcms/richtext-lexical/lexical').SerializedEditorState;
+export const richTextRender = () => z.custom<LexicalRichText>();
+export const optionalRichTextRender = () =>
+  z.custom<LexicalRichText>().nullable().optional();
+
 /** Payload field `type` values the emitter knows how to build from raw meta. */
 export type PayloadRawType = 'text' | 'textarea' | 'select' | 'code' | 'array' | 'richText';
 

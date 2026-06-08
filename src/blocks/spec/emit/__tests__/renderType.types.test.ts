@@ -19,7 +19,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { optionalRender } from '../../dsl';
+import { optionalRender, optionalRichTextRender } from '../../dsl';
 import { type Equal, type Expect, type InferRender } from '../renderType';
 
 import type { CardGridBlockData } from '../../../../export/blocks/cardGrid';
@@ -35,8 +35,8 @@ const statementRenderSchema = z.object({
   blockType: z.literal('statement'),
   eyebrow: optionalRender(z.string()),
   title: z.string(),
-  body: optionalRender(z.string()),
-  footer: optionalRender(z.string()),
+  body: optionalRichTextRender(),
+  footer: optionalRichTextRender(),
 });
 
 type DerivedStatement = InferRender<typeof statementRenderSchema>;

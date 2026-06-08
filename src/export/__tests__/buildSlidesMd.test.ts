@@ -3,6 +3,33 @@ import { describe, expect, it } from 'vitest';
 import { buildSlidesMd, type Presentation } from '../buildSlidesMd';
 import { parseDeck } from '../parse';
 
+// Minimal valid Lexical editor state (root > paragraph > text) for richText
+// fields in fixtures, matching what convertLexicalToHTML expects.
+function lexical(text: string) {
+  return {
+    root: {
+      type: 'root',
+      direction: 'ltr' as const,
+      format: '' as const,
+      indent: 0,
+      version: 1,
+      children: [
+        {
+          type: 'paragraph',
+          direction: 'ltr' as const,
+          format: '' as const,
+          indent: 0,
+          version: 1,
+          textFormat: 0,
+          children: [
+            { type: 'text', text, detail: 0, format: 0, mode: 'normal' as const, style: '', version: 1 },
+          ],
+        },
+      ],
+    },
+  } as never;
+}
+
 const HEADMATTER = `colorSchema: light
 aspectRatio: 16/9
 fonts:
@@ -105,7 +132,7 @@ describe('buildSlidesMd()', () => {
   it('handles a full deck with all block types', () => {
     const slides: Presentation['slides'] = [
       { blockType: 'cover', title: 'Cover', eyebrow: 'Tag', subtitle: 'Sub' },
-      { blockType: 'statement', title: 'Statement', body: 'Body text' },
+      { blockType: 'statement', title: 'Statement', body: lexical('Body text') },
       { blockType: 'section', title: 'Section', number: '02', surface: 'dark' },
       {
         blockType: 'cardGrid',

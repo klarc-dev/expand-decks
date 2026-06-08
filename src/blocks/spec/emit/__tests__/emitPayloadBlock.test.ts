@@ -22,12 +22,12 @@ const statementSpec = block({
       description: 'Citation ou affirmation principale',
     }),
     rawField('body', optionalRender(z.string()), optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Corps',
       description: 'Texte développant l’affirmation',
     }),
     rawField('footer', optionalRender(z.string()), optionalAi(z.string()), {
-      type: 'text',
+      type: 'richText',
       label: 'Pied de page',
       description: 'Légende ou note en bas de la diapositive',
     }),

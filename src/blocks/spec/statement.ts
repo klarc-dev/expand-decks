@@ -17,14 +17,17 @@ import {
   type InferRender,
   optionalAi,
   optionalRender,
+  optionalRichTextRender,
   rawField,
 } from './dsl';
 
 // Per-field render Zods — authored once, reused below.
+// body + footer are rich text (Lexical); their render Zod is the editor state,
+// while their AI Zod stays a markdown string (converted to Lexical on write).
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const body = optionalRender(z.string());
-const footer = optionalRender(z.string());
+const body = optionalRichTextRender();
+const footer = optionalRichTextRender();
 
 export const statementSpec = block({
   slug: 'statement',
@@ -38,12 +41,12 @@ export const statementSpec = block({
       description: 'Citation ou affirmation principale',
     }),
     rawField('body', body, optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Corps',
       description: 'Texte développant l’affirmation',
     }),
     rawField('footer', footer, optionalAi(z.string()), {
-      type: 'text',
+      type: 'richText',
       label: 'Pied de page',
       description: 'Légende ou note en bas de la diapositive',
     }),
