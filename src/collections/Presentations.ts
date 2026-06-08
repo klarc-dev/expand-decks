@@ -22,7 +22,7 @@ export const Presentations: CollectionConfig = {
   labels: { singular: 'Présentation', plural: 'Présentations' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'client', 'status', 'updatedAt'],
+    defaultColumns: ['title', 'status', 'updatedAt'],
     livePreview: {
       url: '/preview',
     },
@@ -139,6 +139,48 @@ export const Presentations: CollectionConfig = {
                 { label: 'Anglais', value: 'en' },
               ],
             },
+            {
+              name: 'footer',
+              type: 'group',
+              label: 'Pied de page',
+              admin: {
+                description:
+                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Balises : {org.name} {title} {date} {page} {total}',
+              },
+              fields: [
+                {
+                  name: 'enabled',
+                  type: 'checkbox',
+                  defaultValue: true,
+                  label: 'Afficher le pied de page',
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'left',
+                      type: 'text',
+                      defaultValue: '{org.name}',
+                      label: 'Gauche',
+                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                    },
+                    {
+                      name: 'center',
+                      type: 'text',
+                      label: 'Centre',
+                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                    },
+                    {
+                      name: 'right',
+                      type: 'text',
+                      defaultValue: '{page} / {total}',
+                      label: 'Droite',
+                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
         {
@@ -227,6 +269,17 @@ export const Presentations: CollectionConfig = {
         { label: 'Publiée', value: PRESENTATION_STATUS.published },
         { label: 'Archivée', value: PRESENTATION_STATUS.archived },
       ],
+    },
+    {
+      name: 'organisation',
+      type: 'relationship',
+      relationTo: COLLECTIONS.organisations,
+      required: true,
+      label: 'Organisation',
+      admin: {
+        position: 'sidebar',
+        description: 'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
+      },
     },
     {
       name: 'createdBy',

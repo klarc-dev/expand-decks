@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
+import { deckContext } from '@/lib/deckContext';
 import { draftPresentationSlides } from '@/lib/draftPresentation';
 import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
 import { ROLES } from '@/access/roles';
@@ -68,8 +69,8 @@ export async function POST(req: NextRequest) {
     }
 
     // LLM-only: draftPresentationSlides does NOT persist; this route owns the
-    // Payload write below.
-    const { slides } = await draftPresentationSlides(brief);
+    // Payload write below. Prepend the deck's metadata so output is deck-aware.
+    const { slides } = await draftPresentationSlides(deckContext(presentation) + brief);
     const slideCount = slides.length;
 
     // The LLM emits long fields as markdown strings; convert them to Lexical
