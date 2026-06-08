@@ -94,6 +94,20 @@ function safeHref(raw: string): string | null {
   return null;
 }
 
+// Collect {{def:...}} literals from an HTML string into the slide-scoped
+// footnote band and replace each with a superscript reference. Shared by md()
+// (plain fields) and richTextToHTML (Lexical fields) so both feed _slideDefs.
+// Operates on already-escaped/converted HTML; { } : are not entity-escaped so
+// DEF_RE still matches.
+export function applyDefs(html: string): string {
+  return html
+    .replace(DEF_RE, (_, content) => {
+      _slideDefs.push(content);
+      return `\x00DEF${_slideDefs.length}\x00`;
+    })
+    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
+}
+
 export function md(text: string | null | undefined): string {
   const escaped = escape(text).replace(DEF_RE, (_, content) => {
     _slideDefs.push(content);

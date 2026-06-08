@@ -1,6 +1,33 @@
 import type { Field } from 'payload';
+import {
+  BoldFeature,
+  InlineToolbarFeature,
+  ItalicFeature,
+  lexicalEditor,
+  LinkFeature,
+  OrderedListFeature,
+  ParagraphFeature,
+  UnderlineFeature,
+  UnorderedListFeature,
+} from '@payloadcms/richtext-lexical';
 
 import { COLLECTIONS } from '../lib/collections';
+
+// Shared minimal inline editor for all rich-text slide fields: paragraphs +
+// bold/italic/underline/link/lists + a floating toolbar. No headings, uploads,
+// relationships or blocks — slide body copy, not documents.
+export const slideRichTextEditor = lexicalEditor({
+  features: () => [
+    ParagraphFeature(),
+    BoldFeature(),
+    ItalicFeature(),
+    UnderlineFeature(),
+    LinkFeature(),
+    UnorderedListFeature(),
+    OrderedListFeature(),
+    InlineToolbarFeature(),
+  ],
+});
 
 export const previewField: Field = {
   name: 'preview',

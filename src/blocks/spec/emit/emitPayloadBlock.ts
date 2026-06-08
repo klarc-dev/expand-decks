@@ -16,6 +16,7 @@ import {
   eyebrowField,
   imageFields,
   previewField,
+  slideRichTextEditor,
   surfaceField,
   titleField,
 } from '../../_shared';
@@ -48,6 +49,7 @@ function emitRawField(field: FieldSpec): Field {
   if (payload.type === 'array' && payload.fields !== undefined) {
     result.fields = payload.fields.flatMap(emitField);
   }
+  if (payload.type === 'richText') result.editor = slideRichTextEditor;
 
   return result as unknown as Field;
 }

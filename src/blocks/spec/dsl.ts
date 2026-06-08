@@ -103,7 +103,7 @@ export const optionalRender = <T extends z.ZodType>(inner: T) =>
 export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
 
 /** Payload field `type` values the emitter knows how to build from raw meta. */
-export type PayloadRawType = 'text' | 'textarea' | 'select' | 'code' | 'array';
+export type PayloadRawType = 'text' | 'textarea' | 'select' | 'code' | 'array' | 'richText';
 
 /** A single `{ label, value }` option for a Payload `select` field. */
 export interface PayloadOption {
