@@ -50,7 +50,8 @@ ${eyebrow}
     return wrapSlide({ image, body });
   }
 
-  const cards = (block.rightCards ?? [])
+  const cardList = block.rightCards ?? [];
+  const cards = cardList
     .map((card) => {
       // <div>, not <p>: richTextToHTML emits its own block-level <p>, which
       // Vue's parser refuses to nest inside another <p>.
@@ -60,9 +61,18 @@ ${eyebrow}
     })
     .join('\n\n');
 
-  const rightCol = cards ? `\n<div class="space-y-3">\n\n${cards}\n\n</div>` : '';
+  // The right column is a vertical stack on a fixed 720px canvas. 4+ stacked
+  // cards under the standard pt-28 header overflow and clip the last card.
+  // Tighten the top padding, the inter-card gap, AND each card's box (.k-tight)
+  // when the column is tall, so the whole stack stays on-slide.
+  const crowded = cardList.length >= 4;
+  const topPad = crowded ? 'pt-20' : 'pt-28';
+  const cardGap = crowded ? 'space-y-2' : 'space-y-3';
+  const tight = crowded ? ' k-tight' : '';
 
-  const body = `<div class="${K.split} px-14 pt-28">
+  const rightCol = cards ? `\n<div class="${cardGap}${tight}">\n\n${cards}\n\n</div>` : '';
+
+  const body = `<div class="${K.split} px-14 ${topPad}">
 
 <div>
 ${eyebrow}
