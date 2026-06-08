@@ -42,11 +42,14 @@ export async function POST(req: NextRequest) {
     }
     const { presentationId, brief } = parsed.data;
 
-    // Verify the presentation exists and user has access
+    // Verify the presentation exists and user has access. disableErrors makes a
+    // missing/inaccessible id return null instead of throwing NotFound (which
+    // would otherwise fall through to the generic 500 handler).
     const presentation = await payload.findByID({
       collection: COLLECTIONS.presentations,
       id: presentationId,
       user,
+      disableErrors: true,
     });
 
     if (!presentation) {
