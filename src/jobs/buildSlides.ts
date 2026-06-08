@@ -15,8 +15,9 @@ import { promisify } from 'node:util';
 import type { TaskConfig } from 'payload';
 
 import { buildSlidesMd } from '../export/buildSlidesMd';
+import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
 import { SLUG_RE } from '../lib/slug';
-import { ARTIFACTS, MEDIA_DIR, spaDir, spaUrl } from '../lib/paths';
+import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
 import { COLLECTIONS } from '../lib/collections';
 import { BUILD_STATUS } from '../lib/status';
 import { CTX } from '../lib/context';
@@ -99,8 +100,33 @@ export const buildSlidesTask: TaskConfig<any> = {
         throw new Error(`Invalid slug format: "${slug}"`);
       }
 
-      // 3. Generate slides.md
-      const slidesMd = buildSlidesMd(presentation as any);
+      // 2b. Resolve the organisation explicitly (presentation is fetched at
+      // depth:0 to keep relationships as ids for the rebuild fingerprint; this
+      // targeted depth:1 fetch hydrates the brand + logo without bloating it).
+      const orgRel = (presentation as { organisation?: number | { id: number } })
+        .organisation;
+      const orgId = typeof orgRel === 'object' && orgRel ? orgRel.id : orgRel;
+      const org = orgId
+        ? await req.payload.findByID({
+            collection: COLLECTIONS.organisations,
+            id: orgId,
+            depth: 1,
+          })
+        : null;
+      const brand = org as (OrgBrand & Record<string, unknown>) | null;
+
+      // 3. Generate slides.md with org/presentation-specific headmatter
+      const baseHeadmatter = readFileSync(
+        join(EXPORT_DIR, ARTIFACTS.headmatter),
+        'utf-8',
+      ).trim();
+      const slidesMd = buildSlidesMd(presentation as any, {
+        headmatter: buildHeadmatter(
+          baseHeadmatter,
+          brand,
+          presentation.language as string | undefined,
+        ),
+      });
 
       // 4. Create temp workdir
       workdir = mkdtempSync(join(tmpdir(), 'slidev-build-'));
@@ -125,8 +151,15 @@ export const buildSlidesTask: TaskConfig<any> = {
       // Write slides.md
       writeFileSync(join(workdir, ARTIFACTS.slidesMd), slidesMd, 'utf-8');
 
-      // Copy style.css
-      cpSync(join(EXPORT_DIR, ARTIFACTS.styleCss), join(workdir, ARTIFACTS.styleCss));
+      // Write style.css = base CSS + per-organisation :root override. The
+      // override is appended (last :root wins) so an org's 4 brand colors
+      // re-derive all --k-* tokens while empty fields fall back to base.
+      const baseCss = readFileSync(join(EXPORT_DIR, ARTIFACTS.styleCss), 'utf-8');
+      writeFileSync(
+        join(workdir, ARTIFACTS.styleCss),
+        `${baseCss}\n${buildThemeCss(brand)}`,
+        'utf-8',
+      );
 
       // Copy headmatter.yaml (for reference, already embedded in slides.md)
       cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));

@@ -114,9 +114,9 @@
 /* Dark variant for cover / section -------------- */
 .k-dark {
   background:
-    radial-gradient(1200px 600px at 85% -10%, rgba(245,163,176,0.22), transparent 60%),
-    radial-gradient(900px 500px at 10% 110%, rgba(2,88,92,0.55), transparent 60%),
-    linear-gradient(135deg, #02585C 0%, #023C3F 100%) !important;
+    radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb, var(--k-rose) 22%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, color-mix(in srgb, var(--k-teal) 55%, transparent), transparent 60%),
+    linear-gradient(135deg, var(--k-teal) 0%, var(--k-teal-700) 100%) !important;
   color: #fff !important;
 }
 
