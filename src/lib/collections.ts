@@ -1,1 +1,1 @@
-export const COLLECTIONS = { presentations: 'presentations', media: 'media', shareLinks: 'share-links', users: 'users', accounts: 'accounts' } as const;
+export const COLLECTIONS = { presentations: 'presentations', organisations: 'organisations', media: 'media', shareLinks: 'share-links', users: 'users', accounts: 'accounts' } as const;

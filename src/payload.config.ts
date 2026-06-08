@@ -11,6 +11,7 @@ import { GoogleAuthProvider } from 'payload-auth-plugin/providers';
 
 import { Users } from './collections/Users';
 import { Presentations } from './collections/Presentations';
+import { Organisations } from './collections/Organisations';
 import { Media } from './collections/Media';
 import { ShareLinks } from './collections/ShareLinks';
 import { Accounts } from './collections/Accounts';
@@ -45,7 +46,7 @@ export default buildConfig({
     },
   },
   serverURL: SERVER_URL,
-  collections: [Users, Presentations, Media, ShareLinks, Accounts],
+  collections: [Users, Organisations, Presentations, Media, ShareLinks, Accounts],
   plugins: [
     authPlugin({
       name: 'auth',
