@@ -51,9 +51,9 @@ const coverRenderSchema = z.object({
   blockType: z.literal('cover'),
   eyebrow: optionalRender(z.string()),
   title: z.string(),
-  subtitle: optionalRender(z.string()),
-  footerLeft: optionalRender(z.string()),
-  footerRight: optionalRender(z.string()),
+  subtitle: optionalRichTextRender(),
+  footerLeft: optionalRichTextRender(),
+  footerRight: optionalRichTextRender(),
   surface: optionalRender(z.enum(['dark', 'light', 'gradient'])),
   image: z.object({ url: z.string() }).nullable().optional(),
   imagePosition: optionalRender(z.enum(['right', 'left'])),
@@ -71,13 +71,13 @@ const twoColsRenderSchema = z.object({
   blockType: z.literal('twoCols'),
   eyebrow: optionalRender(z.string()),
   title: z.string(),
-  intro: optionalRender(z.string()),
-  leftFooter: optionalRender(z.string()),
+  intro: optionalRichTextRender(),
+  leftFooter: optionalRichTextRender(),
   rightCards: z
     .array(
       z.object({
         title: z.string(),
-        description: optionalRender(z.string()),
+        description: optionalRichTextRender(),
       }),
     )
     .nullable()
@@ -98,14 +98,14 @@ const cardGridRenderSchema = z.object({
   blockType: z.literal('cardGrid'),
   eyebrow: optionalRender(z.string()),
   title: z.string(),
-  sidebarText: optionalRender(z.string()),
+  sidebarText: optionalRichTextRender(),
   columns: optionalRender(z.enum(['2', '3', '4'])),
   cards: z
     .array(
       z.object({
         number: optionalRender(z.string()),
         title: z.string(),
-        description: optionalRender(z.string()),
+        description: optionalRichTextRender(),
       }),
     )
     .nullable()

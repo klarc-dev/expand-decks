@@ -1,14 +1,15 @@
 import { K } from '../classNames';
+import { richTextToHTML, type RichText } from '../richtext';
 import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
 export type CtaBlockData = {
   blockType: 'cta';
   eyebrow?: string | null;
   title: string;
-  subtitle?: string | null;
+  subtitle?: RichText;
   primaryAction?: string | null;
   secondaryAction?: string | null;
-  footerNote?: string | null;
+  footerNote?: RichText;
 };
 
 export function renderCta(block: CtaBlockData): string {
@@ -17,8 +18,9 @@ export function renderCta(block: CtaBlockData): string {
     multiline: true,
   });
 
-  const subtitle = block.subtitle
-    ? `\n\n<p class="${K.ctaSub} mb-12">\n  ${md(block.subtitle)}\n</p>`
+  const subtitleHtml = richTextToHTML(block.subtitle);
+  const subtitle = subtitleHtml
+    ? `\n\n<div class="${K.ctaSub} mb-12">\n  ${subtitleHtml}\n</div>`
     : '';
 
   const buttons: string[] = [];
@@ -32,8 +34,9 @@ export function renderCta(block: CtaBlockData): string {
     ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
     : '';
 
-  const footerNote = block.footerNote
-    ? `\n\n<div class="text-xs tracking-[0.3em] uppercase opacity-40 mt-16">\n  ${escape(block.footerNote)}\n</div>`
+  const footerNoteHtml = richTextToHTML(block.footerNote);
+  const footerNote = footerNoteHtml
+    ? `\n\n<div class="text-xs tracking-[0.3em] uppercase opacity-40 mt-16">\n  ${footerNoteHtml}\n</div>`
     : '';
 
   const body = `<div class="text-center max-w-5xl px-12 w-full">

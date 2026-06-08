@@ -1,5 +1,6 @@
 import type { TableBlockData } from '../../blocks/spec/table';
 import { K } from '../classNames';
+import { richTextToHTML } from '../richtext';
 import { eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
 export type { TableBlockData };
@@ -16,14 +17,15 @@ export function renderTable(block: TableBlockData): string {
     : '';
 
   // Pad/truncate each row to the column count so a model cell-count mismatch
-  // can never produce a ragged, broken table.
+  // can never produce a ragged, broken table. cells are rich text; richTextToHTML
+  // returns '' for a missing (padded) cell.
   const body = rows
     .map((r) => {
-      const cells = (r.cells ?? []).map((c) => c.value);
+      const cells = (r.cells ?? []).map((c) => richTextToHTML(c.value));
       const aligned = colCount
         ? Array.from({ length: colCount }, (_, i) => cells[i] ?? '')
         : cells;
-      return `<tr>${aligned.map((v) => `<td>${md(v)}</td>`).join('')}</tr>`;
+      return `<tr>${aligned.map((v) => `<td>${v}</td>`).join('')}</tr>`;
     })
     .join('\n');
 

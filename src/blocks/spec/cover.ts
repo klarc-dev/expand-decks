@@ -6,14 +6,17 @@ import {
   type InferRender,
   optionalAi,
   optionalRender,
+  optionalRichTextRender,
   rawField,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const subtitle = optionalRender(z.string());
-const footerLeft = optionalRender(z.string());
-const footerRight = optionalRender(z.string());
+// subtitle + footers are rich text (Lexical); their render Zod is the editor
+// state, while their AI Zod stays a markdown string (converted to Lexical on write).
+const subtitle = optionalRichTextRender();
+const footerLeft = optionalRichTextRender();
+const footerRight = optionalRichTextRender();
 const surface = optionalRender(z.enum(['dark', 'light', 'gradient']));
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
@@ -32,17 +35,17 @@ export const coverSpec = block({
       description: 'Titre principal de la diapositive de couverture',
     }),
     rawField('subtitle', subtitle, optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Sous-titre',
       description: 'Paragraphe descriptif sous le titre',
     }),
     rawField('footerLeft', footerLeft, optionalAi(z.string()), {
-      type: 'text',
+      type: 'richText',
       label: 'Pied de page gauche',
       description: 'Texte en bas à gauche (ex. lien ou action)',
     }),
     rawField('footerRight', footerRight, optionalAi(z.string()), {
-      type: 'text',
+      type: 'richText',
       label: 'Pied de page droit',
       description: 'Texte en bas à droite (ex. date ou note)',
     }),

@@ -55,7 +55,7 @@ describe('emitPayloadBlock', () => {
           description: 'Titre principal de la grille',
         }),
         rawField('sidebarText', optionalRender(z.string()), optionalAi(z.string()), {
-          type: 'textarea',
+          type: 'richText',
           label: 'Texte latéral',
           description: 'Texte optionnel affiché sur le côté de la grille',
         }),

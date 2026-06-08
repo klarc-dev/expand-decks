@@ -6,12 +6,13 @@ import {
   type InferRender,
   optionalAi,
   optionalRender,
+  optionalRichTextRender,
   rawField,
 } from './dsl';
 
 const number = optionalRender(z.string());
 const title = z.string();
-const subtitle = optionalRender(z.string());
+const subtitle = optionalRichTextRender();
 const surface = optionalRender(z.enum(['dark', 'light']));
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
@@ -32,7 +33,7 @@ export const sectionSpec = block({
       description: 'Titre de la section',
     }),
     rawField('subtitle', subtitle, optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Sous-titre',
       description: 'Description complémentaire sous le titre',
     }),

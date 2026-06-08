@@ -109,8 +109,8 @@ describe('buildSlidesMd()', () => {
         blockType: 'cardGrid',
         title: 'Grid',
         cards: [
-          { number: '01', title: 'A', description: 'Desc' },
-          { number: '02', title: 'B', description: 'Desc' },
+          { number: '01', title: 'A', description: lexical('Desc') },
+          { number: '02', title: 'B', description: lexical('Desc') },
         ],
       },
       { blockType: 'cta', title: 'Thank you' },
@@ -131,20 +131,20 @@ describe('buildSlidesMd()', () => {
 
   it('handles a full deck with all block types', () => {
     const slides: Presentation['slides'] = [
-      { blockType: 'cover', title: 'Cover', eyebrow: 'Tag', subtitle: 'Sub' },
+      { blockType: 'cover', title: 'Cover', eyebrow: 'Tag', subtitle: lexical('Sub') },
       { blockType: 'statement', title: 'Statement', body: lexical('Body text') },
       { blockType: 'section', title: 'Section', number: '02', surface: 'dark' },
       {
         blockType: 'cardGrid',
         title: 'Grid',
         columns: '4',
-        cards: [{ number: '01', title: 'Card', description: 'Desc' }],
+        cards: [{ number: '01', title: 'Card', description: lexical('Desc') }],
       },
       {
         blockType: 'twoCols',
         title: 'Two Cols',
-        intro: 'Intro text',
-        rightCards: [{ title: 'RC', description: 'RD' }],
+        intro: lexical('Intro text'),
+        rightCards: [{ title: 'RC', description: lexical('RD') }],
       },
       {
         blockType: 'stats',
@@ -154,14 +154,14 @@ describe('buildSlidesMd()', () => {
       {
         blockType: 'quotes',
         title: 'Quotes',
-        quotes: [{ quote: 'Great', authorName: 'John', authorRole: 'CEO' }],
+        quotes: [{ quote: lexical('Great'), authorName: 'John', authorRole: 'CEO' }],
       },
       {
         blockType: 'cta',
         title: 'Thank you',
-        subtitle: 'Questions?',
+        subtitle: lexical('Questions?'),
         primaryAction: 'Go',
-        footerNote: 'site.example',
+        footerNote: lexical('site.example'),
       },
       { blockType: 'markdown', layout: 'center', content: '# Raw' },
     ];

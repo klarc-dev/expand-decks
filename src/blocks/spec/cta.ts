@@ -6,15 +6,16 @@ import {
   type InferRender,
   optionalAi,
   optionalRender,
+  optionalRichTextRender,
   rawField,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const subtitle = optionalRender(z.string());
+const subtitle = optionalRichTextRender();
 const primaryAction = optionalRender(z.string());
 const secondaryAction = optionalRender(z.string());
-const footerNote = optionalRender(z.string());
+const footerNote = optionalRichTextRender();
 
 export const ctaSpec = block({
   slug: 'cta',
@@ -28,7 +29,7 @@ export const ctaSpec = block({
       description: 'Titre principal centré (ex. "Merci", "Et maintenant ?")',
     }),
     rawField('subtitle', subtitle, optionalAi(z.string()), {
-      type: 'text',
+      type: 'richText',
       label: 'Sous-titre',
       description: 'Phrase d’accroche sous le titre',
     }),
@@ -43,7 +44,7 @@ export const ctaSpec = block({
       description: 'Texte du lien secondaire (optionnel)',
     }),
     rawField('footerNote', footerNote, optionalAi(z.string()), {
-      type: 'text',
+      type: 'richText',
       label: 'Note de bas',
       description: 'Texte en bas de la diapositive (optionnel)',
     }),

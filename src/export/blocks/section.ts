@@ -1,11 +1,12 @@
 import { K } from '../classNames';
+import { richTextToHTML, type RichText } from '../richtext';
 import { escape, md, surfaceClass, wrapSlide, type SlideImage } from '../utils';
 
 export type SectionBlockData = {
   blockType: 'section';
   number?: string | null;
   title: string;
-  subtitle?: string | null;
+  subtitle?: RichText;
   surface?: 'dark' | 'light' | null;
   image?: { url: string } | null;
   imagePosition?: 'right' | 'left' | null;
@@ -23,8 +24,9 @@ export function renderSection(block: SectionBlockData): string {
   // With image: left-align in the content half rather than centering across
   // the full slide.
   const subtitleAlign = image ? 'max-w-2xl' : 'max-w-3xl mx-auto';
-  const subtitle = block.subtitle
-    ? `\n\n<p class="text-xl opacity-75 ${subtitleAlign} leading-relaxed">\n${md(block.subtitle)}\n</p>`
+  const subtitleHtml = richTextToHTML(block.subtitle);
+  const subtitle = subtitleHtml
+    ? `\n\n<div class="text-xl opacity-75 ${subtitleAlign} leading-relaxed">\n${subtitleHtml}\n</div>`
     : '';
 
   const wrapperClass = image

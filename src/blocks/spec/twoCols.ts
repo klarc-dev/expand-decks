@@ -6,18 +6,19 @@ import {
   type InferRender,
   optionalAi,
   optionalRender,
+  optionalRichTextRender,
   rawField,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const intro = optionalRender(z.string());
-const leftFooter = optionalRender(z.string());
+const intro = optionalRichTextRender();
+const leftFooter = optionalRichTextRender();
 const rightCards = optionalRender(
   z.array(
     z.object({
       title: z.string(),
-      description: optionalRender(z.string()),
+      description: optionalRichTextRender(),
     }),
   ),
 );
@@ -38,12 +39,12 @@ export const twoColsSpec = block({
       description: 'Titre principal de la diapositive',
     }),
     rawField('intro', intro, optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Introduction',
       description: 'Paragraphe d’introduction dans la colonne gauche',
     }),
     rawField('leftFooter', leftFooter, optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Pied gauche',
       description: 'Texte ou statistique en bas de la colonne gauche',
     }),

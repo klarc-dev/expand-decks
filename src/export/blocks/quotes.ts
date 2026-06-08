@@ -1,4 +1,7 @@
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical';
+
 import { K } from '../classNames';
+import { richTextToHTML } from '../richtext';
 import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
 export type QuotesBlockData = {
@@ -6,7 +9,7 @@ export type QuotesBlockData = {
   eyebrow?: string | null;
   title: string;
   quotes?: Array<{
-    quote: string;
+    quote: SerializedEditorState;
     authorName: string;
     authorRole?: string | null;
   }> | null;
@@ -23,7 +26,8 @@ export function renderQuotes(block: QuotesBlockData): string {
       const role = q.authorRole
         ? `<br/>\n    <span>${escape(q.authorRole)}</span>`
         : '';
-      return `<div class="${K.card}">\n  <p class="${K.quote} text-base leading-snug mb-6">\n    ${escape(q.quote)}\n  </p>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
+      const quoteHtml = richTextToHTML(q.quote);
+      return `<div class="${K.card}">\n  <div class="${K.quote} text-base leading-snug mb-6">\n    ${quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
     })
     .join('\n\n');
 

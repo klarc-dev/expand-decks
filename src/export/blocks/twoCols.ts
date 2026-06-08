@@ -1,15 +1,16 @@
 import { K } from '../classNames';
+import { richTextToHTML, type RichText } from '../richtext';
 import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
 export type TwoColsBlockData = {
   blockType: 'twoCols';
   eyebrow?: string | null;
   title: string;
-  intro?: string | null;
-  leftFooter?: string | null;
+  intro?: RichText;
+  leftFooter?: RichText;
   rightCards?: Array<{
     title: string;
-    description?: string | null;
+    description?: RichText;
   }> | null;
   image?: { url: string } | null;
   imagePosition?: 'right' | 'left' | null;
@@ -22,15 +23,17 @@ export function renderTwoCols(block: TwoColsBlockData): string {
 
   const eyebrow = renderEyebrow(block.eyebrow, 'mb-6');
 
-  // Use <div> not <p>: intro often contains markdown lists / multi-paragraphs
-  // which Vue's HTML parser refuses inside a <p> (block content auto-closes the
+  // Use <div> not <p>: richTextToHTML emits its own block-level <p>, which Vue's
+  // HTML parser refuses to nest inside another <p> (block content auto-closes the
   // paragraph, making the explicit </p> an unbalanced tag).
-  const intro = block.intro
-    ? `\n\n<hr class="${K.divider}"/>\n\n<div class="text-base leading-relaxed mb-8 max-w-md">\n\n${md(block.intro)}\n\n</div>`
+  const introHtml = richTextToHTML(block.intro);
+  const intro = introHtml
+    ? `\n\n<hr class="${K.divider}"/>\n\n<div class="text-base leading-relaxed mb-8 max-w-md">\n${introHtml}\n</div>`
     : '';
 
-  const leftFooter = block.leftFooter
-    ? `\n\n<div class="mt-12 max-w-md">\n  <p class="text-sm opacity-70">${md(block.leftFooter)}</p>\n</div>`
+  const leftFooterHtml = richTextToHTML(block.leftFooter);
+  const leftFooter = leftFooterHtml
+    ? `\n\n<div class="mt-12 max-w-md">\n  <div class="text-sm opacity-70">${leftFooterHtml}</div>\n</div>`
     : '';
 
   // When an image is set, it takes the right column slot via Slidev's
@@ -49,11 +52,10 @@ ${eyebrow}
 
   const cards = (block.rightCards ?? [])
     .map((card) => {
-      // <div>, not <p>: descriptions may contain markdown lists / paragraphs
-      // which Vue's parser refuses inside a <p>.
-      const desc = card.description
-        ? `\n\n<div>\n\n${md(card.description)}\n\n</div>`
-        : '';
+      // <div>, not <p>: richTextToHTML emits its own block-level <p>, which
+      // Vue's parser refuses to nest inside another <p>.
+      const descHtml = richTextToHTML(card.description);
+      const desc = descHtml ? `\n\n<div>\n${descHtml}\n</div>` : '';
       return `<div class="${K.card}">\n  <h3 class="text-sm">${escape(card.title)}</h3>${desc}\n</div>`;
     })
     .join('\n\n');

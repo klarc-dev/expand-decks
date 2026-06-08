@@ -1,13 +1,14 @@
 import { K } from '../classNames';
-import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
+import { richTextToHTML, type RichText } from '../richtext';
+import { eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
 export type CoverBlockData = {
   blockType: 'cover';
   eyebrow?: string | null;
   title: string;
-  subtitle?: string | null;
-  footerLeft?: string | null;
-  footerRight?: string | null;
+  subtitle?: RichText;
+  footerLeft?: RichText;
+  footerRight?: RichText;
   surface?: 'dark' | 'light' | 'gradient' | null;
   image?: { url: string } | null;
   imagePosition?: 'right' | 'left' | null;
@@ -23,16 +24,19 @@ export function renderCover(block: CoverBlockData): string {
 
   const eyebrow = renderEyebrow(block.eyebrow, 'mb-8', { indent: '      ' });
 
-  const subtitle = block.subtitle
-    ? `\n      <p class="${K.heroSub}">${md(block.subtitle)}</p>`
+  const subtitleHtml = richTextToHTML(block.subtitle);
+  const subtitle = subtitleHtml
+    ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>`
     : '';
 
-  const footerLeft = block.footerLeft
-    ? `\n    <div class="flex gap-4">\n      <div class="${K.btn}">${escape(block.footerLeft)}</div>\n    </div>`
+  const footerLeftHtml = richTextToHTML(block.footerLeft);
+  const footerLeft = footerLeftHtml
+    ? `\n    <div class="flex gap-4">\n      <div class="${K.btn}">${footerLeftHtml}</div>\n    </div>`
     : '';
 
-  const footerRight = block.footerRight
-    ? `\n    <div class="text-right text-xs opacity-60 tracking-wider uppercase">\n      ${escape(block.footerRight)}\n    </div>`
+  const footerRightHtml = richTextToHTML(block.footerRight);
+  const footerRight = footerRightHtml
+    ? `\n    <div class="text-right text-xs opacity-60 tracking-wider uppercase">\n      ${footerRightHtml}\n    </div>`
     : '';
 
   const footerRow = footerLeft || footerRight

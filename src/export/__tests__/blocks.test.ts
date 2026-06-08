@@ -11,6 +11,33 @@ import { renderStats } from '../blocks/stats';
 import { renderTwoCols } from '../blocks/twoCols';
 import { escape, md } from '../utils';
 
+// Minimal valid Lexical editor state (root > paragraph > text) for richText
+// fields in fixtures, matching what convertLexicalToHTML expects.
+function lexical(text: string) {
+  return {
+    root: {
+      type: 'root',
+      direction: 'ltr' as const,
+      format: '' as const,
+      indent: 0,
+      version: 1,
+      children: [
+        {
+          type: 'paragraph',
+          direction: 'ltr' as const,
+          format: '' as const,
+          indent: 0,
+          version: 1,
+          textFormat: 0,
+          children: [
+            { type: 'text', text, detail: 0, format: 0, mode: 'normal' as const, style: '', version: 1 },
+          ],
+        },
+      ],
+    },
+  } as never;
+}
+
 describe('escape()', () => {
   it('encodes HTML special characters', () => {
     expect(escape('<script>alert("xss")</script>')).toBe(
@@ -214,7 +241,7 @@ describe('renderTwoCols()', () => {
       blockType: 'twoCols',
       title: 'Title',
       rightCards: [
-        { title: 'Card 1', description: 'Desc 1' },
+        { title: 'Card 1', description: lexical('Desc 1') },
         { title: 'Card 2', description: null },
       ],
     });
@@ -227,9 +254,9 @@ describe('renderTwoCols()', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'TwoCols with photo',
-      intro: 'Some intro',
+      intro: lexical('Some intro'),
       image: { url: '/media/photo.jpg' },
-      rightCards: [{ title: 'Should be ignored', description: 'And so should this' }],
+      rightCards: [{ title: 'Should be ignored', description: lexical('And so should this') }],
     });
     expect(result).toContain('layout: image-right');
     expect(result).toContain('image: /media/photo.jpg');
@@ -262,12 +289,12 @@ describe('renderCardGrid()', () => {
       blockType: 'cardGrid',
       title: 'Grid',
       cards: [
-        { number: '01', title: 'A', description: 'Desc A' },
-        { number: '02', title: 'B', description: 'Desc B' },
-        { number: '03', title: 'C', description: 'Desc C' },
-        { number: '04', title: 'D', description: 'Desc D' },
-        { number: '05', title: 'E', description: 'Desc E' },
-        { number: '06', title: 'F', description: 'Desc F' },
+        { number: '01', title: 'A', description: lexical('Desc A') },
+        { number: '02', title: 'B', description: lexical('Desc B') },
+        { number: '03', title: 'C', description: lexical('Desc C') },
+        { number: '04', title: 'D', description: lexical('Desc D') },
+        { number: '05', title: 'E', description: lexical('Desc E') },
+        { number: '06', title: 'F', description: lexical('Desc F') },
       ],
     });
     for (const n of ['01', '02', '03', '04', '05', '06']) {
@@ -310,7 +337,7 @@ describe('renderQuotes()', () => {
       blockType: 'quotes',
       title: 'Quotes',
       quotes: [
-        { quote: 'Great service', authorName: 'John', authorRole: 'CEO' },
+        { quote: lexical('Great service'), authorName: 'John', authorRole: 'CEO' },
       ],
     });
     expect(result).toContain('Great service');
@@ -337,8 +364,8 @@ describe('renderCta()', () => {
     const result = renderCta({
       blockType: 'cta',
       title: 'Thank you',
-      subtitle: 'Questions?',
-      footerNote: 'site.example',
+      subtitle: lexical('Questions?'),
+      footerNote: lexical('site.example'),
     });
     expect(result).toContain('Thank you');
     expect(result).toContain('Questions?');

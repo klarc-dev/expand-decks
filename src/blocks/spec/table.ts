@@ -7,13 +7,14 @@ import {
   optionalAi,
   optionalRender,
   rawField,
+  richTextRender,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
 const surface = optionalRender(z.enum(['dark', 'light']));
 
-const cell = z.object({ value: z.string() });
+const cell = z.object({ value: richTextRender() });
 const column = z.object({ header: z.string() });
 const row = z.object({ cells: z.array(cell) });
 
@@ -81,8 +82,8 @@ export const tableSpec = block({
               label: 'Cellules',
               description: 'Une cellule par colonne, dans l’ordre des colonnes',
               fields: [
-                rawField('value', z.string(), optionalAi(z.string()), {
-                  type: 'textarea',
+                rawField('value', richTextRender(), optionalAi(z.string()), {
+                  type: 'richText',
                   label: 'Contenu',
                   description: 'Texte de la cellule',
                 }),

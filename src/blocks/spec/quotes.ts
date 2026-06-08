@@ -7,6 +7,7 @@ import {
   optionalAi,
   optionalRender,
   rawField,
+  richTextRender,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -14,7 +15,7 @@ const title = z.string();
 const quotes = optionalRender(
   z.array(
     z.object({
-      quote: z.string(),
+      quote: richTextRender(),
       authorName: z.string(),
       authorRole: optionalRender(z.string()),
     }),
@@ -49,8 +50,8 @@ export const quotesSpec = block({
         label: 'Citations',
         description: 'Liste des citations à afficher en grille',
         fields: [
-          rawField('quote', z.string(), z.string(), {
-            type: 'text',
+          rawField('quote', richTextRender(), z.string(), {
+            type: 'richText',
             required: true,
             label: 'Citation',
             description: 'Texte de la citation',

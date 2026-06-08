@@ -6,19 +6,20 @@ import {
   type InferRender,
   optionalAi,
   optionalRender,
+  optionalRichTextRender,
   rawField,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const sidebarText = optionalRender(z.string());
+const sidebarText = optionalRichTextRender();
 const columns = optionalRender(z.enum(['2', '3', '4']));
 const cards = optionalRender(
   z.array(
     z.object({
       number: optionalRender(z.string()),
       title: z.string(),
-      description: optionalRender(z.string()),
+      description: optionalRichTextRender(),
     }),
   ),
 );
@@ -35,7 +36,7 @@ export const cardGridSpec = block({
       description: 'Titre principal de la grille',
     }),
     rawField('sidebarText', sidebarText, optionalAi(z.string()), {
-      type: 'textarea',
+      type: 'richText',
       label: 'Texte latéral',
       description: 'Texte optionnel affiché sur le côté de la grille',
     }),

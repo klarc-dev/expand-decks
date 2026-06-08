@@ -60,7 +60,8 @@ export const cardTitleDescFields = (): Field[] => ([
   },
   {
     name: 'description',
-    type: 'textarea',
+    type: 'richText',
+    editor: slideRichTextEditor,
     label: 'Description',
     admin: { description: 'Contenu descriptif de la carte' },
   },
