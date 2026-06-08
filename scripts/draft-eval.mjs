@@ -10,7 +10,10 @@
  * briefFile defaults to scripts/pi-brief.txt; model overrides OPENAI_MODEL.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { getPayload } from 'payload';
+import config from '../src/payload.config.ts';
 import { draftPresentationSlides } from '../src/lib/draftPresentation.ts';
+import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite.ts';
 import { buildSlidesMd } from '../src/export/buildSlidesMd.ts';
 
 const briefFile = process.argv[2] ?? 'scripts/pi-brief.txt';
@@ -38,9 +41,14 @@ try {
 
   writeFileSync('/tmp/draft-eval.json', JSON.stringify(result, null, 2));
   try {
-    const md = buildSlidesMd({ title: 'Eval', slides });
+    // Mirror the real route: markdown strings → Lexical before rendering, so
+    // richText fields (statement body, table cells, cta/cover/section prose…)
+    // are not silently dropped as empty payload-richtext divs.
+    const payload = await getPayload({ config });
+    const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
+    const md = buildSlidesMd({ title: 'Eval', slides: richSlides });
     writeFileSync('/tmp/draft-eval.slides.md', md);
-    console.log('\nwrote /tmp/draft-eval.json and /tmp/draft-eval.slides.md');
+    console.log('\nwrote /tmp/draft-eval.json and /tmp/draft-eval.slides.md (richText converted)');
   } catch (e) {
     console.error('\nrender failed:', e instanceof Error ? e.message : e);
   }
