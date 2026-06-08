@@ -131,12 +131,18 @@ export const buildSlidesTask: TaskConfig<any> = {
       // Copy headmatter.yaml (for reference, already embedded in slides.md)
       cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));
 
-      // Copy fonts if they exist
-      const fontsDir = join(EXPORT_DIR, ARTIFACTS.fonts);
+      // Copy the brand fonts into the deck's `public/fonts/` so Slidev bundles
+      // them into the built SPA AND the PDF export. style.css references them as
+      // `/fonts/<file>.ttf`; Slidev serves a deck-root `public/` at the SPA root,
+      // so the absolute URL resolves in the standalone dist and in PDF rendering
+      // (it previously only worked because Next served public/fonts at runtime —
+      // the dist itself shipped no fonts, so the PDF fell back to a system font).
       try {
-        cpSync(fontsDir, join(workdir, ARTIFACTS.fonts), { recursive: true });
+        cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), {
+          recursive: true,
+        });
       } catch {
-        // Fonts directory may not exist yet — not critical
+        // public/fonts missing — non-fatal; the deck falls back to system fonts.
       }
 
       // 5. Build SPA with a relative base so assets resolve wherever the dist
