@@ -3,12 +3,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import type { Presentation } from '@/payload-types';
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject, NoObjectGeneratedError } from 'ai';
+import { TypeValidationError } from 'ai';
 import { z } from 'zod';
 
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
+import { DRAFT_MODEL, draftObject } from '@/lib/ai';
 import { ROLES } from '@/access/roles';
 import { ALL_SPECS } from '@/blocks/spec';
 import { emitSlidesArraySchema } from '@/blocks/spec/emit/emitDraftSchema';
@@ -74,52 +74,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    // Generate slides via the configured OpenAI-compatible endpoint
-    // (OpenAI direct, or a LiteLLM/OpenRouter proxy — model name must match
-    // what that endpoint serves, hence OPENAI_MODEL).
-    const llm = createOpenAI({
-      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-      apiKey: process.env.OPENAI_API_KEY || '',
-    });
-    const { object } = await generateObject({
-      model: llm(process.env.OPENAI_MODEL || 'gpt-5-mini'),
+    // draftObject uses tool calling (not generateObject) for gateway
+    // compatibility — see src/lib/ai.ts. DRAFT_MODEL must be namespaced.
+    const object = await draftObject({
+      model: DRAFT_MODEL,
       schema: slidesArraySchema,
       system: SYSTEM_PROMPT,
       prompt: brief,
-      temperature: 0.7,
-      providerOptions: {
-        openai: {
-          // OpenAI strict mode rejects our schema (optional fields without
-          // null, length bounds). Non-strict still guides the model with the
-          // schema; Zod validates the result server-side either way.
-          strictJsonSchema: false,
-        },
-      },
     });
 
-    // Zod validated the structured output against the block-spec union, so the
-    // slides match the generated Presentation['slides'] union at runtime.
-    const slides = object.slides as Presentation['slides'];
+    // object.slides is the Zod-validated union array (min 3); cast only at the
+    // Payload write boundary to the generated Presentation['slides'] shape.
+    const slideCount = object.slides.length;
 
     // Write blocks to the presentation
     await payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: { slides },
+      data: { slides: object.slides as Presentation['slides'] },
       user,
       context: { [CTX.skipBuildQueue]: true },
     });
 
     return NextResponse.json({
       success: true,
-      slideCount: object.slides.length,
+      slideCount,
     });
   } catch (error) {
     // Never return raw provider errors to the client — they can leak base URLs,
     // model names, and config hints. Log server-side; send a stable message.
-    if (NoObjectGeneratedError.isInstance(error)) {
+    if (TypeValidationError.isInstance(error)) {
       console.error('[draft-presentation] invalid model output', {
-        finishReason: error.finishReason,
         cause: error.cause instanceof Error ? error.cause.message : undefined,
       });
       return NextResponse.json(
