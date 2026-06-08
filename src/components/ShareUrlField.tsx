@@ -10,6 +10,7 @@ import {
   panelStyle,
   primaryButtonStyle,
 } from '@/components/adminUi/styles';
+import { adminPost } from '@/lib/adminFetch';
 
 /**
  * Reveal-on-demand share URL. The raw token is never stored (only its
@@ -29,12 +30,8 @@ const ShareUrlField: React.FC = () => {
     setError('');
     setCopied(false);
     try {
-      const res = await fetch(`/api/share-links/${id}/rotate`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const { ok, data } = await adminPost(`/api/share-links/${id}/rotate`);
+      if (!ok) {
         setError(data.error || 'Erreur lors de la génération du lien');
         return;
       }

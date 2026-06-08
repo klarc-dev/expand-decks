@@ -40,7 +40,14 @@ This is a **Payload CMS 3 + Next.js 15 (App Router)** portal that lets authors c
    - the build job (markdown → Slidev),
    - the **live preview** page at `/preview` (`src/app/(frontend)/preview/page.tsx`), which uses `useLivePreview` (depth:2 to hydrate nested blocks) and strips per-slide frontmatter before injecting HTML.
 
-   **Invariant:** when you add a new layout block, you must update *all* of: `src/blocks/<Name>Block.ts`, `src/collections/Presentations.ts` (add to the blocks array), `src/export/blocks/<name>.ts` (renderer + type), `src/export/buildSlidesMd.ts` (union + RENDERERS map), `src/app/(frontend)/preview/page.tsx` (RENDERERS map), and the Zod schema in the draft route if it should be AI-draftable. Keep new blocks **use-case-agnostic** — fields should describe visual structure (title, eyebrow, cards, columns…), never domain concepts (office, testimonial, contact row…).
+   **Invariant — adding a new layout block.** Blocks are now driven by the single-source **block-spec DSL** in `src/blocks/spec/` (one `BlockSpec` projects to four artifacts: L1 Payload field config, L2 renderer type, L3 AI draft Zod schema, L4 AI prompt prose). To add a block you:
+   1. author `src/blocks/spec/<name>.ts` — the render Zod consts + `BlockSpec` (with `aiDraftable` and, if draftable, a `promptMeta`) + a precise `<name>RenderSchema` literal + `export type <Name>BlockData`;
+   2. add `src/blocks/<Name>Block.ts` = `emitPayloadBlock(<name>Spec)`;
+   3. register the emitted block in `src/collections/Presentations.ts` (blocks array) **and** add the spec to `src/blocks/spec/index.ts` `ALL_SPECS`;
+   4. add the renderer `src/export/blocks/<name>.ts` importing `<Name>BlockData` from its spec, and wire it into `src/export/renderers.ts` (`RENDERERS` map + `SlideBlock` union — these were consolidated here; `buildSlidesMd.ts` and `/preview` both consume this one registry);
+   5. **nothing to touch in the draft route** — its schema and `SYSTEM_PROMPT` are auto-derived from `ALL_SPECS` (see `src/lib/draftPresentation.ts`), so an `aiDraftable` block with a `promptMeta` is picked up automatically.
+
+   Keep new blocks **use-case-agnostic** — fields should describe visual structure (title, eyebrow, cards, columns…), never domain concepts (office, testimonial, contact row…).
 
 ### Slidev workspace isolation
 
@@ -76,7 +83,7 @@ The `@/*` and `@payload-config` path aliases are defined in `tsconfig.json`.
 
 ### AI drafting
 
-`@ai-stack/payloadcms` is **not** wired up — it crashed the admin client-side render. AI drafting goes through the custom `draft-presentation` route, which is the single source of truth for the block Zod schemas the LLM must match. The `SYSTEM_PROMPT` in that file is deliberately use-case-agnostic — don't inject domain vocabulary, company names, or industry terms; the LLM is supposed to pick up tone from the user's brief.
+`@ai-stack/payloadcms` is **not** wired up — it crashed the admin client-side render. AI drafting goes through the custom `draft-presentation` route. The block Zod schema and system prompt are **not** hand-written there: they are derived from the block-spec SSOT (`src/blocks/spec`) by `src/lib/draftPresentation.ts`, which exports `SLIDES_SCHEMA` (`emitSlidesArraySchema(ALL_SPECS)`), `DRAFT_SYSTEM_PROMPT` (`buildSystemPrompt(...)` over each spec's `promptMeta`), and `draftPresentationSlides(brief)`. The route and the `scripts/draft-smoke.mjs` live check both call that one surface. The provider (`src/lib/ai.ts`) targets any OpenAI-compatible endpoint (9router by default) and uses **tool calling** rather than `response_format: json_schema` (most proxies don't implement structured outputs) — see that file's header. The prompt is deliberately use-case-agnostic — keep `promptMeta` free of domain vocabulary, company names, or industry terms; the LLM picks up tone from the user's brief.
 
 ## Environment
 

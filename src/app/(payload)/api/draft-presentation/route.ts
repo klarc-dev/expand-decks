@@ -8,24 +8,13 @@ import { z } from 'zod';
 
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
-import { DRAFT_MODEL, draftObject } from '@/lib/ai';
+import { draftPresentationSlides } from '@/lib/draftPresentation';
 import { ROLES } from '@/access/roles';
-import { ALL_SPECS } from '@/blocks/spec';
-import { emitSlidesArraySchema } from '@/blocks/spec/emit/emitDraftSchema';
-import { buildSystemPrompt } from '@/blocks/spec/emit/emitPromptSection';
 
 const requestSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
   brief: z.string().trim().min(10).max(8000),
 });
-
-// Derived from the block-spec SSOT: markdown drops out via aiDraftable:false,
-// image/imagePosition via per-field ai:false.
-const slidesArraySchema = emitSlidesArraySchema(ALL_SPECS);
-
-const SYSTEM_PROMPT = buildSystemPrompt(
-  ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : [])),
-);
 
 export async function POST(req: NextRequest) {
   try {
@@ -74,24 +63,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    // draftObject uses tool calling (not generateObject) for gateway
-    // compatibility — see src/lib/ai.ts. DRAFT_MODEL must be namespaced.
-    const object = await draftObject({
-      model: DRAFT_MODEL,
-      schema: slidesArraySchema,
-      system: SYSTEM_PROMPT,
-      prompt: brief,
-    });
+    // Shared LLM-only surface: derives the schema + system prompt from the
+    // block-spec SSOT and tool-calls the gateway (see src/lib/ai.ts). It does
+    // NOT persist — this route owns the Payload write below.
+    const { slides } = await draftPresentationSlides(brief);
 
-    // object.slides is the Zod-validated union array (min 3); cast only at the
-    // Payload write boundary to the generated Presentation['slides'] shape.
-    const slideCount = object.slides.length;
+    // slides is the Zod-validated union array (min 3); cast only at the Payload
+    // write boundary to the generated Presentation['slides'] shape.
+    const slideCount = slides.length;
 
     // Write blocks to the presentation
     await payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: { slides: object.slides as Presentation['slides'] },
+      data: { slides: slides as Presentation['slides'] },
       user,
       context: { [CTX.skipBuildQueue]: true },
     });

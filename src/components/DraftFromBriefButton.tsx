@@ -11,6 +11,7 @@ import {
   panelStyle,
   primaryButtonStyle,
 } from '@/components/adminUi/styles';
+import { adminPost } from '@/lib/adminFetch';
 
 const DraftFromBriefButton: React.FC = () => {
   const [brief, setBrief] = useState('');
@@ -31,17 +32,13 @@ const DraftFromBriefButton: React.FC = () => {
     setError('');
 
     try {
-      const res = await fetch('/api/draft-presentation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ presentationId: String(id), brief }),
+      const { ok, status, data } = await adminPost('/api/draft-presentation', {
+        presentationId: String(id),
+        brief,
       });
 
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setError(data.error || `Erreur lors de la génération (HTTP ${res.status})`);
+      if (!ok) {
+        setError(data.error || `Erreur lors de la génération (HTTP ${status})`);
         return;
       }
 

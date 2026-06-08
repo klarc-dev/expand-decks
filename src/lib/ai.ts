@@ -38,7 +38,7 @@ export const DRAFT_MODEL = process.env.OPENAI_MODEL || 'cc/claude-sonnet-4-6';
  * Without this, 9router streams Anthropic (`cc/*`) responses and the SDK's
  * non-streaming parser throws "Invalid JSON response".
  */
-const forceNonStreamFetch: typeof fetch = async (input, init) => {
+export const forceNonStreamFetch: typeof fetch = async (input, init) => {
   if (init?.body && typeof init.body === 'string') {
     try {
       const parsed = JSON.parse(init.body) as Record<string, unknown>;
