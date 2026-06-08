@@ -21,6 +21,7 @@
 import { z } from 'zod';
 
 import { aiSchemaOf, type BlockSpec } from '../dsl';
+import { MAX_SLIDES, MIN_SLIDES } from '../../../lib/draftConfig';
 
 /**
  * Build the AI-draft union: a plain `z.union` of `aiSchemaOf(spec)` for every
@@ -58,7 +59,7 @@ export function emitOutlineSchema(specs: BlockSpec[]): OutlineSchema {
     intent: z.string(),
   });
   return z.object({
-    slides: z.array(stub as z.ZodType<OutlineStub>).min(3).max(40),
+    slides: z.array(stub as z.ZodType<OutlineStub>).min(MIN_SLIDES).max(MAX_SLIDES),
   }) as OutlineSchema;
 }
 
@@ -81,12 +82,15 @@ export type SlidesArraySchema = z.ZodObject<{
 }>;
 
 /**
- * Top-level draft schema: `{ slides: array(union).min(3).max(40) }`. The cap is
- * 40 (not 20) so a long structured brief — e.g. a 26-slide webinar — validates
- * instead of being rejected after generation.
+ * Top-level draft schema: `{ slides: array(union).min(MIN_SLIDES).max(MAX_SLIDES) }`.
+ * The bounds come from `draftConfig` (default 3..40) so a long structured brief —
+ * e.g. a 26-slide webinar — validates instead of being rejected after generation.
  */
 export function emitSlidesArraySchema(specs: BlockSpec[]): SlidesArraySchema {
   return z.object({
-    slides: z.array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>).min(3).max(40),
+    slides: z
+      .array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>)
+      .min(MIN_SLIDES)
+      .max(MAX_SLIDES),
   }) as SlidesArraySchema;
 }

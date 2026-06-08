@@ -32,6 +32,7 @@
 import { z } from 'zod';
 
 import { DRAFT_MODEL, draftObject } from './ai';
+import { BATCH_SIZE, BRIEF_CONTEXT_MAX, INTENT_MAX } from './draftConfig';
 import { ALL_SPECS } from '../blocks/spec';
 import {
   emitBatchSchema,
@@ -54,8 +55,6 @@ export const DRAFT_SYSTEM_PROMPT = buildSystemPrompt(
 
 /** Validated draft payload — `slides` is the non-null union array (min 3). */
 export type DraftedSlides = z.infer<typeof SLIDES_SCHEMA>;
-
-const BATCH_SIZE = 3;
 
 const OUTLINE_SYSTEM = `Tu planifies la structure d'une présentation à partir d'un brief en langage naturel.
 
@@ -114,7 +113,7 @@ function parseSlideBySlideBrief(brief: string): OutlineStub[] | null {
     return {
       blockType: blockTypeForExplicitSlide(number, heading, chunk, index === matches.length - 1),
       title,
-      intent: chunk.slice(0, 1600),
+      intent: chunk.slice(0, INTENT_MAX),
     };
   });
 }
@@ -172,7 +171,7 @@ export async function draftPresentationSlides(
   for (const batch of batches) {
     const planSoFar = stubs.map((s, i) => stubTitleLine(s, i + 1)).join('\n');
     const todo = batch.map((s, i) => stubLine(s, done + i + 1)).join('\n');
-    const prompt = `CONTEXTE GLOBAL :\n${brief.slice(0, 2400)}\n\n---\nPLAN COMPLET (pour le contexte, ne rédige PAS tout) :\n${planSoFar}\n\n---\nLOT À RÉDIGER MAINTENANT (rends exactement ${batch.length} bloc(s), dans cet ordre) :\n${todo}`;
+    const prompt = `CONTEXTE GLOBAL :\n${brief.slice(0, BRIEF_CONTEXT_MAX)}\n\n---\nPLAN COMPLET (pour le contexte, ne rédige PAS tout) :\n${planSoFar}\n\n---\nLOT À RÉDIGER MAINTENANT (rends exactement ${batch.length} bloc(s), dans cet ordre) :\n${todo}`;
 
     const { slides } = await draftObject({
       model,
