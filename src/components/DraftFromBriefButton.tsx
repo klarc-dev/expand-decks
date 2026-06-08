@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDocumentInfo } from '@payloadcms/ui';
+import { toast, useDocumentInfo } from '@payloadcms/ui';
 
 import {
   dashedHintStyle,
@@ -42,10 +42,16 @@ const DraftFromBriefButton: React.FC = () => {
         return;
       }
 
-      // Refresh the page to show the populated blocks
+      // Re-hydrate the document form from the server (Payload re-renders the
+      // server component and the blocks field picks up the new slides) — no
+      // full-page reload, so other unsaved edits in the form survive.
       router.refresh();
-      // Full reload to ensure block fields re-render with new data
-      window.location.reload();
+      const count = typeof data.slideCount === 'number' ? data.slideCount : undefined;
+      toast.success(
+        count != null
+          ? `${count} diapositive${count > 1 ? 's' : ''} générée${count > 1 ? 's' : ''}.`
+          : 'Diapositives générées.',
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur réseau');
     } finally {
