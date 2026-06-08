@@ -145,43 +145,77 @@ function blockTypeForExplicitSlide(
   return 'statement';
 }
 
+/** Context a fill batch needs: the global brief and the full locked plan. */
+export type FillContext = {
+  /** The full natural-language brief (truncated to BRIEF_CONTEXT_MAX in the prompt). */
+  brief: string;
+  /** Every stub in the deck, so the batch sees the plan it's part of. */
+  plan: OutlineStub[];
+  /** How many slides precede this batch, for 1-based numbering in the prompt. */
+  offset: number;
+};
+
+/**
+ * Pass 1 — produce the ordered `{ blockType, title, intent }` stubs that lock the
+ * deck's slide count and ordering. An explicit `S1 — …` brief is parsed directly
+ * (no LLM call); otherwise one outline call is made.
+ */
+export async function draftOutline(
+  brief: string,
+  opts?: { model?: string },
+): Promise<OutlineStub[]> {
+  const explicit = parseSlideBySlideBrief(brief);
+  if (explicit) return explicit;
+
+  const { slides } = await draftObject({
+    model: opts?.model ?? DRAFT_MODEL,
+    schema: OUTLINE_SCHEMA,
+    system: OUTLINE_SYSTEM,
+    prompt: brief,
+  });
+  return slides;
+}
+
+/**
+ * Pass 2 — fill one batch of stubs into fully-populated blocks, aligned back to
+ * the planned blockType/title so a model substitution can't drift the structure.
+ */
+export async function draftBatch(
+  batch: OutlineStub[],
+  context: FillContext,
+  opts?: { model?: string },
+): Promise<DraftedSlides['slides']> {
+  const planSoFar = context.plan.map((s, i) => stubTitleLine(s, i + 1)).join('\n');
+  const todo = batch.map((s, i) => stubLine(s, context.offset + i + 1)).join('\n');
+  const prompt = `CONTEXTE GLOBAL :\n${context.brief.slice(0, BRIEF_CONTEXT_MAX)}\n\n---\nPLAN COMPLET (pour le contexte, ne rédige PAS tout) :\n${planSoFar}\n\n---\nLOT À RÉDIGER MAINTENANT (rends exactement ${batch.length} bloc(s), dans cet ordre) :\n${todo}`;
+
+  const { slides } = await draftObject({
+    model: opts?.model ?? DRAFT_MODEL,
+    schema: BATCH_SCHEMA,
+    system: fillSystem(),
+    prompt,
+  });
+
+  return alignBatch(batch, slides);
+}
+
 /**
  * Draft slides from a natural-language brief via a two-pass plan→fill loop.
- * Throws if the model fails to call the tool or its arguments fail validation
- * (the route surfaces this as a 422).
+ * Thin orchestrator over `draftOutline` + `draftBatch`. Throws if the model
+ * fails to call the tool or its arguments fail validation (route → 422).
  */
 export async function draftPresentationSlides(
   brief: string,
   opts?: { model?: string },
 ): Promise<DraftedSlides> {
-  const model = opts?.model ?? DRAFT_MODEL;
+  const stubs = await draftOutline(brief, opts);
 
-  const stubs = parseSlideBySlideBrief(brief) ?? (await draftObject({
-    model,
-    schema: OUTLINE_SCHEMA,
-    system: OUTLINE_SYSTEM,
-    prompt: brief,
-  })).slides;
-
-  const batches = chunk(stubs, BATCH_SIZE);
   const all: DraftedSlides['slides'] = [];
-  const system = fillSystem();
-  let done = 0;
+  let offset = 0;
 
-  for (const batch of batches) {
-    const planSoFar = stubs.map((s, i) => stubTitleLine(s, i + 1)).join('\n');
-    const todo = batch.map((s, i) => stubLine(s, done + i + 1)).join('\n');
-    const prompt = `CONTEXTE GLOBAL :\n${brief.slice(0, BRIEF_CONTEXT_MAX)}\n\n---\nPLAN COMPLET (pour le contexte, ne rédige PAS tout) :\n${planSoFar}\n\n---\nLOT À RÉDIGER MAINTENANT (rends exactement ${batch.length} bloc(s), dans cet ordre) :\n${todo}`;
-
-    const { slides } = await draftObject({
-      model,
-      schema: BATCH_SCHEMA,
-      system,
-      prompt,
-    });
-
-    all.push(...alignBatch(batch, slides));
-    done += batch.length;
+  for (const batch of chunk(stubs, BATCH_SIZE)) {
+    all.push(...(await draftBatch(batch, { brief, plan: stubs, offset }, opts)));
+    offset += batch.length;
   }
 
   return { slides: all };

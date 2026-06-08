@@ -12,6 +12,8 @@ import { DRAFT_MODEL, draftObject } from '../ai';
 import {
   DRAFT_SYSTEM_PROMPT,
   SLIDES_SCHEMA,
+  draftBatch,
+  draftOutline,
   draftPresentationSlides,
 } from '../draftPresentation';
 
@@ -124,5 +126,61 @@ describe('draftPresentationSlides() — two-pass plan→fill', () => {
   it('defaults to DRAFT_MODEL', async () => {
     await draftPresentationSlides('un brief suffisamment long');
     expect(mockedDraftObject.mock.calls[0]![0]!.model).toBe(DRAFT_MODEL);
+  });
+});
+
+describe('draftOutline() — pass 1 primitive', () => {
+  beforeEach(() => mockedDraftObject.mockReset());
+
+  it('returns LLM stubs for a narrative brief (one outline call)', async () => {
+    const outline = {
+      slides: [
+        { blockType: 'cover', title: 'A', intent: 'i' },
+        { blockType: 'statement', title: 'B', intent: 'i' },
+        { blockType: 'cta', title: 'C', intent: 'i' },
+      ],
+    };
+    mockedDraftObject.mockResolvedValueOnce(outline);
+
+    const stubs = await draftOutline('un brief suffisamment long');
+
+    expect(mockedDraftObject).toHaveBeenCalledTimes(1);
+    expect(stubs).toHaveLength(3);
+    expect(stubs[0]).toMatchObject({ blockType: 'cover', title: 'A' });
+  });
+
+  it('parses an explicit S1/S2/S3 brief without calling the LLM', async () => {
+    const stubs = await draftOutline(
+      `S1 — Titre\n« Titre réel ».\nS2 — Arbre de décision\nx\nS3 — Q&R\ny`,
+    );
+
+    expect(mockedDraftObject).not.toHaveBeenCalled();
+    expect(stubs[0]!.blockType).toBe('cover');
+    expect(stubs[2]!.blockType).toBe('cta');
+  });
+});
+
+describe('draftBatch() — pass 2 primitive', () => {
+  beforeEach(() => mockedDraftObject.mockReset());
+
+  const plan = [
+    { blockType: 'cover', title: 'A', intent: 'i' },
+    { blockType: 'statement', title: 'B', intent: 'i' },
+    { blockType: 'cta', title: 'C', intent: 'i' },
+  ];
+
+  it('returns one aligned slide per stub, forcing planned blockType/title', async () => {
+    mockedDraftObject.mockResolvedValue({
+      slides: [
+        { blockType: 'stats', body: 'drifted' }, // model drift on blockType + missing title
+        { blockType: 'statement', title: 'Changed' },
+      ],
+    });
+
+    const out = await draftBatch(plan.slice(0, 2), { brief: 'b', plan, offset: 0 });
+
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ blockType: 'cover', title: 'A' });
+    expect(out[1]).toMatchObject({ blockType: 'statement', title: 'B' });
   });
 });
