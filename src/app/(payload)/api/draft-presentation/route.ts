@@ -63,9 +63,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
-    // Shared LLM-only surface: derives the schema + system prompt from the
-    // block-spec SSOT and tool-calls the gateway (see src/lib/ai.ts). It does
-    // NOT persist — this route owns the Payload write below.
+    // LLM-only: draftPresentationSlides does NOT persist; this route owns the
+    // Payload write below.
     const { slides } = await draftPresentationSlides(brief);
 
     // slides is the Zod-validated union array (min 3); cast only at the Payload
