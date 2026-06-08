@@ -1,5 +1,29 @@
 # Handoff Prompts
 
+> ## ✅ IMPLEMENTATION STATUS (updated 2026-06-08, commit `a1815e2`)
+>
+> The core of this plan has already been **executed and committed** as WIP. The prompts below are retained as the record of intent. Current state:
+>
+> | Item | Status | Evidence |
+> |---|---|---|
+> | **HP-1** AI schema → `emitSlidesArraySchema(ALL_SPECS)` | ✅ DONE | route.ts wired; LLM JSON-Schema contract verified byte-identical via `spec/__tests__/allSpecs.parity.test.ts` |
+> | **HP-2** prompt → `buildSystemPrompt(promptMetas)` | ✅ DONE | SYSTEM_PROMPT reproduced byte-for-byte from `ALL_SPECS` |
+> | **HP-3** migrate 8 blocks to spec DSL | ✅ DONE | all 8 `*Block.ts` now `emitPayloadBlock(<spec>)`; `spec/index.ts` ALL_SPECS added; **`payload-types.ts` regenerates byte-identical** |
+> | **HP-4 (D5)** dedupe `InferRender` | ✅ DONE | `renderType.ts` re-exports from `dsl` |
+> | **HP-4 (D6)** delete dead `adminFetch` | ✅ DONE | file removed (zero importers) |
+> | **HP-4 (D9)** centralize eyebrow | ✅ DONE | cover/cardGrid/quotes/cta route through `utils.eyebrow` (byte-identical, snapshot tests pass) |
+> | **D4** SPA routes | ⏸️ INTENTIONALLY NOT TOUCHED | legitimate specialization |
+>
+> **Verification at commit:** `npx tsc --noEmit` clean; `pnpm test` 93/93 pass; `pnpm generate:types` produces no diff.
+>
+> ### Remaining work (NOT yet done — genuine follow-ups)
+> 1. **Manual QA the AI draft + admin form** against a live DB/LLM. Automated parity proves the *contract* is unchanged, but a real `/admin` draft run + build was not exercised in this session.
+> 2. **HP-4 (D6) decision:** `adminFetch` was *deleted*, not *adopted*. If you'd rather DRY the hand-rolled `fetch` in `DraftFromBriefButton.tsx`/`ShareUrlField.tsx`, reintroduce a shared helper.
+> 3. **CLAUDE.md update:** the "add a block = touch N files" invariant is now stale — a new block is one `spec/<name>.ts` + one `emitPayloadBlock` line + one registration + one renderer + one `RENDERERS`/`ALL_SPECS` entry. Update the doc's block-authoring section to point at the spec DSL.
+> 4. **Review the pre-existing `Presentations` access change** (`create: isAdminOrSelf` → `isLoggedIn`) carried in the same commit — confirm that access loosening is intended.
+>
+> ---
+
 Copy any fenced block below directly into `/make-plan`. They are ordered by the sequencing in `03-unified-proposal.md`: cheap de-risking emitters first (HP-1, HP-2), the big migration second (HP-3), trivial cleanups last (HP-4). Each cites concrete call sites from Phase 2 evidence and includes anti-pattern guards.
 
 ---
