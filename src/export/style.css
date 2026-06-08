@@ -639,3 +639,23 @@
   padding: 0.6rem 0;
   border-top: 1px solid var(--k-line);
 }
+
+/* RichText normalization -------------------------------------------------- */
+/* convertLexicalToHTML wraps every field in <div class="payload-richtext">
+   with block-level <p> children carrying default browser margins. In small
+   single-line containers (button pills, footer bars, table cells, eyebrows)
+   those margins inflate the box — a one-word pill became an 81px circle.
+   Collapse the wrapper and drop the paragraph margins so richText sits flush. */
+.payload-richtext { display: contents; }
+.payload-richtext > p { margin: 0; }
+
+/* Multi-paragraph prose (statement body, twoCols intro): keep spacing between
+   paragraphs but no leading/trailing margin so the block stays centered. */
+.payload-richtext > p + p { margin-top: 0.7em; }
+
+/* On dark surfaces, `.k-dark p` forces white text. A richText <p> living inside
+   a button/footer must take the container's own color instead, or white pill
+   labels (cover footerLeft, CTA actions) render invisible white-on-white. */
+.k-btn p,
+.k-btn-ghost p,
+.k-foot p { color: inherit; }
