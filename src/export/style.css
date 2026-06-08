@@ -564,6 +564,18 @@
 .k-dark .k-slide-header .brand,
 .k-dark .k-slide-footer .page { color: #fff; }
 
+.k-slide-logo {
+  position: absolute;
+  top: 1.4rem;
+  left: 3.5rem;
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 5;
+}
+
 /* CTA-specific text classes — replace inline styles -------------- */
 .k-cta-title {
   color: #fff;

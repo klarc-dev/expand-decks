@@ -13,4 +13,6 @@ export const ARTIFACTS = {
   fonts: 'fonts',
   pdf: 'slides.pdf',
   dist: 'dist',
+  footerLayer: 'slide-bottom.vue',
+  logoLayer: 'global-top.vue',
 } as const;

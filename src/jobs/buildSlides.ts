@@ -16,6 +16,12 @@ import type { TaskConfig } from 'payload';
 
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
+import {
+  buildFooterHeadmatter,
+  buildFooterLayer,
+  buildLogoLayer,
+  type FooterConfig,
+} from '../export/chrome';
 import { SLUG_RE } from '../lib/slug';
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
 import { COLLECTIONS } from '../lib/collections';
@@ -115,17 +121,37 @@ export const buildSlidesTask: TaskConfig<any> = {
         : null;
       const brand = org as (OrgBrand & Record<string, unknown>) | null;
 
-      // 3. Generate slides.md with org/presentation-specific headmatter
+      // 2c. Resolve footer config + chrome vars + logo URL. The footer stores
+      // templates with placeholders; static vars are resolved here, live vars
+      // ({page}/{total}) stay in the layer. Logo resolves via the media symlink.
+      const footer = (presentation as { footer?: Partial<FooterConfig> }).footer;
+      const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
+      const logoUrl =
+        logoRel && typeof logoRel === 'object' && logoRel.filename
+          ? `/media/${logoRel.filename}`
+          : null;
+      const chromeVars = {
+        'org.name': (brand?.name as string) ?? '',
+        title: presentation.title as string,
+        date: new Date().toLocaleDateString(
+          presentation.language === 'en' ? 'en-GB' : 'fr-FR',
+        ),
+      };
+
+      // 3. Generate slides.md with org/presentation-specific headmatter +
+      // footer/logo config embedded so the generated Vue layers can read it.
       const baseHeadmatter = readFileSync(
         join(EXPORT_DIR, ARTIFACTS.headmatter),
         'utf-8',
       ).trim();
+      const themedHeadmatter = buildHeadmatter(
+        baseHeadmatter,
+        brand,
+        presentation.language as string | undefined,
+      );
+      const chromeHeadmatter = buildFooterHeadmatter(footer, chromeVars, logoUrl);
       const slidesMd = buildSlidesMd(presentation as any, {
-        headmatter: buildHeadmatter(
-          baseHeadmatter,
-          brand,
-          presentation.language as string | undefined,
-        ),
+        headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
       });
 
       // 4. Create temp workdir
@@ -176,6 +202,18 @@ export const buildSlidesTask: TaskConfig<any> = {
         });
       } catch {
         // public/fonts missing — non-fatal; the deck falls back to system fonts.
+      }
+
+      // Write the per-slide footer + logo Vue layers (only when configured).
+      // slide-bottom.vue (not global-bottom) carries correct per-slide state
+      // into the PDF export without needing --per-slide.
+      const footerLayer = buildFooterLayer(Boolean(footer?.enabled));
+      if (footerLayer) {
+        writeFileSync(join(workdir, ARTIFACTS.footerLayer), footerLayer, 'utf-8');
+      }
+      const logoLayer = buildLogoLayer(Boolean(logoUrl));
+      if (logoLayer) {
+        writeFileSync(join(workdir, ARTIFACTS.logoLayer), logoLayer, 'utf-8');
       }
 
       // 5. Build SPA with a relative base so assets resolve wherever the dist
