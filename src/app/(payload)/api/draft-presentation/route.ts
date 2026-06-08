@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { deckContext } from '@/lib/deckContext';
+import { mergeAugmentedSlides } from '@/lib/augmentSlides';
 import { draftPresentationSlides } from '@/lib/draftPresentation';
 import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
 import { ROLES } from '@/access/roles';
@@ -16,6 +17,10 @@ import { ROLES } from '@/access/roles';
 const requestSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
   brief: z.string().trim().min(10).max(20000),
+  // 'replace' (default) overwrites the deck wholesale — current behaviour.
+  // 'augment' appends the newly-drafted slides to the existing deck, keeping
+  // every existing slide byte-for-byte (never re-drafted, never re-converted).
+  mode: z.enum(['replace', 'augment']).default('replace'),
 });
 
 export async function POST(req: NextRequest) {
@@ -42,7 +47,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const { presentationId, brief } = parsed.data;
+    const { presentationId, brief, mode } = parsed.data;
 
     // Verify the presentation exists and user has access. disableErrors makes a
     // missing/inaccessible id return null instead of throwing NotFound (which
@@ -71,24 +76,33 @@ export async function POST(req: NextRequest) {
     // LLM-only: draftPresentationSlides does NOT persist; this route owns the
     // Payload write below. Prepend the deck's metadata so output is deck-aware.
     const { slides } = await draftPresentationSlides(deckContext(presentation) + brief);
-    const slideCount = slides.length;
+    const newSlideCount = slides.length;
 
-    // The LLM emits long fields as markdown strings; convert them to Lexical
-    // editor state before persisting so the richText fields store valid JSON.
-    const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
+    // The LLM emits long fields as markdown strings; convert ONLY the freshly
+    // drafted slides to Lexical editor state. In augment mode the existing
+    // slides are already Lexical and are kept verbatim (never re-converted).
+    const draftedRich = await convertSlidesMarkdownToLexical(slides, payload);
 
-    // Write blocks to the presentation
+    // In augment mode, append to the existing deck, preserving every existing
+    // slide by reference. In replace mode, overwrite wholesale (default).
+    const existing = (mode === 'augment' && Array.isArray(presentation.slides)
+      ? presentation.slides
+      : []) as NonNullable<Presentation['slides']>;
+    const nextSlides = mergeAugmentedSlides(existing, draftedRich) as Presentation['slides'];
+
     await payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: { slides: richSlides as Presentation['slides'] },
+      data: { slides: nextSlides },
       user,
       context: { [CTX.skipBuildQueue]: true },
     });
 
     return NextResponse.json({
       success: true,
-      slideCount,
+      // Slides added this call; in augment mode the deck total is larger.
+      slideCount: newSlideCount,
+      mode,
     });
   } catch (error) {
     // Never return raw provider errors to the client — they can leak base URLs,
