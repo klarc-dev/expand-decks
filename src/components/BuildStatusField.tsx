@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useDocumentInfo } from '@payloadcms/ui';
+import React, { useEffect } from 'react';
+import { useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
 import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
 
@@ -18,44 +18,35 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
   [BUILD_STATUS.failed]: { label: 'Échoué', color: 'var(--theme-error-500)', bg: 'var(--theme-error-50)' },
 };
 
-const POLL_MS = 5000;
+// Poll fast while a build is in flight; stop entirely on a terminal state so an
+// idle tab never holds a perpetual interval.
+const BUILDING_POLL_MS = 2000;
 
 /**
- * Live build status — polls the document so authors see
- * En attente → En cours → Réussi/Échoué without reloading the page.
+ * Live build status — uses Payload's native `usePayloadAPI` to read the document
+ * (no hand-rolled fetch/state) and re-fetches on a short interval only while the
+ * build is in progress, so authors see En attente → En cours → Réussi/Échoué.
  */
 const BuildStatusField: React.FC = () => {
   const { id } = useDocumentInfo();
-  const [info, setInfo] = useState<BuildInfo | null>(null);
+  const [{ data }, { setParams }] = usePayloadAPI(id ? `/api/presentations/${id}` : '', {
+    initialParams: { depth: 0 },
+  });
+
+  const info = (data ?? null) as BuildInfo | null;
+  const status = info?.lastBuildStatus ?? BUILD_STATUS.idle;
 
   useEffect(() => {
-    if (!id) return;
-    let active = true;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/presentations/${id}?depth=0`, {
-          credentials: 'include',
-        });
-        if (!res.ok) return;
-        const doc = (await res.json()) as BuildInfo;
-        if (active) setInfo(doc);
-      } catch {
-        // transient network errors — keep the last known state
-      }
-    };
-
-    poll();
-    const timer = setInterval(poll, POLL_MS);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [id]);
+    // Only poll while building; success/failed/idle need no refresh loop.
+    if (!id || status !== BUILD_STATUS.building) return;
+    const timer = setInterval(() => {
+      setParams({ depth: 0, t: Date.now() });
+    }, BUILDING_POLL_MS);
+    return () => clearInterval(timer);
+  }, [id, status, setParams]);
 
   if (!id || !info) return null;
 
-  const status = info.lastBuildStatus ?? BUILD_STATUS.idle;
   const meta = STATUS_LABELS[status] ?? STATUS_LABELS[BUILD_STATUS.idle]!;
 
   return (
@@ -87,7 +78,7 @@ const BuildStatusField: React.FC = () => {
       </span>
       {status === BUILD_STATUS.building && (
         <span style={{ fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
-          mise à jour automatique toutes les 5 s
+          mise à jour automatique…
         </span>
       )}
       {status === BUILD_STATUS.success && info.spaUrl && (
