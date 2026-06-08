@@ -17,8 +17,18 @@ export function escape(text: string | null | undefined): string {
   return (text ?? '').replace(HTML_ENTITY_RE, (ch) => HTML_ENTITIES[ch] ?? ch);
 }
 
-export function eyebrow(text: string | null | undefined, marginClass = 'mb-8'): string {
-  return text ? `\n<div class="${K.eyebrow} ${marginClass}">${escape(text)}</div>` : '';
+// opts reproduce per-renderer variants byte-for-byte: indent (leading spaces
+// before <div>), extraClass (e.g. CTA dark), multiline (text on its own line).
+export function eyebrow(
+  text: string | null | undefined,
+  marginClass = 'mb-8',
+  opts?: { indent?: string; extraClass?: string; multiline?: boolean },
+): string {
+  if (!text) return '';
+  const indent = opts?.indent ?? '';
+  const cls = `${K.eyebrow}${opts?.extraClass ? ` ${opts.extraClass}` : ''} ${marginClass}`;
+  const inner = opts?.multiline ? `\n  ${escape(text)}\n` : escape(text);
+  return `\n${indent}<div class="${cls}">${inner}</div>`;
 }
 
 // Serialize a string as a YAML scalar, double-quoting only when the value

@@ -1,5 +1,5 @@
 import { K } from '../classNames';
-import { escape, gridClass, md, wrapSlide } from '../utils';
+import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
 export type QuotesBlockData = {
   blockType: 'quotes';
@@ -16,9 +16,7 @@ export function renderQuotes(block: QuotesBlockData): string {
   const quotes = block.quotes ?? [];
   const grid = gridClass(quotes.length || 3);
 
-  const eyebrow = block.eyebrow
-    ? `\n    <div class="${K.eyebrow} mb-4">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-4', { indent: '    ' });
 
   const quotesHtml = quotes
     .map((q) => {

@@ -26,7 +26,7 @@ export const Presentations: CollectionConfig = {
     },
   },
   access: {
-    create: isAdminOrSelf,
+    create: isLoggedIn,
     read: isLoggedIn,
     update: isAdminOrSelf,
     delete: isAdmin,

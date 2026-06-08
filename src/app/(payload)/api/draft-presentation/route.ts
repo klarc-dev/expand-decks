@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { getPayload } from 'payload';
 import config from '@payload-config';
+import type { Presentation } from '@/payload-types';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject, NoObjectGeneratedError } from 'ai';
 import { z } from 'zod';
@@ -9,193 +10,22 @@ import { z } from 'zod';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { ROLES } from '@/access/roles';
+import { ALL_SPECS } from '@/blocks/spec';
+import { emitSlidesArraySchema } from '@/blocks/spec/emit/emitDraftSchema';
+import { buildSystemPrompt } from '@/blocks/spec/emit/emitPromptSection';
 
 const requestSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
   brief: z.string().trim().min(10).max(8000),
 });
 
-const eyebrowZod = z.string().optional();
-const surfaceZod = (gradient: boolean) =>
-  (gradient
-    ? z.enum(['dark', 'light', 'gradient'])
-    : z.enum(['dark', 'light'])
-  ).optional();
+// Derived from the block-spec SSOT: markdown drops out via aiDraftable:false,
+// image/imagePosition via per-field ai:false.
+const slidesArraySchema = emitSlidesArraySchema(ALL_SPECS);
 
-// image/imagePosition are intentionally omitted from AI drafting — they require an uploaded media id, not an LLM-generated value; authors add images in the admin.
-const coverSchema = z.object({
-  blockType: z.literal('cover'),
-  eyebrow: eyebrowZod,
-  title: z.string(),
-  subtitle: z.string().optional(),
-  footerLeft: z.string().optional(),
-  footerRight: z.string().optional(),
-  surface: surfaceZod(true),
-});
-
-const sectionSchema = z.object({
-  blockType: z.literal('section'),
-  number: z.string().optional(),
-  title: z.string(),
-  subtitle: z.string().optional(),
-  surface: surfaceZod(false),
-});
-
-const statementSchema = z.object({
-  blockType: z.literal('statement'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  body: z.string().optional(),
-  footer: z.string().optional(),
-});
-
-// image/imagePosition are intentionally omitted from AI drafting — they require an uploaded media id, not an LLM-generated value; authors add images in the admin.
-const twoColsSchema = z.object({
-  blockType: z.literal('twoCols'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  intro: z.string().optional(),
-  leftFooter: z.string().optional(),
-  rightCards: z
-    .array(
-      z.object({
-        title: z.string(),
-        description: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const cardGridSchema = z.object({
-  blockType: z.literal('cardGrid'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  sidebarText: z.string().optional(),
-  columns: z.enum(['2', '3', '4']).optional(),
-  cards: z
-    .array(
-      z.object({
-        number: z.string().optional(),
-        title: z.string(),
-        description: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const statsSchema = z.object({
-  blockType: z.literal('stats'),
-  eyebrow: eyebrowZod,
-  title: z.string(),
-  surface: surfaceZod(false),
-  stats: z
-    .array(
-      z.object({
-        value: z.string(),
-        label: z.string(),
-      }),
-    )
-    .optional(),
-});
-
-const quotesSchema = z.object({
-  blockType: z.literal('quotes'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  quotes: z
-    .array(
-      z.object({
-        quote: z.string(),
-        authorName: z.string(),
-        authorRole: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const ctaSchema = z.object({
-  blockType: z.literal('cta'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  subtitle: z.string().optional(),
-  primaryAction: z.string().optional(),
-  secondaryAction: z.string().optional(),
-  footerNote: z.string().optional(),
-});
-
-// markdown is intentionally excluded — it is an admin-only escape-hatch block, not AI-draftable.
-// Plain z.union, not z.discriminatedUnion: the latter serializes to JSON
-// Schema `oneOf`, which OpenAI structured outputs rejects ("'oneOf' is not
-// permitted"); z.union produces the accepted `anyOf`. The blockType literal
-// in each member keeps validation equivalent.
-const slideBlockSchema = z.union([
-  coverSchema,
-  sectionSchema,
-  statementSchema,
-  twoColsSchema,
-  cardGridSchema,
-  statsSchema,
-  quotesSchema,
-  ctaSchema,
-]);
-
-const slidesArraySchema = z.object({
-  slides: z.array(slideBlockSchema).min(3).max(20),
-});
-
-const SYSTEM_PROMPT = `Tu génères des diapositives structurées à partir d'un brief en langage naturel.
-
-Tu retournes un tableau de blocs (slides) typés. Chaque bloc a un champ "blockType" qui détermine sa mise en page. Ces blocs sont purement des LAYOUTS : ils ne portent aucune logique métier, seulement une structure visuelle réutilisable.
-
-Layouts disponibles :
-
-1. **cover** — Diapositive d'ouverture
-   - eyebrow: accroche courte au-dessus du titre
-   - title: titre principal (obligatoire)
-   - subtitle: paragraphe descriptif
-   - footerLeft / footerRight: textes en bas de slide
-   - surface: "dark" | "light" | "gradient"
-
-2. **section** — Intercalaire de section
-   - number: numéro (ex. "01")
-   - title: titre (obligatoire)
-   - subtitle: description
-   - surface: "dark" | "light"
-
-3. **statement** — Affirmation ou citation mise en avant
-   - eyebrow, title (obligatoire), body, footer
-
-4. **twoCols** — Deux colonnes avec cartes à droite
-   - eyebrow, title (obligatoire), intro, leftFooter
-   - rightCards: [{title, description}]
-
-5. **cardGrid** — Grille de cartes numérotées
-   - eyebrow, title (obligatoire), sidebarText
-   - columns: "2" | "3" | "4"
-   - cards: [{number, title, description}]
-
-6. **stats** — Chiffres clés en grille
-   - eyebrow, title (obligatoire), surface
-   - stats: [{value, label}]
-
-7. **quotes** — Grille de citations
-   - eyebrow, title (obligatoire)
-   - quotes: [{quote, authorName, authorRole}]
-
-8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
-   - eyebrow, title (obligatoire), subtitle
-   - primaryAction / secondaryAction: libellés de boutons
-   - footerNote: petit texte en bas
-
-Règles :
-- Commence TOUJOURS par un bloc "cover"
-- Termine TOUJOURS par un bloc "cta"
-- Utilise "section" pour structurer le contenu en parties
-- Varie les layouts pour rendre la présentation dynamique
-- Reste dans la langue du brief (français par défaut si ambigu)
-- Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
-- Sinon, génère entre 8 et 15 diapositives selon la complexité du brief
-- Les textes doivent être concis et percutants`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : [])),
+);
 
 export async function POST(req: NextRequest) {
   try {
@@ -267,11 +97,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Zod validated the structured output against the block-spec union, so the
+    // slides match the generated Presentation['slides'] union at runtime.
+    const slides = object.slides as Presentation['slides'];
+
     // Write blocks to the presentation
     await payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: { slides: object.slides },
+      data: { slides },
       user,
       context: { [CTX.skipBuildQueue]: true },
     });

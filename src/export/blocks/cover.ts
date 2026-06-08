@@ -1,5 +1,5 @@
 import { K } from '../classNames';
-import { escape, md, wrapSlide, type SlideImage } from '../utils';
+import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
 export type CoverBlockData = {
   blockType: 'cover';
@@ -21,9 +21,7 @@ export function renderCover(block: CoverBlockData): string {
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
 
-  const eyebrow = block.eyebrow
-    ? `\n      <div class="${K.eyebrow} mb-8">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-8', { indent: '      ' });
 
   const subtitle = block.subtitle
     ? `\n      <p class="${K.heroSub}">${md(block.subtitle)}</p>`

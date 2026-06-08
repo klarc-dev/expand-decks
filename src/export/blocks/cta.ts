@@ -1,5 +1,5 @@
 import { K } from '../classNames';
-import { escape, md, surfaceClass, wrapSlide } from '../utils';
+import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
 export type CtaBlockData = {
   blockType: 'cta';
@@ -12,9 +12,10 @@ export type CtaBlockData = {
 };
 
 export function renderCta(block: CtaBlockData): string {
-  const eyebrow = block.eyebrow
-    ? `\n<div class="${K.eyebrow} ${K.eyebrowDark} mb-10">\n  ${escape(block.eyebrow)}\n</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-10', {
+    extraClass: K.eyebrowDark,
+    multiline: true,
+  });
 
   const subtitle = block.subtitle
     ? `\n\n<p class="${K.ctaSub} mb-12">\n  ${md(block.subtitle)}\n</p>`

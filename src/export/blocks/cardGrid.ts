@@ -1,5 +1,5 @@
 import { K } from '../classNames';
-import { escape, gridClass, md, wrapSlide } from '../utils';
+import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
 export type CardGridBlockData = {
   blockType: 'cardGrid';
@@ -15,9 +15,7 @@ export type CardGridBlockData = {
 };
 
 export function renderCardGrid(block: CardGridBlockData): string {
-  const eyebrow = block.eyebrow
-    ? `\n    <div class="${K.eyebrow} mb-4">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-4', { indent: '    ' });
 
   const sidebar = block.sidebarText
     ? `\n  <p class="text-sm text-right max-w-xs opacity-70">\n    ${md(block.sidebarText)}\n  </p>`

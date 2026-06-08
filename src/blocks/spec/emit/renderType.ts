@@ -1,20 +1,18 @@
 /**
  * L2 render-type derivation — type-only emit module.
  *
- * `InferRender` is the single canonical alias used to derive a renderer's
- * `*BlockData` type from a render `z.object` literal (see dsl.ts top-of-file
- * note). `Equal` / `Expect` provide compile-time, bidirectional structural
+ * `InferRender` is re-exported from `../dsl` (its single canonical home — the
+ * client-safe DSL that spec files already import) so there is exactly one alias
+ * definition. `Equal` / `Expect` provide compile-time, bidirectional structural
  * equality assertions so a derivation that drifts from a hand-written
  * `*BlockData` becomes a `tsc` error.
  *
- * Client-safety: imports ONLY zod — no Payload / Next runtime — so it stays
- * loadable into `'use client'` renderer types.
+ * Client-safety: imports ONLY zod + the client-safe dsl — no Payload / Next
+ * runtime — so it stays loadable into `'use client'` renderer types.
  */
 
-import { z } from 'zod';
-
 /** Render-data type for a precise render schema value (a `z.object` literal). */
-export type InferRender<TSchema extends z.ZodType> = z.infer<TSchema>;
+export type { InferRender } from '../dsl';
 
 /**
  * Compile-time, bidirectional structural equality. Resolves to `true` only when

@@ -34,12 +34,20 @@ export function emitDraftSchema(specs: BlockSpec[]): z.ZodType {
   return z.union(members);
 }
 
+/** A drafted slide block — at minimum it carries its layout discriminant. */
+export type DraftedSlide = { blockType: string } & Record<string, unknown>;
+
+/** Typed top-level draft schema so callers infer `{ slides: DraftedSlide[] }`. */
+export type SlidesArraySchema = z.ZodObject<{
+  slides: z.ZodArray<z.ZodType<DraftedSlide>>;
+}>;
+
 /**
  * Top-level draft schema: `{ slides: array(union).min(3).max(20) }`, matching
  * the route's `slidesArraySchema` exactly.
  */
-export function emitSlidesArraySchema(specs: BlockSpec[]): z.ZodType {
+export function emitSlidesArraySchema(specs: BlockSpec[]): SlidesArraySchema {
   return z.object({
-    slides: z.array(emitDraftSchema(specs)).min(3).max(20),
-  });
+    slides: z.array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>).min(3).max(20),
+  }) as SlidesArraySchema;
 }
