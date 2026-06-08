@@ -233,18 +233,18 @@ describe('emitSlidesArraySchema()', () => {
     slides: z
       .array(z.union([currentCoverSchema, currentStatementSchema, currentCardGridSchema]))
       .min(3)
-      .max(20),
+      .max(40),
   });
 
   it('matches the current slidesArraySchema JSON Schema', () => {
     expect(jsonSchema(schema)).toEqual(jsonSchema(currentSlidesArraySchema));
   });
 
-  it('enforces the 3..20 slide bounds', () => {
+  it('enforces the 3..40 slide bounds', () => {
     const slide = { blockType: 'cover', title: 'X' };
     expect(schema.safeParse({ slides: [slide, slide] }).success).toBe(false);
     expect(schema.safeParse({ slides: [slide, slide, slide] }).success).toBe(true);
-    const tooMany = Array.from({ length: 21 }, () => slide);
+    const tooMany = Array.from({ length: 41 }, () => slide);
     expect(schema.safeParse({ slides: tooMany }).success).toBe(false);
   });
 });

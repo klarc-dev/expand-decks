@@ -1,5 +1,5 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { generateText, tool, type ToolSet } from 'ai';
+import { generateText, TypeValidationError, tool, type ToolSet } from 'ai';
 import type { z } from 'zod';
 
 /**
@@ -30,8 +30,22 @@ import type { z } from 'zod';
 const baseURL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 const apiKey = process.env.OPENAI_API_KEY || '';
 
-/** Default drafting model. MUST be namespaced for 9router (e.g. `cc/...`, `cx/...`). */
-export const DRAFT_MODEL = process.env.OPENAI_MODEL || 'cc/claude-sonnet-4-6';
+/**
+ * Default drafting model. MUST be namespaced for 9router (e.g. `cc/...`, `cx/...`).
+ *
+ * Drafting a structured multi-slide deck is a long, union-heavy structured-output
+ * task; Opus holds up far better than Sonnet on long tool-call argument blobs, so
+ * it is the default. Override per-deployment with `OPENAI_MODEL`.
+ */
+export const DRAFT_MODEL = process.env.OPENAI_MODEL || 'cc/claude-opus-4-8';
+
+/**
+ * Per-call wall-clock budget. With `forceNonStreamFetch` the gateway buffers the
+ * whole generation before returning a byte, so a stalled call would otherwise
+ * hang to the platform timeout. Batches are small, so 110s is ample headroom;
+ * aborting turns a rare stall into a fast, isolated failure the retry recovers.
+ */
+const DEFAULT_TIMEOUT_MS = 110_000;
 
 /**
  * Wrap fetch to force `stream:false` on requests that don't already set it.
@@ -80,11 +94,17 @@ export async function draftObject<T>({
   schema,
   system,
   prompt,
+  maxOutputTokens,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  maxRepairs = 1,
 }: {
   model: string;
   schema: z.ZodType<T>;
   system: string;
   prompt: string;
+  maxOutputTokens?: number;
+  timeoutMs?: number;
+  maxRepairs?: number;
 }): Promise<T> {
   const tools = {
     emit: tool({
@@ -93,18 +113,34 @@ export async function draftObject<T>({
     }),
   } satisfies ToolSet;
 
-  const { toolCalls } = await generateText({
-    model: nineRouter(model),
-    system,
-    prompt,
-    tools,
-    toolChoice: { type: 'tool', toolName: 'emit' },
-  });
+  // The repair turn re-states the brief plus the validation error so the model
+  // corrects only what failed. Tool calling constrains the shape; this catches
+  // the refinement failures (min/max, enum, array lengths) it cannot.
+  let userPrompt = prompt;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const { toolCalls } = await generateText({
+        model: nineRouter(model),
+        system,
+        prompt: userPrompt,
+        tools,
+        toolChoice: { type: 'tool', toolName: 'emit' },
+        ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+        abortSignal: AbortSignal.timeout(timeoutMs),
+      });
 
-  const call = toolCalls[0];
-  if (!call || call.toolName !== 'emit') {
-    throw new Error('Le modèle n’a pas appelé l’outil de génération.');
+      const call = toolCalls[0];
+      if (!call || call.toolName !== 'emit') {
+        throw new Error('Le modèle n’a pas appelé l’outil de génération.');
+      }
+      // The AI SDK has already validated `input` against the tool's inputSchema.
+      return call.input as T;
+    } catch (error) {
+      if (attempt >= maxRepairs || !TypeValidationError.isInstance(error)) {
+        throw error;
+      }
+      const detail = error.cause instanceof Error ? error.cause.message : String(error.cause ?? error);
+      userPrompt = `${prompt}\n\n---\nLa sortie précédente a échoué la validation : ${detail}\nCorrige et réémets la sortie complète conforme au schéma.`;
+    }
   }
-  // The AI SDK has already validated `input` against the tool's inputSchema.
-  return call.input as T;
 }

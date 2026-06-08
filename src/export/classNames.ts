@@ -25,6 +25,7 @@ export const K = {
   split: 'k-split',
   divider: 'k-divider',
   stat: 'k-stat',
+  table: 'k-table',
   foot: 'k-foot',
   defItem: 'k-def-item',
   defFooter: 'k-def-footer',

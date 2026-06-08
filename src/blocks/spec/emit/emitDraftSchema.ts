@@ -34,6 +34,44 @@ export function emitDraftSchema(specs: BlockSpec[]): z.ZodType {
   return z.union(members);
 }
 
+/** Ordered blockType slugs of every AI-draftable spec (SSOT for the outline enum). */
+export function draftBlockTypes(specs: BlockSpec[]): [string, ...string[]] {
+  const slugs = specs.filter((s) => s.aiDraftable).map((s) => s.blockType);
+  return slugs as [string, ...string[]];
+}
+
+/** One outline stub: which layout, its title, and a one-line intent for the fill pass. */
+export type OutlineStub = { blockType: string; title: string; intent: string };
+
+export type OutlineSchema = z.ZodObject<{
+  slides: z.ZodArray<z.ZodType<OutlineStub>>;
+}>;
+
+/**
+ * Pass-1 schema: a cheap list of `{ blockType, title, intent }` stubs that locks
+ * the deck's exact slide count and ordering before any body is generated.
+ */
+export function emitOutlineSchema(specs: BlockSpec[]): OutlineSchema {
+  const stub = z.object({
+    blockType: z.enum(draftBlockTypes(specs)),
+    title: z.string(),
+    intent: z.string(),
+  });
+  return z.object({
+    slides: z.array(stub as z.ZodType<OutlineStub>).min(3).max(40),
+  }) as OutlineSchema;
+}
+
+/**
+ * Pass-2 batch schema: `{ slides: union[] }` with no min/max — the batch size is
+ * the contract (the orchestrator asks for exactly the stubs in this batch).
+ */
+export function emitBatchSchema(specs: BlockSpec[]): SlidesArraySchema {
+  return z.object({
+    slides: z.array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>),
+  }) as SlidesArraySchema;
+}
+
 /** A drafted slide block — at minimum it carries its layout discriminant. */
 export type DraftedSlide = { blockType: string } & Record<string, unknown>;
 
@@ -43,11 +81,12 @@ export type SlidesArraySchema = z.ZodObject<{
 }>;
 
 /**
- * Top-level draft schema: `{ slides: array(union).min(3).max(20) }`, matching
- * the route's `slidesArraySchema` exactly.
+ * Top-level draft schema: `{ slides: array(union).min(3).max(40) }`. The cap is
+ * 40 (not 20) so a long structured brief — e.g. a 26-slide webinar — validates
+ * instead of being rejected after generation.
  */
 export function emitSlidesArraySchema(specs: BlockSpec[]): SlidesArraySchema {
   return z.object({
-    slides: z.array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>).min(3).max(20),
+    slides: z.array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>).min(3).max(40),
   }) as SlidesArraySchema;
 }

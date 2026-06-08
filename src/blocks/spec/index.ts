@@ -8,6 +8,7 @@ import { quotesSpec } from './quotes';
 import { sectionSpec } from './section';
 import { statementSpec } from './statement';
 import { statsSpec } from './stats';
+import { tableSpec } from './table';
 import { twoColsSpec } from './twoCols';
 
 // Ordered to match the slides blocks array in src/collections/Presentations.ts.
@@ -21,5 +22,6 @@ export const ALL_SPECS: BlockSpec[] = [
   statsSpec,
   quotesSpec,
   ctaSpec,
+  tableSpec,
   markdownSpec,
 ];

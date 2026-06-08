@@ -57,28 +57,72 @@ describe('DRAFT_SYSTEM_PROMPT', () => {
   });
 });
 
-describe('draftPresentationSlides()', () => {
+describe('draftPresentationSlides() — two-pass plan→fill', () => {
+  const outline = {
+    slides: [
+      { blockType: 'cover', title: 'A', intent: 'i' },
+      { blockType: 'statement', title: 'B', intent: 'i' },
+      { blockType: 'cta', title: 'C', intent: 'i' },
+    ],
+  };
+
   beforeEach(() => {
     mockedDraftObject.mockReset();
-    mockedDraftObject.mockResolvedValue(valid3);
+    // First call = outline pass; subsequent calls = fill batches.
+    mockedDraftObject
+      .mockResolvedValueOnce(outline)
+      .mockResolvedValue(valid3);
   });
 
-  it('calls draftObject once with SLIDES_SCHEMA, DRAFT_SYSTEM_PROMPT and DRAFT_MODEL by default', async () => {
+  it('runs an outline pass then a fill pass (one batch for a short deck)', async () => {
     const result = await draftPresentationSlides('un brief suffisamment long');
 
-    expect(mockedDraftObject).toHaveBeenCalledTimes(1);
-    const arg = mockedDraftObject.mock.calls[0]![0];
-    expect(arg.schema).toBe(SLIDES_SCHEMA);
-    expect(arg.system).toBe(DRAFT_SYSTEM_PROMPT);
-    expect(arg.model).toBe(DRAFT_MODEL);
-    expect(arg.prompt).toBe('un brief suffisamment long');
-    expect(result).toBe(valid3);
+    expect(mockedDraftObject).toHaveBeenCalledTimes(2);
+    expect(result.slides).toHaveLength(3);
   });
 
-  it('uses the passed model when opts.model is given', async () => {
+  it('forces the planned blockType/title onto each filled slide', async () => {
+    mockedDraftObject.mockReset();
+    mockedDraftObject
+      .mockResolvedValueOnce(outline)
+      // model drifts: wrong blockType + missing title on first slide
+      .mockResolvedValue({
+        slides: [
+          { blockType: 'stats', body: 'x' },
+          { blockType: 'statement', title: 'Changed' },
+          { blockType: 'cta', title: 'C' },
+        ],
+      });
+
+    const result = await draftPresentationSlides('un brief suffisamment long');
+
+    expect(result.slides[0]).toMatchObject({ blockType: 'cover', title: 'A' });
+    expect(result.slides[1]).toMatchObject({ title: 'B' });
+  });
+
+  it('skips the LLM outline pass for explicit S1/S2/S3 briefs', async () => {
+    mockedDraftObject.mockReset();
+    mockedDraftObject.mockResolvedValue(valid3);
+
+    const result = await draftPresentationSlides(`S1 — Titre\n« Titre réel de la présentation ».\nS2 — Arbre de décision\nQuestion de contrefaçon détectable.\nS3 — Q&R\nClôture`);
+
+    expect(mockedDraftObject).toHaveBeenCalledTimes(1);
+    expect(result.slides[0]!.blockType).toBe('cover');
+    expect(result.slides[0]).toMatchObject({ title: 'Titre réel de la présentation' });
+    expect(result.slides[1]!.blockType).toBe('cardGrid');
+    expect(result.slides[2]!.blockType).toBe('cta');
+  });
+
+  it('passes the model through to both passes', async () => {
     await draftPresentationSlides('un brief suffisamment long', { model: 'cx/gpt-5' });
 
-    const arg = mockedDraftObject.mock.calls[0]![0];
-    expect(arg.model).toBe('cx/gpt-5');
+    for (const call of mockedDraftObject.mock.calls) {
+      expect(call[0]!.model).toBe('cx/gpt-5');
+    }
+  });
+
+  it('defaults to DRAFT_MODEL', async () => {
+    await draftPresentationSlides('un brief suffisamment long');
+    expect(mockedDraftObject.mock.calls[0]![0]!.model).toBe(DRAFT_MODEL);
   });
 });

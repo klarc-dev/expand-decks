@@ -248,6 +248,62 @@
 
 .k-dark .k-stat .lbl { color: rgba(255,255,255,0.7); }
 
+.k-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.92rem;
+  border: 1px solid var(--k-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.k-table th {
+  font-family: 'Gilroy', sans-serif;
+  font-weight: 600;
+  text-align: left;
+  color: #fff;
+  background: var(--k-teal);
+  padding: 0.7rem 1rem;
+  letter-spacing: 0.01em;
+}
+
+.k-table td {
+  padding: 0.65rem 1rem;
+  color: var(--k-ink);
+  border-top: 1px solid var(--k-line);
+  vertical-align: top;
+  line-height: 1.35;
+}
+
+.k-table td:first-child {
+  font-weight: 500;
+  color: var(--k-teal);
+}
+
+.k-table tbody tr:nth-child(even) { background: var(--k-teal-50); }
+
+.k-table strong { color: var(--k-teal-700); }
+
+.k-dark .k-table {
+  border-color: rgba(255,255,255,0.18);
+}
+
+.k-dark .k-table th {
+  background: var(--k-teal-900);
+}
+
+.k-dark .k-table td {
+  color: rgba(255,255,255,0.88);
+  border-top-color: rgba(255,255,255,0.12);
+}
+
+.k-dark .k-table td:first-child { color: var(--k-rose); }
+
+.k-dark .k-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.05); }
+
+.k-dark .k-table strong { color: #fff; }
+
 .k-divider {
   width: 40px;
   height: 2px;

@@ -13,7 +13,7 @@ import { ROLES } from '@/access/roles';
 
 const requestSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
-  brief: z.string().trim().min(10).max(8000),
+  brief: z.string().trim().min(10).max(20000),
 });
 
 export async function POST(req: NextRequest) {

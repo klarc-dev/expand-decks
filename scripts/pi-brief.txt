@@ -1,0 +1,167 @@
+Keep iterating fixing improving evaluating polishing the codebase and logic until you manage to get an hands-off perfect presentation generating by inputting "Webinaire PI — Brief slide par slide
+60 min · avocat · dirigeants/DAF/R&D/ops de PME-ETI (pas juristes) · fil rouge unique : NovaSense (§17) · source rapport-pi-final.pdf.
+Thèse : la valeur se perd par défaut d'organisation, pas par méconnaissance du droit.
+Petite audience : pas de sondage ni de vote. Questions rhétoriques (tu poses, tu réponds). Format conversationnel.
+
+Structure :
+
+CE QU'ON PROTÈGE (1 slide)
+POURQUOI (2 slides)
+COMMENT — le reste, étape par étape selon le cycle de vie du salarié (embauche → mission → invention → départ), + pilotage transverse.
+Pourquoi le cycle de vie salarié : la quasi-totalité des inventions naît du travail des salariés (§7). Le risque PI se joue donc aux moments RH — à l'entrée, pendant la mission, à la sortie. C'est concret, chronologique, et ça tient juridiquement.
+
+OUVERTURE
+S1 — Titre
+« Gérer la PI dans une entreprise d'innovation — ne pas perdre ce que vous créez ».
+S2 — La perte (cold open)
+NovaSense : une slide de conférence de trop → nouveauté détruite → brevet mort. Aucune faute juridique, juste un process manquant.
+Note : pose la thèse à l'oral. §2.2, §5.5.
+1. CE QU'ON PROTÈGE (1 slide)
+S3 — Tableau d'orientation (HERO 1)
+Droit	Protège	Durée
+Brevet	une solution technique	20 ans non renouvelable
+Marque	un signe distinctif	10 ans, renouvelable ∞
+Dessin & modèle	l'apparence	5 → 25 ans max
+Droit d'auteur / logiciel	le code, l'œuvre	sans dépôt, 70 ans pma
+Secret d'affaires	le savoir-faire non divulgué	illimité tant que secret
+Base de données	l'investissement dans la base	15 ans
+Note : on oriente, on n'enseigne pas. §3 + §18.2. Une seule slide, on passe.
+2. POURQUOI (2 slides)
+S4 — Pourquoi #1 : c'est ce qui se price en due diligence
+Texte : la PI, c'est ce qu'un investisseur ou un acquéreur audite et valorise. Chaîne de cession rompue ou annuité impayée = décote, voire deal mort.
+Note : §9.5. Registre avocat.
+S5 — Pourquoi #2 : les 4 pertes évitables
+Liste : 1. divulgation prématurée · 2. dépôt sans tri · 3. titularité non cadrée · 4. secrets non protégés.
+Texte : aucune n'est une faute de droit. Toutes sont des défauts d'organisation.
+Note : c'est le sommaire du « comment ». On les coche à la fin. §13.3.
+3. COMMENT — le cycle de vie du salarié
+S6 — Section : le cycle de vie (HERO — schéma)
+Schéma horizontal : Embauche → Mission (invention → déclaration → décision) → Vie courante → Départ, + Pilotage en bandeau transverse.
+Note : c'est la carte. On va la parcourir de gauche à droite. Bandeau NovaSense.
+ÉTAPE 1 — À L'EMBAUCHE : QUI DÉTIENT ?
+S7 — QUI crée, QUI détient ? (HERO — matrice)
+Le statut du créateur change le régime de dévolution. Quatre cas à ne pas confondre :
+Statut	Dévolution à l'entreprise	Ce qu'il faut faire
+Salarié (invention de mission)	Automatique (L.611-7 CPI ; logiciel L.113-9). Contrepartie : rémunération supplémentaire d'ordre public.	Définir les missions inventives au contrat ; barème de rémunération.
+Stagiaire / doctorant (non-salarié accueilli)	Conditionnelle : automatique seulement si structure « réalisant de la recherche » (L.611-7-1 ; logiciel L.113-9-1) — notion non définie, incertaine pour une PME.	Ne pas s'y fier : convention de stage avec clause PI explicite.
+Dirigeant non-salarié (mandataire, gérant)	⚠️ Aucune. Hors champ de L.611-7 et de L.611-7-1 : l'invention reste au dirigeant.	Cession expresse dans le mandat ou un acte séparé.
+Prestataire / freelance	Aucune sauf cession écrite (L.131-3 ; l'exception logiciel L.113-9 ne le couvre pas).	Clause de cession + confidentialité, signée avant démarrage.
+Note : deux pièges à marteler. (1) Le dirigeant non-salarié (fondateur mandataire social) : pas de dévolution automatique, jamais. (2) Le stagiaire : la dévolution légale (ord. n° 2021-1658 du 15 déc. 2021, décrets du 11 août 2023) ne joue que pour une « structure réalisant de la recherche » — notion floue ; pour une PME lambda, le contrat reste nécessaire. §7, §9.4.
+S8 — Le socle contractuel : 3 documents, pas un de plus
+LE PRINCIPE : la PI se gagne ou se perd dans les contrats. Trois documents couvrent toute la surface — chacun signé avant tout accès aux informations sensibles.
+Risque / qui	Document	Ce qu'il sécurise
+Partenaire externe (avant toute discussion)	Accord de confidentialité — unilatéral ou bilatéral, durée selon l'enjeu	non-divulgation · non-utilisation · non-détournement
+Salarié	Clause PI au contrat de travail (ou avenant pour l'existant)	cession droits d'auteur + inventions — rappel L.611-7 / L.113-9
+Non-salariés (prestataire, consultant, stagiaire, dirigeant)	Convention adaptée au statut : contrat de prestation · convention de stage · cession au mandat	cession à l'entreprise de la PI résultante
+Note : mapping direct de la matrice S7 — un document par catégorie de créateur. Trois angles : protéger le patrimoine vers l'externe · cadrer le régime légal salarié · récupérer la PI des non-salariés. La forme du 3e document dépend du statut (prestation / stage / mandat) ; l'objet est constant : la cession.
+⚠️ « non-concurrence » envers un salarié = clause encadrée (durée, zone, contrepartie financière). Dans un NDA partenaire, parler de non-détournement / non-sollicitation, pas de non-concurrence.
+Chute : « Pas de contrat = pas de titularité. »
+ÉTAPE 2 — PENDANT LA MISSION : CAPTER
+S9 — La déclaration d'invention (DI)
+Texte : la brique de base. Qui déclare, quoi, quand. Formulaire standardisé relié à la R&D.
+Note : §5.1–5.2.
+S10 — Règle d'or : dépôt AVANT divulgation
+Texte : publication, démo, salon, présentation orale = antériorité destructrice. Irréversible.
+Réf : L.611-11 CPI.
+Note : le point le plus rentable du webinaire.
+S11 — La question piège
+Texte : « Une démo client orale, même sous NDA oublié, détruit-elle la brevetabilité ? » → Oui.
+Note : tu poses, tu marques un temps, tu réponds. Pas de vote.
+ÉTAPE 3 — PENDANT LA MISSION : QUALIFIER & RÉMUNÉRER LE SALARIÉ
+S12 — Invention de salarié = obligation, pas option
+Texte : la rémunération supplémentaire est d'ordre public : elle ne peut être subordonnée à un « intérêt exceptionnel », et un brevet de barrage non exploité y ouvre droit.
+Réf : L.611-7 CPI ; Cass. com. 22 fév. 2005, n° 03-11.027 ; CNIS L.615-21.
+Geste : qualifier l'invention dès la DI, barème interne tracé. La DI sert aussi de preuve de date.
+ÉTAPE 4 — AU MOMENT DE L'INVENTION : DÉCIDER
+S13 — Arbre de décision (HERO 2)
+Arbre, 5 questions : 1. stratégique/exploitable ? 2. contrefaçon détectable ? (non→secret) 3. divulgation inévitable ? (oui→breveter) 4. secret tenable ? 5. durée de vie > qq années ?
+Note : §15.3. Le dérouler en live.
+S14 — Résolution NovaSense
+Texte : procédé non détectable + effectif restreint → secret, pas brevet. Breveter = divulguer un procédé insurveillable.
+Note : §17.3.
+S15 — La 3e voie : publication défensive
+Texte : détruire la nouveauté volontairement pour verrouiller la liberté d'exploitation sans déposer.
+Note : §6.4.
+ÉTAPE 5 — EN VIE COURANTE : PROTÉGER LE SECRET
+S16 — Le secret n'existe que si tu l'organises
+Texte : 3 critères cumulatifs. Le 3e — les mesures de protection raisonnables — est une condition de protégeabilité, pas une précaution. Pas de mesures = pas de secret opposable, même si l'info est réellement secrète.
+Réf : L.151-1 C. com.
+Note : ça tombe bien — les « mesures raisonnables », c'est exactement le process simple des 3 slides qui suivent.
+S17 — Le process en 3 temps : horodater → classer → partager
+Message clé : ce n'est pas compliqué si c'est structuré. Un seul réflexe, trois temps, dans l'ordre.
+HORODATER d'abord — associer une date certaine au document avant de l'exposer (preuve d'antériorité).
+CLASSER — lui coller un niveau de confidentialité (slide suivante).
+PARTAGER — via la dataroom, avec le bon accord (slide d'après).
+Note : l'ordre compte. On date avant de diffuser, jamais l'inverse. Lien avec la DI (preuve de date, §5.6).
+S18 — Temps 1 : horodatage — un seul process, sur tout
+LE PRINCIPE : associer une date certaine + l'intégrité à un document technique, sans rien publier. Effet juridique propre : preuve d'antériorité → fonde le droit de possession personnelle antérieure (L.613-7 CPI) — droit défensif d'exploiter malgré le brevet d'un tiers. Pas un monopole, pas un titre.
+Un seul mécanisme, automatique, sur tout document sensible (pas de tri par sensibilité) : le certificat d'horodatage blockchain (ancrage d'empreinte). Scalable, coût marginal, applicable à tout le flux R&D (cahier de labo, spec, code, présentation).
+Recevable et à forte valeur probatoire — la JP 2025 l'a tranché : TJ Marseille, 20 mars 2025, n° 23/00046 (AZ Factory c/ Valeria Moda) admet le certificat blockchain seul comme preuve d'antériorité ET de titularité, qualifié de commencement de preuve par écrit, fiabilité « comparable à un dépôt INPI ». Fondé sur la liberté de la preuve (art. 1358 C. civ. ; L.110-3 C. com. entre commerçants) et la non-discrimination / registres électroniques eIDAS 2.
+Bonus (pas un prérequis) : un horodatage qualifié eIDAS ajoute la présomption d'exactitude (art. 41) — renversement de charge. Même prestataire, même geste : on ne multiplie pas le process. e-Soleau (papier supprimé, décret n° 2023-166) et constat de commissaire de justice restent des options ponctuelles pour les enjeux les plus lourds.
+Geste : l'outil d'horodatage est branché sur le dossier projet ; tout document classé sensible est ancré à sa création. Conserver le fichier original (la preuve = recalcul de l'empreinte).
+S19 — Temps 2 : les niveaux de confidentialité (HERO — échelle)
+Une échelle simple, 5 niveaux, à laquelle tout le monde se réfère :
+Niveau	Règle	Exemple
+0 — Public	librement publiable	plaquette, site, brevet publié
+1 — Sur demande	publiable sur demande, sans formalité	doc commercial, specs non sensibles
+2 — Sous NDA	publiable sur demande avec accord de confidentialité	doc technique, perfs produit
+3 — Approbation PI	diffusion uniquement après accord du responsable PI	procédé, données R&D stratégiques
+4 — Interne strict	ne sort pas, jamais	secret de fabrication, code cœur
+Note : les grandes règles sont calibrées par l'entreprise (qui classe quoi par défaut). Niveau 3 = le filtre humain qui évite la fuite par excès de zèle commercial. NovaSense : son procédé de fabrication = niveau 4.
+S20 — Temps 3 : dataroom + templates NDA centralisés
+Texte : on partage via une dataroom, pas via l'explorateur de fichiers interne — on donne accès au document, pas à toute l'arborescence. Traçabilité des consultations en prime (renforce la preuve de « mesures raisonnables »).
+Au même endroit : un dossier central de modèles de NDA, par scénario (salarié, prestataire, partenaire, investisseur) et par langue (FR/EN…), pour que personne n'improvise un accord.
+Geste : niveau 2 → la dataroom impose le bon NDA avant ouverture de l'accès. Plus de « j'ai envoyé le doc par mail sans rien faire signer ».
+S21 — Rendre tout ça opposable
+Texte : la politique de classification ne vaut que si elle s'impose aux gens. Elle s'appuie sur le socle contractuel de S8 (clause PI/confidentialité aux contrats), complété pour l'existant et le collectif par :
+avenant au contrat de travail pour les salariés déjà en poste ;
+règlement intérieur pour ancrer la charte de confidentialité et le process à l'échelle collective.
+Réf : §8.3 (mesures raisonnables), §12 (culture/RH).
+Note : rappel, pas redite de S8 — ici on ancre l'échelle de confidentialité dans le collectif. C'est le maillon qui transforme une « bonne pratique » en obligation sanctionnable.
+ÉTAPE 6 — AU DÉPART : OFFBOARDING
+S22 — Le départ, vecteur n°1 de fuite
+Texte : le départ d'un sachant = moment critique. Trois gestes : rappel formel des obligations de confidentialité (qui survivent au contrat), restitution des supports/données, clôture immédiate des accès (dont la dataroom).
+Réf : §12.2.
+Geste : entretien de sortie tracé, mentionnant les actifs PI manipulés.
+TRANSVERSE — PILOTER
+S23 — Le minimum vital
+Texte : 1. un comité PI qui arbitre et trace (dépôt/secret/publication/abandon) · 2. 3–5 KPI (nb DI, taux DI→dépôt, échéancier annuités) · 3. le tueur silencieux : l'annuité oubliée → déchéance, perte irréversible 100 % évitable.
+Note : §4.2, §6.3, §11.1, §11.4.
+CLÔTURE
+S24 — Plan 90 jours (HERO)
+Texte : « pas besoin d'une fonction PI parfaite, besoin de commencer. »
+2 objectifs falsifiables : 4 comités/an · zéro annuité échue par oubli.
+Note : révéler les 10 gestes (§13.4) + 6 chantiers (§13.2). Chacun = livrable daté + responsable.
+S25 — CTA : le kit
+Texte : formulaire DI · trame charte PI · clauses cession/confidentialité/salariés · règlement copropriété · échelle de confidentialité + modèles NDA multilingues · 4 listes de contrôle (avant divulgation, due diligence, on/offboarding, maintenance).
+Note : annexes A–C + l'échelle/dataroom. Pont vers la prestation = modèles à adapter au cas concret (§14).
+S26 — Q&R
+Note : pré-amorcer avec FAQ §18.4 (publier avant dépôt / freelance / rémunération salarié / brevet ou secret / copropriété).
+Hors-oral → kit / « pour aller plus loin »
+Contenu	Destination
+Régimes détaillés, IA, SEP/FRAND, sui generis BDD (§3.4–3.8)	one-pager
+Annexes A–E complètes	kit (= CTA)
+JUB (§10.4), extension géo (§6.5), financements (§6.7), logiciels (§11.3)	slides annexes non commentées
+RACI détaillée (§15.1)	kit
+Mémo production
+~26 slides pour 45 min. Visuels qui portent tout : tableau 6 droits (S3), schéma cycle de vie (S6), matrice QUI crée/détient (S7), arbre de décision (S13), échelle de confidentialité (S19) — + le plan 90 jours (S24).
+NovaSense en bandeau sur toutes les slides « comment ».
+Pas d'interaction technique : questions rhétoriques portées par l'intervenant (S11 divulgation, tu peux interpeller la salle nommément).
+Le bloc S17–S21 est le cœur « pratico-pratique » : montre que le process est simple et opposable. À ne pas sacrifier.
+1 slide CTA (S25).
+Variantes
+45 min sans Q&R : S23 → 1 slide ; fondre S11 dans S10 ; fondre S18 (horodatage) dans S17. Garde S7–S8 et S19–S21 intacts (titularité + cœur pratico-pratique). Arc intact.
+90 min atelier : + artefact NovaSense réel par étape · + 2e histoire (échec titularité en M&A) · démo dataroom + un NDA réel · construire le plan 90 j avec la salle.
+Checklist articles (citer avec la référence)
+Nouveauté/brevetabilité : L.611-10/-11/-14/-15 CPI ; art. 52 CBE.
+Salariés : L.611-7 CPI ; Cass. com. 22 fév. 2005 n° 03-11.027 ; L.615-21 (CNIS).
+Non-salariés (stagiaires/doctorants) : L.611-7-1 / L.113-9-1 CPI ; ord. n° 2021-1658 du 15 déc. 2021 ; décrets du 11 août 2023. ⚠️ réservé aux structures « réalisant de la recherche ».
+Logiciel : L.113-9 / L.113-9-1 CPI.
+Cession droit d'auteur : L.131-3 CPI.
+Possession personnelle antérieure : L.613-7 CPI.
+Copropriété brevets : L.613-29 à L.613-32 CPI.
+Bases de données : L.341-1 / L.342-5 CPI.
+Secret d'affaires : L.151-1 à L.154-1 C. com. ; loi 2018-670 ; dir. (UE) 2016/943.
+Preuve / horodatage : certificat blockchain recevable — TJ Marseille 20 mars 2025 n° 23/00046 (antériorité + titularité, commencement de preuve par écrit) ; liberté de la preuve art. 1358 C. civ., L.110-3 C. com. ; eIDAS art. 41 (présomption = horodatage qualifié, bonus) ; eIDAS 2 (registres électroniques) ; e-Soleau décret n° 2023-166.
+Demande provisoire : L.612-3 CPI (priorité interne) ; décret n° 2020-15 du 8 janv. 2020.
+JUB : règl. (UE) 1257/2012 & 1260/2012, depuis 01/06/2023. " like a real user would in the form.

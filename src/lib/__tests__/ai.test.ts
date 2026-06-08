@@ -8,6 +8,7 @@ const generateText = vi.fn();
 vi.mock('ai', () => ({
   generateText: (...args: unknown[]) => generateText(...args),
   tool: (config: unknown) => config,
+  TypeValidationError: { isInstance: () => false },
 }));
 
 import { draftObject, forceNonStreamFetch } from '../ai';
