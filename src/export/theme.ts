@@ -67,15 +67,19 @@ export function buildHeadmatter(
   brand: Partial<OrgBrand> | null | undefined,
   language?: string | null,
 ): string {
+  // Anchored to the exact 2-space-indented keys under `fonts:` / `htmlAttrs:`
+  // in headmatter.yaml so a future top-level key containing "sans"/"local"/
+  // "lang" can't be rewritten by accident. Values are enum-constrained
+  // (Gilroy/Roboto, fr/en) so they can never break the YAML scalar.
   let out = base;
   if (brand?.bodyFont) {
-    out = out.replace(/^(\s*sans:\s*).*$/m, `$1${brand.bodyFont}`);
+    out = out.replace(/^(  sans:[ \t]*).*$/m, `$1${brand.bodyFont}`);
   }
   if (brand?.headingFont) {
-    out = out.replace(/^(\s*local:\s*).*$/m, `$1${brand.headingFont}`);
+    out = out.replace(/^(  local:[ \t]*).*$/m, `$1${brand.headingFont}`);
   }
   if (language) {
-    out = out.replace(/^(\s*lang:\s*).*$/m, `$1${language}`);
+    out = out.replace(/^(  lang:[ \t]*).*$/m, `$1${language}`);
   }
   return out;
 }

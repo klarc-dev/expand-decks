@@ -23,7 +23,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "presentations" ADD COLUMN "footer_left" varchar DEFAULT '{org.name}';
   ALTER TABLE "presentations" ADD COLUMN "footer_center" varchar;
   ALTER TABLE "presentations" ADD COLUMN "footer_right" varchar DEFAULT '{page} / {total}';
-  ALTER TABLE "presentations" ADD COLUMN "organisation_id" integer NOT NULL;
+  -- Add the org relation NULLABLE first so the migration is safe on a table
+  -- that already has rows; we backfill below, then enforce NOT NULL.
+  ALTER TABLE "presentations" ADD COLUMN "organisation_id" integer;
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "organisations_id" integer;
   ALTER TABLE "organisations" ADD CONSTRAINT "organisations_logo_id_media_id_fk" FOREIGN KEY ("logo_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "organisations" ADD CONSTRAINT "organisations_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
@@ -31,7 +33,19 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "organisations_created_by_idx" ON "organisations" USING btree ("created_by_id");
   CREATE INDEX "organisations_updated_at_idx" ON "organisations" USING btree ("updated_at");
   CREATE INDEX "organisations_created_at_idx" ON "organisations" USING btree ("created_at");
-  ALTER TABLE "presentations" ADD CONSTRAINT "presentations_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE set null ON UPDATE no action;
+
+  -- Backfill: ensure a default organisation exists and attach every existing
+  -- presentation to it, so the NOT NULL constraint below can be enforced on a
+  -- non-empty table. Idempotent.
+  INSERT INTO "organisations" ("name") SELECT 'Klarc'
+    WHERE NOT EXISTS (SELECT 1 FROM "organisations");
+  UPDATE "presentations" SET "organisation_id" = (SELECT MIN("id") FROM "organisations")
+    WHERE "organisation_id" IS NULL;
+  ALTER TABLE "presentations" ALTER COLUMN "organisation_id" SET NOT NULL;
+
+  -- FK is RESTRICT (not SET NULL): organisation_id is NOT NULL, so a referenced
+  -- org cannot be deleted while presentations point at it.
+  ALTER TABLE "presentations" ADD CONSTRAINT "presentations_organisation_id_organisations_id_fk" FOREIGN KEY ("organisation_id") REFERENCES "public"."organisations"("id") ON DELETE restrict ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_organisations_fk" FOREIGN KEY ("organisations_id") REFERENCES "public"."organisations"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "presentations_organisation_idx" ON "presentations" USING btree ("organisation_id");
   CREATE INDEX "payload_locked_documents_rels_organisations_id_idx" ON "payload_locked_documents_rels" USING btree ("organisations_id");`)

@@ -34,6 +34,14 @@ export const afterOrganisationChange: CollectionAfterChangeHook = async ({
     },
   });
 
+  // Surface (don't silently swallow) the rare case of an org reused beyond the
+  // page cap, so the un-rebuilt decks are visible in logs rather than stale.
+  if (refs.totalDocs > refs.docs.length) {
+    req.payload.logger.warn(
+      `afterOrganisationChange: org ${doc.id} has ${refs.totalDocs} published decks; only ${refs.docs.length} were queued for rebuild.`,
+    );
+  }
+
   for (const presentation of refs.docs) {
     await (req.payload.jobs.queue as Function)({
       task: BUILD_SLIDES_TASK,
