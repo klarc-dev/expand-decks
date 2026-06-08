@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { draftPresentationSlides } from '@/lib/draftPresentation';
+import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
 import { ROLES } from '@/access/roles';
 
 const requestSchema = z.object({
@@ -69,16 +70,17 @@ export async function POST(req: NextRequest) {
     // LLM-only: draftPresentationSlides does NOT persist; this route owns the
     // Payload write below.
     const { slides } = await draftPresentationSlides(brief);
-
-    // slides is the Zod-validated union array (min 3); cast only at the Payload
-    // write boundary to the generated Presentation['slides'] shape.
     const slideCount = slides.length;
+
+    // The LLM emits long fields as markdown strings; convert them to Lexical
+    // editor state before persisting so the richText fields store valid JSON.
+    const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
 
     // Write blocks to the presentation
     await payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: { slides: slides as Presentation['slides'] },
+      data: { slides: richSlides as Presentation['slides'] },
       user,
       context: { [CTX.skipBuildQueue]: true },
     });

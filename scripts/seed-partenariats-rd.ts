@@ -19,6 +19,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getPayload } from 'payload';
+import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical';
 import config from '@payload-config';
 import type { Presentation } from '../src/payload-types';
 
@@ -63,16 +64,17 @@ if (
 }
 
 type Slide = NonNullable<Presentation['slides']>[number];
+type RichTextConverter = (markdown: string) => never;
 
-function buildSlides(media: Record<AssetKey, number>): Slide[] {
+function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Slide[] {
   return [
   // PDF page 1 — cover
   {
     blockType: 'cover',
     eyebrow: 'BLOOM FORMATION',
     title: 'Optimiser et sécuriser ses contrats R&D',
-    footerLeft: 'Joachim BRINDEAU',
-    footerRight: 'Document actualisé le 1er décembre 2025.',
+    footerLeft: rt('Joachim BRINDEAU'),
+    footerRight: rt('Document actualisé le 1er décembre 2025.'),
     surface: 'light',
   },
 
@@ -80,13 +82,13 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
   {
     blockType: 'twoCols',
     title: 'Sommaire',
-    intro: `1. Introduction — 3
+    intro: rt(`1. Introduction — 3
 2. Notions indispensables — 7
 3. Sécurisation des échanges — 10
 4. Cadrage du projet — 15
 5. Négociation d'un contrat — 24
 6. Points particuliers — 30
-7. Questions & réponses — 37`,
+7. Questions & réponses — 37`),
     image: media.handshake,
     imagePosition: 'right',
   },
@@ -95,8 +97,9 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
   {
     blockType: 'section',
     title: 'Introduction',
-    subtitle:
+    subtitle: rt(
       "Un **projet R&D** est une initiative structurée caractérisée par son incertitude scientifique ou technique, et son potentiel à générer de la valeur à travers des avancées dans un domaine spécifique.",
+    ),
     surface: 'dark',
   },
 
@@ -104,7 +107,7 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
   {
     blockType: 'twoCols',
     title: 'Exemple de projets R&D',
-    intro: `**Bibliothèque d'actifs** — Développement en interne d'une bibliothèque de molécules.
+    intro: rt(`**Bibliothèque d'actifs** — Développement en interne d'une bibliothèque de molécules.
 
 **10 candidats** — Screening de la bibliothèque par une université.
 
@@ -112,7 +115,7 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
 
 **Composition (PoF)** — Formulation d'une composition en interne.
 
-**Produit commercialisable** — Industrialisation en collaboration avec un partenaire industriel.`,
+**Produit commercialisable** — Industrialisation en collaboration avec un partenaire industriel.`),
     image: media.presenter,
     imagePosition: 'right',
   },
@@ -143,7 +146,7 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
   {
     blockType: 'twoCols',
     title: 'Sécuriser et optimiser',
-    intro: `**Sécuriser**
+    intro: rt(`**Sécuriser**
 
 - Apports des parties
 - Confidentialité
@@ -153,18 +156,18 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
   - Exclusivité d'exploitation
 - Concurrence
 - Aspects financiers
-- Prise de décision`,
+- Prise de décision`),
     rightCards: [
       {
         title: 'Optimisation opérationnelle',
-        description: `- Accélérer la négociation
+        description: rt(`- Accélérer la négociation
 - Fluidifier le déroulement du projet
-- Prévoir le changement et l'échec`,
+- Prévoir le changement et l'échec`),
       },
       {
         title: 'Optimisation financière',
-        description: `- Financements publics
-- Aspects fiscaux`,
+        description: rt(`- Financements publics
+- Aspects fiscaux`),
       },
     ],
   },
@@ -174,8 +177,9 @@ function buildSlides(media: Record<AssetKey, number>): Slide[] {
   {
     blockType: 'section',
     title: 'Notions indispensables',
-    subtitle:
+    subtitle: rt(
       "Certains notions indispensables permettent d'**encadrer la gestion de la propriété intellectuelle** : différents types de droits, définitions intégrant les notions de pré-existence ou de propriété, modalités d'exploitation, etc.",
+    ),
     surface: 'dark',
   },
 
@@ -233,8 +237,9 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
   {
     blockType: 'section',
     title: 'Sécurisation des échanges',
-    subtitle:
+    subtitle: rt(
       "La **sécurisation des échanges** est un préalable indispensable à toute divulgation d'information confidentielle et à tout envoi de matériel propriétaire.",
+    ),
     surface: 'dark',
   },
 
@@ -243,7 +248,7 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
     blockType: 'twoCols',
     eyebrow: 'Sécurisation des échanges',
     title: 'Mettre en place un accord de confidentialité',
-    intro: `**Pourquoi ?**
+    intro: rt(`**Pourquoi ?**
 
 Sans contrat, *les informations obtenues dans le cadre des négociations sont confidentielles* mais risque de litige sur :
 
@@ -251,7 +256,7 @@ Sans contrat, *les informations obtenues dans le cadre des négociations sont co
 - Le caractère confidentiel de l'information communiquée
 - La durée de l'obligation
 - Le droit d'utilisation de l'information communiquée (y compris le droit de breveter)
-- Etc.`,
+- Etc.`),
   },
 
   // PDF page 12 — Mettre en place un accord de confidentialité — Que définir ?
@@ -335,7 +340,7 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
   {
     blockType: 'section',
     title: 'Cadrage du projet',
-    subtitle: 'Le **cadrage du projet** est aussi important que le contenu du contrat.',
+    subtitle: rt('Le **cadrage du projet** est aussi important que le contenu du contrat.'),
     surface: 'dark',
   },
 
@@ -344,20 +349,20 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
     blockType: 'twoCols',
     eyebrow: 'Cadrage du projet',
     title: 'Raisons du cadrage',
-    intro: `**Sécuriser**
+    intro: rt(`**Sécuriser**
 
 - Rappeler ses connaissances propres ;
 - Révéler des connaissances propres tierces ;
 - Identifier et éviter les concurrents potentiels ;
 - Maîtriser le flux d'informations ;
-- Engager les moyens des parties.`,
+- Engager les moyens des parties.`),
     rightCards: [
       {
         title: 'Optimiser',
-        description: `- Identifier et justifier les demandes de fonds ;
+        description: rt(`- Identifier et justifier les demandes de fonds ;
 - Optimiser sa fiscalité ;
 - Clarifier le pilotage ;
-- Permettre la sortie du projet.`,
+- Permettre la sortie du projet.`),
       },
     ],
   },
@@ -497,7 +502,7 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
     blockType: 'twoCols',
     eyebrow: 'Cadrage du projet',
     title: 'Définir les moyens',
-    intro: `**Que définir pour chaque Partie ?**
+    intro: rt(`**Que définir pour chaque Partie ?**
 
 1. **Moyens financiers**
    - a. Montant ;
@@ -505,19 +510,19 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
    - c. Destinataire des paiements.
 2. **Moyens humains**
    - Nombre et qualification des ETP ;
-   - Identification du principal investigator souhaité sur le projet (optionnel).`,
+   - Identification du principal investigator souhaité sur le projet (optionnel).`),
     rightCards: [
       {
         title: 'Moyens matériels',
-        description: `- a. Achat / location de matériel ;
-- b. Budget consommables ;`,
+        description: rt(`- a. Achat / location de matériel ;
+- b. Budget consommables ;`),
       },
       {
         title: 'Connaissances propres',
-        description: `- Technologie (brevet, certificat d'utilité, COV, etc. ou secret d'affaires) ;
+        description: rt(`- Technologie (brevet, certificat d'utilité, COV, etc. ou secret d'affaires) ;
 - Matériel propriétaire (idem technologie) ;
 - Logiciels (droit d'auteur et éventuellement brevet) ;
-- Bases de données (droit sui generis des DB + savoir-faire).`,
+- Bases de données (droit sui generis des DB + savoir-faire).`),
       },
     ],
   },
@@ -527,12 +532,12 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
     blockType: 'statement',
     eyebrow: 'Cadrage du projet',
     title: 'Définir les moyens',
-    body: `**Pourquoi ?**
+    body: rt(`**Pourquoi ?**
 
 - Rappeler les restrictions (e.g informer de l'existence d'un brevet)
 - Éviter les restrictions (e.g découvrir l'existence d'un brevet)
 - Définir les engagements des parties
-- Définir la propriété des résultats (si les apports sont un critère)`,
+- Définir la propriété des résultats (si les apports sont un critère)`),
   },
 
   // PDF page 24 — section divider Négociation d'un contrat
@@ -547,7 +552,7 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
     blockType: 'twoCols',
     eyebrow: 'Négociation du contrat',
     title: 'Moyen le plus efficace : établir une term-sheet',
-    intro: `**Qu'est-ce qu'une term-sheet ?**
+    intro: rt(`**Qu'est-ce qu'une term-sheet ?**
 
 Un document non-contraignant récapitulant les principaux termes du partenariat, le plus souvent sous forme de tableau.
 
@@ -555,11 +560,11 @@ Un document non-contraignant récapitulant les principaux termes du partenariat,
 
 - Rédaction du contrat principal grandement facilitée
 - Accélération drastique de la négociation du contrat
-- Révélation des deal-breakers le plus tôt possible`,
+- Révélation des deal-breakers le plus tôt possible`),
     rightCards: [
       {
         title: 'Exemple — Term-sheet ANONYME · ALPHA × BETA',
-        description: `Cette term-sheet récapitule les discussions relatives au projet ANONYME entre ALPHA et BETA. *Il ne s'agit pas d'un accord contraignant ni de clauses formulées* mais simplement d'un support aux discussions pour faciliter la contractualisation.
+        description: rt(`Cette term-sheet récapitule les discussions relatives au projet ANONYME entre ALPHA et BETA. *Il ne s'agit pas d'un accord contraignant ni de clauses formulées* mais simplement d'un support aux discussions pour faciliter la contractualisation.
 
 1. Parties
 2. Principales définitions
@@ -571,7 +576,7 @@ Un document non-contraignant récapitulant les principaux termes du partenariat,
    - 4.4. Amélioration continue
 5. Partenariat d'Exploitation
    - 5.1. Objet du Partenariat d'Exploitation (Rôles conjoint · Rôles spécifiques à ALPHA · Rôles spécifiques à BETA)
-   - 5.2. Exclusivité`,
+   - 5.2. Exclusivité`),
       },
     ],
   },
@@ -581,12 +586,12 @@ Un document non-contraignant récapitulant les principaux termes du partenariat,
     blockType: 'statement',
     eyebrow: 'Négociation du contrat',
     title: 'Choisir le type de contrat',
-    body: `Le titre du contrat n'a aucun impact sur son effet juridique.
+    body: rt(`Le titre du contrat n'a aucun impact sur son effet juridique.
 
 Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclature pour :
 
 - **faciliter la compréhension des personnes impliquées**
-- **Répondre aux critères des guichets de financement, et de l'administration fiscale.**`,
+- **Répondre aux critères des guichets de financement, et de l'administration fiscale.**`),
   },
 
   // PDF page 27 — Tableau types de contrats
@@ -660,22 +665,22 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
     blockType: 'twoCols',
     eyebrow: 'Points particuliers',
     title: 'Gestion des résultats',
-    intro: `- **Imbriquer ses définitions**
+    intro: rt(`- **Imbriquer ses définitions**
 - **Utiliser le cadre contractuel pour anticiper :**
   - Restreindre les Résultats pour que tout ce qui n'est pas demandé par le partenaire soit une Connaissance Propre
   - Corréler la cession avec les paiements (ou ajouter une clause de réserve de propriété)
-  - Divulguer le code-source une fois payé (si nécessaire avec clause de séquestre)`,
+  - Divulguer le code-source une fois payé (si nécessaire avec clause de séquestre)`),
     rightCards: [
       {
         title: 'Hiérarchie des objets',
-        description: `Informations
+        description: rt(`Informations
 → Informations Confidentielles
 → Résultats
   → Connaissances Nouvelles
     → Résultats Propres
     → Résultats Conjoints
   → Connaissances Propres
-→ Propriété Intellectuelle`,
+→ Propriété Intellectuelle`),
       },
     ],
   },
@@ -735,7 +740,7 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
     blockType: 'cta',
     eyebrow: 'Contact',
     title: 'Joachim BRINDEAU',
-    subtitle: 'Avocat',
+    subtitle: rt('Avocat'),
     primaryAction: '(+33) 7 87 87 60 83',
     secondaryAction: 'joachim.brindeau@bloom-legal.com',
   },
@@ -772,9 +777,11 @@ async function upsertMedia(
 
 async function main() {
   const payload = await getPayload({ config });
+  const editorConfig = await editorConfigFactory.default({ config: payload.config });
+  const rt = (markdown: string) => convertMarkdownToLexical({ editorConfig, markdown }) as never;
 
   const mediaIds = await upsertMedia(payload);
-  const slides = buildSlides(mediaIds);
+  const slides = buildSlides(mediaIds, rt);
 
   const existing = await payload.find({
     collection: 'presentations',
