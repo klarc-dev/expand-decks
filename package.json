@@ -27,7 +27,7 @@
     "@payloadcms/ui": "3.85.0",
     "ai": "^6.0.198",
     "gray-matter": "^4.0.3",
-    "next": "15.5.18",
+    "next": "16.2.7",
     "payload": "3.85.0",
     "payload-auth-plugin": "^0.7.6",
     "react": "^19.1.0",
