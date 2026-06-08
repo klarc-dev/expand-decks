@@ -12,7 +12,7 @@ Package manager is **pnpm** (see `.pnpmrc.json`). Node 20.
 - `pnpm test` — Vitest. Include pattern is `src/**/__tests__/**/*.test.ts`. Run a single file with `pnpm test src/export/__tests__/blocks.test.ts` and a single case with `-t "<name>"`.
 - `pnpm payload` — Payload CLI (e.g. `pnpm payload migrate`, `pnpm payload migrate:create`).
 - `pnpm generate:types` — Regenerate `src/payload-types.ts` after collection/block changes.
-- `pnpm generate:importmap` — Regenerate `src/app/(payload)/admin/importMap.js` after adding custom admin components (run this when changing `admin.components` references).
+- `pnpm generate:importmap` — Regenerate `src/app/(payload)/admin/importMap.js` after adding custom admin components **or richText fields** (run this when changing `admin.components` references, or after adding/removing a `type: 'richText'` field — the Lexical editor's admin components must be in the import map or the field silently fails to render with "PayloadComponent not found in importMap").
 - `pnpm jobs:run` — Run the default job queue once (used by the `payload-worker` service in Docker).
 
 Migrations live in `src/migrations/` with an `index.ts` barrel. After changing schema run `pnpm payload migrate:create` then commit both the `.ts` and `.json` files.
