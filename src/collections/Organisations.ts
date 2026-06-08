@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload';
 
 import { isAdmin, isAdminOrSelf, isLoggedIn } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+import { afterOrganisationChange } from '../hooks/afterOrganisationChange';
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -31,6 +32,9 @@ export const Organisations: CollectionConfig = {
     read: isLoggedIn,
     update: isAdminOrSelf,
     delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [afterOrganisationChange],
   },
   fields: [
     {
