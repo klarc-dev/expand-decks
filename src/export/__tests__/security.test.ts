@@ -89,3 +89,59 @@ describe('md() — link href XSS defense', () => {
     expect(md('[anchor](#section)')).toBe('<a href="#section">anchor</a>');
   });
 });
+
+describe('buildSlidesMd() — composed deck is injection-free across all block types', () => {
+  const INJECT = 'pwn"\nlayout: hijack\nevilKey: stolen';
+  const XSS_LINK = '[x](javascript:alert(1))';
+  const DATA_LINK = '[y](data:text/html,<script>1</script>)';
+
+  // Feed YAML-injection + XSS payloads through every text surface of every
+  // block type, then assert the full assembled deck cannot be hijacked.
+  const slides = [
+    { blockType: 'cover', title: INJECT, eyebrow: XSS_LINK, subtitle: DATA_LINK },
+    { blockType: 'statement', title: INJECT, body: `${XSS_LINK} ${DATA_LINK}` },
+    { blockType: 'section', title: INJECT, number: '01', surface: 'dark' },
+    { blockType: 'cardGrid', title: INJECT, columns: '4', cards: [{ number: '01', title: XSS_LINK, description: DATA_LINK }] },
+    { blockType: 'twoCols', title: INJECT, intro: XSS_LINK, rightCards: [{ title: INJECT, description: DATA_LINK }] },
+    { blockType: 'stats', title: INJECT, stats: [{ value: XSS_LINK, label: INJECT }] },
+    { blockType: 'quotes', title: INJECT, quotes: [{ quote: XSS_LINK, authorName: INJECT, authorRole: DATA_LINK }] },
+    { blockType: 'cta', title: INJECT, subtitle: XSS_LINK, primaryAction: DATA_LINK, footerNote: INJECT },
+  ];
+
+  const result = buildSlidesMd({ title: INJECT, slides: slides as never }, { headmatter: HEADMATTER });
+
+  // Extract only the YAML frontmatter blocks (between --- fences). An injected
+  // key is exploitable only if it lands HERE; the same text appearing inside an
+  // HTML <h1> body is harmless escaped content, not a parsed directive.
+  const frontmatterBlocks: string[] = [];
+  {
+    const lines = result.split('\n');
+    let inFm = false;
+    let buf: string[] = [];
+    for (const line of lines) {
+      if (line === '---') {
+        if (inFm) { frontmatterBlocks.push(buf.join('\n')); buf = []; }
+        inFm = !inFm;
+        continue;
+      }
+      if (inFm) buf.push(line);
+    }
+  }
+  const allFrontmatter = frontmatterBlocks.join('\n');
+
+  it('emits no injected key inside any frontmatter block', () => {
+    expect(allFrontmatter).not.toMatch(/^layout: hijack$/m);
+    expect(allFrontmatter).not.toMatch(/^evilKey: stolen$/m);
+  });
+
+  it('emits no dangerous-scheme anchor anywhere in the deck', () => {
+    expect(result).not.toContain('href="javascript:');
+    expect(result).not.toContain('href="data:');
+    expect(result).not.toContain('href="vbscript:');
+  });
+
+  it('still produces a parseable multi-slide deck (payloads did not break rendering)', () => {
+    const fences = result.match(/^---\s*$/gm) ?? [];
+    expect(fences.length).toBeGreaterThan(slides.length);
+  });
+});
