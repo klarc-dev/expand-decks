@@ -3,11 +3,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
+import { generateObject, NoObjectGeneratedError } from 'ai';
 import { z } from 'zod';
 
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
+import { ROLES } from '@/access/roles';
+
+const requestSchema = z.object({
+  presentationId: z.union([z.string().min(1).max(128), z.number()]),
+  brief: z.string().trim().min(10).max(8000),
+});
 
 const eyebrowZod = z.string().optional();
 const surfaceZod = (gradient: boolean) =>
@@ -201,15 +207,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { presentationId, brief } = body;
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+    }
 
-    if (!presentationId || !brief) {
+    const parsed = requestSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
         { error: 'presentationId et brief sont requis' },
         { status: 400 },
       );
     }
+    const { presentationId, brief } = parsed.data;
 
     // Verify the presentation exists and user has access
     const presentation = await payload.findByID({
@@ -220,6 +232,16 @@ export async function POST(req: NextRequest) {
 
     if (!presentation) {
       return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
+    }
+
+    // Authorize the WRITE before spending LLM tokens: only an admin or the
+    // presentation owner may draft into it (read access alone is broader).
+    const createdById =
+      typeof presentation.createdBy === 'object'
+        ? presentation.createdBy?.id
+        : presentation.createdBy;
+    if (user.role !== ROLES.admin && createdById !== user.id) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
     // Generate slides via the configured OpenAI-compatible endpoint
@@ -259,14 +281,26 @@ export async function POST(req: NextRequest) {
       slideCount: object.slides.length,
     });
   } catch (error) {
-    // Authors get a readable French message; the raw provider error (LiteLLM
-    // auth failures, model errors…) goes in `detail` for debugging.
-    const detail = error instanceof Error ? error.message : 'Erreur inconnue';
+    // Never return raw provider errors to the client — they can leak base URLs,
+    // model names, and config hints. Log server-side; send a stable message.
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.error('[draft-presentation] invalid model output', {
+        finishReason: error.finishReason,
+        cause: error.cause instanceof Error ? error.cause.message : undefined,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'La génération a produit un format inattendu. Simplifiez le brief et réessayez.',
+        },
+        { status: 422 },
+      );
+    }
+    console.error('[draft-presentation] generation failed', error);
     return NextResponse.json(
       {
         error:
           'La génération a échoué : le service IA est indisponible ou mal configuré. Réessayez plus tard ou contactez un administrateur.',
-        detail,
       },
       { status: 500 },
     );

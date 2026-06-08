@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { ARTIFACTS } from '../lib/paths';
 
 import { RENDERERS, type SlideBlock } from './renderers';
-import { resetDefs } from './utils';
+import { resetDefs, yamlQuoted } from './utils';
 
 export type Presentation = {
   title: string;
@@ -52,7 +52,7 @@ export function buildSlidesMd(
   // The first slide's frontmatter is merged into the headmatter block (as in
   // a hand-written Slidev deck): a standalone headmatter block would become
   // an empty phantom first slide in the built SPA / exported PDF.
-  const headOpen = `---\ntitle: "${presentation.title}"\n${headmatter}`;
+  const headOpen = `---\ntitle: ${yamlQuoted(presentation.title)}\n${headmatter}`;
 
   if (slidesMd.length === 0) {
     return `${headOpen}\n---\n`;

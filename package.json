@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "prebuild": "cp node_modules/@payloadcms/next/dist/prod/styles.css src/app/\\(payload\\)/payload-admin.css",
     "build": "next build",
     "start": "next start",

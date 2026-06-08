@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { resolve, extname } from 'node:path';
+import { resolve, relative, isAbsolute, extname } from 'node:path';
 
 import { NextResponse } from 'next/server';
 
@@ -48,8 +48,9 @@ export async function serveSpaFile(
   const spaRoot = spaDir(slug);
   const absolutePath = resolve(spaRoot, filePath);
 
-  // Double-check resolved path stays within the SPA directory
-  if (!absolutePath.startsWith(spaRoot)) {
+  // Boundary-aware containment: a prefix check would let `<root>-evil` pass.
+  const rel = relative(spaRoot, absolutePath);
+  if (rel !== '' && (rel.startsWith('..') || isAbsolute(rel))) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 

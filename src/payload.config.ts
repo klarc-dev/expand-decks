@@ -16,7 +16,7 @@ import { ShareLinks } from './collections/ShareLinks';
 import { Accounts } from './collections/Accounts';
 import { buildSlidesTask } from './jobs/buildSlides';
 import { COLLECTIONS } from './lib/collections';
-import { SERVER_URL } from './lib/env';
+import { SERVER_URL, PAYLOAD_SECRET, DATABASE_URL } from './lib/env';
 import { ROLES } from './access/roles';
 
 const filename = fileURLToPath(import.meta.url);
@@ -93,7 +93,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: DATABASE_URL,
     },
   }),
   editor: lexicalEditor(),
@@ -106,7 +106,7 @@ export default buildConfig({
     autoRun: [{ cron: '*/1 * * * *', limit: 5 }],
     deleteJobOnComplete: true,
   },
-  secret: process.env.PAYLOAD_SECRET || 'dev-secret-payload',
+  secret: PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

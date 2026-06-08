@@ -43,6 +43,9 @@ async function runSlidev(
   return execFile(npxPath, args, {
     cwd,
     timeout: EXEC_TIMEOUT_MS,
+    // Slidev/Vite/Playwright are chatty; the default 1 MiB cap would kill the
+    // child mid-build and surface as a misleading failure.
+    maxBuffer: 32 * 1024 * 1024,
     env: {
       ...process.env,
       // Strip secrets the builder doesn't need

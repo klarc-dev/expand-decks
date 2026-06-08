@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdminOrAuthor, isAdmin, userIsAdmin, userIsAdminOrAuthor } from '../access/roles';
+import { isAdminOrAuthor, isAdmin, isAdminOrSelf, userIsAdmin, userIsAdminOrAuthor } from '../access/roles';
 import { sha256 } from '../lib/shareLinks';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
@@ -10,6 +10,28 @@ import { SERVER_URL } from '../lib/env';
 
 const buildShareUrl = (token: string): string => {
   return `${SERVER_URL}/share/${token}`;
+};
+
+// A non-admin may only share presentations they created — otherwise knowing any
+// presentation id would let an author publish another author's deck publicly.
+const ownsPresentation = async (
+  req: PayloadRequest,
+  presId: unknown,
+  userId: unknown,
+): Promise<boolean> => {
+  if (!presId) return false;
+  try {
+    const pres = await req.payload.findByID({
+      collection: COLLECTIONS.presentations,
+      id: presId as string,
+      depth: 0,
+      overrideAccess: true,
+    });
+    const ownerId = typeof pres.createdBy === 'object' ? pres.createdBy?.id : pres.createdBy;
+    return ownerId === userId;
+  } catch {
+    return false;
+  }
 };
 
 export const ShareLinks: CollectionConfig = {
@@ -21,7 +43,7 @@ export const ShareLinks: CollectionConfig = {
   },
   access: {
     create: isAdminOrAuthor,
-    read: isAdminOrAuthor,
+    read: isAdminOrSelf,
     update: isAdmin,
     delete: isAdmin,
   },
@@ -61,6 +83,13 @@ export const ShareLinks: CollectionConfig = {
           return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
+        if (!userIsAdmin(user)) {
+          const presId =
+            typeof link.presentation === 'object' ? link.presentation?.id : link.presentation;
+          const owns = await ownsPresentation(req, presId, user.id);
+          if (!owns) return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         const token = randomBytes(32).toString('base64url');
         await req.payload.update({
           collection: COLLECTIONS.shareLinks,
@@ -77,6 +106,15 @@ export const ShareLinks: CollectionConfig = {
     beforeChange: [
       async ({ data, req, operation }) => {
         if (operation === 'create') {
+          const user = req.user;
+          if (user && !userIsAdmin(user)) {
+            const presId =
+              typeof data.presentation === 'object' ? data.presentation?.id : data.presentation;
+            const owns = await ownsPresentation(req, presId, user.id);
+            if (!owns) {
+              throw new Error('Vous ne pouvez partager que vos propres présentations.');
+            }
+          }
           const token = randomBytes(32).toString('base64url');
           data.tokenHash = sha256(token);
           data.createdBy = req.user?.id;

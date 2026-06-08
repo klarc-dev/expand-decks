@@ -38,11 +38,10 @@ const DraftFromBriefButton: React.FC = () => {
         body: JSON.stringify({ presentationId: String(id), brief }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const detail = data.detail && data.detail !== data.error ? ` (${data.detail})` : '';
-        setError((data.error || 'Erreur lors de la génération') + detail);
+        setError(data.error || `Erreur lors de la génération (HTTP ${res.status})`);
         return;
       }
 

@@ -26,3 +26,10 @@ export const isAdminOrSelf: Access = ({ req: { user } }) => {
   if (user.role === ROLES.admin) return true;
   return { createdBy: { equals: user.id } };
 };
+
+// Users have no `createdBy`, so self-scoping must match on `id` — not createdBy.
+export const isAdminOrSelfUser: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (user.role === ROLES.admin) return true;
+  return { id: { equals: user.id } };
+};
