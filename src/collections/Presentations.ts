@@ -1,6 +1,9 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdmin, isAdminOrSelf, isLoggedIn } from '../access/roles';
+import { isAdmin, isAdminOrSelf, isLoggedIn, userIsAdmin } from '../access/roles';
+import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
+import { CTX } from '../lib/context';
+import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { isValidSlug, SLUG_MAX } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { BUILD_STATUS, PRESENTATION_STATUS } from '../lib/status';
@@ -33,6 +36,82 @@ export const Presentations: CollectionConfig = {
     update: isAdminOrSelf,
     delete: isAdmin,
   },
+  endpoints: [
+    {
+      // Trigger a rebuild on demand. Unlike the publish-gated afterChange hook,
+      // this enqueues the same buildSlides job regardless of status. Owner or
+      // admin only; throttled per-presentation via an enqueue-time timestamp so
+      // rapid clicks can't spawn N concurrent Chromium/Slidev processes.
+      path: '/:id/build',
+      method: 'post',
+      handler: async (req: PayloadRequest) => {
+        const user = req.user;
+        if (!user) return Response.json({ error: 'Non authentifié' }, { status: 401 });
+
+        const id = req.routeParams?.id as string | undefined;
+        if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
+
+        // findByID with the user enforces read access; 404 lumps missing +
+        // forbidden, matching the draft route's convention.
+        let presentation;
+        try {
+          presentation = await req.payload.findByID({
+            collection: COLLECTIONS.presentations,
+            id,
+            depth: 0,
+            user,
+            overrideAccess: false,
+          });
+        } catch {
+          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
+        }
+        if (!presentation) {
+          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
+        }
+
+        // Authorize the write before spending a Chromium process.
+        const createdById =
+          typeof presentation.createdBy === 'object'
+            ? presentation.createdBy?.id
+            : presentation.createdBy;
+        if (!userIsAdmin(user) && createdById !== user.id) {
+          return Response.json({ error: 'Accès refusé' }, { status: 403 });
+        }
+
+        // Throttle: reject if a build was requested within the cooldown. Read
+        // the enqueue-time timestamp, NOT lastBuildStatus (which the worker only
+        // flips to 'building' on the next cron tick — too late to gate a burst).
+        const last = presentation.lastBuildRequestedAt
+          ? Date.parse(presentation.lastBuildRequestedAt as string)
+          : 0;
+        if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
+          return Response.json(
+            { error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.' },
+            { status: 429 },
+          );
+        }
+
+        // Stamp the request time atomically before enqueuing, with the
+        // skipBuildQueue flag so this patch doesn't itself trigger the hook.
+        await req.payload.update({
+          collection: COLLECTIONS.presentations,
+          id,
+          data: { lastBuildRequestedAt: new Date().toISOString() },
+          overrideAccess: true,
+          context: { [CTX.skipBuildQueue]: true },
+        });
+
+        // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
+        await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
+          task: BUILD_SLIDES_TASK,
+          input: { presentationId: id },
+          req,
+        });
+
+        return Response.json({ queued: true });
+      },
+    },
+  ],
   hooks: {
     afterChange: [afterPresentationChange],
   },
@@ -248,6 +327,17 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: 'Détails de l\'erreur en cas d\'échec du build',
                 readOnly: true,
+              },
+            },
+            {
+              name: 'lastBuildRequestedAt',
+              type: 'date',
+              label: 'Dernière demande de build',
+              admin: {
+                description:
+                  'Horodatage de la dernière demande de build à la volée (throttle anti-spam).',
+                readOnly: true,
+                hidden: true,
               },
             },
           ],
