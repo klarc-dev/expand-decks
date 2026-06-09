@@ -37,7 +37,13 @@ export default buildConfig({
       afterLogin: ['/components/GoogleLoginButton#default'],
     },
     livePreview: {
-      url: '/preview',
+      // Function form (native Payload pattern): embed the doc id so the
+      // preview route can fetch the document server-side and seed
+      // useLivePreview's `initialData` *with its id*. Without the id,
+      // live-preview's mergeData populates `/api/presentations/undefined`
+      // (HTTP 500) and slides never render. New/unsaved docs (no id) fall
+      // back to the bare /preview, which shows a "save first" message.
+      url: ({ data }) => (data?.id ? `/preview/${data.id}` : '/preview'),
       collections: [COLLECTIONS.presentations],
       breakpoints: [
         { name: 'slide', label: '16:9 Slide', width: 960, height: 540 },
