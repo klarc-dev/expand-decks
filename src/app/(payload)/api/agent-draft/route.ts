@@ -10,7 +10,7 @@ import { CTX } from '@/lib/context';
 import { DRAFT_STATUS, type DraftStatus } from '@/lib/status';
 import { deckContext } from '@/lib/deckContext';
 import { ROLES } from '@/access/roles';
-import { draftDeck } from '@/agents/orchestrate';
+import { mastra } from '@/agents/mastra';
 import { persistSlides } from '@/agents/tools/persist';
 
 export const maxDuration = 800; // self-hosted; the agentic run is long-running
@@ -100,10 +100,39 @@ export async function POST(req: NextRequest) {
   void (async () => {
     try {
       await mirror('gather');
-      const deck = await draftDeck(deckContext(presentation) + brief, {
-        visual,
-        onPhase: (p, d) => void mirror(p, d),
+
+      // Step ids ARE the draftStatus phases: workflow-step-start carries
+      // payload.stepName, foreach writers emit workflow-step-progress, and the
+      // validate/visual steps emit custom `phase` chunks via writer.write.
+      const run = await mastra.getWorkflow('deckWorkflow').createRun();
+      const stream = run.stream({
+        inputData: { brief: deckContext(presentation) + brief },
+        initialState: { visual, title: presentation.title ?? undefined },
       });
+
+      for await (const chunk of stream) {
+        if (chunk.type === 'workflow-step-start') {
+          await mirror(chunk.payload.stepName);
+        } else if (chunk.type === 'workflow-step-progress') {
+          await mirror('draft', {
+            completed: chunk.payload.completedCount,
+            total: chunk.payload.totalCount,
+          });
+        } else if (chunk.type === 'phase') {
+          const { phase, ...detail } = chunk.payload as { phase: string };
+          await mirror(phase, Object.keys(detail).length ? detail : undefined);
+        }
+      }
+
+      const result = await stream.result;
+      if (result.status !== 'success') {
+        throw new Error(
+          `[deckWorkflow] run ${result.status}` +
+            (result.status === 'failed' ? `: ${result.error?.message ?? ''}` : ''),
+        );
+      }
+      const deck = result.result;
+
       await persistSlides({
         payload,
         presentationId,
