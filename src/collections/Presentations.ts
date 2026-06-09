@@ -6,7 +6,7 @@ import { CTX } from '../lib/context';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { isValidSlug, SLUG_MAX } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
-import { BUILD_STATUS, PRESENTATION_STATUS } from '../lib/status';
+import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
 import { CoverBlock } from '../blocks/CoverBlock';
 import { SectionBlock } from '../blocks/SectionBlock';
 import { StatementBlock } from '../blocks/StatementBlock';
@@ -137,6 +137,15 @@ export const Presentations: CollectionConfig = {
               admin: {
                 components: {
                   Field: '/components/DraftFromBriefButton#default',
+                },
+              },
+            },
+            {
+              name: 'agentDraftFromBrief',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: '/components/AgentDraftButton#default',
                 },
               },
             },
@@ -297,6 +306,40 @@ export const Presentations: CollectionConfig = {
                 { label: 'Réussi', value: BUILD_STATUS.success },
                 { label: 'Échoué', value: BUILD_STATUS.failed },
               ],
+            },
+            {
+              name: 'draftStatus',
+              type: 'select',
+              defaultValue: DRAFT_STATUS.idle,
+              label: 'Statut du build agentique',
+              admin: {
+                description: "État du dernier build par l'agent IA",
+                readOnly: true,
+              },
+              options: [
+                { label: 'En attente', value: DRAFT_STATUS.idle },
+                { label: 'Recherche', value: DRAFT_STATUS.gathering },
+                { label: 'Plan', value: DRAFT_STATUS.structuring },
+                { label: 'Rédaction', value: DRAFT_STATUS.drafting },
+                { label: 'Validation', value: DRAFT_STATUS.validating },
+                { label: 'Build visuel', value: DRAFT_STATUS.building },
+                { label: 'Terminé', value: DRAFT_STATUS.done },
+                { label: 'Échoué', value: DRAFT_STATUS.failed },
+              ],
+            },
+            {
+              name: 'draftEvents',
+              type: 'json',
+              label: "Journal de l'agent",
+              admin: {
+                description: 'Progression détaillée du dernier build agentique',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'draftRunId',
+              type: 'text',
+              admin: { hidden: true, readOnly: true },
             },
             {
               name: 'spaUrl',

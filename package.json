@@ -35,6 +35,8 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
+    "@mastra/core": "^1.41.0",
+    "@mastra/pg": "^1.12.1",
     "@payloadcms/db-postgres": "3.85.0",
     "@payloadcms/live-preview-react": "3.85.0",
     "@payloadcms/next": "3.85.0",

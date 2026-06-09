@@ -1,0 +1,43 @@
+/**
+ * Phase 2 LIVE smoke — full gather → structure → foreach(writer) → assemble.
+ * Asserts every drafted slide renders (buildSlidesMd throws on unknown/invalid
+ * blocks) and the assembled markdown is non-trivial. Skipped without an API key.
+ */
+import { describe, expect, it } from 'vitest';
+
+import { draftDeck } from '../orchestrate';
+import { ALL_SPECS } from '../../blocks/spec';
+
+const live = process.env.OPENAI_API_KEY ? describe : describe.skip;
+const DRAFTABLE = new Set(ALL_SPECS.map((s) => s.blockType));
+
+const BRIEF =
+  'Court deck (5–6 slides) for corporate lawyers: why leading with the conclusion (BLUF) makes an expert legal talk land. Cover the cognitive reason, one concrete example, and the main objection refuted.';
+
+live('Phase 2 live (full draftDeck)', () => {
+  it('drafts renderable slides and assembles markdown', { timeout: 300_000 }, async () => {
+    const deck = await draftDeck(BRIEF, {
+      onPhase: (p, d) => console.log(`[phase2] ${p}${d ? ' ' + JSON.stringify(d) : ''}`),
+    });
+
+    expect(deck.slides.length).toBeGreaterThanOrEqual(3);
+    // Every slide is a known block type and carries its locked discriminant.
+    for (const s of deck.slides) {
+      expect(DRAFTABLE.has((s as { blockType: string }).blockType)).toBe(true);
+      expect((s as { title?: string }).title).toBeTruthy();
+    }
+    // Assembled markdown is a real Slidev deck (headmatter + slide separators).
+    expect(deck.md).toContain('---');
+    expect(deck.md.length).toBeGreaterThan(200);
+
+    console.log(
+      `\n[phase2] ${deck.slides.length} slides, ${deck.md.length} chars md\n` +
+        deck.slides
+          .map(
+            (s, i) =>
+              `  ${i + 1}. [${(s as { blockType: string }).blockType}] ${(s as { title: string }).title}`,
+          )
+          .join('\n'),
+    );
+  });
+});

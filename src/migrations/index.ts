@@ -2,6 +2,7 @@ import * as migration_20260608_183203_richtext_fields from './20260608_183203_ri
 import * as migration_20260608_203955_org_and_footer from './20260608_203955_org_and_footer';
 import * as migration_20260608_205627_build_requested_at from './20260608_205627_build_requested_at';
 import * as migration_20260609_064938_mermaid_block from './20260609_064938_mermaid_block';
+import * as migration_20260609_083115_agent_fields from './20260609_083115_agent_fields';
 
 export const migrations = [
   {
@@ -23,5 +24,10 @@ export const migrations = [
     up: migration_20260609_064938_mermaid_block.up,
     down: migration_20260609_064938_mermaid_block.down,
     name: '20260609_064938_mermaid_block',
+  },
+  {
+    up: migration_20260609_083115_agent_fields.up,
+    down: migration_20260609_083115_agent_fields.down,
+    name: '20260609_083115_agent_fields',
   },
 ];
