@@ -14,11 +14,24 @@
     "jobs:run": "payload jobs:run --queue default",
     "login": "node --env-file=.env scripts/login.mjs",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
     "lint:dead": "fallow",
     "lint:dead:scan": "fallow dead-code",
     "lint:dead:fix": "fallow fix --dry-run",
     "lint:dead:ci": "fallow audit --gate new-only --format json",
-    "lint:dead:prod": "fallow dead-code --production"
+    "lint:dead:prod": "fallow dead-code --production",
+    "prepare": "lefthook install"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20 <21",
+    "pnpm": ">=10"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
@@ -40,13 +53,18 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@next/eslint-plugin-next": "16.2.7",
     "@playwright/test": "^1.60.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "eslint": "^9.39.4",
     "fallow": "^2.89.0",
+    "lefthook": "^2.1.9",
     "playwright": "^1.60.0",
     "typescript": "^5.8.0",
+    "typescript-eslint": "^8.61.0",
     "vitest": "^4.1.0"
   },
   "pnpm": {
@@ -58,7 +76,9 @@
       "uuid@<11.1.1": ">=11.1.1 <12",
       "qs@>=6.11.1 <6.15.2": ">=6.15.2",
       "postcss@<8.5.10": ">=8.5.10",
-      "dompurify@<3.4.0": ">=3.4.0"
+      "dompurify@<3.4.0": ">=3.4.0",
+      "js-cookie@<3.0.7": ">=3.0.7 <4",
+      "esbuild@<0.25.0": ">=0.25.0"
     }
   }
 }
