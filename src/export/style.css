@@ -444,6 +444,41 @@
   color: #fff;
 }
 
+/* Mermaid diagram frame. Mermaid renders an <svg> into <div class="mermaid">
+   inside our wrapper; with flowchart.useMaxWidth (setup/mermaid.ts) the svg
+   carries max-width:100%, so we only need to (a) center it and (b) cap its
+   HEIGHT to the space left under the slide header, scaling width to match.
+   Without this the graph renders at intrinsic size and overflows the 720px
+   canvas — clipped to near-blank in the PDF export. */
+.k-mermaid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.k-mermaid .mermaid {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.k-mermaid svg {
+  /* !important beats Mermaid's inline `style="max-width:Npx"` + width="100%".
+     width:auto + height:auto + both max-* + the svg's intrinsic viewBox ratio =
+     scale-to-fit preserving aspect, so a tall TD flowchart shrinks to fit the
+     ~420px of vertical space under the header instead of overflowing. */
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 420px !important;
+}
+.k-mermaid-caption {
+  text-align: center;
+  font-size: var(--t-caption);
+  color: var(--fg-muted);
+  margin-top: 0.6rem;
+}
+
 .k-timeline {
   display: flex;
   align-items: stretch;

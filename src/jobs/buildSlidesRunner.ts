@@ -2,6 +2,7 @@ import { execFile as execFileCb } from 'node:child_process';
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -70,6 +71,15 @@ function stageBuildDir({ slidesMd, themeCss, footerEnabled, logoPresent }: Stage
   writeFileSync(join(workdir, ARTIFACTS.styleCss), `${baseCss}\n${themeCss}`, 'utf-8');
 
   cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));
+
+  // Slidev auto-loads ./setup/mermaid.ts (the official Mermaid theming hook).
+  // We ship it from src/export so diagrams use the Klarc palette and emit a
+  // max-width SVG that the .k-mermaid CSS can scale to fit the canvas.
+  mkdirSync(join(workdir, ARTIFACTS.setupDir), { recursive: true });
+  cpSync(
+    join(EXPORT_DIR, ARTIFACTS.mermaidSetupSrc),
+    join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
+  );
 
   if (existsSync(PUBLIC_FONTS_DIR)) {
     cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), { recursive: true });

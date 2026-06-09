@@ -15,4 +15,7 @@ export const ARTIFACTS = {
   dist: 'dist',
   footerLayer: 'slide-bottom.vue',
   logoLayer: 'global-top.vue',
+  mermaidSetupSrc: 'mermaid-setup.ts',
+  mermaidSetupDest: 'mermaid.ts',
+  setupDir: 'setup',
 } as const;
