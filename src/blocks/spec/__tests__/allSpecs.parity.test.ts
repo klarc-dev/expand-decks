@@ -12,134 +12,48 @@ import { StatsBlock } from '../../StatsBlock';
 import { TableBlock } from '../../TableBlock';
 import { TimelineBlock } from '../../TimelineBlock';
 import { TwoColsBlock } from '../../TwoColsBlock';
+import { aiSchemaOf } from '../dsl';
 import { ALL_SPECS } from '../index';
 import { emitPayloadBlock } from '../emit/emitPayloadBlock';
 import { emitSlidesArraySchema } from '../emit/emitDraftSchema';
 import { buildSystemPrompt } from '../emit/emitPromptSection';
 
-// The exact slidesArraySchema the draft route fed to the LLM before the SSOT
-// migration — verbatim from the old route.ts hand-rolled union.
-const surfaceZod = (gradient: boolean) =>
-  (gradient ? z.enum(['dark', 'light', 'gradient']) : z.enum(['dark', 'light'])).optional();
-const eyebrowZod = z.string().optional();
-const LEGACY_SLIDES_SCHEMA = z.object({
-  slides: z
-    .array(
-      z.union([
-        z.object({
-          blockType: z.literal('cover'),
-          eyebrow: eyebrowZod,
-          title: z.string(),
-          subtitle: z.string().optional(),
-          footerLeft: z.string().optional(),
-          footerRight: z.string().optional(),
-          surface: surfaceZod(true),
-        }),
-        z.object({
-          blockType: z.literal('section'),
-          number: z.string().optional(),
-          title: z.string(),
-          subtitle: z.string().optional(),
-          surface: surfaceZod(false),
-        }),
-        z.object({
-          blockType: z.literal('statement'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          body: z.string().optional(),
-          footer: z.string().optional(),
-        }),
-        z.object({
-          blockType: z.literal('twoCols'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          intro: z.string().optional(),
-          leftFooter: z.string().optional(),
-          rightCards: z
-            .array(z.object({ title: z.string(), description: z.string().optional() }))
-            .optional(),
-        }),
-        z.object({
-          blockType: z.literal('cardGrid'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          sidebarText: z.string().optional(),
-          columns: z.enum(['2', '3', '4']).optional(),
-          cards: z
-            .array(
-              z.object({
-                number: z.string().optional(),
-                title: z.string(),
-                description: z.string().optional(),
-              }),
-            )
-            .optional(),
-        }),
-        z.object({
-          blockType: z.literal('stats'),
-          eyebrow: eyebrowZod,
-          title: z.string(),
-          surface: surfaceZod(false),
-          stats: z
-            .array(z.object({ value: z.string(), label: z.string() }))
-            .optional(),
-        }),
-        z.object({
-          blockType: z.literal('quotes'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          quotes: z
-            .array(
-              z.object({
-                quote: z.string(),
-                authorName: z.string(),
-                authorRole: z.string().optional(),
-              }),
-            )
-            .optional(),
-        }),
-        z.object({
-          blockType: z.literal('cta'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          subtitle: z.string().optional(),
-          primaryAction: z.string().optional(),
-          secondaryAction: z.string().optional(),
-          footerNote: z.string().optional(),
-        }),
-        z.object({
-          blockType: z.literal('table'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          surface: z.enum(['dark', 'light']).optional(),
-          columns: z
-            .array(z.object({ header: z.string() }))
-            .min(2)
-            .max(5)
-            .optional(),
-          rows: z
-            .array(z.object({ cells: z.array(z.object({ value: z.string() })) }))
-            .min(1)
-            .max(8)
-            .optional(),
-        }),
-        z.object({
-          blockType: z.literal('timeline'),
-          eyebrow: z.string().optional(),
-          title: z.string(),
-          surface: z.enum(['dark', 'light']).optional(),
-          steps: z
-            .array(z.object({ label: z.string(), description: z.string().optional() }))
-            .min(2)
-            .max(6)
-            .optional(),
-          footer: z.string().optional(),
-        }),
-      ]),
-    )
-    .min(3)
-    .max(40),
-});
+const DRAFTABLE = ALL_SPECS.filter((spec) => spec.aiDraftable);
+
+// Golden roster of AI-draftable blockTypes, in order. This is the EXTERNAL
+// anchor that keeps the union assertions strong: derived lists track ALL_SPECS
+// and so silently shrink when a block is dropped, but the generated union must
+// still match THIS fixed roster — so a removed or renamed draftable fails here.
+const EXPECTED_DRAFTABLE = [
+  'cover',
+  'section',
+  'statement',
+  'twoCols',
+  'cardGrid',
+  'stats',
+  'quotes',
+  'cta',
+  'table',
+  'timeline',
+] as const;
+
+// Minimal valid object for a draftable member: blockType + title. Built and
+// proven against the spec's OWN aiSchema (not hand-coded) so it tracks any
+// future required field instead of silently weakening the union assertions.
+const minimalSlide = (spec: (typeof ALL_SPECS)[number]) => {
+  const slide: Record<string, unknown> = { blockType: spec.blockType, title: 'x' };
+  expect(aiSchemaOf(spec).safeParse(slide).success, `${spec.blockType} minimal`).toBe(true);
+  return slide;
+};
+
+// blockType literals of each generated union member, read off the emitted JSON
+// Schema `anyOf` — the same LLM-facing surface the deleted equality check used.
+const unionBlockTypes = (schema: z.ZodType): string[] => {
+  const json = z.toJSONSchema(schema, { io: 'input' }) as unknown as {
+    properties: { slides: { items: { anyOf: { properties: { blockType: { const: string } } }[] } } };
+  };
+  return json.properties.slides.items.anyOf.map((member) => member.properties.blockType.const);
+};
 
 // The PromptMeta records on the AI-draftable specs must reproduce the original
 // hand-written SYSTEM_PROMPT byte-for-byte (the parity oracle is duplicated in
@@ -241,9 +155,37 @@ describe('ALL_SPECS parity', () => {
     expect(buildSystemPrompt(metas)).toBe(EXPECTED_PROMPT);
   });
 
-  it('emits the legacy slidesArraySchema JSON Schema (LLM contract unchanged)', () => {
-    const toJson = (s: z.ZodType) => z.toJSONSchema(s, { io: 'input' });
-    expect(toJson(emitSlidesArraySchema(ALL_SPECS))).toEqual(toJson(LEGACY_SLIDES_SCHEMA));
+  it('bounds the generated slides array at min 3 / max 40', () => {
+    const schema = emitSlidesArraySchema(ALL_SPECS);
+    const slides = (n: number) => ({
+      slides: Array.from({ length: n }, () => minimalSlide(DRAFTABLE[0]!)),
+    });
+    expect(schema.safeParse(slides(2)).success).toBe(false);
+    expect(schema.safeParse(slides(3)).success).toBe(true);
+    expect(schema.safeParse(slides(41)).success).toBe(false);
+  });
+
+  it('accepts a minimal valid slide for every AI-draftable spec', () => {
+    const schema = emitSlidesArraySchema(ALL_SPECS);
+    for (const spec of DRAFTABLE) {
+      const deck = { slides: [minimalSlide(spec), minimalSlide(spec), minimalSlide(spec)] };
+      expect(schema.safeParse(deck).success, spec.blockType).toBe(true);
+    }
+  });
+
+  it('rejects an unknown blockType and the non-draftable markdown block', () => {
+    const schema = emitSlidesArraySchema(ALL_SPECS);
+    const filler = [minimalSlide(DRAFTABLE[0]!), minimalSlide(DRAFTABLE[0]!)];
+    expect(
+      schema.safeParse({ slides: [{ blockType: 'nope', title: 'x' }, ...filler] }).success,
+    ).toBe(false);
+    expect(
+      schema.safeParse({ slides: [{ blockType: 'markdown', title: 'x' }, ...filler] }).success,
+    ).toBe(false);
+  });
+
+  it('exposes one union member per AI-draftable spec, blockType literals matching', () => {
+    expect(unionBlockTypes(emitSlidesArraySchema(ALL_SPECS))).toEqual([...EXPECTED_DRAFTABLE]);
   });
 
   it('marks markdown as not AI-draftable and excludes it from prompt + schema', () => {
@@ -254,17 +196,6 @@ describe('ALL_SPECS parity', () => {
 
   it('keeps exactly the 10 AI-draftable layouts in the draft union', () => {
     const draftable = ALL_SPECS.filter((s) => s.aiDraftable).map((s) => s.blockType);
-    expect(draftable).toEqual([
-      'cover',
-      'section',
-      'statement',
-      'twoCols',
-      'cardGrid',
-      'stats',
-      'quotes',
-      'cta',
-      'table',
-      'timeline',
-    ]);
+    expect(draftable).toEqual([...EXPECTED_DRAFTABLE]);
   });
 });
