@@ -152,7 +152,14 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     });
 
     await runSlidev(['build', '--base', './'], workdir);
-    await runSlidev(['export', '--format', 'pdf', '--output', ARTIFACTS.pdf], workdir);
+    // --wait gives async client-rendered content (Mermaid diagrams paint their
+    // SVG only AFTER networkidle) time to settle before each page is captured;
+    // without it, diagram slides export blank. The FIRST mermaid on a deck needs
+    // extra warmup while mermaid.js lazy-initializes, so we budget generously.
+    await runSlidev(
+      ['export', '--format', 'pdf', '--output', ARTIFACTS.pdf, '--wait', '4000'],
+      workdir,
+    );
 
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
     const pdfMedia = await req.payload.create({
