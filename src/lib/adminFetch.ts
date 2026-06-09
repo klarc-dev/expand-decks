@@ -23,3 +23,11 @@ export async function adminPost(
 
   return { ok: res.ok, status: res.status, data };
 }
+
+/** Same-origin admin GET with the session cookie; tolerant JSON parse. */
+export async function adminGet(path: string): Promise<{ ok: boolean; status: number; data: any }> {
+  const res = await fetch(path, { method: 'GET', credentials: 'include' });
+  const data = await res.json().catch(() => ({}));
+
+  return { ok: res.ok, status: res.status, data };
+}

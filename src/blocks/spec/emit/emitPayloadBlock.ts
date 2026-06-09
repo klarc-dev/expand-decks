@@ -14,6 +14,7 @@ import { isAdminField } from '../../../access/roles';
 import {
   cardTitleDescFields,
   eyebrowField,
+  footnotesField,
   imageFields,
   previewField,
   slideRichTextEditor,
@@ -89,11 +90,24 @@ export function emitPayloadBlock(spec: BlockSpec): Block {
   // keep Payload's default label.
   const hasTitle = spec.fields.some((f) => f.factory === 'title');
 
+  // Every block except `markdown` gets the shared "Sources / Notes" repeater.
+  // It carries no render/AI data (no renderer reads it; buildSlidesMd seeds the
+  // footnote band directly from the Payload value), so it is injected here at
+  // L1 only — once — instead of in 11 spec field arrays. Placed before any
+  // trailing `preview` UI field so the form ends on the live preview.
+  const fields = spec.fields.flatMap(emitField);
+  if (spec.slug !== 'markdown') {
+    const previewIdx = fields.findIndex((f) => 'name' in f && f.name === 'preview');
+    const note = footnotesField();
+    if (previewIdx === -1) fields.push(note);
+    else fields.splice(previewIdx, 0, note);
+  }
+
   return {
     slug: spec.slug,
     labels: spec.labels,
     imageURL: spec.imageURL,
-    fields: spec.fields.flatMap(emitField),
+    fields,
     ...(hasTitle ? { admin: { components: { Label: '/components/SlideRowLabel#default' } } } : {}),
   };
 }

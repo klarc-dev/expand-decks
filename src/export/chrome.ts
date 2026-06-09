@@ -7,10 +7,11 @@
  * without needing `--per-slide` (Slidev's "wrong global layer state" caveat).
  *
  * Footer content is normalized: the Presentation stores TEMPLATES with
- * placeholders (`{org.name}`, `{title}`, `{date}`, `{page}`, `{total}`) plus
- * static vars; the Vue layer resolves them at render time so `{page}`/`{total}`
- * stay live and nothing resolved is ever persisted. Slides flagged
- * `hideChrome: true` (cover/section/cta) get no footer.
+ * placeholders. Static tokens (`{org.name}`, `{title}`, `{date}`…) are
+ * pre-resolved at build time via resolveVars (the SSOT in vars.ts) before the
+ * config is embedded; only `{page}`/`{total}` stay LIVE and are resolved by the
+ * Vue layer at render time. Slides flagged `hideChrome: true`
+ * (cover/section/cta) get no footer.
  *
  * Pure module: builds strings only, no fs/Payload imports.
  */
@@ -22,16 +23,13 @@ export interface FooterConfig {
   right: string;
 }
 
-export interface ChromeVars {
-  'org.name': string;
-  title: string;
-  date: string;
-}
-
-/** YAML-embed the footer config + static vars so the Vue layer reads them via `$slidev.configs`. */
+/**
+ * YAML-embed the footer config so the Vue layer reads it via `$slidev.configs`.
+ * The left/center/right strings are expected to be ALREADY resolved for static
+ * tokens by the caller (runner); the Vue layer only resolves `{page}`/`{total}`.
+ */
 export function buildFooterHeadmatter(
   footer: Partial<FooterConfig> | null | undefined,
-  vars: ChromeVars,
   logoUrl?: string | null,
 ): string {
   if (!footer?.enabled) return logoUrl ? `klarcLogo: ${jsonInline(logoUrl)}\n` : '';
@@ -39,7 +37,6 @@ export function buildFooterHeadmatter(
     left: footer.left ?? '',
     center: footer.center ?? '',
     right: footer.right ?? '',
-    vars,
   };
   const logoLine = logoUrl ? `klarcLogo: ${jsonInline(logoUrl)}\n` : '';
   return `klarcFooter: ${jsonInline(block)}\n${logoLine}`;
@@ -51,26 +48,27 @@ function jsonInline(value: unknown): string {
 }
 
 /**
- * `slide-bottom.vue`: resolves the footer templates against live nav + static
- * vars, hides itself on `hideChrome` slides. Returns '' when no footer config
- * is present so the file isn't written.
+ * `slide-bottom.vue`: resolves the LIVE `{page}`/`{total}` tokens against nav
+ * state (static tokens are already resolved at build), hides itself on
+ * `hideChrome` slides. Returns '' when no footer config is present.
  */
 export function buildFooterLayer(hasFooter: boolean): string {
   if (!hasFooter) return '';
   return `<script setup lang="ts">
 import { computed } from 'vue'
 import { useNav, useSlideContext } from '@slidev/client'
-const { currentPage, total } = useNav()
-const { $slidev, $frontmatter } = useSlideContext()
+// $page is THIS slide instance's own 1-indexed page number — correct in PDF
+// export, where the global nav.currentPage stays stuck at 1 for every page
+// (all slides render at once). total comes from nav (constant across slides).
+const { total } = useNav()
+const { $slidev, $frontmatter, $page } = useSlideContext()
 const cfg = computed(() => $slidev?.configs?.klarcFooter)
 const hidden = computed(() => $frontmatter?.hideChrome === true)
 function resolve(t: string): string {
   if (!t) return ''
-  const v = cfg.value?.vars ?? {}
-  return t.replace(/\\{([\\w.]+)\\}/g, (_m, k) => {
-    if (k === 'page') return String(currentPage.value)
-    if (k === 'total') return String(total.value)
-    return v[k] ?? ''
+  return t.replace(/\\{(page|total)\\}/g, (_m, k) => {
+    if (k === 'page') return String($page?.value ?? $page ?? '')
+    return String(total.value)
   })
 }
 const left = computed(() => resolve(cfg.value?.left ?? ''))

@@ -6,7 +6,8 @@ import { ARTIFACTS } from '../lib/paths';
 
 import { getRenderer, type SlideBlock } from './renderers';
 import { slideTone } from './slideTone';
-import { resetDefs, yamlQuoted, type Surface } from './utils';
+import { resetDefs, seedFootnotes, yamlQuoted, type Surface } from './utils';
+import { setVarDoc } from './vars';
 
 export type Presentation = {
   title: string;
@@ -32,16 +33,36 @@ function loadHeadmatter(): string {
  */
 export function buildSlidesMd(
   presentation: Presentation,
-  options?: { headmatter?: string },
+  options?: { headmatter?: string; vars?: Record<string, unknown> },
 ): string {
   const headmatter = options?.headmatter ?? loadHeadmatter();
 
+  // Dynamic {path} variables (e.g. {org.name}, {title}) resolve against this
+  // context inside md()/applyDefs(). Set once; always cleared in finally so the
+  // module-level ctx never leaks into the next build (mirrors resetDefs).
+  setVarDoc(options?.vars ?? null);
+  try {
+    return foldSlides(presentation, headmatter);
+  } finally {
+    setVarDoc(null);
+  }
+}
+
+function foldSlides(presentation: Presentation, headmatter: string): string {
   // Fold over slides carrying the previously-resolved tone, so slideTone can
   // alternate adjacent statements against their real neighbour (KTD5b). The
   // resolved tone is passed to each renderer as ctx.surface; a renderer with an
   // explicit block.surface field still wins (KTD5).
   let prevTone: Surface | null = null;
   let statementIndex = 0; // rotates statement variants when unset (U8/KTD6b)
+  // Deck section titles, in order — the agenda block falls back to these when it
+  // has no authored items (auto-plan from the deck structure).
+  const sections = presentation.slides
+    .filter((b) => b.blockType === 'section')
+    .map((b) =>
+      typeof (b as { title?: unknown }).title === 'string' ? (b as { title: string }).title : '',
+    )
+    .filter((t) => t.trim().length > 0);
   const slidesMd = presentation.slides.map((block) => {
     const renderer = getRenderer(block.blockType);
     if (!renderer) {
@@ -51,7 +72,15 @@ export function buildSlidesMd(
     prevTone = tone;
     const variantIndex = block.blockType === 'statement' ? statementIndex++ : undefined;
     resetDefs();
-    return renderer(block as never, { surface: tone, variantIndex });
+    // Seed authored "Sources / Notes" before rendering so they're numbered
+    // ahead of any inline {{def:…}} refs; markdown blocks carry no footnotes
+    // field and never flush the band.
+    if (block.blockType !== 'markdown') {
+      seedFootnotes(
+        (block as { footnotes?: ({ text?: string | null } | null)[] | null }).footnotes,
+      );
+    }
+    return renderer(block as never, { surface: tone, variantIndex, sections });
   });
 
   // Each renderer's output already begins with `---` (its own frontmatter

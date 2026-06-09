@@ -94,14 +94,24 @@
   --fg-muted: var(--fg-light-muted);
   --fg-footer: #6b7b7b; /* deck footer on light ground ≈ 4.7:1 */
 
-  /* Type ramp — single source for heading/body scale (replaces inline
-     text-4xl/5xl/6xl/xl per renderer). */
-  --t-display: 6rem;
-  --t-hero: 3.2rem;
-  --t-title: 3rem;
-  --t-sub: 2.25rem;
-  --t-body: 1.25rem;
-  --t-caption: 0.8rem;
+  /* Type ramp — single source of truth for every font-size on a slide.
+     Major-Third (1.25) modular scale anchored at 1rem body. EVERY component
+     pulls a token from here; no per-component literal rem (the .k-tight density
+     modifier may step DOWN one token, but never invents a literal). Adding a
+     size? Map it to a token or add a token — don't hardcode. */
+  --t-display: 4.5rem; /* cover + cta hero headline */
+  --t-hero: 3.052rem; /* section/stats/statement centered-hero (h1) */
+  --t-title: 2.441rem; /* unified primary content-slide title (k-h-lg) */
+  --t-sub: 1.953rem; /* secondary heading / h2 (k-h-md) */
+  --t-h3: 1.563rem; /* tertiary heading — card title, timeline label */
+  --t-numeral: 3.5rem; /* display numeral — stat value */
+  --t-quote: 1.4rem; /* pull-quote body */
+  --t-lead: 1.25rem; /* lead/intro — hero body, hero/section/cta subtitle */
+  --t-body: 1rem; /* default copy — card body, table cells, buttons, lists */
+  --t-small: 0.8rem; /* captions, labels, eyebrow, pill, author, card num */
+  --t-micro: 0.62rem; /* slide chrome (header/footer), def-footer */
+  /* Back-compat alias: --t-caption was renamed to --t-small. */
+  --t-caption: var(--t-small);
 
   /* Layout rails — one left/right inset and one title baseline for every
      content slide (replaces px-14/px-12 and pt-24/28/16/20 drift). */
@@ -135,6 +145,14 @@
   color: var(--k-ink);
   background: var(--k-paper);
   letter-spacing: -0.01em;
+  /* Slidev's base layout ships `px-14` (3.5rem) horizontal padding, which stacks
+     ON TOP of every block's own `--content-inset` rail — pushing main content to
+     ~7rem from the edge while the absolutely-positioned footer sits at 3.5rem.
+     Zero the base horizontal padding so `--content-inset` is the single rail and
+     content uses the full width, flush with the footer. Vertical padding stays:
+     blocks own their top offset via `--header-top`. */
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .slidev-layout h1,
@@ -147,12 +165,12 @@
 }
 
 .slidev-layout h1 {
-  font-size: 3.2rem;
+  font-size: var(--t-title);
   line-height: 1.05;
 }
 
 .slidev-layout h2 {
-  font-size: 2.1rem;
+  font-size: var(--t-sub);
   line-height: 1.1;
 }
 
@@ -196,7 +214,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.8rem;
+  font-size: var(--t-small);
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -276,20 +294,20 @@
 
 .k-card h3 {
   margin: 0 0 0.4rem;
-  font-size: 1.15rem;
+  font-size: var(--t-h3);
   color: var(--k-teal);
 }
 
 .k-card p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: var(--t-body);
   color: var(--k-ink-soft);
   line-height: 1.45;
 }
 
 .k-card .k-num {
   font-family: "Gilroy", sans-serif;
-  font-size: 0.75rem;
+  font-size: var(--t-small);
   color: var(--k-rose);
   display: block;
   margin-bottom: 0.3rem;
@@ -307,7 +325,7 @@
   margin-bottom: 0.2rem;
 }
 .k-tight .k-card p {
-  font-size: 0.82rem;
+  font-size: var(--t-small);
   line-height: 1.35;
 }
 
@@ -319,7 +337,7 @@
 
 .k-stat .val {
   font-family: "Gilroy", sans-serif;
-  font-size: 3.5rem;
+  font-size: var(--t-numeral);
   line-height: 1;
   color: var(--k-teal);
   font-weight: 500;
@@ -330,7 +348,7 @@
 }
 
 .k-stat .lbl {
-  font-size: 0.82rem;
+  font-size: var(--t-small);
   color: var(--k-ink-soft);
   letter-spacing: 0.02em;
 }
@@ -343,7 +361,7 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.92rem;
+  font-size: var(--t-body);
   border: 1px solid var(--k-line);
   border-radius: 14px;
   overflow: hidden;
@@ -450,31 +468,44 @@
    HEIGHT to the space left under the slide header, scaling width to match.
    Without this the graph renders at intrinsic size and overflows the 720px
    canvas — clipped to near-blank in the PDF export. */
-.k-mermaid {
+/* Mermaid (diagram) slides. The fence is emitted at root markdown level so the
+   <Mermaid> transform fires; Slidev outputs a centered <div class="mermaid">
+   with an <svg>. The slide carries .k-diagram-slide (set via wrapSlide classAttr)
+   so we restore the horizontal inset the base layout zeroes out, and CENTER the
+   diagram across the full width (it was rendering left-anchored at ~28% width). */
+.k-diagram-slide {
+  padding-left: var(--content-inset);
+  padding-right: var(--content-inset);
+}
+/* Slidev wraps the rendered diagram in .mermaid — center it and cap its height
+   so a tall TD flowchart fits under the header instead of overflowing/clipping. */
+.k-diagram-slide .mermaid {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
-  margin-top: 0.5rem;
+  max-height: 25rem;
+  margin: 0.5rem 0;
+  /* Slidev applies the `{scale}` option as a `transform: scale(N)` with
+     `transform-origin: top left` on this `.mermaid` element, so the scaled-down
+     diagram collapses toward the top-LEFT corner — leaving the empty right/bottom
+     band seen on the slide. justify-content:center can't fix it (the transform
+     runs after flex layout). Override the origin to top-CENTER so the down-scale
+     stays horizontally centered and top-aligned under the header. !important
+     because Slidev sets the origin inline. */
+  transform-origin: top center !important;
 }
-.k-mermaid .mermaid {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-.k-mermaid svg {
-  /* !important beats Mermaid's inline `style="max-width:Npx"` + width="100%".
-     width:auto + height:auto + both max-* + the svg's intrinsic viewBox ratio =
-     scale-to-fit preserving aspect, so a tall TD flowchart shrinks to fit the
-     ~420px of vertical space under the header instead of overflowing. */
-  width: auto !important;
-  height: auto !important;
+.k-diagram-slide .mermaid svg {
   max-width: 100% !important;
-  max-height: 420px !important;
+  max-height: 25rem !important;
+  height: auto !important;
+  /* Mirror the centered origin in case Slidev applies the `{scale}` transform to
+     the inner <svg> rather than the .mermaid wrapper. */
+  transform-origin: top center !important;
 }
 .k-mermaid-caption {
   text-align: center;
-  font-size: var(--t-caption);
+  font-size: var(--t-small);
   color: var(--fg-muted);
   margin-top: 0.6rem;
 }
@@ -512,13 +543,13 @@
 
 .k-tl-label {
   font-family: "Gilroy", sans-serif;
-  font-size: 1.05rem;
+  font-size: var(--t-h3);
   color: var(--k-teal);
   margin: 0 0 0.35rem;
 }
 
 .k-tl-desc {
-  font-size: 0.82rem;
+  font-size: var(--t-small);
   color: var(--k-ink-soft);
   line-height: 1.4;
   margin: 0;
@@ -542,7 +573,7 @@
   background: var(--k-teal-50);
   border: 1px solid var(--k-line);
   color: var(--k-teal-700);
-  font-size: 0.85rem;
+  font-size: var(--t-small);
   text-align: center;
   letter-spacing: 0.01em;
 }
@@ -566,6 +597,79 @@
   color: #eaf2f2;
 }
 
+/* Agenda / plan — vertical numbered list of sections, with optional
+   "you are here" emphasis (active row solid, others dimmed). */
+.k-agenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.k-ag-item {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  align-items: baseline;
+  column-gap: 1.2rem;
+  padding: 0.7rem 1.1rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--k-line);
+  transition: none;
+}
+
+.k-ag-num {
+  font-family: "Gilroy", sans-serif;
+  font-weight: 600;
+  font-size: var(--t-sub);
+  line-height: 1;
+  color: var(--k-rose);
+}
+
+.k-ag-label {
+  font-family: "Gilroy", sans-serif;
+  font-size: var(--t-h3);
+  color: var(--k-teal);
+  margin: 0;
+}
+
+.k-ag-desc {
+  grid-column: 2;
+  font-size: var(--t-small);
+  color: var(--k-ink-soft);
+  line-height: 1.4;
+  margin: 0.25rem 0 0;
+}
+
+/* Active row: filled teal surface so the current section stands out. */
+.k-ag-item--active {
+  background: var(--k-teal-50);
+  border-color: var(--k-teal);
+}
+
+/* Dimmed rows: present but receded, so the eye lands on the active one. */
+.k-ag-item--dim {
+  opacity: 0.45;
+}
+
+.k-dark .k-ag-item {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.k-dark .k-ag-num {
+  color: var(--k-rose);
+}
+.k-dark .k-ag-label {
+  color: #fff;
+}
+.k-dark .k-ag-desc {
+  color: var(--fg-muted);
+}
+.k-dark .k-ag-item--active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
 .k-divider {
   width: 40px;
   height: 2px;
@@ -576,7 +680,7 @@
 
 .k-quote {
   font-family: "Gilroy", sans-serif;
-  font-size: 1.4rem;
+  font-size: var(--t-quote);
   line-height: 1.4;
   color: var(--k-ink);
   font-style: italic;
@@ -593,7 +697,7 @@
 
 .k-author {
   font-family: "Roboto", sans-serif;
-  font-size: 0.82rem;
+  font-size: var(--t-small);
   font-style: normal;
   color: var(--k-teal);
   font-weight: 500;
@@ -614,7 +718,7 @@
   color: #fff;
   border-radius: 999px;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--t-body);
   letter-spacing: -0.01em;
 }
 
@@ -632,7 +736,7 @@
   border: 1px solid var(--k-line);
   border-radius: 999px;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--t-body);
 }
 
 .k-dark .k-btn-ghost {
@@ -663,7 +767,7 @@
    absolute .k-foot bar, which overlapped the deck-level .k-slide-footer
    (chrome.ts). Tone-aware via --fg-muted, so it reads on light and dark. */
 .k-caption {
-  font-size: 0.78rem;
+  font-size: var(--t-small);
   color: var(--fg-muted);
   letter-spacing: 0.02em;
   line-height: 1.4;
@@ -678,7 +782,7 @@
   width: 1.35rem;
   height: 1.35rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: var(--t-small);
   font-weight: 700;
   margin-right: 0.4rem;
   vertical-align: -0.15em;
@@ -762,7 +866,7 @@
   line-height: 1.1;
 }
 .k-hero-body {
-  font-size: var(--t-body);
+  font-size: var(--t-lead);
   line-height: 1.5;
   max-width: 46rem;
   margin-top: 1.5rem;
@@ -814,7 +918,7 @@
   margin: 0 0 2rem;
 }
 .k-center-hero-sub {
-  font-size: var(--t-body);
+  font-size: var(--t-lead);
   color: var(--fg-muted);
   line-height: 1.55;
   margin-top: 1.5rem;
@@ -823,7 +927,7 @@
 /* Cover flourish -------------------------------- */
 .k-hero-big {
   font-family: "Gilroy", sans-serif;
-  font-size: 6rem;
+  font-size: var(--t-display);
   line-height: 0.95;
   letter-spacing: -0.04em;
   font-weight: 400;
@@ -837,7 +941,7 @@
 }
 
 .k-hero-sub {
-  font-size: 1.05rem;
+  font-size: var(--t-lead);
   color: var(--fg-muted); /* solid — was rgba .75 */
   max-width: 36rem;
   line-height: 1.55;
@@ -870,7 +974,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 3.5rem;
-  font-size: 0.62rem;
+  font-size: var(--t-micro);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--fg-footer); /* solid AA token — was opacity:0.45 (severe AA fail) */
@@ -912,12 +1016,12 @@
 /* CTA-specific text classes — replace inline styles -------------- */
 .k-cta-title {
   color: #fff;
-  font-size: 5.5rem;
+  font-size: var(--t-display);
   line-height: 0.95;
 }
 .k-cta-sub {
   font-family: "Gilroy", sans-serif;
-  font-size: 1.25rem;
+  font-size: var(--t-lead);
   font-style: italic;
   color: var(--fg-muted); /* solid on the always-dark cta — was opacity:0.75 */
 }
@@ -927,11 +1031,13 @@
   color: #fff !important;
 }
 
-/* Définitions : appel inline (exposant) + bandeau footer ----------- */
+/* Sources / notes : appel inline (exposant) + bandeau footer.
+   Convention conseil : minuscule, gris neutre, filet fin, exposants discrets
+   (pas d'accent rose), sans italique. ----------- */
 .k-def-ref {
   font-size: 0.65em;
-  font-weight: 700;
-  color: var(--k-rose);
+  font-weight: 600;
+  color: var(--fg-muted);
   vertical-align: super;
   margin: 0 0.05em 0 0.1em;
 }
@@ -940,10 +1046,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1.5rem;
-  font-size: 0.6rem;
+  font-size: var(--t-micro);
   line-height: 1.4;
-  color: var(--k-ink-soft);
-  font-style: italic;
+  color: var(--fg-muted);
   border-top: 1px solid color-mix(in srgb, var(--k-ink) 12%, transparent);
   padding-top: 0.5rem;
 }
@@ -952,9 +1057,8 @@
 }
 .k-def-item sup {
   font-size: 0.85em;
-  font-weight: 700;
-  color: var(--k-rose);
-  font-style: normal;
+  font-weight: 600;
+  color: var(--fg-muted);
   margin-right: 0.25em;
   vertical-align: super;
 }
@@ -964,7 +1068,7 @@
 }
 .k-dark .k-def-item sup,
 .k-dark .k-def-ref {
-  color: var(--k-rose);
+  color: var(--fg-muted);
 }
 
 /* Split layout — replaces two-cols so footer can sit at slide root */
@@ -977,7 +1081,7 @@
 
 /* Inline label (used in service detail slides) */
 .k-label {
-  font-size: 0.75rem;
+  font-size: var(--t-small);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--k-teal);

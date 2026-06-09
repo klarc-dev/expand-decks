@@ -7,6 +7,7 @@ const HTML_ENTITIES: Record<string, string> = {
 };
 
 import { K } from './classNames';
+import { resolveVars } from './vars';
 
 const HTML_ENTITY_RE = /[&<>"']/g;
 const DEF_RE = /\{\{def:(.+?)\}\}/g;
@@ -70,10 +71,26 @@ export function resetDefs(): void {
   _slideDefs = [];
 }
 
+/**
+ * Seed the slide-scoped footnote band from the shared "Sources / Notes" Payload
+ * repeater (block.footnotes). Called by buildSlidesMd before the renderer runs,
+ * so authored notes are numbered ahead of any inline `{{def:…}}` refs and both
+ * share one continuous numbering in the footer band. Empty/blank texts skipped.
+ */
+export function seedFootnotes(notes?: ({ text?: string | null } | null)[] | null): void {
+  if (!notes) return;
+  for (const note of notes) {
+    const text = note?.text?.trim();
+    if (text) _slideDefs.push(text);
+  }
+}
+
 function consumeDefFooter(): string {
   if (_slideDefs.length === 0) return '';
+  // md() (not escape) so a note can carry an inline [texte](url) link or *emphasis*;
+  // md() escapes HTML entities itself, so this stays injection-safe.
   const items = _slideDefs
-    .map((d, i) => `<span class="${K.defItem}"><sup>${i + 1}</sup>${escape(d)}</span>`)
+    .map((d, i) => `<span class="${K.defItem}"><sup>${i + 1}</sup>${md(d)}</span>`)
     .join('');
   _slideDefs = [];
   return `\n\n<div class="${K.defFooter}">${items}</div>`;
@@ -103,7 +120,10 @@ function safeHref(raw: string): string | null {
 // Operates on already-escaped/converted HTML; { } : are not entity-escaped so
 // DEF_RE still matches.
 export function applyDefs(html: string): string {
-  return html
+  // Resolve {path} variables first (input is already Lexical-converted HTML;
+  // `{ } .` are not entity-escaped so VAR_RE still matches). escape() guards
+  // each substituted value.
+  return resolveVars(html, escape)
     .replace(DEF_RE, (_, content) => {
       _slideDefs.push(content);
       return `\x00DEF${_slideDefs.length}\x00`;
@@ -112,7 +132,9 @@ export function applyDefs(html: string): string {
 }
 
 export function md(text: string | null | undefined): string {
-  const escaped = escape(text).replace(DEF_RE, (_, content) => {
+  // Resolve {path} variables before escaping, so a resolved value is escaped
+  // like any author text.
+  const escaped = escape(resolveVars(text)).replace(DEF_RE, (_, content) => {
     _slideDefs.push(content);
     return `\x00DEF${_slideDefs.length}\x00`;
   });
@@ -193,11 +215,13 @@ ${body}${consumeDefFooter()}`;
 // ---------------------------------------------------------------------------
 
 /**
- * Context threaded into every renderer (U5/U8). Carries the resolved slide tone
- * and, for statement, the index-resolved layout variant (used only when the
- * block's own `variant` field is unset — KTD6b).
+ * Context threaded into every renderer (U5/U8). Carries the resolved slide tone,
+ * for statement the index-resolved layout variant (used only when the block's
+ * own `variant` field is unset — KTD6b), and `sections`: the deck's ordered
+ * `section` titles, which the agenda block falls back to when its own `items`
+ * are empty (auto-plan from the deck structure).
  */
-export type RenderCtx = { surface?: Surface | null; variantIndex?: number };
+export type RenderCtx = { surface?: Surface | null; variantIndex?: number; sections?: string[] };
 
 /**
  * Slide header: eyebrow + title at the shared `--header-top` baseline, optional

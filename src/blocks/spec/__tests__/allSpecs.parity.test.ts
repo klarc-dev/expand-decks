@@ -12,6 +12,7 @@ import { StatsBlock } from '../../StatsBlock';
 import { TableBlock } from '../../TableBlock';
 import { TimelineBlock } from '../../TimelineBlock';
 import { MermaidBlock } from '../../MermaidBlock';
+import { AgendaBlock } from '../../AgendaBlock';
 import { TwoColsBlock } from '../../TwoColsBlock';
 import { aiSchemaOf } from '../dsl';
 import { ALL_SPECS } from '../index';
@@ -37,6 +38,7 @@ const EXPECTED_DRAFTABLE = [
   'table',
   'timeline',
   'mermaid',
+  'agenda',
 ] as const;
 
 // Minimal valid object for a draftable member: blockType + title + any other
@@ -128,6 +130,10 @@ Layouts disponibles :
    - eyebrow, title (obligatoire), surface ("light" | "dark"), caption
    - source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs \`\`\`
 
+12. **agenda** — Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire
+   - eyebrow, title (obligatoire), surface ("light" | "dark")
+   - items: [{label, description}] — 2 à 8 sections, dans l’ordre, numérotées automatiquement
+
 Règles :
 - Commence TOUJOURS par un bloc "cover"
 - Termine TOUJOURS par un bloc "cta"
@@ -153,6 +159,7 @@ const BLOCKS = {
   table: TableBlock,
   timeline: TimelineBlock,
   mermaid: MermaidBlock,
+  agenda: AgendaBlock,
   markdown: MarkdownBlock,
 } as const;
 
@@ -213,7 +220,7 @@ describe('ALL_SPECS parity', () => {
     expect(markdown?.promptMeta).toBeUndefined();
   });
 
-  it('keeps exactly the 11 AI-draftable layouts in the draft union', () => {
+  it('keeps exactly the 12 AI-draftable layouts in the draft union', () => {
     const draftable = ALL_SPECS.filter((s) => s.aiDraftable).map((s) => s.blockType);
     expect(draftable).toEqual([...EXPECTED_DRAFTABLE]);
   });

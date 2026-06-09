@@ -6,6 +6,7 @@ import { CTX } from '../lib/context';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { isValidSlug, SLUG_MAX } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
+import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
 import { CoverBlock } from '../blocks/CoverBlock';
 import { SectionBlock } from '../blocks/SectionBlock';
@@ -18,6 +19,7 @@ import { CtaBlock } from '../blocks/CtaBlock';
 import { TableBlock } from '../blocks/TableBlock';
 import { TimelineBlock } from '../blocks/TimelineBlock';
 import { MermaidBlock } from '../blocks/MermaidBlock';
+import { AgendaBlock } from '../blocks/AgendaBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
@@ -117,6 +119,54 @@ export const Presentations: CollectionConfig = {
         return Response.json({ queued: true });
       },
     },
+    {
+      // Variable list for the `@`-mention editor menu. Flattens the populated
+      // presentation + its linked organisation into `{path, label, sample}`
+      // entries — generic, so any scalar field on either collection appears
+      // with no code change (SSOT). Read access enforced via findByID + user.
+      path: '/:id/vars',
+      method: 'get',
+      handler: async (req: PayloadRequest) => {
+        const user = req.user;
+        if (!user) return Response.json({ error: 'Non authentifié' }, { status: 401 });
+
+        const id = req.routeParams?.id as string | undefined;
+        if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
+
+        let doc;
+        try {
+          doc = await req.payload.findByID({
+            collection: COLLECTIONS.presentations,
+            id,
+            depth: 1, // populate organisation so its fields can be flattened
+            user,
+            overrideAccess: false,
+          });
+        } catch {
+          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
+        }
+
+        const record = doc as unknown as Record<string, unknown>;
+        const orgRel = record.organisation;
+        const orgVars =
+          orgRel && typeof orgRel === 'object'
+            ? flattenVars(orgRel as Record<string, unknown>, 'org')
+            : [];
+        const slideCount = Array.isArray(record.slides) ? record.slides.length : 0;
+        const vars = [
+          ...flattenVars(record),
+          ...orgVars,
+          {
+            path: 'date',
+            label: 'date',
+            sample: new Date().toLocaleDateString(record.language === 'en' ? 'en-GB' : 'fr-FR'),
+          },
+          { path: 'total', label: 'total', sample: String(slideCount) },
+        ];
+
+        return Response.json({ vars });
+      },
+    },
   ],
   hooks: {
     afterChange: [afterPresentationChange],
@@ -165,6 +215,7 @@ export const Presentations: CollectionConfig = {
                 TableBlock,
                 TimelineBlock,
                 MermaidBlock,
+                AgendaBlock,
                 MarkdownBlock,
               ],
             },

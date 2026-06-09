@@ -95,6 +95,61 @@ describe('buildSlidesMd()', () => {
     expect(chunks.filter((c, i) => i > 0 && c.trim() === '')).toHaveLength(0);
   });
 
+  it('renders authored footnotes as a numbered def-footer band', () => {
+    const result = build([
+      {
+        blockType: 'statement',
+        title: 'Claim',
+        footnotes: [{ text: 'Source : Gartner, 2025' }, { text: 'Voir [étude](https://x.test)' }],
+      } as never,
+    ]);
+    expect(result).toContain('k-def-footer');
+    // First note numbered ¹, second ², in author order.
+    expect(result).toContain('<sup>1</sup>Source : Gartner, 2025');
+    // md() turns the inline link into an anchor.
+    expect(result).toContain('<sup>2</sup>Voir <a href="https://x.test">étude</a>');
+  });
+
+  it('skips blank footnote texts and emits no band when all empty', () => {
+    const result = build([
+      {
+        blockType: 'statement',
+        title: 'Claim',
+        footnotes: [{ text: '  ' }, { text: '' }],
+      } as never,
+    ]);
+    expect(result).not.toContain('k-def-footer');
+  });
+
+  it('does not flush a footnote band for markdown blocks', () => {
+    // markdown carries no footnotes field and never calls wrapSlide; seedFootnotes
+    // is skipped for it, so even a stray value must not produce a band.
+    const result = build([
+      { blockType: 'markdown', content: '# Hi', footnotes: [{ text: 'x' }] } as never,
+    ]);
+    expect(result).not.toContain('k-def-footer');
+  });
+
+  it('resolves {path} variables against the build vars context', () => {
+    const result = buildSlidesMd(
+      { title: 'Deck', slides: [{ blockType: 'cover', title: 'Bienvenue chez {org.name}' }] },
+      { headmatter: HEADMATTER, vars: { org: { name: 'Klarc' } } },
+    );
+    expect(result).toContain('Bienvenue chez Klarc');
+    expect(result).not.toContain('{org.name}');
+  });
+
+  it('does not leak the vars context to a subsequent build with no vars', () => {
+    buildSlidesMd(
+      { title: 'Deck', slides: [{ blockType: 'cover', title: '{title}' }] },
+      { headmatter: HEADMATTER, vars: { title: 'Resolved' } },
+    );
+    const second = build([{ blockType: 'cover', title: '{title}' }]);
+    // no vars passed → the literal token must survive untouched
+    expect(second).toContain('{title}');
+    expect(second).not.toContain('Resolved');
+  });
+
   it('throws for unknown block type', () => {
     expect(() => build([{ blockType: 'unknown' as never, title: 'Bad' } as never])).toThrow(
       'Unknown block type: unknown',

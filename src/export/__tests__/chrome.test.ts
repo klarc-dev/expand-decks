@@ -2,30 +2,30 @@ import { describe, expect, it } from 'vitest';
 
 import { buildFooterHeadmatter, buildFooterLayer, buildLogoLayer } from '../chrome';
 
-const vars = { 'org.name': 'Klarc', title: 'Deck', date: '2026-06-08' };
-
 describe('buildFooterHeadmatter', () => {
-  it('emits a klarcFooter YAML line with templates + static vars when enabled', () => {
+  it('emits a klarcFooter YAML line with the (pre-resolved) templates when enabled', () => {
+    // Static tokens are resolved by the caller; this helper just embeds the
+    // strings and leaves {page}/{total} for the Vue layer.
     const out = buildFooterHeadmatter(
-      { enabled: true, left: '{org.name}', center: '', right: '{page} / {total}' },
-      vars,
+      { enabled: true, left: 'Klarc', center: '', right: '{page} / {total}' },
       null,
     );
     expect(out).toContain('klarcFooter:');
     const json = JSON.parse(out.replace(/^klarcFooter:\s*/, '').trim());
-    expect(json.left).toBe('{org.name}');
+    expect(json.left).toBe('Klarc');
     expect(json.right).toBe('{page} / {total}');
-    expect(json.vars['org.name']).toBe('Klarc');
+    // no static-var payload is embedded anymore
+    expect(json.vars).toBeUndefined();
   });
 
   it('omits the footer block when disabled, but still emits the logo line', () => {
-    const out = buildFooterHeadmatter({ enabled: false }, vars, '/media/logo.png');
+    const out = buildFooterHeadmatter({ enabled: false }, '/media/logo.png');
     expect(out).not.toContain('klarcFooter:');
     expect(out).toContain('klarcLogo: "/media/logo.png"');
   });
 
   it('emits nothing when disabled and no logo', () => {
-    expect(buildFooterHeadmatter({ enabled: false }, vars, null)).toBe('');
+    expect(buildFooterHeadmatter({ enabled: false }, null)).toBe('');
   });
 });
 
@@ -33,9 +33,11 @@ describe('buildFooterLayer / buildLogoLayer', () => {
   it('generates a slide-bottom layer that resolves page/total live and respects hideChrome', () => {
     const layer = buildFooterLayer(true);
     expect(layer).toContain('useNav');
-    expect(layer).toContain('currentPage');
     expect(layer).toContain('hideChrome');
     expect(layer).toContain('k-slide-footer');
+    // only the live page/total tokens remain in the Vue resolver
+    expect(layer).toContain('page|total');
+    expect(layer).not.toContain('cfg.value?.vars');
   });
 
   it('returns empty string when no footer/logo configured (file not written)', () => {

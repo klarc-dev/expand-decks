@@ -23,6 +23,7 @@ import {
   type FooterConfig,
 } from '../export/chrome';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
+import { resolveVarsWith } from '../export/vars';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
@@ -137,11 +138,30 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       logoRel && typeof logoRel === 'object' && logoRel.filename
         ? `/media/${logoRel.filename}`
         : null;
-    const chromeVars = {
-      'org.name': (brand?.name as string) ?? '',
-      title: presentation.title as string,
+
+    // Single resolution context — the SSOT for {path} variables in slide bodies
+    // AND footer templates. Exposes the whole presentation, its linked org under
+    // both {org.*} (alias) and {organisation.*} (real path), plus synthetic
+    // {date}/{total}. Adding a field to either collection makes {thatField} work
+    // with no code change here.
+    const vars: Record<string, unknown> = {
+      ...presentation,
+      organisation: org ?? undefined,
+      org: org ?? undefined,
       date: new Date().toLocaleDateString(presentation.language === 'en' ? 'en-GB' : 'fr-FR'),
+      total: (presentation.slides as unknown[] | undefined)?.length ?? 0,
     };
+
+    // Pre-resolve static tokens in footer templates; {page}/{total} stay live in
+    // the Vue layer (they need per-slide nav state).
+    const resolvedFooter = footer
+      ? {
+          ...footer,
+          left: resolveVarsWith(footer.left ?? '', vars),
+          center: resolveVarsWith(footer.center ?? '', vars),
+          right: resolveVarsWith(footer.right ?? '', vars),
+        }
+      : footer;
 
     const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
     const themedHeadmatter = buildHeadmatter(
@@ -149,9 +169,10 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       brand,
       presentation.language as string | undefined,
     );
-    const chromeHeadmatter = buildFooterHeadmatter(footer, chromeVars, logoUrl);
+    const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
     const slidesMd = buildSlidesMd(presentation as never, {
       headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
+      vars,
     });
 
     workdir = stageBuildDir({
@@ -162,12 +183,14 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     });
 
     await runSlidev(['build', '--base', './'], workdir);
-    // --wait gives async client-rendered content (Mermaid diagrams paint their
-    // SVG only AFTER networkidle) time to settle before each page is captured;
-    // without it, diagram slides export blank. The FIRST mermaid on a deck needs
-    // extra warmup while mermaid.js lazy-initializes, so we budget generously.
+    // --per-slide renders each slide independently so per-slide nav state ($page,
+    //   layout) resolves correctly — without it the footer page counter sticks at
+    //   "1" for every page in export (global currentPage never advances).
+    // --wait lets async client-rendered content (Mermaid SVGs paint only AFTER
+    //   networkidle) settle before each page is captured; without it diagram
+    //   slides export blank. Generous budget for first-mermaid lazy init.
     await runSlidev(
-      ['export', '--format', 'pdf', '--output', ARTIFACTS.pdf, '--wait', '4000'],
+      ['export', '--format', 'pdf', '--output', ARTIFACTS.pdf, '--per-slide', '--wait', '4000'],
       workdir,
     );
 

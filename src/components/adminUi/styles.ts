@@ -45,6 +45,36 @@ export const mutedTextStyle: React.CSSProperties = {
   color: 'var(--theme-elevation-500)',
 };
 
+/** `@`-mention dropdown shell (positioned by the typeahead anchor element). */
+export const varMenuStyle: React.CSSProperties = {
+  listStyle: 'none',
+  margin: '4px 0 0',
+  padding: '4px',
+  minWidth: '220px',
+  maxHeight: '280px',
+  overflowY: 'auto',
+  border: '1px solid var(--theme-elevation-150)',
+  borderRadius: '4px',
+  backgroundColor: 'var(--theme-elevation-0)',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+  zIndex: 10,
+};
+
+/** One row in the `@`-mention dropdown. `selected` flips the highlight. */
+export function varMenuItemStyle(selected: boolean): React.CSSProperties {
+  return {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '12px',
+    padding: '6px 8px',
+    borderRadius: '3px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    color: 'var(--theme-text)',
+    backgroundColor: selected ? 'var(--theme-elevation-100)' : 'transparent',
+  };
+}
+
 /**
  * Green primary action button. padding/fontSize/cursor are intentionally
  * omitted — call sites differ (10px 20px vs 8px 16px, 14px vs 13px, and
