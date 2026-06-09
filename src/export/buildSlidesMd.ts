@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { ARTIFACTS } from '../lib/paths';
 
-import { RENDERERS, type SlideBlock } from './renderers';
+import { getRenderer, type SlideBlock } from './renderers';
 import { resetDefs, yamlQuoted } from './utils';
 
 export type Presentation = {
@@ -36,7 +36,7 @@ export function buildSlidesMd(
   const headmatter = options?.headmatter ?? loadHeadmatter();
 
   const slidesMd = presentation.slides.map((block) => {
-    const renderer = RENDERERS[block.blockType];
+    const renderer = getRenderer(block.blockType);
     if (!renderer) {
       throw new Error(`Unknown block type: ${block.blockType}`);
     }

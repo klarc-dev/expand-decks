@@ -23,16 +23,24 @@ export type SlideBlock =
   | TimelineBlockData
   | MarkdownBlockData;
 
-export const RENDERERS: Record<string, (block: never) => string> = {
-  cover: renderCover as (block: never) => string,
-  section: renderSection as (block: never) => string,
-  statement: renderStatement as (block: never) => string,
-  twoCols: renderTwoCols as (block: never) => string,
-  cardGrid: renderCardGrid as (block: never) => string,
-  stats: renderStats as (block: never) => string,
-  quotes: renderQuotes as (block: never) => string,
-  cta: renderCta as (block: never) => string,
-  table: renderTable as (block: never) => string,
-  timeline: renderTimeline as (block: never) => string,
-  markdown: renderMarkdown as (block: never) => string,
-};
+type Renderer = (block: never) => string;
+
+// Exhaustive by construction: a SlideBlock with no renderer fails to compile.
+export const RENDERERS = {
+  cover: renderCover as Renderer,
+  section: renderSection as Renderer,
+  statement: renderStatement as Renderer,
+  twoCols: renderTwoCols as Renderer,
+  cardGrid: renderCardGrid as Renderer,
+  stats: renderStats as Renderer,
+  quotes: renderQuotes as Renderer,
+  cta: renderCta as Renderer,
+  table: renderTable as Renderer,
+  timeline: renderTimeline as Renderer,
+  markdown: renderMarkdown as Renderer,
+} satisfies Record<SlideBlock['blockType'], Renderer>;
+
+// Runtime lookup by an arbitrary string (callers handle the undefined case).
+export function getRenderer(blockType: string): Renderer | undefined {
+  return (RENDERERS as Record<string, Renderer>)[blockType];
+}

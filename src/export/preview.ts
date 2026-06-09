@@ -1,4 +1,4 @@
-import { RENDERERS, type SlideBlock } from './renderers';
+import { getRenderer, type SlideBlock } from './renderers';
 
 /**
  * Render a single slide block to preview HTML + layout name, node-free.
@@ -10,7 +10,7 @@ import { RENDERERS, type SlideBlock } from './renderers';
 export function renderBlockPreview(
   block: SlideBlock,
 ): { html: string; layout: string } | null {
-  const renderer = RENDERERS[(block as { blockType: string }).blockType];
+  const renderer = getRenderer((block as { blockType: string }).blockType);
   if (!renderer) return null;
   let md: string;
   try {
