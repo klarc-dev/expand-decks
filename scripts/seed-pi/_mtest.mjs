@@ -92,15 +92,13 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.goto('http://localhost:8788/index.html#1', { waitUntil: 'networkidle' });
 await page.waitForTimeout(3500);
 const info = await page.evaluate(() => {
-  const svgs = [...document.querySelectorAll('svg')].filter(
-    (s) => s.id?.includes('mermaid') || s.closest('.k-mermaid'),
-  );
-  const svg = svgs.find((s) => s.getBoundingClientRect().height > 0) || svgs[0];
-  if (!svg) return { hasSvg: false, total: document.querySelectorAll('svg').length };
+  const svg = document.querySelector('svg[id*="mermaid"], .k-mermaid svg, svg');
+  if (!svg) return { hasSvg: false };
   const r = svg.getBoundingClientRect();
   const cs = getComputedStyle(svg);
   return {
     hasSvg: true,
+    id: svg.id,
     w: Math.round(r.width),
     h: Math.round(r.height),
     bottom: Math.round(r.bottom),
@@ -109,7 +107,7 @@ const info = await page.evaluate(() => {
     attrWidth: svg.getAttribute('width'),
     computedMaxH: cs.maxHeight,
     computedH: cs.height,
-    parentClass: svg.parentElement?.className,
+    ancestorKMermaid: !!svg.closest('.k-mermaid'),
   };
 });
 console.log('SVG=' + JSON.stringify(info));
