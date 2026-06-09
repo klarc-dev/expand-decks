@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   rawField,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -32,10 +34,8 @@ export const timelineSpec = block({
   labels: { singular: 'Frise', plural: 'Frises' },
   imageURL: '/block-previews/timeline.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string())),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre de la frise',
-    }),
+    eyebrowFieldSpec(eyebrow),
+    titleFieldSpec(title, 'Titre de la frise'),
     rawField('surface', surface, optionalAi(z.enum(['dark', 'light'])), {
       type: 'select',
       label: 'Surface',

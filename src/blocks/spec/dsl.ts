@@ -253,6 +253,48 @@ export function block(spec: BlockSpec): BlockSpec {
 }
 
 // ---------------------------------------------------------------------------
+// Header-field factories (U7) — the eyebrow/title/surface trio is declared
+// identically across nearly every spec. These return the exact same FieldSpec
+// the inline `factoryField(...)` calls produced, so render/AI key sets cannot
+// drift and the spec files stop copy-pasting. Byte-identical emission is the
+// gate (allSpecs.parity + generate:types zero-diff).
+// ---------------------------------------------------------------------------
+
+/** `eyebrow` field: render Zod + AI optional string. `description` → factoryArgs. */
+export function eyebrowFieldSpec(render: z.ZodType, description?: string): FieldSpec {
+  return factoryField(
+    'eyebrow',
+    'eyebrow',
+    render,
+    optionalAi(z.string()),
+    description !== undefined ? { description } : undefined,
+  );
+}
+
+/** `title` field: render Zod + required AI string. `description` → factoryArgs. */
+export function titleFieldSpec(render: z.ZodType, description?: string): FieldSpec {
+  return factoryField(
+    'title',
+    'title',
+    render,
+    z.string(),
+    description !== undefined ? { description } : undefined,
+  );
+}
+
+/**
+ * `surface` field: render Zod + AI enum. `gradient` couples both the 3-value AI
+ * enum AND the `{ gradient: true }` factoryArg the emitter reads to build the
+ * Payload select with the gradient option.
+ */
+export function surfaceFieldSpec(render: z.ZodType, gradient = false): FieldSpec {
+  const ai = gradient
+    ? optionalAi(z.enum(['dark', 'light', 'gradient']))
+    : optionalAi(z.enum(['dark', 'light']));
+  return factoryField('surface', 'surface', render, ai, gradient ? { gradient: true } : undefined);
+}
+
+// ---------------------------------------------------------------------------
 // Projection helpers (pure)
 // ---------------------------------------------------------------------------
 

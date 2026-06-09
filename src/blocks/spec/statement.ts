@@ -13,12 +13,14 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   optionalRichTextRender,
   rawField,
+  titleFieldSpec,
 } from './dsl';
 
 // Per-field render Zods — authored once, reused below.
@@ -36,10 +38,8 @@ export const statementSpec = block({
   labels: { singular: 'Affirmation', plural: 'Affirmations' },
   imageURL: '/block-previews/statement.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string())),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Citation ou affirmation principale',
-    }),
+    eyebrowFieldSpec(eyebrow),
+    titleFieldSpec(title, 'Citation ou affirmation principale'),
     rawField('body', body, optionalAi(z.string()), {
       type: 'richText',
       label: 'Corps',

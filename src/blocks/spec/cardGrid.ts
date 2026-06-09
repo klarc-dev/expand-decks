@@ -2,12 +2,14 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   optionalRichTextRender,
   rawField,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -31,10 +33,8 @@ export const cardGridSpec = block({
   labels: { singular: 'Grille de cartes', plural: 'Grilles de cartes' },
   imageURL: '/block-previews/cardGrid.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string())),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre principal de la grille',
-    }),
+    eyebrowFieldSpec(eyebrow),
+    titleFieldSpec(title, 'Titre principal de la grille'),
     rawField('sidebarText', sidebarText, optionalAi(z.string()), {
       type: 'richText',
       label: 'Texte latéral',

@@ -2,12 +2,14 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   rawField,
   richTextRender,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -29,10 +31,8 @@ export const quotesSpec = block({
   labels: { singular: 'Citations', plural: 'Citations' },
   imageURL: '/block-previews/quotes.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string())),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre de la diapositive',
-    }),
+    eyebrowFieldSpec(eyebrow),
+    titleFieldSpec(title, 'Titre de la diapositive'),
     rawField(
       'quotes',
       z.array(z.unknown()),

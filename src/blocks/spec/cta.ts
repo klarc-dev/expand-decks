@@ -2,12 +2,14 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   optionalRichTextRender,
   rawField,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -24,10 +26,8 @@ export const ctaSpec = block({
   labels: { singular: 'Appel à l’action', plural: 'Appels à l’action' },
   imageURL: '/block-previews/cta.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string())),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre principal centré (ex. "Merci", "Et maintenant ?")',
-    }),
+    eyebrowFieldSpec(eyebrow),
+    titleFieldSpec(title, 'Titre principal centré (ex. "Merci", "Et maintenant ?")'),
     rawField('subtitle', subtitle, optionalAi(z.string()), {
       type: 'richText',
       label: 'Sous-titre',
