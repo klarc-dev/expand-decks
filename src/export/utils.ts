@@ -254,7 +254,10 @@ export function cardStack(
     const cols = Math.min(Math.max(opts.cols ?? 4, 2), 4);
     const rows = Math.ceil(cards.length / cols);
     const crowded = rows > 2;
-    return { html: `<div class="${gridClass(cols)}">\n\n${inner}\n\n</div>`, crowded };
+    // When crowded, also shrink each card box (.k-tight) — trimming only the
+    // top padding isn't enough to keep a 3rd row on the 720px canvas.
+    const tight = crowded ? ' k-tight' : '';
+    return { html: `<div class="${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`, crowded };
   }
   const crowded = cards.length >= 4;
   const gap = crowded ? 'space-y-2 k-tight' : 'space-y-3';
