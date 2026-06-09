@@ -12,9 +12,7 @@ export function renderMarkdown(block: MarkdownBlockData): string {
     fmLines.push(block.frontmatter);
   }
 
-  const frontmatter = fmLines.length > 0
-    ? `---\n${fmLines.join('\n')}\n---`
-    : '---\n---';
+  const frontmatter = fmLines.length > 0 ? `---\n${fmLines.join('\n')}\n---` : '---\n---';
 
   const content = block.content ?? '';
 

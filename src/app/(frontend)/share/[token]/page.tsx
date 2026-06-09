@@ -22,11 +22,7 @@ const messageStyles = {
   body: { color: '#666' },
 };
 
-export default async function SharePage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const payload = await getPayload({ config });
 
@@ -48,7 +44,9 @@ export default async function SharePage({
       <div style={messageStyles.wrapper}>
         <div style={messageStyles.inner}>
           <h1 style={messageStyles.title}>Lien expiré</h1>
-          <p style={messageStyles.body}>Ce lien de partage a expiré. Veuillez en demander un nouveau.</p>
+          <p style={messageStyles.body}>
+            Ce lien de partage a expiré. Veuillez en demander un nouveau.
+          </p>
         </div>
       </div>
     );

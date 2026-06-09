@@ -144,7 +144,10 @@ export const Presentations: CollectionConfig = {
               name: 'slides',
               type: 'blocks',
               label: 'Diapositives',
-              admin: { description: 'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.' },
+              admin: {
+                description:
+                  'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.',
+              },
               blocks: [
                 CoverBlock,
                 SectionBlock,
@@ -196,8 +199,9 @@ export const Presentations: CollectionConfig = {
                 ],
               },
               validate: (value: string | null | undefined) => {
-                if (!value) return 'L\'identifiant est requis';
-                if (!isValidSlug(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
+                if (!value) return "L'identifiant est requis";
+                if (!isValidSlug(value))
+                  return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
                 return true;
               },
             },
@@ -266,7 +270,8 @@ export const Presentations: CollectionConfig = {
         },
         {
           label: 'Sortie',
-          description: 'Artefacts générés automatiquement par le build (disponibles après publication).',
+          description:
+            'Artefacts générés automatiquement par le build (disponibles après publication).',
           fields: [
             {
               name: 'buildStatusLive',
@@ -327,7 +332,7 @@ export const Presentations: CollectionConfig = {
               type: 'textarea',
               label: 'Erreur du dernier build',
               admin: {
-                description: 'Détails de l\'erreur en cas d\'échec du build',
+                description: "Détails de l'erreur en cas d'échec du build",
                 readOnly: true,
               },
             },

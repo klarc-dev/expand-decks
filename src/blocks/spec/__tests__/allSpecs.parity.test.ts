@@ -59,7 +59,9 @@ const minimalSlide = (spec: (typeof ALL_SPECS)[number]) => {
 // Schema `anyOf` — the same LLM-facing surface the deleted equality check used.
 const unionBlockTypes = (schema: z.ZodType): string[] => {
   const json = z.toJSONSchema(schema, { io: 'input' }) as unknown as {
-    properties: { slides: { items: { anyOf: { properties: { blockType: { const: string } } }[] } } };
+    properties: {
+      slides: { items: { anyOf: { properties: { blockType: { const: string } } }[] } };
+    };
   };
   return json.properties.slides.items.anyOf.map((member) => member.properties.blockType.const);
 };

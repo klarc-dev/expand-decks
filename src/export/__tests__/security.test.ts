@@ -47,7 +47,10 @@ describe('yamlQuoted() — always-quoted title', () => {
 describe('buildSlidesMd() — title cannot break headmatter', () => {
   it('keeps a single frontmatter block when the title contains quotes/newlines', () => {
     const result = buildSlidesMd(
-      { title: 'Evil"\nlayout: hijack\nfoo: bar', slides: [{ blockType: 'cover', title: 'Hi' } as never] },
+      {
+        title: 'Evil"\nlayout: hijack\nfoo: bar',
+        slides: [{ blockType: 'cover', title: 'Hi' } as never],
+      },
       { headmatter: HEADMATTER },
     );
     // The injected keys must never appear at the start of a real frontmatter
@@ -101,14 +104,37 @@ describe('buildSlidesMd() — composed deck is injection-free across all block t
     { blockType: 'cover', title: INJECT, eyebrow: XSS_LINK, subtitle: DATA_LINK },
     { blockType: 'statement', title: INJECT, body: `${XSS_LINK} ${DATA_LINK}` },
     { blockType: 'section', title: INJECT, number: '01', surface: 'dark' },
-    { blockType: 'cardGrid', title: INJECT, columns: '4', cards: [{ number: '01', title: XSS_LINK, description: DATA_LINK }] },
-    { blockType: 'twoCols', title: INJECT, intro: XSS_LINK, rightCards: [{ title: INJECT, description: DATA_LINK }] },
+    {
+      blockType: 'cardGrid',
+      title: INJECT,
+      columns: '4',
+      cards: [{ number: '01', title: XSS_LINK, description: DATA_LINK }],
+    },
+    {
+      blockType: 'twoCols',
+      title: INJECT,
+      intro: XSS_LINK,
+      rightCards: [{ title: INJECT, description: DATA_LINK }],
+    },
     { blockType: 'stats', title: INJECT, stats: [{ value: XSS_LINK, label: INJECT }] },
-    { blockType: 'quotes', title: INJECT, quotes: [{ quote: XSS_LINK, authorName: INJECT, authorRole: DATA_LINK }] },
-    { blockType: 'cta', title: INJECT, subtitle: XSS_LINK, primaryAction: DATA_LINK, footerNote: INJECT },
+    {
+      blockType: 'quotes',
+      title: INJECT,
+      quotes: [{ quote: XSS_LINK, authorName: INJECT, authorRole: DATA_LINK }],
+    },
+    {
+      blockType: 'cta',
+      title: INJECT,
+      subtitle: XSS_LINK,
+      primaryAction: DATA_LINK,
+      footerNote: INJECT,
+    },
   ];
 
-  const result = buildSlidesMd({ title: INJECT, slides: slides as never }, { headmatter: HEADMATTER });
+  const result = buildSlidesMd(
+    { title: INJECT, slides: slides as never },
+    { headmatter: HEADMATTER },
+  );
 
   // Extract only the YAML frontmatter blocks (between --- fences). An injected
   // key is exploitable only if it lands HERE; the same text appearing inside an
@@ -120,7 +146,10 @@ describe('buildSlidesMd() — composed deck is injection-free across all block t
     let buf: string[] = [];
     for (const line of lines) {
       if (line === '---') {
-        if (inFm) { frontmatterBlocks.push(buf.join('\n')); buf = []; }
+        if (inFm) {
+          frontmatterBlocks.push(buf.join('\n'));
+          buf = [];
+        }
         inFm = !inFm;
         continue;
       }

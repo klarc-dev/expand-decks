@@ -42,10 +42,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = requestSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'presentationId et brief sont requis' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'presentationId et brief sont requis' }, { status: 400 });
     }
     const { presentationId, brief, mode } = parsed.data;
 
@@ -85,9 +82,9 @@ export async function POST(req: NextRequest) {
 
     // In augment mode, append to the existing deck, preserving every existing
     // slide by reference. In replace mode, overwrite wholesale (default).
-    const existing = (mode === 'augment' && Array.isArray(presentation.slides)
-      ? presentation.slides
-      : []) as NonNullable<Presentation['slides']>;
+    const existing = (
+      mode === 'augment' && Array.isArray(presentation.slides) ? presentation.slides : []
+    ) as NonNullable<Presentation['slides']>;
     const nextSlides = mergeAugmentedSlides(existing, draftedRich) as Presentation['slides'];
 
     await payload.update({
@@ -113,8 +110,7 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json(
         {
-          error:
-            'La génération a produit un format inattendu. Simplifiez le brief et réessayez.',
+          error: 'La génération a produit un format inattendu. Simplifiez le brief et réessayez.',
         },
         { status: 422 },
       );

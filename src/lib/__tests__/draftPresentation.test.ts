@@ -71,9 +71,7 @@ describe('draftPresentationSlides() — two-pass plan→fill', () => {
   beforeEach(() => {
     mockedDraftObject.mockReset();
     // First call = outline pass; subsequent calls = fill batches.
-    mockedDraftObject
-      .mockResolvedValueOnce(outline)
-      .mockResolvedValue(valid3);
+    mockedDraftObject.mockResolvedValueOnce(outline).mockResolvedValue(valid3);
   });
 
   it('runs an outline pass then a fill pass (one batch for a short deck)', async () => {
@@ -114,7 +112,9 @@ describe('draftPresentationSlides() — two-pass plan→fill', () => {
     mockedDraftObject.mockReset();
     mockedDraftObject.mockResolvedValue(valid3);
 
-    const result = await draftPresentationSlides(`S1 — Titre\n« Titre réel de la présentation ».\nS2 — Arbre de décision\nQuestion de contrefaçon détectable.\nS3 — Q&R\nClôture`);
+    const result = await draftPresentationSlides(
+      `S1 — Titre\n« Titre réel de la présentation ».\nS2 — Arbre de décision\nQuestion de contrefaçon détectable.\nS3 — Q&R\nClôture`,
+    );
 
     expect(mockedDraftObject).toHaveBeenCalledTimes(1);
     expect(result.slides[0]!.blockType).toBe('cover');

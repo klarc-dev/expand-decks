@@ -1,6 +1,12 @@
 import type { CollectionConfig } from 'payload';
 
-import { ROLES, isAdmin, isAdminOrSelfUser, isAdminField, userIsAdminOrAuthor } from '../access/roles';
+import {
+  ROLES,
+  isAdmin,
+  isAdminOrSelfUser,
+  isAdminField,
+  userIsAdminOrAuthor,
+} from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 
 export const Users: CollectionConfig = {

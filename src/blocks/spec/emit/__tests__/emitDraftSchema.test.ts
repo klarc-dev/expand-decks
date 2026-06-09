@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import {
-  aiSchemaOf,
-  block,
-  factoryField,
-  optionalAi,
-  rawField,
-  type BlockSpec,
-} from '../../dsl';
+import { aiSchemaOf, block, factoryField, optionalAi, rawField, type BlockSpec } from '../../dsl';
 import { emitDraftSchema, emitSlidesArraySchema } from '../emitDraftSchema';
 
 // ---------------------------------------------------------------------------
@@ -31,12 +24,7 @@ const coverSpec: BlockSpec = block({
     rawField('subtitle', render, optionalAi(z.string()), { type: 'textarea' }),
     rawField('footerLeft', render, optionalAi(z.string()), { type: 'text' }),
     rawField('footerRight', render, optionalAi(z.string()), { type: 'text' }),
-    factoryField(
-      'surface',
-      'surface',
-      render,
-      optionalAi(z.enum(['dark', 'light', 'gradient'])),
-    ),
+    factoryField('surface', 'surface', render, optionalAi(z.enum(['dark', 'light', 'gradient']))),
     // image / imagePosition are NOT AI-draftable (ai: false → dropped from L3).
     factoryField('image', 'image', render, false),
     rawField('imagePosition', render, false, { type: 'select' }),
@@ -148,15 +136,11 @@ describe('emitDraftSchema() — per-block JSON Schema parity', () => {
   });
 
   it('statement member matches the current hand-written statement schema', () => {
-    expect(jsonSchema(aiSchemaOf(statementSpec))).toEqual(
-      jsonSchema(currentStatementSchema),
-    );
+    expect(jsonSchema(aiSchemaOf(statementSpec))).toEqual(jsonSchema(currentStatementSchema));
   });
 
   it('cardGrid member matches the current hand-written cardGrid schema', () => {
-    expect(jsonSchema(aiSchemaOf(cardGridSpec))).toEqual(
-      jsonSchema(currentCardGridSchema),
-    );
+    expect(jsonSchema(aiSchemaOf(cardGridSpec))).toEqual(jsonSchema(currentCardGridSchema));
   });
 });
 

@@ -1,0 +1,46 @@
+# Git hooks (https://lefthook.dev). Installed via the `prepare` npm script
+# (`lefthook install`) on `pnpm install`; run `pnpm exec lefthook install`
+# once manually if hooks aren't present yet.
+#
+# Strategy (balanced): fast auto-fixers on commit, full verification on push.
+
+pre-commit:
+  parallel: true
+  jobs:
+    # Format + safe-fix + lint staged files with Biome, then re-stage results.
+    - name: biome
+      glob:
+        - '*.ts'
+        - '*.tsx'
+        - '*.js'
+        - '*.jsx'
+        - '*.mjs'
+        - '*.json'
+        - '*.jsonc'
+        - '*.css'
+      run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+    # Next.js Core Web Vitals lint on staged JS/TS (auto-fixable subset).
+    - name: eslint
+      glob:
+        - '*.ts'
+        - '*.tsx'
+        - '*.js'
+        - '*.jsx'
+        - '*.mjs'
+      run: pnpm exec eslint --fix --no-warn-ignored {staged_files}
+      stage_fixed: true
+
+pre-push:
+  parallel: false
+  jobs:
+    - name: typecheck
+      run: pnpm typecheck
+
+    - name: test
+      run: pnpm test
+
+    # Fail only on NEW dead-code/complexity introduced by the pushed changes.
+    - name: dead-code-gate
+      run: pnpm lint:dead:ci

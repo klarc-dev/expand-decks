@@ -21,11 +21,8 @@ export type { InferRender } from '../dsl';
  * etc. are distinguished — except where TS itself treats them as identical, e.g.
  * an optional property `?: X` already implies `| undefined`).
  */
-export type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (
-  <T>() => T extends B ? 1 : 2
-)
-  ? true
-  : false;
+export type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 /** Assertion helper: `Expect<Equal<...>>` errors at compile time on a mismatch. */
 export type Expect<T extends true> = T;

@@ -31,9 +31,7 @@ export function formStateToBlockData(
       if (container === undefined || container === null || typeof container !== 'object') {
         (cur as Record<string | number, unknown>)[slot] = nextIsIndex ? [] : {};
       }
-      cur = (cur as Record<string | number, unknown>)[slot] as
-        | Record<string, unknown>
-        | unknown[];
+      cur = (cur as Record<string | number, unknown>)[slot] as Record<string, unknown> | unknown[];
     }
 
     const last = segs[segs.length - 1]!;

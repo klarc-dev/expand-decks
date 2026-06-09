@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildFooterHeadmatter,
-  buildFooterLayer,
-  buildLogoLayer,
-} from '../chrome';
+import { buildFooterHeadmatter, buildFooterLayer, buildLogoLayer } from '../chrome';
 
 const vars = { 'org.name': 'Klarc', title: 'Deck', date: '2026-06-08' };
 

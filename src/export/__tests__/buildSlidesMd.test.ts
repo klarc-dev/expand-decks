@@ -22,7 +22,15 @@ function lexical(text: string) {
           version: 1,
           textFormat: 0,
           children: [
-            { type: 'text', text, detail: 0, format: 0, mode: 'normal' as const, style: '', version: 1 },
+            {
+              type: 'text',
+              text,
+              detail: 0,
+              format: 0,
+              mode: 'normal' as const,
+              style: '',
+              version: 1,
+            },
           ],
         },
       ],
@@ -43,9 +51,7 @@ function build(slides: Presentation['slides']): string {
 
 describe('buildSlidesMd()', () => {
   it('produces valid Slidev markdown with headmatter', () => {
-    const result = build([
-      { blockType: 'cover', title: 'Hello' },
-    ]);
+    const result = build([{ blockType: 'cover', title: 'Hello' }]);
     expect(result).toMatch(/^---\n/);
     expect(result).toContain('title: "Test Deck"');
     expect(result).toContain('colorSchema: light');
@@ -90,9 +96,9 @@ describe('buildSlidesMd()', () => {
   });
 
   it('throws for unknown block type', () => {
-    expect(() =>
-      build([{ blockType: 'unknown' as never, title: 'Bad' } as never]),
-    ).toThrow('Unknown block type: unknown');
+    expect(() => build([{ blockType: 'unknown' as never, title: 'Bad' } as never])).toThrow(
+      'Unknown block type: unknown',
+    );
   });
 
   it('handles empty slides array', () => {

@@ -41,7 +41,7 @@ const ASSETS = [
   {
     key: 'presenter',
     filename: 'exemple-rd-presenter.jpg',
-    alt: "Présentateur Klarc devant un écran montrant un exemple de projet R&D",
+    alt: 'Présentateur Klarc devant un écran montrant un exemple de projet R&D',
   },
   {
     key: 'keyboard',
@@ -53,10 +53,7 @@ const ASSETS = [
 type AssetKey = (typeof ASSETS)[number]['key'];
 
 // Production safety: refuse to seed prod without --force.
-if (
-  process.env.DATABASE_URL?.toLowerCase().includes('prod') &&
-  !process.argv.includes('--force')
-) {
+if (process.env.DATABASE_URL?.toLowerCase().includes('prod') && !process.argv.includes('--force')) {
   console.error(
     'Refusing to seed: DATABASE_URL appears to point to production. Re-run with --force to override.',
   );
@@ -68,46 +65,47 @@ type RichTextConverter = (markdown: string) => never;
 
 function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Slide[] {
   return [
-  // PDF page 1 — cover
-  {
-    blockType: 'cover',
-    eyebrow: 'BLOOM FORMATION',
-    title: 'Optimiser et sécuriser ses contrats R&D',
-    footerLeft: rt('Joachim BRINDEAU'),
-    footerRight: rt('Document actualisé le 1er décembre 2025.'),
-    surface: 'light',
-  },
+    // PDF page 1 — cover
+    {
+      blockType: 'cover',
+      eyebrow: 'BLOOM FORMATION',
+      title: 'Optimiser et sécuriser ses contrats R&D',
+      footerLeft: rt('Joachim BRINDEAU'),
+      footerRight: rt('Document actualisé le 1er décembre 2025.'),
+      surface: 'light',
+    },
 
-  // PDF page 2 — sommaire (image-right, photo poignée de main)
-  {
-    blockType: 'twoCols',
-    title: 'Sommaire',
-    intro: rt(`1. Introduction — 3
+    // PDF page 2 — sommaire (image-right, photo poignée de main)
+    {
+      blockType: 'twoCols',
+      title: 'Sommaire',
+      intro: rt(`1. Introduction — 3
 2. Notions indispensables — 7
 3. Sécurisation des échanges — 10
 4. Cadrage du projet — 15
 5. Négociation d'un contrat — 24
 6. Points particuliers — 30
 7. Questions & réponses — 37`),
-    image: media.handshake,
-    imagePosition: 'right',
-  },
+      image: media.handshake,
+      imagePosition: 'right',
+    },
 
-  // PDF page 3 — section divider Introduction
-  {
-    blockType: 'section',
-    title: 'Introduction',
-    subtitle: rt(
-      "Un **projet R&D** est une initiative structurée caractérisée par son incertitude scientifique ou technique, et son potentiel à générer de la valeur à travers des avancées dans un domaine spécifique.",
-    ),
-    surface: 'dark',
-  },
+    // PDF page 3 — section divider Introduction
+    {
+      blockType: 'section',
+      title: 'Introduction',
+      subtitle: rt(
+        'Un **projet R&D** est une initiative structurée caractérisée par son incertitude scientifique ou technique, et son potentiel à générer de la valeur à travers des avancées dans un domaine spécifique.',
+      ),
+      surface: 'dark',
+    },
 
-  // PDF page 4 — Exemple de projets R&D (image-right, photo presenter)
-  {
-    blockType: 'twoCols',
-    title: 'Exemple de projets R&D',
-    intro: rt(`**Bibliothèque d'actifs** — Développement en interne d'une bibliothèque de molécules.
+    // PDF page 4 — Exemple de projets R&D (image-right, photo presenter)
+    {
+      blockType: 'twoCols',
+      title: 'Exemple de projets R&D',
+      intro:
+        rt(`**Bibliothèque d'actifs** — Développement en interne d'une bibliothèque de molécules.
 
 **10 candidats** — Screening de la bibliothèque par une université.
 
@@ -116,16 +114,16 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
 **Composition (PoF)** — Formulation d'une composition en interne.
 
 **Produit commercialisable** — Industrialisation en collaboration avec un partenaire industriel.`),
-    image: media.presenter,
-    imagePosition: 'right',
-  },
+      image: media.presenter,
+      imagePosition: 'right',
+    },
 
-  // PDF page 5 — Chronologie d'un partenariat (process flow → markdown)
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Chronologie d'un partenariat
+    // PDF page 5 — Chronologie d'un partenariat (process flow → markdown)
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Chronologie d'un partenariat
 
 **Étape préalable :** Horodater ses connaissances propres.
 
@@ -140,13 +138,13 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
 7. Révision du projet → Amélioration continue
 
 **Branches d'arrêt :** Négociation → Abandon des négociations · Abandon du projet`,
-  },
+    },
 
-  // PDF page 6 — Sécuriser et Optimiser
-  {
-    blockType: 'twoCols',
-    title: 'Sécuriser et optimiser',
-    intro: rt(`**Sécuriser**
+    // PDF page 6 — Sécuriser et Optimiser
+    {
+      blockType: 'twoCols',
+      title: 'Sécuriser et optimiser',
+      intro: rt(`**Sécuriser**
 
 - Apports des parties
 - Confidentialité
@@ -157,38 +155,38 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
 - Concurrence
 - Aspects financiers
 - Prise de décision`),
-    rightCards: [
-      {
-        title: 'Optimisation opérationnelle',
-        description: rt(`- Accélérer la négociation
+      rightCards: [
+        {
+          title: 'Optimisation opérationnelle',
+          description: rt(`- Accélérer la négociation
 - Fluidifier le déroulement du projet
 - Prévoir le changement et l'échec`),
-      },
-      {
-        title: 'Optimisation financière',
-        description: rt(`- Financements publics
+        },
+        {
+          title: 'Optimisation financière',
+          description: rt(`- Financements publics
 - Aspects fiscaux`),
-      },
-    ],
-  },
+        },
+      ],
+    },
 
-  // PDF page 7 — section divider Notions indispensables
-  // NB: PDF verbatim — "Certains notions" (faute conservée).
-  {
-    blockType: 'section',
-    title: 'Notions indispensables',
-    subtitle: rt(
-      "Certains notions indispensables permettent d'**encadrer la gestion de la propriété intellectuelle** : différents types de droits, définitions intégrant les notions de pré-existence ou de propriété, modalités d'exploitation, etc.",
-    ),
-    surface: 'dark',
-  },
+    // PDF page 7 — section divider Notions indispensables
+    // NB: PDF verbatim — "Certains notions" (faute conservée).
+    {
+      blockType: 'section',
+      title: 'Notions indispensables',
+      subtitle: rt(
+        "Certains notions indispensables permettent d'**encadrer la gestion de la propriété intellectuelle** : différents types de droits, définitions intégrant les notions de pré-existence ou de propriété, modalités d'exploitation, etc.",
+      ),
+      surface: 'dark',
+    },
 
-  // PDF page 8 — Notions à maîtriser (4 sections de définitions → markdown)
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Notions à maîtriser
+    // PDF page 8 — Notions à maîtriser (4 sections de définitions → markdown)
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Notions à maîtriser
 
 <div class="text-sm opacity-60 mb-6">Notions indispensables</div>
 
@@ -213,14 +211,14 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
 - Droit de propriété (en totalité ou quote-part)
 - Droit d'exploitation (gratuit ou onéreux, exclusif ou non, périmètre géographique / sectoriel / temporel)
 - Désignation comme inventeur (impact la notoriété et la rémunération des salariés)`,
-  },
+    },
 
-  // PDF page 9 — Droits de propriété intellectuelle (table)
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Droits de propriété intellectuelle
+    // PDF page 9 — Droits de propriété intellectuelle (table)
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Droits de propriété intellectuelle
 
 <div class="text-sm opacity-60 mb-6">Notions indispensables</div>
 
@@ -231,24 +229,24 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
 | **Droits d'auteurs** | Originalité. Protégé dès sa création sans formalités. Ne protège pas les informations techniques contenues dans le document (cas du rapport, poster, etc.). |
 | **Droit sui generis des bases de données** | Prise d'initiative + risque des investissements (L341-1 CPI). Protège le contenu de la base de données. Se cumule avec le droit d'auteurs. |
 | **Autres droits selon prestation** | Selon les prestations, une partie peut être amenée à générer d'autres actifs PI. Exemples : topographies de semi-conducteurs, COV, dessins & modèles, marques, noms de domaine… |`,
-  },
+    },
 
-  // PDF page 10 — section divider Sécurisation des échanges
-  {
-    blockType: 'section',
-    title: 'Sécurisation des échanges',
-    subtitle: rt(
-      "La **sécurisation des échanges** est un préalable indispensable à toute divulgation d'information confidentielle et à tout envoi de matériel propriétaire.",
-    ),
-    surface: 'dark',
-  },
+    // PDF page 10 — section divider Sécurisation des échanges
+    {
+      blockType: 'section',
+      title: 'Sécurisation des échanges',
+      subtitle: rt(
+        "La **sécurisation des échanges** est un préalable indispensable à toute divulgation d'information confidentielle et à tout envoi de matériel propriétaire.",
+      ),
+      surface: 'dark',
+    },
 
-  // PDF page 11 — Mettre en place un accord de confidentialité — Pourquoi ?
-  {
-    blockType: 'twoCols',
-    eyebrow: 'Sécurisation des échanges',
-    title: 'Mettre en place un accord de confidentialité',
-    intro: rt(`**Pourquoi ?**
+    // PDF page 11 — Mettre en place un accord de confidentialité — Pourquoi ?
+    {
+      blockType: 'twoCols',
+      eyebrow: 'Sécurisation des échanges',
+      title: 'Mettre en place un accord de confidentialité',
+      intro: rt(`**Pourquoi ?**
 
 Sans contrat, *les informations obtenues dans le cadre des négociations sont confidentielles* mais risque de litige sur :
 
@@ -257,14 +255,14 @@ Sans contrat, *les informations obtenues dans le cadre des négociations sont co
 - La durée de l'obligation
 - Le droit d'utilisation de l'information communiquée (y compris le droit de breveter)
 - Etc.`),
-  },
+    },
 
-  // PDF page 12 — Mettre en place un accord de confidentialité — Que définir ?
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Mettre en place un accord de confidentialité
+    // PDF page 12 — Mettre en place un accord de confidentialité — Que définir ?
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Mettre en place un accord de confidentialité
 
 <div class="text-sm opacity-60 mb-6">Sécurisation des échanges</div>
 
@@ -278,14 +276,14 @@ Sans contrat, *les informations obtenues dans le cadre des négociations sont co
    - b. La période de secret (en général 5 à 10 ans) à compter de la fin de la période d'échange, ou jusqu'à ce que l'information tombe dans le champ de l'une des exceptions au contrat (e.g. divulgation publique sans défaillance).
 3. **Divulgateur(s) et bénéficiaire(s).** Exemple : un contrat de sous-traitance aura rarement le sous-traitant comme divulgateur.
 4. **Utilisation autorisée.**`,
-  },
+    },
 
-  // PDF page 13 — Mettre en place un accord de transfert de matériel
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Mettre en place un accord de transfert de matériel
+    // PDF page 13 — Mettre en place un accord de transfert de matériel
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Mettre en place un accord de transfert de matériel
 
 <div class="text-sm opacity-60 mb-6">Sécurisation des échanges</div>
 
@@ -304,14 +302,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 4. Livrables attendus (rapport d'évaluation du matériel)
 5. Modalités de retour / destruction du matériel
 6. Régime de propriété industrielle des données afférentes au matériel (modifications, améliorations, applications)`,
-  },
+    },
 
-  // PDF page 14 — Focus L151-1 et suivants
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Focus L151-1 et suivants
+    // PDF page 14 — Focus L151-1 et suivants
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Focus L151-1 et suivants
 
 > **Article L151-1** — Création LOI n° 2018-670 du 30 juillet 2018 - art. 1
 >
@@ -334,45 +332,45 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 > 1° Une découverte ou une création indépendante ;
 >
 > 2° L'observation, l'étude, le démontage ou le test d'un produit ou d'un objet qui a été mis à la disposition du public ou qui est de façon licite en possession de la personne qui obtient l'information, sauf stipulation contractuelle interdisant ou limitant l'obtention du secret.`,
-  },
+    },
 
-  // PDF page 15 — section divider Cadrage du projet
-  {
-    blockType: 'section',
-    title: 'Cadrage du projet',
-    subtitle: rt('Le **cadrage du projet** est aussi important que le contenu du contrat.'),
-    surface: 'dark',
-  },
+    // PDF page 15 — section divider Cadrage du projet
+    {
+      blockType: 'section',
+      title: 'Cadrage du projet',
+      subtitle: rt('Le **cadrage du projet** est aussi important que le contenu du contrat.'),
+      surface: 'dark',
+    },
 
-  // PDF page 16 — Raisons du cadrage
-  {
-    blockType: 'twoCols',
-    eyebrow: 'Cadrage du projet',
-    title: 'Raisons du cadrage',
-    intro: rt(`**Sécuriser**
+    // PDF page 16 — Raisons du cadrage
+    {
+      blockType: 'twoCols',
+      eyebrow: 'Cadrage du projet',
+      title: 'Raisons du cadrage',
+      intro: rt(`**Sécuriser**
 
 - Rappeler ses connaissances propres ;
 - Révéler des connaissances propres tierces ;
 - Identifier et éviter les concurrents potentiels ;
 - Maîtriser le flux d'informations ;
 - Engager les moyens des parties.`),
-    rightCards: [
-      {
-        title: 'Optimiser',
-        description: rt(`- Identifier et justifier les demandes de fonds ;
+      rightCards: [
+        {
+          title: 'Optimiser',
+          description: rt(`- Identifier et justifier les demandes de fonds ;
 - Optimiser sa fiscalité ;
 - Clarifier le pilotage ;
 - Permettre la sortie du projet.`),
-      },
-    ],
-  },
+        },
+      ],
+    },
 
-  // PDF page 17 — Thématiques à encadrer (table)
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Thématiques à encadrer
+    // PDF page 17 — Thématiques à encadrer (table)
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Thématiques à encadrer
 
 <div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
@@ -384,14 +382,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 | **Tâches** | Travaux \\| Date \\| Durée \\| Ressources \\| Lieux \\| Entité responsable \\| Tiers impliqués |
 | **Pilotage** | Comité technique \\| comité stratégique \\| coordinateur \\| mandataire commun |
 | **Moyens** | Financiers \\| humains \\| matériels \\| connaissances propres |`,
-  },
+    },
 
-  // PDF page 18 — Définir le contexte
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Définir le contexte
+    // PDF page 18 — Définir le contexte
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Définir le contexte
 
 <div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
@@ -410,14 +408,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 - Annexe du contrat permettant de contextualiser les clauses ;
 - Appui aux demandes de financements (EIC, PIA, BFT, ect.) ;
 - Justification des dispositifs fiscaux (CICO, CIR, CII, IP BOX, etc.).`,
-  },
+    },
 
-  // PDF page 19 — Définir les parties
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Définir les parties
+    // PDF page 19 — Définir les parties
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Définir les parties
 
 <div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
@@ -437,14 +435,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 - Estimer les chances de réparation d'une défaillance du partenaire (e.g divulgation d'un brevet avant dépôt) ;
 - Assurer l'optimisation de vos financements (éligibilité CICo, sous-traitants déclarés dans les demandes, etc.) ;
 - Éviter la découverte d'un agrément expiré sans moyen de recours (30% de manque à gagner).`,
-  },
+    },
 
-  // PDF page 20 — Définir les tâches
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Définir les tâches
+    // PDF page 20 — Définir les tâches
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Définir les tâches
 
 <div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
@@ -463,14 +461,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 - Définir clairement les responsabilités (et donc les éventuelles défaillances) ;
 - Définir clairement les apports (si défini comme critère de la propriété des résultats) ;
 - Anticiper les problématiques de transport / d'export de matériel.`,
-  },
+    },
 
-  // PDF page 21 — Définir les comités de pilotage
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Définir les comités de pilotage
+    // PDF page 21 — Définir les comités de pilotage
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Définir les comités de pilotage
 
 <div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
@@ -495,14 +493,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
   - Exclusion d'une partie défaillante ;
   - Remplacement d'un sous-traitant ;
   - etc.`,
-  },
+    },
 
-  // PDF page 22 — Définir les moyens (Que définir, deux colonnes)
-  {
-    blockType: 'twoCols',
-    eyebrow: 'Cadrage du projet',
-    title: 'Définir les moyens',
-    intro: rt(`**Que définir pour chaque Partie ?**
+    // PDF page 22 — Définir les moyens (Que définir, deux colonnes)
+    {
+      blockType: 'twoCols',
+      eyebrow: 'Cadrage du projet',
+      title: 'Définir les moyens',
+      intro: rt(`**Que définir pour chaque Partie ?**
 
 1. **Moyens financiers**
    - a. Montant ;
@@ -511,48 +509,49 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 2. **Moyens humains**
    - Nombre et qualification des ETP ;
    - Identification du principal investigator souhaité sur le projet (optionnel).`),
-    rightCards: [
-      {
-        title: 'Moyens matériels',
-        description: rt(`- a. Achat / location de matériel ;
+      rightCards: [
+        {
+          title: 'Moyens matériels',
+          description: rt(`- a. Achat / location de matériel ;
 - b. Budget consommables ;`),
-      },
-      {
-        title: 'Connaissances propres',
-        description: rt(`- Technologie (brevet, certificat d'utilité, COV, etc. ou secret d'affaires) ;
+        },
+        {
+          title: 'Connaissances propres',
+          description:
+            rt(`- Technologie (brevet, certificat d'utilité, COV, etc. ou secret d'affaires) ;
 - Matériel propriétaire (idem technologie) ;
 - Logiciels (droit d'auteur et éventuellement brevet) ;
 - Bases de données (droit sui generis des DB + savoir-faire).`),
-      },
-    ],
-  },
+        },
+      ],
+    },
 
-  // PDF page 23 — Définir les moyens (Pourquoi, encart)
-  {
-    blockType: 'statement',
-    eyebrow: 'Cadrage du projet',
-    title: 'Définir les moyens',
-    body: rt(`**Pourquoi ?**
+    // PDF page 23 — Définir les moyens (Pourquoi, encart)
+    {
+      blockType: 'statement',
+      eyebrow: 'Cadrage du projet',
+      title: 'Définir les moyens',
+      body: rt(`**Pourquoi ?**
 
 - Rappeler les restrictions (e.g informer de l'existence d'un brevet)
 - Éviter les restrictions (e.g découvrir l'existence d'un brevet)
 - Définir les engagements des parties
 - Définir la propriété des résultats (si les apports sont un critère)`),
-  },
+    },
 
-  // PDF page 24 — section divider Négociation d'un contrat
-  {
-    blockType: 'section',
-    title: "Négociation d'un contrat",
-    surface: 'dark',
-  },
+    // PDF page 24 — section divider Négociation d'un contrat
+    {
+      blockType: 'section',
+      title: "Négociation d'un contrat",
+      surface: 'dark',
+    },
 
-  // PDF page 25 — Term-sheet (intro + tableau exemple)
-  {
-    blockType: 'twoCols',
-    eyebrow: 'Négociation du contrat',
-    title: 'Moyen le plus efficace : établir une term-sheet',
-    intro: rt(`**Qu'est-ce qu'une term-sheet ?**
+    // PDF page 25 — Term-sheet (intro + tableau exemple)
+    {
+      blockType: 'twoCols',
+      eyebrow: 'Négociation du contrat',
+      title: 'Moyen le plus efficace : établir une term-sheet',
+      intro: rt(`**Qu'est-ce qu'une term-sheet ?**
 
 Un document non-contraignant récapitulant les principaux termes du partenariat, le plus souvent sous forme de tableau.
 
@@ -561,10 +560,11 @@ Un document non-contraignant récapitulant les principaux termes du partenariat,
 - Rédaction du contrat principal grandement facilitée
 - Accélération drastique de la négociation du contrat
 - Révélation des deal-breakers le plus tôt possible`),
-    rightCards: [
-      {
-        title: 'Exemple — Term-sheet ANONYME · ALPHA × BETA',
-        description: rt(`Cette term-sheet récapitule les discussions relatives au projet ANONYME entre ALPHA et BETA. *Il ne s'agit pas d'un accord contraignant ni de clauses formulées* mais simplement d'un support aux discussions pour faciliter la contractualisation.
+      rightCards: [
+        {
+          title: 'Exemple — Term-sheet ANONYME · ALPHA × BETA',
+          description:
+            rt(`Cette term-sheet récapitule les discussions relatives au projet ANONYME entre ALPHA et BETA. *Il ne s'agit pas d'un accord contraignant ni de clauses formulées* mais simplement d'un support aux discussions pour faciliter la contractualisation.
 
 1. Parties
 2. Principales définitions
@@ -577,29 +577,29 @@ Un document non-contraignant récapitulant les principaux termes du partenariat,
 5. Partenariat d'Exploitation
    - 5.1. Objet du Partenariat d'Exploitation (Rôles conjoint · Rôles spécifiques à ALPHA · Rôles spécifiques à BETA)
    - 5.2. Exclusivité`),
-      },
-    ],
-  },
+        },
+      ],
+    },
 
-  // PDF page 26 — Choisir le type de contrat (intro)
-  {
-    blockType: 'statement',
-    eyebrow: 'Négociation du contrat',
-    title: 'Choisir le type de contrat',
-    body: rt(`Le titre du contrat n'a aucun impact sur son effet juridique.
+    // PDF page 26 — Choisir le type de contrat (intro)
+    {
+      blockType: 'statement',
+      eyebrow: 'Négociation du contrat',
+      title: 'Choisir le type de contrat',
+      body: rt(`Le titre du contrat n'a aucun impact sur son effet juridique.
 
 Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclature pour :
 
 - **faciliter la compréhension des personnes impliquées**
 - **Répondre aux critères des guichets de financement, et de l'administration fiscale.**`),
-  },
+    },
 
-  // PDF page 27 — Tableau types de contrats
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Types de contrats R&D
+    // PDF page 27 — Tableau types de contrats
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Types de contrats R&D
 
 <div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
@@ -612,14 +612,14 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 | **Accord-cadre de fourniture de services R&D** | Encadrer les conditions globales qui seront appliquées à des "contrats d'applications" (e.g. pour faire appel de manière récurrente à une CRO) |
 | **Contrat de co-traitance de travaux R&D** | Mutualisation des moyens nécessaires aux travaux R&D à réaliser pour le compte d'un tiers (e.g se grouper pour répondre à un appel d'offre). |
 | **Convention CIFRE** | Contrat spécifique permettant le financement d'un doctorant en partenariat avec l'école doctorale sous le contrôle de l'ANRT. |`,
-  },
+    },
 
-  // PDF page 28 — Autres outils de négociation
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Autres outils de négociations
+    // PDF page 28 — Autres outils de négociation
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Autres outils de négociations
 
 <div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
@@ -629,14 +629,14 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 | **Lettre d'intention (LoI)** / **Memorandum d'entente (MoU)** | Les parties s'engagent à entrer en négociation. |
 | **Accord partiel / provisoire** | Les parties s'engagent sur certains points déterminants dans le contrat définitif. |
 | **Promesse de contrat** | Une partie s'engage à contracter avec une autre selon des éléments essentiels déterminés si cette autre partie donne son consentement dans une certaine période fixée. |`,
-  },
+    },
 
-  // PDF page 29 — Principaux points de négociation
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Principaux points de négociation
+    // PDF page 29 — Principaux points de négociation
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Principaux points de négociation
 
 <div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
@@ -651,29 +651,29 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 - **Effets des milestones**
   - Sur les paiements
   - Sur la résiliation`,
-  },
+    },
 
-  // PDF page 30 — section divider Points particuliers
-  {
-    blockType: 'section',
-    title: 'Points particuliers',
-    surface: 'dark',
-  },
+    // PDF page 30 — section divider Points particuliers
+    {
+      blockType: 'section',
+      title: 'Points particuliers',
+      surface: 'dark',
+    },
 
-  // PDF page 31 — Gestion des résultats
-  {
-    blockType: 'twoCols',
-    eyebrow: 'Points particuliers',
-    title: 'Gestion des résultats',
-    intro: rt(`- **Imbriquer ses définitions**
+    // PDF page 31 — Gestion des résultats
+    {
+      blockType: 'twoCols',
+      eyebrow: 'Points particuliers',
+      title: 'Gestion des résultats',
+      intro: rt(`- **Imbriquer ses définitions**
 - **Utiliser le cadre contractuel pour anticiper :**
   - Restreindre les Résultats pour que tout ce qui n'est pas demandé par le partenaire soit une Connaissance Propre
   - Corréler la cession avec les paiements (ou ajouter une clause de réserve de propriété)
   - Divulguer le code-source une fois payé (si nécessaire avec clause de séquestre)`),
-    rightCards: [
-      {
-        title: 'Hiérarchie des objets',
-        description: rt(`Informations
+      rightCards: [
+        {
+          title: 'Hiérarchie des objets',
+          description: rt(`Informations
 → Informations Confidentielles
 → Résultats
   → Connaissances Nouvelles
@@ -681,16 +681,16 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
     → Résultats Conjoints
   → Connaissances Propres
 → Propriété Intellectuelle`),
-      },
-    ],
-  },
+        },
+      ],
+    },
 
-  // PDF page 32 — Pilotage (négociation du contrat)
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Pilotage
+    // PDF page 32 — Pilotage (négociation du contrat)
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Pilotage
 
 <div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
@@ -705,14 +705,14 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 **Rôles et pouvoir du mandataire commun** (ou "unique" si implication du public)
 
 **Rôles du coordinateur**`,
-  },
+    },
 
-  // PDF page 33 — Résultats non-brevetables
-  {
-    blockType: 'markdown',
-    layout: 'default',
-    frontmatter: 'class: relative',
-    content: `# Résultats non-brevetables
+    // PDF page 33 — Résultats non-brevetables
+    {
+      blockType: 'markdown',
+      layout: 'default',
+      frontmatter: 'class: relative',
+      content: `# Résultats non-brevetables
 
 <div class="text-sm opacity-60 mb-6">Points particuliers</div>
 
@@ -726,25 +726,25 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 - Nantis
 - Apportés en nature
 - Valorisés aux actifs de l'entreprise et immobilisés`,
-  },
+    },
 
-  // PDF page 34 — section divider Q&R
-  {
-    blockType: 'section',
-    title: 'Questions & réponses',
-    surface: 'dark',
-  },
+    // PDF page 34 — section divider Q&R
+    {
+      blockType: 'section',
+      title: 'Questions & réponses',
+      surface: 'dark',
+    },
 
-  // PDF page 35 — Contact
-  {
-    blockType: 'cta',
-    eyebrow: 'Contact',
-    title: 'Joachim BRINDEAU',
-    subtitle: rt('Avocat'),
-    primaryAction: '(+33) 7 87 87 60 83',
-    secondaryAction: 'joachim.brindeau@bloom-legal.com',
-  },
-];
+    // PDF page 35 — Contact
+    {
+      blockType: 'cta',
+      eyebrow: 'Contact',
+      title: 'Joachim BRINDEAU',
+      subtitle: rt('Avocat'),
+      primaryAction: '(+33) 7 87 87 60 83',
+      secondaryAction: 'joachim.brindeau@bloom-legal.com',
+    },
+  ];
 }
 
 async function upsertMedia(

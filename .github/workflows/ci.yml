@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck · Lint · Test · Build
+    runs-on: ubuntu-latest
+
+    env:
+      NODE_ENV: test
+      NEXT_TELEMETRY_DISABLED: '1'
+      # Placeholder values so Payload/Next config loads at build time.
+      # Build must not connect to a live DB; these only satisfy config parsing.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/slides_ci
+      PAYLOAD_SECRET: ci-placeholder-secret
+      NEXT_PUBLIC_SERVER_URL: http://localhost:4317
+      OPENAI_BASE_URL: http://localhost:9999/v1
+      OPENAI_API_KEY: ci-placeholder
+      GOOGLE_CLIENT_ID: ci-placeholder
+      GOOGLE_CLIENT_SECRET: ci-placeholder
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so `fallow audit --gate new-only` can diff against the base.
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint (Biome)
+        run: pnpm check
+
+      - name: Lint (Next Core Web Vitals)
+        run: pnpm lint
+
+      - name: Dead-code gate (new issues only)
+        run: pnpm lint:dead:ci
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

@@ -1,7 +1,14 @@
 import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
-import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
+import {
+  escape,
+  eyebrow as renderEyebrow,
+  md,
+  surfaceClass,
+  wrapSlide,
+  type RenderCtx,
+} from '../utils';
 
 export type { CtaBlockData };
 
@@ -23,9 +30,10 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   if (block.secondaryAction) {
     buttons.push(`<div class="${K.btnGhost}">${escape(block.secondaryAction)}</div>`);
   }
-  const buttonsHtml = buttons.length > 0
-    ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
-    : '';
+  const buttonsHtml =
+    buttons.length > 0
+      ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
+      : '';
 
   // mt-16 caption; uses the AA-safe k-caption token (+ uppercase modifier), not
   // opacity-40 or an inline style.

@@ -1,1 +1,1 @@
-{"onlyBuiltDependencies": ["sharp", "esbuild"]}
+{ "onlyBuiltDependencies": ["sharp", "esbuild", "lefthook", "@biomejs/biome"] }

@@ -30,8 +30,7 @@ function emitRawField(field: FieldSpec): Field {
   if (payload.language !== undefined) admin.language = payload.language;
   admin.description = payload.description;
   if (payload.adminCondition) {
-    admin.condition = (_: unknown, siblingData: { image?: unknown }) =>
-      Boolean(siblingData?.image);
+    admin.condition = (_: unknown, siblingData: { image?: unknown }) => Boolean(siblingData?.image);
   }
 
   const result: Record<string, unknown> = {

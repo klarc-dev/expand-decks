@@ -61,59 +61,45 @@ export const tableSpec = block({
         'reference : tableau standard. matrix : cellules de statut (ok / attention / bloqué) rendues en pastilles.',
       options: TABLE_VARIANTS.map((v) => ({ label: v, value: v })),
     }),
-    rawField(
-      'columns',
-      z.array(z.unknown()),
-      optionalAi(z.array(aiColumn).min(2).max(5)),
-      {
-        type: 'array',
-        label: 'Colonnes',
-        description: 'En-têtes de colonnes (2 à 5)',
-        fields: [
-          rawField('header', z.string(), optionalAi(z.string()), {
-            type: 'text',
-            label: 'En-tête',
-            required: true,
-            description: 'Libellé de la colonne',
-          }),
-        ],
-      },
-    ),
-    rawField(
-      'rows',
-      z.array(z.unknown()),
-      optionalAi(z.array(aiRow).min(1).max(8)),
-      {
-        type: 'array',
-        label: 'Lignes',
-        description: 'Lignes du tableau ; chaque cellule correspond à une colonne, dans l’ordre',
-        fields: [
-          rawField(
-            'cells',
-            z.array(z.unknown()),
-            optionalAi(z.array(aiCell)),
-            {
-              type: 'array',
-              label: 'Cellules',
-              description: 'Une cellule par colonne, dans l’ordre des colonnes',
-              fields: [
-                rawField('value', richTextRender(), optionalAi(z.string()), {
-                  type: 'richText',
-                  label: 'Contenu',
-                  description: 'Texte de la cellule',
-                }),
-              ],
-            },
-          ),
-        ],
-      },
-    ),
+    rawField('columns', z.array(z.unknown()), optionalAi(z.array(aiColumn).min(2).max(5)), {
+      type: 'array',
+      label: 'Colonnes',
+      description: 'En-têtes de colonnes (2 à 5)',
+      fields: [
+        rawField('header', z.string(), optionalAi(z.string()), {
+          type: 'text',
+          label: 'En-tête',
+          required: true,
+          description: 'Libellé de la colonne',
+        }),
+      ],
+    }),
+    rawField('rows', z.array(z.unknown()), optionalAi(z.array(aiRow).min(1).max(8)), {
+      type: 'array',
+      label: 'Lignes',
+      description: 'Lignes du tableau ; chaque cellule correspond à une colonne, dans l’ordre',
+      fields: [
+        rawField('cells', z.array(z.unknown()), optionalAi(z.array(aiCell)), {
+          type: 'array',
+          label: 'Cellules',
+          description: 'Une cellule par colonne, dans l’ordre des colonnes',
+          fields: [
+            rawField('value', richTextRender(), optionalAi(z.string()), {
+              type: 'richText',
+              label: 'Contenu',
+              description: 'Texte de la cellule',
+            }),
+          ],
+        }),
+      ],
+    }),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {
     index: 9,
     heading: 'table',
-    summary: 'Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)',
+    summary:
+      'Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)',
     lines: [
       'eyebrow, title (obligatoire), surface ("light" | "dark")',
       'tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.',

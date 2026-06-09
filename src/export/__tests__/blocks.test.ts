@@ -31,7 +31,15 @@ function lexical(text: string) {
           version: 1,
           textFormat: 0,
           children: [
-            { type: 'text', text, detail: 0, format: 0, mode: 'normal' as const, style: '', version: 1 },
+            {
+              type: 'text',
+              text,
+              detail: 0,
+              format: 0,
+              mode: 'normal' as const,
+              style: '',
+              version: 1,
+            },
           ],
         },
       ],
@@ -74,9 +82,7 @@ describe('md()', () => {
   });
 
   it('converts links to <a>', () => {
-    expect(md('[Klarc](https://klarc.com)')).toBe(
-      '<a href="https://klarc.com">Klarc</a>',
-    );
+    expect(md('[Klarc](https://klarc.com)')).toBe('<a href="https://klarc.com">Klarc</a>');
   });
 
   it('escapes HTML while converting markdown', () => {
@@ -383,9 +389,7 @@ describe('renderQuotes()', () => {
     const result = renderQuotes({
       blockType: 'quotes',
       title: 'Quotes',
-      quotes: [
-        { quote: lexical('Great service'), authorName: 'John', authorRole: 'CEO' },
-      ],
+      quotes: [{ quote: lexical('Great service'), authorName: 'John', authorRole: 'CEO' }],
     });
     expect(result).toContain('Great service');
     expect(result).toContain('John');

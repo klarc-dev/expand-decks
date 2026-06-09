@@ -6,17 +6,16 @@ import { afterOrganisationChange } from '../hooks/afterOrganisationChange';
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
-const colorField = (name: string, label: string, description: string, defaultValue: string) =>
-  ({
-    name,
-    type: 'text' as const,
-    required: true,
-    defaultValue,
-    label,
-    admin: { description },
-    validate: (value: string | null | undefined) =>
-      value && HEX_RE.test(value) ? true : 'Couleur hexadécimale requise (ex. #02585C)',
-  });
+const colorField = (name: string, label: string, description: string, defaultValue: string) => ({
+  name,
+  type: 'text' as const,
+  required: true,
+  defaultValue,
+  label,
+  admin: { description },
+  validate: (value: string | null | undefined) =>
+    value && HEX_RE.test(value) ? true : 'Couleur hexadécimale requise (ex. #02585C)',
+});
 
 export const Organisations: CollectionConfig = {
   slug: COLLECTIONS.organisations,
@@ -52,8 +51,18 @@ export const Organisations: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            colorField('primary', 'Primaire', 'Couleur principale (titres, accents forts)', '#02585C'),
-            colorField('secondary', 'Accent', 'Couleur secondaire (puces, éléments décoratifs)', '#F5A3B0'),
+            colorField(
+              'primary',
+              'Primaire',
+              'Couleur principale (titres, accents forts)',
+              '#02585C',
+            ),
+            colorField(
+              'secondary',
+              'Accent',
+              'Couleur secondaire (puces, éléments décoratifs)',
+              '#F5A3B0',
+            ),
           ],
         },
         {

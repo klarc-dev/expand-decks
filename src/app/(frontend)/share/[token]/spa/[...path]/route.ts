@@ -23,8 +23,7 @@ export async function GET(
   }
 
   // Resolve presentation slug
-  const presentation =
-    typeof link.presentation === 'object' ? link.presentation : null;
+  const presentation = typeof link.presentation === 'object' ? link.presentation : null;
   if (!presentation?.slug) {
     return new NextResponse('Not found', { status: 404 });
   }

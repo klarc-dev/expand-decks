@@ -34,10 +34,7 @@ const MIME_TYPES: Record<string, string> = {
  * resolved path stays inside the slug's SPA directory. An empty path serves
  * index.html. Returns 403 on traversal attempts, 404 when the file is absent.
  */
-export async function serveSpaFile(
-  slug: string,
-  pathSegments: string[],
-): Promise<NextResponse> {
+export async function serveSpaFile(slug: string, pathSegments: string[]): Promise<NextResponse> {
   const filePath = pathSegments.length > 0 ? pathSegments.join('/') : INDEX_HTML;
 
   // Prevent path traversal — reject '..' and absolute segments
@@ -61,10 +58,7 @@ export async function serveSpaFile(
 
     // index.html must revalidate so rebuilds show up immediately; the
     // hash-named assets it references are safe to cache aggressively.
-    const cacheControl =
-      ext === '.html'
-        ? 'no-cache'
-        : 'public, max-age=3600, immutable';
+    const cacheControl = ext === '.html' ? 'no-cache' : 'public, max-age=3600, immutable';
 
     return new NextResponse(content, {
       status: 200,

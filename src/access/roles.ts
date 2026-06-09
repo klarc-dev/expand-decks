@@ -9,17 +9,14 @@ export const userIsAdmin = (u: RoleUser): boolean => u?.role === ROLES.admin;
 export const userIsAdminOrAuthor = (u: RoleUser): boolean =>
   u?.role === ROLES.admin || u?.role === ROLES.author;
 
-export const isAdmin: Access = ({ req: { user } }) =>
-  user?.role === ROLES.admin;
+export const isAdmin: Access = ({ req: { user } }) => user?.role === ROLES.admin;
 
 export const isAdminOrAuthor: Access = ({ req: { user } }) =>
   user?.role === ROLES.admin || user?.role === ROLES.author;
 
-export const isLoggedIn: Access = ({ req: { user } }) =>
-  Boolean(user);
+export const isLoggedIn: Access = ({ req: { user } }) => Boolean(user);
 
-export const isAdminField: FieldAccess = ({ req: { user } }) =>
-  user?.role === ROLES.admin;
+export const isAdminField: FieldAccess = ({ req: { user } }) => user?.role === ROLES.admin;
 
 export const isAdminOrSelf: Access = ({ req: { user } }) => {
   if (!user) return false;

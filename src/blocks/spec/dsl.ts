@@ -96,8 +96,7 @@ export type FieldFactory =
   | 'raw';
 
 /** Render-facing optional that infers as `prop?: T | null`. */
-export const optionalRender = <T extends z.ZodType>(inner: T) =>
-  z.nullable(inner).optional();
+export const optionalRender = <T extends z.ZodType>(inner: T) => z.nullable(inner).optional();
 
 /** AI-facing optional (plain `.optional()`, no null) per strictJsonSchema:false. */
 export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
@@ -108,8 +107,7 @@ export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
 // only shapes InferRender so *BlockData carries the Lexical editor state.
 export type LexicalRichText = import('@payloadcms/richtext-lexical/lexical').SerializedEditorState;
 export const richTextRender = () => z.custom<LexicalRichText>();
-export const optionalRichTextRender = () =>
-  z.custom<LexicalRichText>().nullable().optional();
+export const optionalRichTextRender = () => z.custom<LexicalRichText>().nullable().optional();
 
 /** Payload field `type` values the emitter knows how to build from raw meta. */
 export type PayloadRawType = 'text' | 'textarea' | 'select' | 'code' | 'array' | 'richText';

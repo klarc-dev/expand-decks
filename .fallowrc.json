@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+
+  "ignorePatterns": ["src/app/(payload)/admin/importMap.js", "src/app/(payload)/payload-admin.css"],
+
+  "ignoreDependencies": ["sharp", "sass"],
+
+  "ignoreUnresolvedImports": ["./.next/types/routes.d.ts"],
+
+  "duplicates": {
+    "minOccurrences": 3,
+    "ignore": ["src/migrations/**"]
+  },
+
+  "health": {
+    "maxCrap": 1000,
+    "ignore": ["scripts/**", "src/migrations/**", "*.mjs"]
+  },
+
+  "rules": {
+    "unused-files": "warn",
+    "unused-exports": "warn",
+    "unused-types": "warn",
+    "unused-dependencies": "error",
+    "unused-dev-dependencies": "warn",
+    "unresolved-imports": "error",
+    "unlisted-dependencies": "error",
+    "circular-dependencies": "error",
+    "duplicate-exports": "warn",
+    "stale-suppressions": "warn"
+  }
+}

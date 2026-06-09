@@ -19,9 +19,7 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   const eyebrow = renderEyebrow(block.eyebrow, 'mb-8', { indent: '      ' });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
-  const subtitle = subtitleHtml
-    ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>`
-    : '';
+  const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
 
   const footerLeftHtml = richTextToHTML(block.footerLeft);
   const footerLeft = footerLeftHtml
@@ -33,9 +31,10 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
     ? `\n    <div class="${K.caption} k-caption--upper text-right">\n      ${footerRightHtml}\n    </div>`
     : '';
 
-  const footerRow = footerLeft || footerRight
-    ? `\n  <div class="flex items-end justify-between">${footerLeft}${footerRight}\n  </div>`
-    : '';
+  const footerRow =
+    footerLeft || footerRight
+      ? `\n  <div class="flex items-end justify-between">${footerLeft}${footerRight}\n  </div>`
+      : '';
 
   // With image: half-slide layout (Slidev image-right/-left supplies the other
   // half). Drop `absolute inset-0` so the content flows in Slidev's content

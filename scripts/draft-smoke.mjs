@@ -1,7 +1,7 @@
 import { draftPresentationSlides } from '../src/lib/draftPresentation.ts';
 
 const DEFAULT_BRIEF =
-  "Présentation de 6 diapositives sur les avantages du télétravail pour une PME : productivité, coûts, attractivité.";
+  'Présentation de 6 diapositives sur les avantages du télétravail pour une PME : productivité, coûts, attractivité.';
 
 const brief = process.argv[2] ?? DEFAULT_BRIEF;
 

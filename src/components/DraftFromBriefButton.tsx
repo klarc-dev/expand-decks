@@ -16,9 +16,10 @@ import { ALL_SPECS } from '@/blocks/spec';
 
 // Layouts the AI can produce, derived from the block-spec SSOT so this list can
 // never drift from what the draft route actually supports.
-const DRAFTABLE_LAYOUTS = ALL_SPECS.filter(
-  (s) => s.aiDraftable && s.promptMeta,
-).map((s) => ({ heading: s.promptMeta!.heading, summary: s.promptMeta!.summary }));
+const DRAFTABLE_LAYOUTS = ALL_SPECS.filter((s) => s.aiDraftable && s.promptMeta).map((s) => ({
+  heading: s.promptMeta!.heading,
+  summary: s.promptMeta!.summary,
+}));
 
 const DraftFromBriefButton: React.FC = () => {
   const [brief, setBrief] = useState('');
@@ -118,8 +119,8 @@ const DraftFromBriefButton: React.FC = () => {
             ))}
           </ul>
           <p style={{ margin: '0 0 8px' }}>
-            <strong>Règles</strong> : commence par une couverture, termine par une clôture ;
-            génère 8 à 15 diapositives, ou le nombre exact que vous précisez.
+            <strong>Règles</strong> : commence par une couverture, termine par une clôture ; génère
+            8 à 15 diapositives, ou le nombre exact que vous précisez.
           </p>
           <p style={{ margin: 0 }}>
             <strong>Contrôle précis</strong> : structurez le brief slide par slide avec la syntaxe{' '}

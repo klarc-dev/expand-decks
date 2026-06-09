@@ -18,10 +18,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     JSON.stringify(formStateToBlockData(fields as never, path)),
   );
 
-  const data = useMemo(
-    () => JSON.parse(blockJson) as Record<string, unknown>,
-    [blockJson],
-  );
+  const data = useMemo(() => JSON.parse(blockJson) as Record<string, unknown>, [blockJson]);
 
   if (!data?.blockType) return null;
 

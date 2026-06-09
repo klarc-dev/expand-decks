@@ -100,7 +100,10 @@ const result = await buildSlidesTask.handler({
   input: { presentationId: String(presentation.id) },
   req: { payload },
 });
-console.log(`build handler returned in ${((Date.now() - t0) / 1000).toFixed(1)}s:`, JSON.stringify(result));
+console.log(
+  `build handler returned in ${((Date.now() - t0) / 1000).toFixed(1)}s:`,
+  JSON.stringify(result),
+);
 
 // 5. Re-read the presentation to report artifacts.
 const final = await payload.findByID({
@@ -113,8 +116,9 @@ console.log('\n=== RESULT ===');
 console.log('lastBuildStatus:', final.lastBuildStatus);
 console.log('lastBuildError :', final.lastBuildError || '(none)');
 console.log('spaUrl         :', final.spaUrl);
-console.log('pdfFile        :', final.pdfFile && typeof final.pdfFile === 'object'
-  ? final.pdfFile.filename
-  : final.pdfFile);
+console.log(
+  'pdfFile        :',
+  final.pdfFile && typeof final.pdfFile === 'object' ? final.pdfFile.filename : final.pdfFile,
+);
 
 process.exit(final.lastBuildStatus === 'success' ? 0 : 1);

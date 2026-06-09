@@ -113,7 +113,11 @@ describe('heroFrame() — statement-only variant surface', () => {
   });
 
   it('passes surface through to the wrapper class', () => {
-    expect(heroFrame({ title: 'T', scale: 'hero', align: 'center', surface: 'dark' })).toContain('k-dark');
-    expect(heroFrame({ title: 'T', scale: 'hero', align: 'center', surface: 'light' })).not.toContain('k-dark');
+    expect(heroFrame({ title: 'T', scale: 'hero', align: 'center', surface: 'dark' })).toContain(
+      'k-dark',
+    );
+    expect(
+      heroFrame({ title: 'T', scale: 'hero', align: 'center', surface: 'light' }),
+    ).not.toContain('k-dark');
   });
 });

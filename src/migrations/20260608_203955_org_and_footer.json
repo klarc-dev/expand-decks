@@ -74,12 +74,8 @@
           "name": "users_sessions_parent_id_fk",
           "tableFrom": "users_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -380,12 +376,8 @@
           "name": "organisations_logo_id_media_id_fk",
           "tableFrom": "organisations",
           "tableTo": "media",
-          "columnsFrom": [
-            "logo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["logo_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -393,12 +385,8 @@
           "name": "organisations_created_by_id_users_id_fk",
           "tableFrom": "organisations",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -563,12 +551,8 @@
           "name": "presentations_blocks_cover_image_id_media_id_fk",
           "tableFrom": "presentations_blocks_cover",
           "tableTo": "media",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -576,12 +560,8 @@
           "name": "presentations_blocks_cover_parent_id_fk",
           "tableFrom": "presentations_blocks_cover",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -734,12 +714,8 @@
           "name": "presentations_blocks_section_image_id_media_id_fk",
           "tableFrom": "presentations_blocks_section",
           "tableTo": "media",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -747,12 +723,8 @@
           "name": "presentations_blocks_section_parent_id_fk",
           "tableFrom": "presentations_blocks_section",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -874,12 +846,8 @@
           "name": "presentations_blocks_statement_parent_id_fk",
           "tableFrom": "presentations_blocks_statement",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -962,12 +930,8 @@
           "name": "presentations_blocks_two_cols_right_cards_parent_id_fk",
           "tableFrom": "presentations_blocks_two_cols_right_cards",
           "tableTo": "presentations_blocks_two_cols",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1118,12 +1082,8 @@
           "name": "presentations_blocks_two_cols_image_id_media_id_fk",
           "tableFrom": "presentations_blocks_two_cols",
           "tableTo": "media",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["image_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1131,12 +1091,8 @@
           "name": "presentations_blocks_two_cols_parent_id_fk",
           "tableFrom": "presentations_blocks_two_cols",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1225,12 +1181,8 @@
           "name": "presentations_blocks_card_grid_cards_parent_id_fk",
           "tableFrom": "presentations_blocks_card_grid_cards",
           "tableTo": "presentations_blocks_card_grid",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1354,12 +1306,8 @@
           "name": "presentations_blocks_card_grid_parent_id_fk",
           "tableFrom": "presentations_blocks_card_grid",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1442,12 +1390,8 @@
           "name": "presentations_blocks_stats_stats_parent_id_fk",
           "tableFrom": "presentations_blocks_stats_stats",
           "tableTo": "presentations_blocks_stats",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1565,12 +1509,8 @@
           "name": "presentations_blocks_stats_parent_id_fk",
           "tableFrom": "presentations_blocks_stats",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1659,12 +1599,8 @@
           "name": "presentations_blocks_quotes_quotes_parent_id_fk",
           "tableFrom": "presentations_blocks_quotes_quotes",
           "tableTo": "presentations_blocks_quotes",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1774,12 +1710,8 @@
           "name": "presentations_blocks_quotes_parent_id_fk",
           "tableFrom": "presentations_blocks_quotes",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1913,12 +1845,8 @@
           "name": "presentations_blocks_cta_parent_id_fk",
           "tableFrom": "presentations_blocks_cta",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1995,12 +1923,8 @@
           "name": "presentations_blocks_table_columns_parent_id_fk",
           "tableFrom": "presentations_blocks_table_columns",
           "tableTo": "presentations_blocks_table",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2077,12 +2001,8 @@
           "name": "presentations_blocks_table_rows_cells_parent_id_fk",
           "tableFrom": "presentations_blocks_table_rows_cells",
           "tableTo": "presentations_blocks_table_rows",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2153,12 +2073,8 @@
           "name": "presentations_blocks_table_rows_parent_id_fk",
           "tableFrom": "presentations_blocks_table_rows",
           "tableTo": "presentations_blocks_table",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2276,12 +2192,8 @@
           "name": "presentations_blocks_table_parent_id_fk",
           "tableFrom": "presentations_blocks_table",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2364,12 +2276,8 @@
           "name": "presentations_blocks_timeline_steps_parent_id_fk",
           "tableFrom": "presentations_blocks_timeline_steps",
           "tableTo": "presentations_blocks_timeline",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2493,12 +2401,8 @@
           "name": "presentations_blocks_timeline_parent_id_fk",
           "tableFrom": "presentations_blocks_timeline",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2614,12 +2518,8 @@
           "name": "presentations_blocks_markdown_parent_id_fk",
           "tableFrom": "presentations_blocks_markdown",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2866,12 +2766,8 @@
           "name": "presentations_pdf_file_id_media_id_fk",
           "tableFrom": "presentations",
           "tableTo": "media",
-          "columnsFrom": [
-            "pdf_file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pdf_file_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2879,12 +2775,8 @@
           "name": "presentations_cover_image_id_media_id_fk",
           "tableFrom": "presentations",
           "tableTo": "media",
-          "columnsFrom": [
-            "cover_image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["cover_image_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2892,12 +2784,8 @@
           "name": "presentations_organisation_id_organisations_id_fk",
           "tableFrom": "presentations",
           "tableTo": "organisations",
-          "columnsFrom": [
-            "organisation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organisation_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2905,12 +2793,8 @@
           "name": "presentations_created_by_id_users_id_fk",
           "tableFrom": "presentations",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2984,12 +2868,8 @@
           "name": "presentations_texts_parent_fk",
           "tableFrom": "presentations_texts",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3391,12 +3271,8 @@
           "name": "share_links_presentation_id_presentations_id_fk",
           "tableFrom": "share_links",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "presentation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["presentation_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3404,12 +3280,8 @@
           "name": "share_links_created_by_id_users_id_fk",
           "tableFrom": "share_links",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3588,12 +3460,8 @@
           "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3761,12 +3629,8 @@
           "name": "payload_jobs_log_parent_id_fk",
           "tableFrom": "payload_jobs_log",
           "tableTo": "payload_jobs",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["_parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4297,12 +4161,8 @@
           "name": "payload_locked_documents_rels_parent_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "payload_locked_documents",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4310,12 +4170,8 @@
           "name": "payload_locked_documents_rels_users_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "users",
-          "columnsFrom": [
-            "users_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["users_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4323,12 +4179,8 @@
           "name": "payload_locked_documents_rels_organisations_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "organisations",
-          "columnsFrom": [
-            "organisations_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organisations_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4336,12 +4188,8 @@
           "name": "payload_locked_documents_rels_presentations_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "presentations",
-          "columnsFrom": [
-            "presentations_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["presentations_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4349,12 +4197,8 @@
           "name": "payload_locked_documents_rels_media_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "media",
-          "columnsFrom": [
-            "media_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["media_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4362,12 +4206,8 @@
           "name": "payload_locked_documents_rels_share_links_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "share_links",
-          "columnsFrom": [
-            "share_links_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["share_links_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4375,12 +4215,8 @@
           "name": "payload_locked_documents_rels_accounts_fk",
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "accounts_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["accounts_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4584,12 +4420,8 @@
           "name": "payload_preferences_rels_parent_fk",
           "tableFrom": "payload_preferences_rels",
           "tableTo": "payload_preferences",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4597,12 +4429,8 @@
           "name": "payload_preferences_rels_users_fk",
           "tableFrom": "payload_preferences_rels",
           "tableTo": "users",
-          "columnsFrom": [
-            "users_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["users_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4694,152 +4522,92 @@
     "public.enum_users_role": {
       "name": "enum_users_role",
       "schema": "public",
-      "values": [
-        "admin",
-        "author",
-        "viewer"
-      ]
+      "values": ["admin", "author", "viewer"]
     },
     "public.enum_organisations_heading_font": {
       "name": "enum_organisations_heading_font",
       "schema": "public",
-      "values": [
-        "Gilroy",
-        "Roboto"
-      ]
+      "values": ["Gilroy", "Roboto"]
     },
     "public.enum_organisations_body_font": {
       "name": "enum_organisations_body_font",
       "schema": "public",
-      "values": [
-        "Roboto",
-        "Gilroy"
-      ]
+      "values": ["Roboto", "Gilroy"]
     },
     "public.enum_presentations_blocks_cover_surface": {
       "name": "enum_presentations_blocks_cover_surface",
       "schema": "public",
-      "values": [
-        "dark",
-        "light",
-        "gradient"
-      ]
+      "values": ["dark", "light", "gradient"]
     },
     "public.enum_presentations_blocks_cover_image_position": {
       "name": "enum_presentations_blocks_cover_image_position",
       "schema": "public",
-      "values": [
-        "right",
-        "left"
-      ]
+      "values": ["right", "left"]
     },
     "public.enum_presentations_blocks_section_surface": {
       "name": "enum_presentations_blocks_section_surface",
       "schema": "public",
-      "values": [
-        "dark",
-        "light"
-      ]
+      "values": ["dark", "light"]
     },
     "public.enum_presentations_blocks_section_image_position": {
       "name": "enum_presentations_blocks_section_image_position",
       "schema": "public",
-      "values": [
-        "right",
-        "left"
-      ]
+      "values": ["right", "left"]
     },
     "public.enum_presentations_blocks_two_cols_image_position": {
       "name": "enum_presentations_blocks_two_cols_image_position",
       "schema": "public",
-      "values": [
-        "right",
-        "left"
-      ]
+      "values": ["right", "left"]
     },
     "public.enum_presentations_blocks_card_grid_columns": {
       "name": "enum_presentations_blocks_card_grid_columns",
       "schema": "public",
-      "values": [
-        "2",
-        "3",
-        "4"
-      ]
+      "values": ["2", "3", "4"]
     },
     "public.enum_presentations_blocks_stats_surface": {
       "name": "enum_presentations_blocks_stats_surface",
       "schema": "public",
-      "values": [
-        "dark",
-        "light"
-      ]
+      "values": ["dark", "light"]
     },
     "public.enum_presentations_blocks_table_surface": {
       "name": "enum_presentations_blocks_table_surface",
       "schema": "public",
-      "values": [
-        "light",
-        "dark"
-      ]
+      "values": ["light", "dark"]
     },
     "public.enum_presentations_blocks_timeline_surface": {
       "name": "enum_presentations_blocks_timeline_surface",
       "schema": "public",
-      "values": [
-        "light",
-        "dark"
-      ]
+      "values": ["light", "dark"]
     },
     "public.enum_presentations_language": {
       "name": "enum_presentations_language",
       "schema": "public",
-      "values": [
-        "fr",
-        "en"
-      ]
+      "values": ["fr", "en"]
     },
     "public.enum_presentations_last_build_status": {
       "name": "enum_presentations_last_build_status",
       "schema": "public",
-      "values": [
-        "idle",
-        "building",
-        "success",
-        "failed"
-      ]
+      "values": ["idle", "building", "success", "failed"]
     },
     "public.enum_presentations_status": {
       "name": "enum_presentations_status",
       "schema": "public",
-      "values": [
-        "draft",
-        "published",
-        "archived"
-      ]
+      "values": ["draft", "published", "archived"]
     },
     "public.enum_payload_jobs_log_task_slug": {
       "name": "enum_payload_jobs_log_task_slug",
       "schema": "public",
-      "values": [
-        "inline",
-        "buildSlides"
-      ]
+      "values": ["inline", "buildSlides"]
     },
     "public.enum_payload_jobs_log_state": {
       "name": "enum_payload_jobs_log_state",
       "schema": "public",
-      "values": [
-        "failed",
-        "succeeded"
-      ]
+      "values": ["failed", "succeeded"]
     },
     "public.enum_payload_jobs_task_slug": {
       "name": "enum_payload_jobs_task_slug",
       "schema": "public",
-      "values": [
-        "inline",
-        "buildSlides"
-      ]
+      "values": ["inline", "buildSlides"]
     }
   },
   "schemas": {},

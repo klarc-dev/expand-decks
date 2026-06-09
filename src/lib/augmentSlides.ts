@@ -12,6 +12,9 @@
  * Append is the only merge strategy implemented; replace-by-index is a deferred
  * open question (see plan).
  */
-export function mergeAugmentedSlides<E, N>(existing: readonly E[], drafted: readonly N[]): (E | N)[] {
+export function mergeAugmentedSlides<E, N>(
+  existing: readonly E[],
+  drafted: readonly N[],
+): (E | N)[] {
   return [...existing, ...drafted];
 }

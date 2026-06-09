@@ -1,6 +1,13 @@
 import type { StatsBlockData } from '../../blocks/spec/stats';
 import { K } from '../classNames';
-import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
+import {
+  escape,
+  eyebrow as renderEyebrow,
+  md,
+  surfaceClass,
+  wrapSlide,
+  type RenderCtx,
+} from '../utils';
 
 export type { StatsBlockData };
 

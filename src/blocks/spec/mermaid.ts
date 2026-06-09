@@ -45,7 +45,8 @@ export const mermaidSpec = block({
   promptMeta: {
     index: 11,
     heading: 'mermaid',
-    summary: 'Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)',
+    summary:
+      'Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)',
     lines: [
       'eyebrow, title (obligatoire), surface ("light" | "dark"), caption',
       'source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs ```',

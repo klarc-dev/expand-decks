@@ -21,9 +21,7 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
     })
     .join('\n');
 
-  const band = block.footer
-    ? `\n\n<div class="${K.timelineBand}">${md(block.footer)}</div>`
-    : '';
+  const band = block.footer ? `\n\n<div class="${K.timelineBand}">${md(block.footer)}</div>` : '';
 
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
   const bodyHtml = contentFrame(

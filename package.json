@@ -19,8 +19,8 @@
     "lint:fix": "eslint . --fix",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "check": "biome check .",
-    "check:fix": "biome check --write .",
+    "check": "biome lint .",
+    "check:fix": "biome lint --write .",
     "lint:dead": "fallow",
     "lint:dead:scan": "fallow dead-code",
     "lint:dead:fix": "fallow fix --dry-run",
@@ -30,7 +30,7 @@
   },
   "packageManager": "pnpm@10.33.2",
   "engines": {
-    "node": ">=20 <21",
+    "node": ">=20",
     "pnpm": ">=10"
   },
   "dependencies": {

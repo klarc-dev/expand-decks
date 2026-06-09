@@ -139,7 +139,8 @@ export async function draftObject<T>({
       if (attempt >= maxRepairs || !TypeValidationError.isInstance(error)) {
         throw error;
       }
-      const detail = error.cause instanceof Error ? error.cause.message : String(error.cause ?? error);
+      const detail =
+        error.cause instanceof Error ? error.cause.message : String(error.cause ?? error);
       userPrompt = `${prompt}\n\n---\nLa sortie précédente a échoué la validation : ${detail}\nCorrige et réémets la sortie complète conforme au schéma.`;
     }
   }

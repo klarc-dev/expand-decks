@@ -7,75 +7,75 @@
 
 /* Gilroy — chargé localement depuis /public/fonts/ */
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-Light.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-Regular.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-RegularItalic.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-RegularItalic.ttf") format("truetype");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-Medium.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-Semibold.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Semibold.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-Bold.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-BoldItalic.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-BoldItalic.ttf") format("truetype");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gilroy';
-  src: url('/fonts/Gilroy-Black.ttf') format('truetype');
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Black.ttf") format("truetype");
   font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  --k-teal:        #02585C;
-  --k-teal-600:    #034A4E;
-  --k-teal-700:    #023C3F;
-  --k-teal-900:    #021A1B;
-  --k-teal-50:     #ECF7F7;
-  --k-teal-100:    #D4ECEC;
-  --k-rose:        #F5A3B0;
-  --k-rose-soft:   #FBE2E6;
-  --k-ink:         #0F2A2B;
-  --k-ink-soft:    #4A6365;
-  --k-paper:       #FAFBFB;
-  --k-line:        rgba(2, 88, 92, 0.12);
+  --k-teal: #02585c;
+  --k-teal-600: #034a4e;
+  --k-teal-700: #023c3f;
+  --k-teal-900: #021a1b;
+  --k-teal-50: #ecf7f7;
+  --k-teal-100: #d4ecec;
+  --k-rose: #f5a3b0;
+  --k-rose-soft: #fbe2e6;
+  --k-ink: #0f2a2b;
+  --k-ink-soft: #4a6365;
+  --k-paper: #fafbfb;
+  --k-line: rgba(2, 88, 92, 0.12);
 
   /* --- Reusable-components refactor tokens (U1) --------------------------
      Foundation layer: consumed by render primitives (U4) and the AA pass (U3).
@@ -89,29 +89,29 @@
      Light-ground #5A6B6B on #FAFBFB ≈ 5.6:1; dark-ground #C7D6D6 on the teal
      gradient (darkest stop #023C3F) ≈ 8:1. --fg-muted flips with .k-dark so a
      single rule can replace the scattered opacity rules in U3. */
-  --fg-light-muted: #5A6B6B;
-  --fg-dark-muted:  #C7D6D6;
-  --fg-muted:       var(--fg-light-muted);
-  --fg-footer:      #6B7B7B; /* deck footer on light ground ≈ 4.7:1 */
+  --fg-light-muted: #5a6b6b;
+  --fg-dark-muted: #c7d6d6;
+  --fg-muted: var(--fg-light-muted);
+  --fg-footer: #6b7b7b; /* deck footer on light ground ≈ 4.7:1 */
 
   /* Type ramp — single source for heading/body scale (replaces inline
      text-4xl/5xl/6xl/xl per renderer). */
   --t-display: 6rem;
-  --t-hero:    3.2rem;
-  --t-title:   3rem;
-  --t-sub:     2.25rem;
-  --t-body:    1.25rem;
+  --t-hero: 3.2rem;
+  --t-title: 3rem;
+  --t-sub: 2.25rem;
+  --t-body: 1.25rem;
   --t-caption: 0.8rem;
 
   /* Layout rails — one left/right inset and one title baseline for every
      content slide (replaces px-14/px-12 and pt-24/28/16/20 drift). */
   --content-inset: 3.5rem;
-  --header-top:    6rem;
+  --header-top: 6rem;
 
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
      contrast by ground (U3 consumes these). */
-  --pill-bg:     var(--k-teal-50);
-  --pill-fg:     var(--k-teal);
+  --pill-bg: var(--k-teal-50);
+  --pill-fg: var(--k-teal);
   --pill-border: var(--k-line);
   --accent-rule: var(--k-rose);
 }
@@ -123,15 +123,15 @@
   --fg: #fff;
   --fg-muted: var(--fg-dark-muted);
   --fg-footer: rgba(255, 255, 255, 0.78); /* on the teal gradient ≈ 6:1 */
-  --pill-bg: rgba(255, 255, 255, 0.10);
+  --pill-bg: rgba(255, 255, 255, 0.1);
   --pill-fg: #fff;
-  --pill-border: rgba(255, 255, 255, 0.30);
+  --pill-border: rgba(255, 255, 255, 0.3);
 }
 
 /* Typography ----------------------------------- */
 .slidev-layout {
-  font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: 'ss01', 'cv11';
+  font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
   color: var(--k-ink);
   background: var(--k-paper);
   letter-spacing: -0.01em;
@@ -140,7 +140,7 @@
 .slidev-layout h1,
 .slidev-layout h2,
 .slidev-layout h3 {
-  font-family: 'Gilroy', 'Roboto', sans-serif;
+  font-family: "Gilroy", "Roboto", sans-serif;
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--k-teal);
@@ -156,7 +156,8 @@
   line-height: 1.1;
 }
 
-.slidev-layout p, .slidev-layout li {
+.slidev-layout p,
+.slidev-layout li {
   color: var(--k-ink-soft);
   line-height: 1.55;
 }
@@ -164,17 +165,29 @@
 /* Dark variant for cover / section -------------- */
 .k-dark {
   background:
-    radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb, var(--k-rose) 22%, transparent), transparent 60%),
-    radial-gradient(900px 500px at 10% 110%, color-mix(in srgb, var(--k-teal) 55%, transparent), transparent 60%),
+    radial-gradient(
+      1200px 600px at 85% -10%,
+      color-mix(in srgb, var(--k-rose) 22%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 10% 110%,
+      color-mix(in srgb, var(--k-teal) 55%, transparent),
+      transparent 60%
+    ),
     linear-gradient(135deg, var(--k-teal) 0%, var(--k-teal-700) 100%) !important;
   color: #fff !important;
 }
 
-.k-dark h1, .k-dark h2, .k-dark h3 {
+.k-dark h1,
+.k-dark h2,
+.k-dark h3 {
   color: #fff;
 }
 
-.k-dark p, .k-dark li, .k-dark .muted {
+.k-dark p,
+.k-dark li,
+.k-dark .muted {
   color: var(--fg-muted); /* solid #C7D6D6 ≈ 8:1 — was rgba .72 (AA fail) */
 }
 
@@ -196,14 +209,15 @@
 
 .k-dark .k-eyebrow {
   color: #fff;
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .k-eyebrow::before {
-  content: '';
+  content: "";
   display: inline-block;
-  width: 6px; height: 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: var(--k-rose);
 }
@@ -212,18 +226,21 @@
   display: inline-flex;
   align-items: baseline;
   gap: 0.35rem;
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-weight: 500;
   font-size: 1.6rem;
   letter-spacing: -0.03em;
   color: var(--k-teal);
 }
 
-.k-dark .k-logo { color: #fff; }
+.k-dark .k-logo {
+  color: #fff;
+}
 
 .k-logo::after {
-  content: '';
-  width: 8px; height: 8px;
+  content: "";
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: var(--k-rose);
   display: inline-block;
@@ -240,7 +257,7 @@
 }
 
 .k-card::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
@@ -249,8 +266,13 @@
   transition: opacity 0.3s ease;
 }
 
-.k-card:hover::before { opacity: 1; }
-.k-card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -15px rgba(2,88,92,0.25); }
+.k-card:hover::before {
+  opacity: 1;
+}
+.k-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -15px rgba(2, 88, 92, 0.25);
+}
 
 .k-card h3 {
   margin: 0 0 0.4rem;
@@ -266,7 +288,7 @@
 }
 
 .k-card .k-num {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 0.75rem;
   color: var(--k-rose);
   display: block;
@@ -281,8 +303,13 @@
   padding: 0.85rem 1.1rem;
   border-radius: 14px;
 }
-.k-tight .k-card h3 { margin-bottom: 0.2rem; }
-.k-tight .k-card p { font-size: 0.82rem; line-height: 1.35; }
+.k-tight .k-card h3 {
+  margin-bottom: 0.2rem;
+}
+.k-tight .k-card p {
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
 
 .k-stat {
   display: flex;
@@ -291,14 +318,16 @@
 }
 
 .k-stat .val {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 3.5rem;
   line-height: 1;
   color: var(--k-teal);
   font-weight: 500;
 }
 
-.k-dark .k-stat .val { color: #fff; }
+.k-dark .k-stat .val {
+  color: #fff;
+}
 
 .k-stat .lbl {
   font-size: 0.82rem;
@@ -306,7 +335,9 @@
   letter-spacing: 0.02em;
 }
 
-.k-dark .k-stat .lbl { color: var(--fg-muted); }
+.k-dark .k-stat .lbl {
+  color: var(--fg-muted);
+}
 
 .k-table {
   width: 100%;
@@ -319,7 +350,7 @@
 }
 
 .k-table th {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-weight: 600;
   text-align: left;
   color: #fff;
@@ -341,12 +372,16 @@
   color: var(--k-teal);
 }
 
-.k-table tbody tr:nth-child(even) { background: var(--k-teal-50); }
+.k-table tbody tr:nth-child(even) {
+  background: var(--k-teal-50);
+}
 
-.k-table strong { color: var(--k-teal-700); }
+.k-table strong {
+  color: var(--k-teal-700);
+}
 
 .k-dark .k-table {
-  border-color: rgba(255,255,255,0.18);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .k-dark .k-table th {
@@ -354,15 +389,21 @@
 }
 
 .k-dark .k-table td {
-  color: #EAF2F2; /* near-white, ≈ 12:1 — was rgba .88 */
-  border-top-color: rgba(255,255,255,0.12);
+  color: #eaf2f2; /* near-white, ≈ 12:1 — was rgba .88 */
+  border-top-color: rgba(255, 255, 255, 0.12);
 }
 
-.k-dark .k-table td:first-child { color: var(--k-rose); }
+.k-dark .k-table td:first-child {
+  color: var(--k-rose);
+}
 
-.k-dark .k-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.05); }
+.k-dark .k-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.05);
+}
 
-.k-dark .k-table strong { color: #fff; }
+.k-dark .k-table strong {
+  color: #fff;
+}
 
 .k-timeline {
   display: flex;
@@ -385,7 +426,7 @@
   border-radius: 999px;
   background: var(--k-teal);
   color: #fff;
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-weight: 600;
   font-size: 1.1rem;
   display: flex;
@@ -396,7 +437,7 @@
 }
 
 .k-tl-label {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 1.05rem;
   color: var(--k-teal);
   margin: 0 0 0.35rem;
@@ -432,14 +473,23 @@
   letter-spacing: 0.01em;
 }
 
-.k-dark .k-tl-dot { background: #fff; color: var(--k-teal-900); }
-.k-dark .k-tl-label { color: #fff; }
-.k-dark .k-tl-desc { color: var(--fg-muted); }
-.k-dark .k-tl-arrow { color: var(--k-rose); }
+.k-dark .k-tl-dot {
+  background: #fff;
+  color: var(--k-teal-900);
+}
+.k-dark .k-tl-label {
+  color: #fff;
+}
+.k-dark .k-tl-desc {
+  color: var(--fg-muted);
+}
+.k-dark .k-tl-arrow {
+  color: var(--k-rose);
+}
 .k-dark .k-tl-band {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.16);
-  color: #EAF2F2;
+  color: #eaf2f2;
 }
 
 .k-divider {
@@ -451,7 +501,7 @@
 }
 
 .k-quote {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 1.4rem;
   line-height: 1.4;
   color: var(--k-ink);
@@ -459,7 +509,7 @@
 }
 
 .k-quote::before {
-  content: '\201C';
+  content: "\201C";
   font-size: 3rem;
   color: var(--k-rose);
   line-height: 0;
@@ -468,7 +518,7 @@
 }
 
 .k-author {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-size: 0.82rem;
   font-style: normal;
   color: var(--k-teal);
@@ -513,7 +563,7 @@
 
 .k-dark .k-btn-ghost {
   color: #fff;
-  border-color: rgba(255,255,255,0.3);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Grids ---------------------------------------- */
@@ -559,9 +609,18 @@
   margin-right: 0.4rem;
   vertical-align: -0.15em;
 }
-.k-pill--ok      { background: #d3f9d8; color: #0b6b3a; }
-.k-pill--warn    { background: #fff3bf; color: #8a6d00; }
-.k-pill--blocked { background: var(--k-rose-soft); color: #a01b2e; }
+.k-pill--ok {
+  background: #d3f9d8;
+  color: #0b6b3a;
+}
+.k-pill--warn {
+  background: #fff3bf;
+  color: #8a6d00;
+}
+.k-pill--blocked {
+  background: var(--k-rose-soft);
+  color: #a01b2e;
+}
 
 /* --- Reusable render primitives (U4/U5) ------------------------------------
    slideHeader / contentFrame / heroFrame styling. One content rail
@@ -574,11 +633,23 @@
   padding-top: calc(var(--header-top) - 3rem);
 }
 /* Crowded grids (3+ rows) tighten their row gap so the last row stays on-canvas. */
-.k-grid-2.k-tight, .k-grid-3.k-tight, .k-grid-4.k-tight { gap: 0.7rem; }
-.k-h-lg { font-size: var(--t-title); line-height: 1.05; }
-.k-h-md { font-size: var(--t-sub); line-height: 1.1; }
+.k-grid-2.k-tight,
+.k-grid-3.k-tight,
+.k-grid-4.k-tight {
+  gap: 0.7rem;
+}
+.k-h-lg {
+  font-size: var(--t-title);
+  line-height: 1.05;
+}
+.k-h-md {
+  font-size: var(--t-sub);
+  line-height: 1.1;
+}
 /* Header sidebar note (e.g. cardGrid sidebarText) — solid muted, was opacity-70. */
-.k-side-note { color: var(--fg-muted); }
+.k-side-note {
+  color: var(--fg-muted);
+}
 
 /* heroFrame — statement-only emphasis surface (U8 consumer). The scale modifier
    sets the title size; the body column clamps against the fixed canvas so a long
@@ -590,17 +661,32 @@
   justify-content: center;
   min-height: 100%;
 }
-.k-hero--center { align-items: center; text-align: center; }
-.k-hero--left { align-items: flex-start; text-align: left; }
+.k-hero--center {
+  align-items: center;
+  text-align: center;
+}
+.k-hero--left {
+  align-items: flex-start;
+  text-align: left;
+}
 .k-hero-title {
-  font-family: 'Gilroy', 'Roboto', sans-serif;
+  font-family: "Gilroy", "Roboto", sans-serif;
   font-weight: 400;
   letter-spacing: -0.03em;
   margin: 0;
 }
-.k-hero--hero    .k-hero-title { font-size: var(--t-hero);    line-height: 1.05; }
-.k-hero--display .k-hero-title { font-size: var(--t-display); line-height: 0.98; }
-.k-hero--title   .k-hero-title { font-size: var(--t-title);   line-height: 1.1; }
+.k-hero--hero .k-hero-title {
+  font-size: var(--t-hero);
+  line-height: 1.05;
+}
+.k-hero--display .k-hero-title {
+  font-size: var(--t-display);
+  line-height: 0.98;
+}
+.k-hero--title .k-hero-title {
+  font-size: var(--t-title);
+  line-height: 1.1;
+}
 .k-hero-body {
   font-size: var(--t-body);
   line-height: 1.55;
@@ -611,7 +697,9 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 8;
 }
-.k-hero--display .k-hero-body { -webkit-line-clamp: 4; }
+.k-hero--display .k-hero-body {
+  -webkit-line-clamp: 4;
+}
 
 /* Centered-hero body — shared by stats / section / cta (their title IS the hero,
    so they compose this + wrapSlide rather than heroFrame, per KTD6c). One rail,
@@ -622,9 +710,12 @@
   margin: 0 auto;
   text-align: center;
 }
-.k-center-hero--left { text-align: left; margin: 0; }
+.k-center-hero--left {
+  text-align: left;
+  margin: 0;
+}
 .k-center-hero-title {
-  font-family: 'Gilroy', 'Roboto', sans-serif;
+  font-family: "Gilroy", "Roboto", sans-serif;
   font-weight: 400;
   font-size: var(--t-hero);
   line-height: 1.05;
@@ -640,7 +731,7 @@
 
 /* Cover flourish -------------------------------- */
 .k-hero-big {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 6rem;
   line-height: 0.95;
   letter-spacing: -0.04em;
@@ -663,7 +754,7 @@
 
 /* Section divider ------------------------------- */
 .k-section-num {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 5rem;
   color: var(--k-rose);
   line-height: 1;
@@ -695,17 +786,25 @@
   pointer-events: none;
   z-index: 5;
 }
-.k-slide-header { top: 1.1rem; }
-.k-slide-footer { bottom: 1.1rem; }
+.k-slide-header {
+  top: 1.1rem;
+}
+.k-slide-footer {
+  bottom: 1.1rem;
+}
 .k-slide-header .brand,
 .k-slide-footer .page {
   font-weight: 600;
   color: var(--k-teal);
 }
 .k-dark .k-slide-header,
-.k-dark .k-slide-footer { color: var(--fg-footer); }
+.k-dark .k-slide-footer {
+  color: var(--fg-footer);
+}
 .k-dark .k-slide-header .brand,
-.k-dark .k-slide-footer .page { color: #fff; }
+.k-dark .k-slide-footer .page {
+  color: #fff;
+}
 
 .k-slide-logo {
   position: absolute;
@@ -726,14 +825,14 @@
   line-height: 0.95;
 }
 .k-cta-sub {
-  font-family: 'Gilroy', sans-serif;
+  font-family: "Gilroy", sans-serif;
   font-size: 1.25rem;
   font-style: italic;
   color: var(--fg-muted); /* solid on the always-dark cta — was opacity:0.75 */
 }
 .k-eyebrow-dark {
-  background: rgba(255,255,255,0.08) !important;
-  border-color: rgba(255,255,255,0.2) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
   color: #fff !important;
 }
 
@@ -757,7 +856,9 @@
   border-top: 1px solid color-mix(in srgb, var(--k-ink) 12%, transparent);
   padding-top: 0.5rem;
 }
-.k-def-item { display: inline-block; }
+.k-def-item {
+  display: inline-block;
+}
 .k-def-item sup {
   font-size: 0.85em;
   font-weight: 700;
@@ -771,7 +872,9 @@
   border-top-color: rgba(255, 255, 255, 0.15);
 }
 .k-dark .k-def-item sup,
-.k-dark .k-def-ref { color: var(--k-rose); }
+.k-dark .k-def-ref {
+  color: var(--k-rose);
+}
 
 /* Split layout — replaces two-cols so footer can sit at slide root */
 .k-split {
@@ -799,18 +902,29 @@
    single-line containers (button pills, footer bars, table cells, eyebrows)
    those margins inflate the box — a one-word pill became an 81px circle.
    Collapse the wrapper and drop the paragraph margins so richText sits flush. */
-.payload-richtext { display: contents; }
-.payload-richtext > p { margin: 0; }
+.payload-richtext {
+  display: contents;
+}
+.payload-richtext > p {
+  margin: 0;
+}
 
 /* Multi-paragraph prose (statement body, twoCols intro): keep spacing between
    paragraphs but no leading/trailing margin so the block stays centered. */
-.payload-richtext > p + p { margin-top: 0.7em; }
+.payload-richtext > p + p {
+  margin-top: 0.7em;
+}
 
 /* On dark surfaces, `.k-dark p` forces white text. A richText <p> living inside
    a button/footer must take the container's own color instead, or white pill
    labels (cover footerLeft, CTA actions) render invisible white-on-white. */
 .k-btn p,
 .k-btn-ghost p,
-.k-caption p { color: inherit; }
+.k-caption p {
+  color: inherit;
+}
 /* Uppercase tracked caption (cta footer note). */
-.k-caption--upper { text-transform: uppercase; letter-spacing: 0.3em; }
+.k-caption--upper {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+}

@@ -53,7 +53,7 @@ export const ctaSpec = block({
   promptMeta: {
     index: 8,
     heading: 'cta',
-    summary: 'Diapositive centrée pour appel à l\'action OU clôture (merci, contact, etc.)',
+    summary: "Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)",
     lines: [
       'eyebrow, title (obligatoire), subtitle',
       'primaryAction / secondaryAction: libellés de boutons',

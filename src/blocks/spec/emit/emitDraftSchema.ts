@@ -59,7 +59,10 @@ export function emitOutlineSchema(specs: BlockSpec[]): OutlineSchema {
     intent: z.string(),
   });
   return z.object({
-    slides: z.array(stub as z.ZodType<OutlineStub>).min(MIN_SLIDES).max(MAX_SLIDES),
+    slides: z
+      .array(stub as z.ZodType<OutlineStub>)
+      .min(MIN_SLIDES)
+      .max(MAX_SLIDES),
   }) as OutlineSchema;
 }
 

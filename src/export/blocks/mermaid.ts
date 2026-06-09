@@ -27,9 +27,7 @@ export function renderMermaid(block: MermaidBlockData, ctx?: RenderCtx): string 
     ? `<div class="k-mermaid">\n\n\`\`\`mermaid\n${source}\n\`\`\`\n\n</div>`
     : '';
 
-  const caption = block.caption
-    ? `\n\n<p class="k-mermaid-caption">${md(block.caption)}</p>`
-    : '';
+  const caption = block.caption ? `\n\n<p class="k-mermaid-caption">${md(block.caption)}</p>` : '';
 
   const bodyHtml = contentFrame(`${header}\n\n${diagram}${caption}`, { wFull: true });
 

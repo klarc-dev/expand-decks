@@ -2,7 +2,13 @@ import { randomBytes } from 'node:crypto';
 
 import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdminOrAuthor, isAdmin, isAdminOrSelf, userIsAdmin, userIsAdminOrAuthor } from '../access/roles';
+import {
+  isAdminOrAuthor,
+  isAdmin,
+  isAdminOrSelf,
+  userIsAdmin,
+  userIsAdminOrAuthor,
+} from '../access/roles';
 import { sha256 } from '../lib/shareLinks';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
@@ -126,9 +132,7 @@ export const ShareLinks: CollectionConfig = {
         if (data.presentation) {
           try {
             const presId =
-              typeof data.presentation === 'object'
-                ? data.presentation.id
-                : data.presentation;
+              typeof data.presentation === 'object' ? data.presentation.id : data.presentation;
             const pres = await req.payload.findByID({
               collection: COLLECTIONS.presentations,
               id: presId,
@@ -198,7 +202,7 @@ export const ShareLinks: CollectionConfig = {
         // produced a red "required" error on a field authors cannot edit.
         hidden: true,
         readOnly: true,
-        description: 'SHA-256 du jeton de partage (le jeton brut n\'est jamais stocké)',
+        description: "SHA-256 du jeton de partage (le jeton brut n'est jamais stocké)",
       },
     },
     {
@@ -209,7 +213,7 @@ export const ShareLinks: CollectionConfig = {
       // 30 days by default so authors don't have to fight the date picker
       // for the common case.
       defaultValue: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      admin: { description: 'Date et heure d\'expiration du lien (30 jours par défaut)' },
+      admin: { description: "Date et heure d'expiration du lien (30 jours par défaut)" },
     },
     {
       name: 'createdBy',

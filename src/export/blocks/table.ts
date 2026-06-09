@@ -20,7 +20,10 @@ const STATUS_PATTERNS: Array<[RegExp, 'ok' | 'warn' | 'blocked']> = [
 ];
 
 function statusPill(cellHtml: string): string {
-  const t = cellHtml.replace(/<[^>]+>/g, '').trim().toLowerCase();
+  const t = cellHtml
+    .replace(/<[^>]+>/g, '')
+    .trim()
+    .toLowerCase();
   const match = STATUS_PATTERNS.find(([re]) => re.test(t));
   if (!match) return cellHtml; // prose cell — untouched
   const kind = match[1];
@@ -45,12 +48,8 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const body = rows
     .map((r) => {
       const cells = (r.cells ?? []).map((c) => richTextToHTML(c.value));
-      const aligned = colCount
-        ? Array.from({ length: colCount }, (_, i) => cells[i] ?? '')
-        : cells;
-      return `<tr>${aligned
-        .map((v) => `<td>${isMatrix ? statusPill(v) : v}</td>`)
-        .join('')}</tr>`;
+      const aligned = colCount ? Array.from({ length: colCount }, (_, i) => cells[i] ?? '') : cells;
+      return `<tr>${aligned.map((v) => `<td>${isMatrix ? statusPill(v) : v}</td>`).join('')}</tr>`;
     })
     .join('\n');
 

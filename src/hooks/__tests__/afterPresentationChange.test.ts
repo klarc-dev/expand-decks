@@ -25,9 +25,9 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
   });
 
   it('detects slides changes', () => {
-    expect(
-      buildInputsChanged({ ...base, slides: [{ blockType: 'cta', title: 'Z' }] }, base),
-    ).toBe(true);
+    expect(buildInputsChanged({ ...base, slides: [{ blockType: 'cta', title: 'Z' }] }, base)).toBe(
+      true,
+    );
   });
 
   it('detects organisation change (theme swap)', () => {
@@ -41,7 +41,9 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
   });
 
   it('detects footer, title and language changes', () => {
-    expect(buildInputsChanged({ ...base, footer: { ...base.footer, left: '{title}' } }, base)).toBe(true);
+    expect(buildInputsChanged({ ...base, footer: { ...base.footer, left: '{title}' } }, base)).toBe(
+      true,
+    );
     expect(buildInputsChanged({ ...base, title: 'New' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, language: 'en' }, base)).toBe(true);
   });

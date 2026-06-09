@@ -64,14 +64,12 @@ const ShareUrlField: React.FC = () => {
 
   return (
     <div style={{ ...panelStyle, padding: '16px' }}>
-      <label
-        style={{ display: 'block', fontWeight: 600, marginBottom: '8px', fontSize: '14px' }}
-      >
+      <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px', fontSize: '14px' }}>
         URL de partage
       </label>
       <p style={{ ...mutedTextStyle, marginTop: 0, marginBottom: '12px' }}>
-        Le jeton n&apos;est jamais stocké en clair : l&apos;URL n&apos;est visible qu&apos;au
-        moment de sa génération. Générer une nouvelle URL invalide la précédente.
+        Le jeton n&apos;est jamais stocké en clair : l&apos;URL n&apos;est visible qu&apos;au moment
+        de sa génération. Générer une nouvelle URL invalide la précédente.
       </p>
 
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>

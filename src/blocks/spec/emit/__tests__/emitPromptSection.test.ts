@@ -130,16 +130,12 @@ const metas: PromptMeta[] = [
     index: 7,
     heading: 'quotes',
     summary: 'Grille de citations',
-    lines: [
-      'eyebrow, title (obligatoire)',
-      'quotes: [{quote, authorName, authorRole}]',
-    ],
+    lines: ['eyebrow, title (obligatoire)', 'quotes: [{quote, authorName, authorRole}]'],
   },
   {
     index: 8,
     heading: 'cta',
-    summary:
-      "Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)",
+    summary: "Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)",
     lines: [
       'eyebrow, title (obligatoire), subtitle',
       'primaryAction / secondaryAction: libellés de boutons',

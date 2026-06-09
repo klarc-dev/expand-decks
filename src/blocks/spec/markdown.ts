@@ -1,12 +1,6 @@
 import { z } from 'zod';
 
-import {
-  block,
-  factoryField,
-  type InferRender,
-  optionalRender,
-  rawField,
-} from './dsl';
+import { block, factoryField, type InferRender, optionalRender, rawField } from './dsl';
 
 const layout = optionalRender(z.string());
 const frontmatter = optionalRender(z.string());

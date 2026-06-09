@@ -1,7 +1,15 @@
 import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
-import { card, cardStack, contentFrame, slideHeader, wrapSlide, type RenderCtx, type SlideImage } from '../utils';
+import {
+  card,
+  cardStack,
+  contentFrame,
+  slideHeader,
+  wrapSlide,
+  type RenderCtx,
+  type SlideImage,
+} from '../utils';
 
 export type { TwoColsBlockData };
 

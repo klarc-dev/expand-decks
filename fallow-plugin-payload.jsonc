@@ -1,0 +1,44 @@
+{
+  // Project-local Fallow plugin teaching the analyzer about this repo's
+  // Payload CMS + out-of-process Slidev wiring — references Fallow cannot
+  // trace statically because they go through string paths, the Payload
+  // migrate CLI, or an execFile() shell-out to a separate pnpm workspace.
+  //
+  // Auto-discovered by `fallow` from the project root. Verify it loads with:
+  //   pnpm exec fallow list --plugins   # expect: payload-slidev
+  //
+  // Scope is deliberately narrow: it credits ONLY the specific exports that
+  // are reflection-wired, so genuinely-dead sibling exports/components stay
+  // flagged. This is a structural blind-spot map, not a blanket mute.
+  "name": "payload-slidev",
+
+  // Activate whenever this is a Payload project.
+  "enablers": ["payload"],
+
+  // Files Fallow cannot reach in the import graph but that ARE live at
+  // runtime. `alwaysUsed` marks the FILE reachable (clears the unused-file
+  // finding); note it also stops export-level checks INSIDE these files, so
+  // keep the list to genuinely-reflection-wired units only.
+  "alwaysUsed": [
+    // Payload migrations — executed wholesale by `payload migrate`, never imported.
+    "src/migrations/**/*.ts",
+
+    // Payload custom admin components — referenced ONLY by string path in
+    // collection/config files (e.g. Field: '/components/X#default', and
+    // Icon/Logo in payload.config.ts) and wired through the generated,
+    // gitignored src/app/(payload)/admin/importMap.js. Each is a single-
+    // purpose admin field/button exporting exactly its wired symbol.
+    "src/components/DraftFromBriefButton.tsx",
+    "src/components/BuildStatusField.tsx",
+    "src/components/GoogleLoginButton.tsx",
+    "src/components/ShareUrlField.tsx",
+    "src/components/SlidePreview.tsx",
+    "src/components/KlarcIcon.tsx",
+    "src/components/KlarcLogo.tsx"
+  ],
+
+  // Slidev runs out-of-process: buildSlides.ts shells out via execFile() to
+  // the binary in the isolated slidev-workspace/ pnpm project. These packages
+  // appear in the root package.json but are never imported from src/.
+  "toolingDependencies": ["@slidev/cli", "@slidev/theme-default", "vue"]
+}

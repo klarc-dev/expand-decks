@@ -13,3 +13,4 @@ src/payload-types.ts
 dogfood-output/
 tsconfig.tsbuildinfo
 .omo/
+.fallow/

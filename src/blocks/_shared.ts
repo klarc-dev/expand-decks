@@ -50,7 +50,7 @@ export const titleField = (description: string): Field => ({
   admin: { description },
 });
 
-export const cardTitleDescFields = (): Field[] => ([
+export const cardTitleDescFields = (): Field[] => [
   {
     name: 'title',
     type: 'text',
@@ -65,7 +65,7 @@ export const cardTitleDescFields = (): Field[] => ([
     label: 'Description',
     admin: { description: 'Contenu descriptif de la carte' },
   },
-]);
+];
 
 export const surfaceField = (opts?: { gradient?: boolean }): Field => ({
   name: 'surface',
@@ -82,7 +82,7 @@ export const surfaceField = (opts?: { gradient?: boolean }): Field => ({
 
 export const imageFields = (
   description = 'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left)',
-): Field[] => ([
+): Field[] => [
   {
     name: 'image',
     type: 'upload',
@@ -104,4 +104,4 @@ export const imageFields = (
       { label: 'Gauche', value: 'left' },
     ],
   },
-]);
+];

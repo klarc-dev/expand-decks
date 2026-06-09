@@ -12,10 +12,18 @@ type BuildInfo = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  [BUILD_STATUS.idle]: { label: 'En attente', color: 'var(--theme-elevation-600)', bg: 'var(--theme-elevation-100)' },
+  [BUILD_STATUS.idle]: {
+    label: 'En attente',
+    color: 'var(--theme-elevation-600)',
+    bg: 'var(--theme-elevation-100)',
+  },
   [BUILD_STATUS.building]: { label: 'En cours…', color: '#8a6d00', bg: '#fff3bf' },
   [BUILD_STATUS.success]: { label: 'Réussi', color: '#0b6b3a', bg: '#d3f9d8' },
-  [BUILD_STATUS.failed]: { label: 'Échoué', color: 'var(--theme-error-500)', bg: 'var(--theme-error-50)' },
+  [BUILD_STATUS.failed]: {
+    label: 'Échoué',
+    color: 'var(--theme-error-500)',
+    bg: 'var(--theme-error-50)',
+  },
 };
 
 // Poll fast while a build is in flight; stop entirely on a terminal state so an
@@ -82,12 +90,7 @@ const BuildStatusField: React.FC = () => {
         </span>
       )}
       {status === BUILD_STATUS.success && info.spaUrl && (
-        <a
-          href={info.spaUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{ fontSize: '13px' }}
-        >
+        <a href={info.spaUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px' }}>
           Ouvrir la présentation web ↗
         </a>
       )}

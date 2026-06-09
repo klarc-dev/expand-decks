@@ -88,7 +88,10 @@ function consumeDefFooter(): string {
 // in href, so `\njavascript:` still executes — strip control chars and lowercase
 // before testing the scheme, then emit the original (already entity-escaped) URL.
 function safeHref(raw: string): string | null {
-  const probe = raw.trim().replace(/[\x00-\x1f]/g, '').toLowerCase();
+  const probe = raw
+    .trim()
+    .replace(/[\x00-\x1f]/g, '')
+    .toLowerCase();
   if (/^(https?:|mailto:)/.test(probe)) return raw;
   if (!/^[a-z][a-z0-9+.-]*:/.test(probe)) return raw;
   return null;
@@ -121,11 +124,6 @@ export function md(text: string | null | undefined): string {
       return href ? `<a href="${href}">${label}</a>` : label;
     })
     .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
-}
-
-export const STAGGER_DELAY_MS = 100;
-export function vMotion(_index: number): string {
-  return '';
 }
 
 export type Surface = 'dark' | 'light' | 'gradient';
@@ -177,9 +175,7 @@ export function wrapSlide({
 }: WrapSlideOptions): string {
   const cls = classAttr ?? (surface ? surfaceClass(surface) : 'relative');
   const chromeFlag = hideChrome ? '\nhideChrome: true' : '';
-  const effectiveLayout = image?.url
-    ? `image-${image.position ?? 'right'}`
-    : layout;
+  const effectiveLayout = image?.url ? `image-${image.position ?? 'right'}` : layout;
   const imageLine = image?.url ? `\nimage: ${yamlScalar(image.url)}` : '';
   return `---
 layout: ${yamlScalar(effectiveLayout)}
@@ -276,10 +272,7 @@ export function cardStack(
  * baseline. Replaces the per-renderer `<div class="px-14 pt-NN [w-full]">`
  * openers. `crowded` shrinks the top padding when content is tall.
  */
-export function contentFrame(
-  body: string,
-  opts?: { crowded?: boolean; wFull?: boolean },
-): string {
+export function contentFrame(body: string, opts?: { crowded?: boolean; wFull?: boolean }): string {
   const cls = `k-content${opts?.crowded ? ' k-content-tight' : ''}${opts?.wFull ? ' w-full' : ''}`;
   return `<div class="${cls}">\n\n${body}\n\n</div>`;
 }

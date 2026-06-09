@@ -46,29 +46,24 @@ export const timelineSpec = block({
         { label: 'Sombre', value: 'dark' },
       ],
     }),
-    rawField(
-      'steps',
-      z.array(z.unknown()),
-      optionalAi(z.array(aiStep).min(2).max(6)),
-      {
-        type: 'array',
-        label: 'Étapes',
-        description: 'Étapes ordonnées, reliées de gauche à droite par des flèches (2 à 6)',
-        fields: [
-          rawField('label', z.string(), optionalAi(z.string()), {
-            type: 'text',
-            label: 'Étape',
-            required: true,
-            description: 'Nom court de l’étape',
-          }),
-          rawField('description', optionalRender(z.string()), optionalAi(z.string()), {
-            type: 'textarea',
-            label: 'Description',
-            description: 'Texte court sous l’étape',
-          }),
-        ],
-      },
-    ),
+    rawField('steps', z.array(z.unknown()), optionalAi(z.array(aiStep).min(2).max(6)), {
+      type: 'array',
+      label: 'Étapes',
+      description: 'Étapes ordonnées, reliées de gauche à droite par des flèches (2 à 6)',
+      fields: [
+        rawField('label', z.string(), optionalAi(z.string()), {
+          type: 'text',
+          label: 'Étape',
+          required: true,
+          description: 'Nom court de l’étape',
+        }),
+        rawField('description', optionalRender(z.string()), optionalAi(z.string()), {
+          type: 'textarea',
+          label: 'Description',
+          description: 'Texte court sous l’étape',
+        }),
+      ],
+    }),
     rawField('footer', footer, optionalAi(z.string()), {
       type: 'text',
       label: 'Pied de page',
@@ -79,7 +74,8 @@ export const timelineSpec = block({
   promptMeta: {
     index: 10,
     heading: 'timeline',
-    summary: 'Frise horizontale d’étapes ordonnées reliées par des flèches (cycle de vie, processus, parcours chronologique)',
+    summary:
+      'Frise horizontale d’étapes ordonnées reliées par des flèches (cycle de vie, processus, parcours chronologique)',
     lines: [
       'eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)',
       'steps: [{label, description}] — 2 à 6 étapes, dans l’ordre, affichées de gauche à droite',

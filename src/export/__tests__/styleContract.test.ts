@@ -4,10 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-const css = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '..', 'style.css'),
-  'utf-8',
-);
+const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'style.css'), 'utf-8');
 
 describe('style.css richText normalization (regression: cover footerLeft circle)', () => {
   it('collapses the .payload-richtext wrapper so it does not inflate inline pills', () => {

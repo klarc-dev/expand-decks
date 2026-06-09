@@ -69,10 +69,7 @@ export function emitPromptSection(meta: PromptMeta): string {
  * from `metas` (joined by a blank line), then the fixed rules block. Entry
  * order follows the input array; callers pass metas in their `index` order.
  */
-export function buildSystemPrompt(
-  metas: PromptMeta[],
-  opts?: BuildSystemPromptOptions,
-): string {
+export function buildSystemPrompt(metas: PromptMeta[], opts?: BuildSystemPromptOptions): string {
   const intro = opts?.intro ?? INTRO;
   const rules = opts?.rules ?? RULES;
   const entries = metas.map(emitPromptSection).join('\n\n');
