@@ -2,12 +2,15 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   optionalRichTextRender,
   rawField,
+  surfaceFieldSpec,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -28,12 +31,8 @@ export const coverSpec = block({
   labels: { singular: 'Couverture', plural: 'Couvertures' },
   imageURL: '/block-previews/cover.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string()), {
-      description: 'Texte court au-dessus du titre principal',
-    }),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre principal de la diapositive de couverture',
-    }),
+    eyebrowFieldSpec(eyebrow, 'Texte court au-dessus du titre principal'),
+    titleFieldSpec(title, 'Titre principal de la diapositive de couverture'),
     rawField('subtitle', subtitle, optionalAi(z.string()), {
       type: 'richText',
       label: 'Sous-titre',
@@ -49,9 +48,7 @@ export const coverSpec = block({
       label: 'Pied de page droit',
       description: 'Texte en bas à droite (ex. date ou note)',
     }),
-    factoryField('surface', 'surface', surface, optionalAi(z.enum(['dark', 'light', 'gradient'])), {
-      gradient: true,
-    }),
+    surfaceFieldSpec(surface, true),
     factoryField('image', 'image', z.never(), false),
     factoryField('preview', 'preview', z.never(), false),
   ],

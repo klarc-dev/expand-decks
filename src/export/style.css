@@ -76,6 +76,56 @@
   --k-ink-soft:    #4A6365;
   --k-paper:       #FAFBFB;
   --k-line:        rgba(2, 88, 92, 0.12);
+
+  /* --- Reusable-components refactor tokens (U1) --------------------------
+     Foundation layer: consumed by render primitives (U4) and the AA pass (U3).
+     Nothing reads these until those units; this block is a pure addition. */
+
+  /* Tone pair — light is the default; .k-dark overrides both below. */
+  --bg: var(--k-paper);
+  --fg: var(--k-ink);
+
+  /* Muted text — SOLID colours (no opacity/rgba) so contrast is predictable.
+     Light-ground #5A6B6B on #FAFBFB ≈ 5.6:1; dark-ground #C7D6D6 on the teal
+     gradient (darkest stop #023C3F) ≈ 8:1. --fg-muted flips with .k-dark so a
+     single rule can replace the scattered opacity rules in U3. */
+  --fg-light-muted: #5A6B6B;
+  --fg-dark-muted:  #C7D6D6;
+  --fg-muted:       var(--fg-light-muted);
+  --fg-footer:      #6B7B7B; /* deck footer on light ground ≈ 4.7:1 */
+
+  /* Type ramp — single source for heading/body scale (replaces inline
+     text-4xl/5xl/6xl/xl per renderer). */
+  --t-display: 6rem;
+  --t-hero:    3.2rem;
+  --t-title:   3rem;
+  --t-sub:     2.25rem;
+  --t-body:    1.25rem;
+  --t-caption: 0.8rem;
+
+  /* Layout rails — one left/right inset and one title baseline for every
+     content slide (replaces px-14/px-12 and pt-24/28/16/20 drift). */
+  --content-inset: 3.5rem;
+  --header-top:    6rem;
+
+  /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
+     contrast by ground (U3 consumes these). */
+  --pill-bg:     var(--k-teal-50);
+  --pill-fg:     var(--k-teal);
+  --pill-border: var(--k-line);
+  --accent-rule: var(--k-rose);
+}
+
+/* Dark tone overrides the pair + muted + pill so primitives/AA rules need no
+   per-ground branching. */
+.k-dark {
+  --bg: var(--k-teal);
+  --fg: #fff;
+  --fg-muted: var(--fg-dark-muted);
+  --fg-footer: rgba(255, 255, 255, 0.78); /* on the teal gradient ≈ 6:1 */
+  --pill-bg: rgba(255, 255, 255, 0.10);
+  --pill-fg: #fff;
+  --pill-border: rgba(255, 255, 255, 0.30);
 }
 
 /* Typography ----------------------------------- */
@@ -125,7 +175,7 @@
 }
 
 .k-dark p, .k-dark li, .k-dark .muted {
-  color: rgba(255,255,255,0.72);
+  color: var(--fg-muted); /* solid #C7D6D6 ≈ 8:1 — was rgba .72 (AA fail) */
 }
 
 /* Components ----------------------------------- */
@@ -256,7 +306,7 @@
   letter-spacing: 0.02em;
 }
 
-.k-dark .k-stat .lbl { color: rgba(255,255,255,0.7); }
+.k-dark .k-stat .lbl { color: var(--fg-muted); }
 
 .k-table {
   width: 100%;
@@ -304,7 +354,7 @@
 }
 
 .k-dark .k-table td {
-  color: rgba(255,255,255,0.88);
+  color: #EAF2F2; /* near-white, ≈ 12:1 — was rgba .88 */
   border-top-color: rgba(255,255,255,0.12);
 }
 
@@ -384,12 +434,12 @@
 
 .k-dark .k-tl-dot { background: #fff; color: var(--k-teal-900); }
 .k-dark .k-tl-label { color: #fff; }
-.k-dark .k-tl-desc { color: rgba(255, 255, 255, 0.72); }
+.k-dark .k-tl-desc { color: var(--fg-muted); }
 .k-dark .k-tl-arrow { color: var(--k-rose); }
 .k-dark .k-tl-band {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.85);
+  color: #EAF2F2;
 }
 
 .k-divider {
@@ -485,24 +535,107 @@
   gap: 1.2rem;
 }
 
-/* Footer bar ----------------------------------- */
-.k-foot {
-  position: absolute;
-  left: 2.2rem; right: 2.2rem; bottom: 1.2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.72rem;
-  color: var(--k-ink-soft);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding-top: 0.6rem;
-  border-top: 1px solid var(--k-line);
+/* Caption — in-flow footnote inside a slide's content column. Replaces the old
+   absolute .k-foot bar, which overlapped the deck-level .k-slide-footer
+   (chrome.ts). Tone-aware via --fg-muted, so it reads on light and dark. */
+.k-caption {
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  max-width: 48rem;
 }
 
-.k-dark .k-foot {
-  color: rgba(255,255,255,0.5);
-  border-color: rgba(255,255,255,0.15);
+/* Status pill (U10) — matrix-table status cells; replaces inline emoji. */
+.k-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 0.4rem;
+  vertical-align: -0.15em;
+}
+.k-pill--ok      { background: #d3f9d8; color: #0b6b3a; }
+.k-pill--warn    { background: #fff3bf; color: #8a6d00; }
+.k-pill--blocked { background: var(--k-rose-soft); color: #a01b2e; }
+
+/* --- Reusable render primitives (U4/U5) ------------------------------------
+   slideHeader / contentFrame / heroFrame styling. One content rail
+   (--content-inset) and one title baseline (--header-top) replace the per-
+   renderer px-14/px-12 + pt-24/28/16/20 drift. */
+.k-content {
+  padding: var(--header-top) var(--content-inset) 0;
+}
+.k-content-tight {
+  padding-top: calc(var(--header-top) - 3rem);
+}
+/* Crowded grids (3+ rows) tighten their row gap so the last row stays on-canvas. */
+.k-grid-2.k-tight, .k-grid-3.k-tight, .k-grid-4.k-tight { gap: 0.7rem; }
+.k-h-lg { font-size: var(--t-title); line-height: 1.05; }
+.k-h-md { font-size: var(--t-sub); line-height: 1.1; }
+/* Header sidebar note (e.g. cardGrid sidebarText) — solid muted, was opacity-70. */
+.k-side-note { color: var(--fg-muted); }
+
+/* heroFrame — statement-only emphasis surface (U8 consumer). The scale modifier
+   sets the title size; the body column clamps against the fixed canvas so a long
+   body at display scale scales down rather than overflowing. */
+.k-hero {
+  padding: 0 var(--content-inset);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100%;
+}
+.k-hero--center { align-items: center; text-align: center; }
+.k-hero--left { align-items: flex-start; text-align: left; }
+.k-hero-title {
+  font-family: 'Gilroy', 'Roboto', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.k-hero--hero    .k-hero-title { font-size: var(--t-hero);    line-height: 1.05; }
+.k-hero--display .k-hero-title { font-size: var(--t-display); line-height: 0.98; }
+.k-hero--title   .k-hero-title { font-size: var(--t-title);   line-height: 1.1; }
+.k-hero-body {
+  font-size: var(--t-body);
+  line-height: 1.55;
+  max-width: 46rem;
+  margin-top: 1.5rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 8;
+}
+.k-hero--display .k-hero-body { -webkit-line-clamp: 4; }
+
+/* Centered-hero body — shared by stats / section / cta (their title IS the hero,
+   so they compose this + wrapSlide rather than heroFrame, per KTD6c). One rail,
+   one hero-scale title token. */
+.k-center-hero {
+  padding: 0 var(--content-inset);
+  max-width: 64rem;
+  margin: 0 auto;
+  text-align: center;
+}
+.k-center-hero--left { text-align: left; margin: 0; }
+.k-center-hero-title {
+  font-family: 'Gilroy', 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: var(--t-hero);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 2rem;
+}
+.k-center-hero-sub {
+  font-size: var(--t-body);
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin-top: 1.5rem;
 }
 
 /* Cover flourish -------------------------------- */
@@ -523,7 +656,7 @@
 
 .k-hero-sub {
   font-size: 1.05rem;
-  color: rgba(255,255,255,0.75);
+  color: var(--fg-muted); /* solid — was rgba .75 */
   max-width: 36rem;
   line-height: 1.55;
 }
@@ -558,7 +691,7 @@
   font-size: 0.62rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  opacity: 0.45;
+  color: var(--fg-footer); /* solid AA token — was opacity:0.45 (severe AA fail) */
   pointer-events: none;
   z-index: 5;
 }
@@ -570,7 +703,7 @@
   color: var(--k-teal);
 }
 .k-dark .k-slide-header,
-.k-dark .k-slide-footer { color: rgba(255,255,255,0.7); opacity: 0.6; }
+.k-dark .k-slide-footer { color: var(--fg-footer); }
 .k-dark .k-slide-header .brand,
 .k-dark .k-slide-footer .page { color: #fff; }
 
@@ -596,8 +729,7 @@
   font-family: 'Gilroy', sans-serif;
   font-size: 1.25rem;
   font-style: italic;
-  color: #fff;
-  opacity: 0.75;
+  color: var(--fg-muted); /* solid on the always-dark cta — was opacity:0.75 */
 }
 .k-eyebrow-dark {
   background: rgba(255,255,255,0.08) !important;
@@ -624,7 +756,6 @@
   font-style: italic;
   border-top: 1px solid color-mix(in srgb, var(--k-ink) 12%, transparent);
   padding-top: 0.5rem;
-  opacity: 0.85;
 }
 .k-def-item { display: inline-block; }
 .k-def-item sup {
@@ -636,7 +767,7 @@
   vertical-align: super;
 }
 .k-dark .k-def-footer {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--fg-muted);
   border-top-color: rgba(255, 255, 255, 0.15);
 }
 .k-dark .k-def-item sup,
@@ -680,4 +811,6 @@
    labels (cover footerLeft, CTA actions) render invisible white-on-white. */
 .k-btn p,
 .k-btn-ghost p,
-.k-foot p { color: inherit; }
+.k-caption p { color: inherit; }
+/* Uppercase tracked caption (cta footer note). */
+.k-caption--upper { text-transform: uppercase; letter-spacing: 0.3em; }

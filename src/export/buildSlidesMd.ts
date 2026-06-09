@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 import { ARTIFACTS } from '../lib/paths';
 
-import { RENDERERS, type SlideBlock } from './renderers';
-import { resetDefs, yamlQuoted } from './utils';
+import { getRenderer, type SlideBlock } from './renderers';
+import { slideTone } from './slideTone';
+import { resetDefs, yamlQuoted, type Surface } from './utils';
 
 export type Presentation = {
   title: string;
@@ -35,13 +36,22 @@ export function buildSlidesMd(
 ): string {
   const headmatter = options?.headmatter ?? loadHeadmatter();
 
+  // Fold over slides carrying the previously-resolved tone, so slideTone can
+  // alternate adjacent statements against their real neighbour (KTD5b). The
+  // resolved tone is passed to each renderer as ctx.surface; a renderer with an
+  // explicit block.surface field still wins (KTD5).
+  let prevTone: Surface | null = null;
+  let statementIndex = 0; // rotates statement variants when unset (U8/KTD6b)
   const slidesMd = presentation.slides.map((block) => {
-    const renderer = RENDERERS[block.blockType];
+    const renderer = getRenderer(block.blockType);
     if (!renderer) {
       throw new Error(`Unknown block type: ${block.blockType}`);
     }
+    const tone = slideTone(block.blockType, prevTone);
+    prevTone = tone;
+    const variantIndex = block.blockType === 'statement' ? statementIndex++ : undefined;
     resetDefs();
-    return renderer(block as never);
+    return renderer(block as never, { surface: tone, variantIndex });
   });
 
   // Each renderer's output already begins with `---` (its own frontmatter

@@ -1,18 +1,11 @@
+import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
-import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
+import { richTextToHTML } from '../richtext';
+import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
-export type CtaBlockData = {
-  blockType: 'cta';
-  eyebrow?: string | null;
-  title: string;
-  subtitle?: RichText;
-  primaryAction?: string | null;
-  secondaryAction?: string | null;
-  footerNote?: RichText;
-};
+export type { CtaBlockData };
 
-export function renderCta(block: CtaBlockData): string {
+export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   const eyebrow = renderEyebrow(block.eyebrow, 'mb-10', {
     extraClass: K.eyebrowDark,
     multiline: true,
@@ -34,12 +27,14 @@ export function renderCta(block: CtaBlockData): string {
     ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
     : '';
 
+  // mt-16 caption; uses the AA-safe k-caption token (+ uppercase modifier), not
+  // opacity-40 or an inline style.
   const footerNoteHtml = richTextToHTML(block.footerNote);
   const footerNote = footerNoteHtml
-    ? `\n\n<div class="text-xs tracking-[0.3em] uppercase opacity-40 mt-16">\n  ${footerNoteHtml}\n</div>`
+    ? `\n\n<div class="${K.caption} k-caption--upper text-center mx-auto mt-16">\n  ${footerNoteHtml}\n</div>`
     : '';
 
-  const body = `<div class="text-center max-w-5xl px-12 w-full">
+  const body = `<div class="k-center-hero w-full">
 ${eyebrow}
 <h1 class="${K.ctaTitle} mb-4">
 ${md(block.title)}
@@ -47,9 +42,10 @@ ${md(block.title)}
 
 </div>`;
 
+  // cta is the dark closing slide by default; a resolved tone can still override.
   return wrapSlide({
     layout: 'center',
-    classAttr: surfaceClass('dark'),
+    classAttr: surfaceClass(ctx?.surface ?? 'dark'),
     hideChrome: true,
     body,
   });

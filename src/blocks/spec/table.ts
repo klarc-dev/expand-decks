@@ -2,17 +2,23 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   rawField,
   richTextRender,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
 const surface = optionalRender(z.enum(['dark', 'light']));
+// Table layout variant (U10): 'reference' is the default plain table; 'matrix'
+// renders ok/warn/blocked status cells as pills via the StatusPill helper.
+const TABLE_VARIANTS = ['reference', 'matrix'] as const;
+const tableVariant = optionalRender(z.enum(TABLE_VARIANTS));
 
 const cell = z.object({ value: richTextRender() });
 const column = z.object({ header: z.string() });
@@ -32,10 +38,12 @@ export const tableSpec = block({
   labels: { singular: 'Tableau', plural: 'Tableaux' },
   imageURL: '/block-previews/table.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string())),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre du tableau',
-    }),
+    eyebrowFieldSpec(eyebrow),
+    titleFieldSpec(title, 'Titre du tableau'),
+    // NB: kept as an explicit rawField (not surfaceFieldSpec) — table/timeline
+    // default to 'light' with Clair-first options, whereas the shared
+    // surfaceField factory defaults to 'dark'. Consolidating here would flip the
+    // default and reorder options (generate:types drift).
     rawField('surface', surface, optionalAi(z.enum(['dark', 'light'])), {
       type: 'select',
       label: 'Surface',
@@ -45,6 +53,13 @@ export const tableSpec = block({
         { label: 'Clair', value: 'light' },
         { label: 'Sombre', value: 'dark' },
       ],
+    }),
+    rawField('tableVariant', tableVariant, optionalAi(z.enum(TABLE_VARIANTS)), {
+      type: 'select',
+      label: 'Type de tableau',
+      description:
+        'reference : tableau standard. matrix : cellules de statut (ok / attention / bloqué) rendues en pastilles.',
+      options: TABLE_VARIANTS.map((v) => ({ label: v, value: v })),
     }),
     rawField(
       'columns',
@@ -101,6 +116,7 @@ export const tableSpec = block({
     summary: 'Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)',
     lines: [
       'eyebrow, title (obligatoire), surface ("light" | "dark")',
+      'tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.',
       'columns: [{header}] — 2 à 5 colonnes',
       'rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre',
     ],
@@ -112,6 +128,7 @@ export const tableRenderSchema = z.object({
   eyebrow,
   title,
   surface,
+  tableVariant,
   columns,
   rows,
 });

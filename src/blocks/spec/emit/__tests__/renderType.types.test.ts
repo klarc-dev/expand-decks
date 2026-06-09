@@ -37,6 +37,8 @@ const statementRenderSchema = z.object({
   title: z.string(),
   body: optionalRichTextRender(),
   footer: optionalRichTextRender(),
+  variant: optionalRender(z.enum(['centered-hero', 'pull-quote', 'big-statement', 'split'])),
+  surface: optionalRender(z.enum(['dark', 'light'])),
 });
 
 type DerivedStatement = InferRender<typeof statementRenderSchema>;

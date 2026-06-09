@@ -188,3 +188,146 @@ class: ${yamlScalar(cls)}${imageLine}${chromeFlag}
 
 ${body}${consumeDefFooter()}`;
 }
+
+// ---------------------------------------------------------------------------
+// Reusable render primitives (U4). Pure, node-free string builders every
+// content renderer composes instead of hand-rolling its own header/wrapper/card
+// markup. They emit the existing K.* class tokens + the U1 CSS vars, so styling
+// lives in style.css and structure lives here once.
+// ---------------------------------------------------------------------------
+
+/**
+ * Context threaded into every renderer (U5/U8). Carries the resolved slide tone
+ * and, for statement, the index-resolved layout variant (used only when the
+ * block's own `variant` field is unset — KTD6b).
+ */
+export type RenderCtx = { surface?: Surface | null; variantIndex?: number };
+
+/**
+ * Slide header: eyebrow + title at the shared `--header-top` baseline, optional
+ * right-aligned sidebar. `size` picks the heading scale token. Replaces the
+ * per-renderer `eyebrow + <hN class="text-Nxl">` blocks.
+ */
+export function slideHeader(opts: {
+  eyebrow?: string | null;
+  title: string;
+  size?: 'lg' | 'md';
+  sidebar?: string;
+}): string {
+  const eb = eyebrow(opts.eyebrow, 'mb-4', { indent: '    ' });
+  const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
+  const heading = `<h2 class="${sizeClass}">${md(opts.title)}</h2>`;
+  if (opts.sidebar) {
+    return `<div class="flex items-end justify-between mb-10">
+  <div>${eb}
+    ${heading}
+  </div>
+  ${opts.sidebar}
+</div>`;
+  }
+  return `<div class="mb-10">${eb}
+  ${heading}
+</div>`;
+}
+
+/** One card box: optional number badge, title, optional rich-body slot. */
+export function card(opts: {
+  number?: string | null;
+  title: string;
+  body?: string; // already-converted HTML (richTextToHTML output), or ''
+  titleClass?: string;
+}): string {
+  const num = opts.number ? `\n  <span class="${K.num}">${escape(opts.number)}</span>` : '';
+  const h3 = `<h3${opts.titleClass ? ` class="${opts.titleClass}"` : ''}>${escape(opts.title)}</h3>`;
+  const body = opts.body ? `\n  <div>${opts.body}</div>` : '';
+  return `<div class="${K.card}">${num}\n  ${h3}${body}\n</div>`;
+}
+
+/**
+ * Lay out pre-rendered card strings as a grid or vertical column, centralizing
+ * the one crowding heuristic against the fixed 720px canvas (replaces the two
+ * ad-hoc `crowded` blocks in cardGrid/twoCols). Grid 3+ rows, or column 4+
+ * cards, gets the tight treatment.
+ */
+export function cardStack(
+  cards: string[],
+  opts: { layout: 'grid' | 'column'; cols?: number },
+): { html: string; crowded: boolean } {
+  // No cards → no container (a freshly-added block with empty fields must not
+  // emit a stray empty grid div in the live preview).
+  if (cards.length === 0) return { html: '', crowded: false };
+  const inner = cards.join('\n\n');
+  if (opts.layout === 'grid') {
+    const cols = Math.min(Math.max(opts.cols ?? 4, 2), 4);
+    const rows = Math.ceil(cards.length / cols);
+    const crowded = rows > 2;
+    // When crowded, also shrink each card box (.k-tight) — trimming only the
+    // top padding isn't enough to keep a 3rd row on the 720px canvas.
+    const tight = crowded ? ' k-tight' : '';
+    return { html: `<div class="${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`, crowded };
+  }
+  const crowded = cards.length >= 4;
+  const gap = crowded ? 'space-y-2 k-tight' : 'space-y-3';
+  return { html: `<div class="${gap}">\n\n${inner}\n\n</div>`, crowded };
+}
+
+/**
+ * Outer content frame: the single `--content-inset` rail + `--header-top`
+ * baseline. Replaces the per-renderer `<div class="px-14 pt-NN [w-full]">`
+ * openers. `crowded` shrinks the top padding when content is tall.
+ */
+export function contentFrame(
+  body: string,
+  opts?: { crowded?: boolean; wFull?: boolean },
+): string {
+  const cls = `k-content${opts?.crowded ? ' k-content-tight' : ''}${opts?.wFull ? ' w-full' : ''}`;
+  return `<div class="${cls}">\n\n${body}\n\n</div>`;
+}
+
+/**
+ * Emphasis surface for the `statement` block's variant dispatch (U8) — the only
+ * consumer (KTD6c). `align` × `scale` × `accentRule` are driven by statement's
+ * four variants; stats/section/cta compose slideHeader + wrapSlide directly.
+ * The body sits in a `k-hero-body` column that clamps against the fixed canvas,
+ * so a `display`-scale variant with a long body scales/clamps, not overflows.
+ */
+export function heroFrame(opts: {
+  eyebrow?: string | null;
+  title: string;
+  body?: string; // already-converted HTML
+  caption?: string; // in-flow footer caption HTML
+  scale: 'hero' | 'display' | 'title';
+  align: 'center' | 'left' | 'split';
+  surface?: Surface | null;
+  accentRule?: boolean;
+}): string {
+  const eb = eyebrow(opts.eyebrow, 'mb-6');
+  const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
+  const caption = opts.caption
+    ? `\n\n<div class="${K.caption} mt-10">\n  ${opts.caption}\n</div>`
+    : '';
+  const heading = `<h1 class="k-hero-title">\n${md(opts.title)}\n</h1>`;
+
+  // Split is a two-column layout only when there's a body for the right column;
+  // with no body it would emit an empty grid cell, so fall through to the
+  // single-column left treatment instead.
+  if (opts.align === 'split' && opts.body) {
+    const left = `<div>${eb}${rule}\n${heading}\n</div>`;
+    const right = `<div class="k-hero-body">\n${opts.body}\n</div>`;
+    const inner = `<div class="${K.split}">\n${left}\n${right}\n</div>${caption}`;
+    return wrapSlide({
+      layout: 'default',
+      surface: opts.surface,
+      body: `<div class="k-hero k-hero--${opts.scale} k-hero--left">\n${inner}\n</div>`,
+    });
+  }
+
+  const bodyBlock = opts.body ? `\n\n<div class="k-hero-body">\n${opts.body}\n</div>` : '';
+  const alignClass = opts.align === 'center' ? 'k-hero--center' : 'k-hero--left';
+  const inner = `${eb}${rule}\n${heading}${bodyBlock}${caption}`;
+  return wrapSlide({
+    layout: opts.align === 'center' ? 'center' : 'default',
+    surface: opts.surface,
+    body: `<div class="k-hero k-hero--${opts.scale} ${alignClass}">\n${inner}\n</div>`,
+  });
+}

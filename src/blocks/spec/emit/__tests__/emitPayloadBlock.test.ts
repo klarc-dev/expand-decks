@@ -31,6 +31,27 @@ const statementSpec = block({
       label: 'Pied de page',
       description: 'Légende ou note en bas de la diapositive',
     }),
+    rawField(
+      'variant',
+      optionalRender(z.enum(['centered-hero', 'pull-quote', 'big-statement', 'split'])),
+      optionalAi(z.enum(['centered-hero', 'pull-quote', 'big-statement', 'split'])),
+      {
+        type: 'select',
+        label: 'Variante de mise en page',
+        description:
+          'Disposition : centered-hero (centré), pull-quote (citation), big-statement (énoncé large), split (titre/texte). Laisser vide pour une alternance automatique.',
+        options: ['centered-hero', 'pull-quote', 'big-statement', 'split'].map((v) => ({
+          label: v,
+          value: v,
+        })),
+      },
+    ),
+    factoryField(
+      'surface',
+      'surface',
+      optionalRender(z.enum(['dark', 'light'])),
+      optionalAi(z.enum(['dark', 'light'])),
+    ),
     factoryField('preview', 'preview', z.never(), false),
   ],
 });

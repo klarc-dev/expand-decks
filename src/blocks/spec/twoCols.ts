@@ -2,12 +2,14 @@ import { z } from 'zod';
 
 import {
   block,
+  eyebrowFieldSpec,
   factoryField,
   type InferRender,
   optionalAi,
   optionalRender,
   optionalRichTextRender,
   rawField,
+  titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
@@ -32,12 +34,8 @@ export const twoColsSpec = block({
   labels: { singular: 'Deux colonnes', plural: 'Deux colonnes' },
   imageURL: '/block-previews/twoCols.svg',
   fields: [
-    factoryField('eyebrow', 'eyebrow', eyebrow, optionalAi(z.string()), {
-      description: 'Texte court au-dessus du titre (ex. "01 · Conseil financier")',
-    }),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre principal de la diapositive',
-    }),
+    eyebrowFieldSpec(eyebrow, 'Texte court au-dessus du titre (ex. "01 · Conseil financier")'),
+    titleFieldSpec(title, 'Titre principal de la diapositive'),
     rawField('intro', intro, optionalAi(z.string()), {
       type: 'richText',
       label: 'Introduction',

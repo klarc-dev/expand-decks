@@ -1,18 +1,10 @@
+import type { StatsBlockData } from '../../blocks/spec/stats';
 import { K } from '../classNames';
-import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
+import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
-export type StatsBlockData = {
-  blockType: 'stats';
-  eyebrow?: string | null;
-  title: string;
-  surface?: 'dark' | 'light' | null;
-  stats?: Array<{
-    value: string;
-    label: string;
-  }> | null;
-};
+export type { StatsBlockData };
 
-export function renderStats(block: StatsBlockData): string {
+export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
   const stats = block.stats ?? [];
   const statCount = stats.length || 4;
 
@@ -24,9 +16,11 @@ export function renderStats(block: StatsBlockData): string {
     })
     .join('\n\n');
 
-  const body = `<div class="text-center max-w-5xl px-12">
+  // Centered hero body (not slideHeader — the title IS the hero here, KTD6c).
+  // .k-center-hero owns the rail + centered hero title via shared tokens.
+  const body = `<div class="k-center-hero">
 ${eyebrow}
-<h1 class="text-6xl mb-10">
+<h1 class="k-center-hero-title">
 ${md(block.title)}
 </h1>
 
@@ -40,7 +34,7 @@ ${items}
 
   return wrapSlide({
     layout: 'center',
-    classAttr: surfaceClass(block.surface),
+    classAttr: surfaceClass(block.surface ?? ctx?.surface),
     body,
   });
 }

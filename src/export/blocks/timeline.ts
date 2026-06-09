@@ -1,12 +1,11 @@
 import type { TimelineBlockData } from '../../blocks/spec/timeline';
 import { K } from '../classNames';
-import { eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
+import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { TimelineBlockData };
 
-export function renderTimeline(block: TimelineBlockData): string {
+export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): string {
   const steps = block.steps ?? [];
-  const eyebrow = renderEyebrow(block.eyebrow, 'mb-6', { indent: '    ' });
 
   const nodes = steps
     .map((s, i) => {
@@ -26,17 +25,11 @@ export function renderTimeline(block: TimelineBlockData): string {
     ? `\n\n<div class="${K.timelineBand}">${md(block.footer)}</div>`
     : '';
 
-  const bodyHtml = `<div class="px-14 pt-24 w-full">
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
+  const bodyHtml = contentFrame(
+    `${header}\n\n<div class="${K.timeline}">\n${nodes}\n</div>${band}`,
+    { wFull: true },
+  );
 
-<div class="mb-10">${eyebrow}
-  <h2 class="text-4xl">${md(block.title)}</h2>
-</div>
-
-<div class="${K.timeline}">
-${nodes}
-</div>${band}
-
-</div>`;
-
-  return wrapSlide({ classAttr: surfaceClass(block.surface), body: bodyHtml });
+  return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });
 }

@@ -8,6 +8,8 @@ import {
   optionalRender,
   optionalRichTextRender,
   rawField,
+  surfaceFieldSpec,
+  titleFieldSpec,
 } from './dsl';
 
 const number = optionalRender(z.string());
@@ -29,15 +31,13 @@ export const sectionSpec = block({
       label: 'Numéro',
       description: 'Numéro de section affiché (ex. "02")',
     }),
-    factoryField('title', 'title', title, z.string(), {
-      description: 'Titre de la section',
-    }),
+    titleFieldSpec(title, 'Titre de la section'),
     rawField('subtitle', subtitle, optionalAi(z.string()), {
       type: 'richText',
       label: 'Sous-titre',
       description: 'Description complémentaire sous le titre',
     }),
-    factoryField('surface', 'surface', surface, optionalAi(z.enum(['dark', 'light']))),
+    surfaceFieldSpec(surface),
     factoryField('image', 'image', z.never(), false),
     factoryField('preview', 'preview', z.never(), false),
   ],

@@ -1,63 +1,24 @@
-import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
-import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
+import type { CardGridBlockData } from '../../blocks/spec/cardGrid';
+import { richTextToHTML } from '../richtext';
+import { card, cardStack, contentFrame, slideHeader, wrapSlide, type RenderCtx } from '../utils';
 
-export type CardGridBlockData = {
-  blockType: 'cardGrid';
-  eyebrow?: string | null;
-  title: string;
-  sidebarText?: RichText;
-  columns?: '2' | '3' | '4' | null;
-  cards?: Array<{
-    number?: string | null;
-    title: string;
-    description?: RichText;
-  }> | null;
-};
+export type { CardGridBlockData };
 
-export function renderCardGrid(block: CardGridBlockData): string {
-  const eyebrow = renderEyebrow(block.eyebrow, 'mb-4', { indent: '    ' });
-
+export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): string {
   const sidebarHtml = richTextToHTML(block.sidebarText);
   const sidebar = sidebarHtml
-    ? `\n  <div class="text-sm text-right max-w-xs opacity-70">\n    ${sidebarHtml}\n  </div>`
-    : '';
+    ? `<div class="text-sm text-right max-w-xs k-side-note">\n    ${sidebarHtml}\n  </div>`
+    : undefined;
 
   const cardList = block.cards ?? [];
-  const cards = cardList
-    .map((card) => {
-      const num = card.number ? `\n  <span class="${K.num}">${escape(card.number)}</span>` : '';
-      const descHtml = richTextToHTML(card.description);
-      const desc = descHtml ? `\n  <div>${descHtml}</div>` : '';
-      return `<div class="${K.card}">${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
-    })
-    .join('\n\n');
+  const cards = cardList.map((c) =>
+    card({ number: c.number, title: c.title, body: richTextToHTML(c.description) }),
+  );
 
-  // The canvas is a fixed 720px tall. Up to 2 rows of cards fit under the
-  // standard pt-24 header; a 3rd row (5+ cards in 2 cols, or 7+ in 3 cols)
-  // overflows and gets clipped by the slide edge. Shrink the vertical chrome
-  // when the grid is crowded so any card count stays on-canvas.
-  const cols = Math.min(Math.max(Number(block.columns ?? '4'), 2), 4);
-  const rows = Math.ceil(cardList.length / cols);
-  const crowded = rows > 2;
-  const topPad = crowded ? 'pt-16' : 'pt-24';
-  const headerMargin = crowded ? 'mb-6' : 'mb-10';
+  const cols = Number(block.columns ?? '4');
+  const stack = cardStack(cards, { layout: 'grid', cols });
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, sidebar });
+  const body = contentFrame(`${header}\n\n${stack.html}`, { crowded: stack.crowded });
 
-  const body = `<div class="px-14 ${topPad}">
-
-<div class="flex items-end justify-between ${headerMargin}">
-  <div>${eyebrow}
-    <h2 class="text-5xl">${md(block.title)}</h2>
-  </div>${sidebar}
-</div>
-
-<div class="${gridClass(cols)}">
-
-${cards}
-
-</div>
-
-</div>`;
-
-  return wrapSlide({ body });
+  return wrapSlide({ surface: ctx?.surface, body });
 }

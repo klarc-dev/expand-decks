@@ -69,7 +69,14 @@ Règles du plan :
 - La PREMIÈRE diapositive est toujours un "cover", la DERNIÈRE toujours un "cta".
 - Si le brief précise un nombre de diapositives (ex. "S1...S26", "~26 slides"), produis EXACTEMENT ce nombre, dans cet ordre.
 - Choisis "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne.
-- Respecte fidèlement l'ordre et le découpage décrits dans le brief.`;
+- Respecte fidèlement l'ordre et le découpage décrits dans le brief.
+
+Rythme et variété (pour éviter la monotonie) :
+- Insère un bloc "section" comme intercalaire entre deux grands groupes thématiques (il sert de respiration et de titre de partie).
+- Ne place JAMAIS plus de 2 diapositives consécutives du même blockType. Alterne les layouts.
+- Une citation ou un témoignage attribué à quelqu'un → utilise "quotes", pas "statement".
+- Une affirmation longue (plusieurs phrases développées) → préfère "twoCols" ou "markdown" ; réserve "statement" aux énoncés courts et percutants.
+- Pour les "statement", varie l'intention entre énoncé centré, citation, énoncé large et titre/texte (le rendu choisit la variante, mais des intentions variées aident).`;
 
 function fillSystem(): string {
   return `Tu rédiges le contenu de diapositives déjà planifiées, à partir du brief complet.
