@@ -34,6 +34,7 @@ export const K = {
   timelineArrow: 'k-tl-arrow',
   timelineBand: 'k-tl-band',
   caption: 'k-caption',
+  pill: 'k-pill',
   defItem: 'k-def-item',
   defFooter: 'k-def-footer',
   defRef: 'k-def-ref',

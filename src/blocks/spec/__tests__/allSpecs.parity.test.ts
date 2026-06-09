@@ -105,6 +105,7 @@ Layouts disponibles :
 
 9. **table** — Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)
    - eyebrow, title (obligatoire), surface ("light" | "dark")
+   - tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.
    - columns: [{header}] — 2 à 5 colonnes
    - rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre
 

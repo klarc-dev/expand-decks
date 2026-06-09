@@ -546,6 +546,23 @@
   max-width: 48rem;
 }
 
+/* Status pill (U10) — matrix-table status cells; replaces inline emoji. */
+.k-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 0.4rem;
+  vertical-align: -0.15em;
+}
+.k-pill--ok      { background: #d3f9d8; color: #0b6b3a; }
+.k-pill--warn    { background: #fff3bf; color: #8a6d00; }
+.k-pill--blocked { background: var(--k-rose-soft); color: #a01b2e; }
+
 /* --- Reusable render primitives (U4/U5) ------------------------------------
    slideHeader / contentFrame / heroFrame styling. One content rail
    (--content-inset) and one title baseline (--header-top) replace the per-
