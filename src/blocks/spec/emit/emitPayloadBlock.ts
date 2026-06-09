@@ -32,6 +32,11 @@ function emitRawField(field: FieldSpec): Field {
   if (payload.adminCondition) {
     admin.condition = (_: unknown, siblingData: { image?: unknown }) => Boolean(siblingData?.image);
   }
+  // Every repeater item gets a row label derived from its own text fields
+  // (instead of the default "Card 01 / Row 01") — see RepeaterRowLabel.
+  if (payload.type === 'array') {
+    admin.components = { RowLabel: '/components/RepeaterRowLabel#default' };
+  }
 
   const result: Record<string, unknown> = {
     name: field.name,
@@ -79,10 +84,16 @@ function emitField(field: FieldSpec): Field[] {
 
 /** Emit a Payload `Block` from a `BlockSpec`. */
 export function emitPayloadBlock(spec: BlockSpec): Block {
+  // Blocks with a `title` field get a custom collapsed-header label derived
+  // from that title (instead of the default "Untitled"). Title-less blocks
+  // keep Payload's default label.
+  const hasTitle = spec.fields.some((f) => f.factory === 'title');
+
   return {
     slug: spec.slug,
     labels: spec.labels,
     imageURL: spec.imageURL,
     fields: spec.fields.flatMap(emitField),
+    ...(hasTitle ? { admin: { components: { Label: '/components/SlideRowLabel#default' } } } : {}),
   };
 }

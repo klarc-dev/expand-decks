@@ -27,8 +27,13 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
-    livePreview: {
-      url: '/preview',
+    components: {
+      edit: {
+        // Export button beside Save: rebuilds the deck and regenerates a fresh
+        // PDF from the current content (the build job always replaces pdfFile,
+        // so no stale artifact survives).
+        beforeDocumentControls: ['/components/ExportButton#default'],
+      },
     },
   },
   access: {
@@ -131,15 +136,6 @@ export const Presentations: CollectionConfig = {
           label: 'Contenu',
           description: 'Rédigez le contenu de la présentation.',
           fields: [
-            {
-              name: 'draftFromBrief',
-              type: 'ui',
-              admin: {
-                components: {
-                  Field: '/components/DraftFromBriefButton#default',
-                },
-              },
-            },
             {
               name: 'agentDraftFromBrief',
               type: 'ui',

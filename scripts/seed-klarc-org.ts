@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
+import type { Organisation } from '../src/payload-types';
+
 const __filename = fileURLToPath(import.meta.url);
 const LOGO_PATH = join(dirname(__filename), '..', 'public', 'brand', 'klarc-logomark.svg');
 const LOGO_FILENAME = 'klarc-logomark.svg';
@@ -33,7 +35,7 @@ async function main() {
     overrideAccess: true,
   });
 
-  let logoId: number | string;
+  let logoId: number;
   if (existingMedia.docs.length > 0) {
     logoId = existingMedia.docs[0]!.id;
     console.log(`Reusing media ${LOGO_FILENAME} (id ${logoId}).`);
@@ -66,9 +68,12 @@ async function main() {
     });
     console.log(`Updated organisation "${ORG_NAME}" (id ${id}) — logo set to media ${logoId}.`);
   } else {
+    // Colour + font fields are `required` but carry defaultValues, so Payload
+    // fills them at create time; the generated type still lists them as
+    // required, hence the cast for this name+logo-only seed.
     const created = await payload.create({
       collection: 'organisations',
-      data: { name: ORG_NAME, logo: logoId },
+      data: { name: ORG_NAME, logo: logoId } as Partial<Organisation> as Organisation,
       overrideAccess: true,
     });
     console.log(`Created organisation "${ORG_NAME}" (id ${created.id}) with logo media ${logoId}.`);

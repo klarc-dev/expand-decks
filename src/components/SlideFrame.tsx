@@ -4,11 +4,11 @@ import React from 'react';
 export const SLIDE_STAGE_BG = '#1a1a2e';
 
 /**
- * Presentational inner slide frame shared by the admin SlidePreview and the
- * /preview page. Owns the `slidev-layout`/`k-cover` className, the standard
- * `3rem 4rem` slide padding, and the dangerouslySetInnerHTML wiring. Callers
- * pass their own sizing/decoration via `style` (merged after the padding so a
- * caller could override it, though both current call sites use 3rem 4rem).
+ * Presentational inner slide frame used by the admin per-slide SlidePreview.
+ * Owns the `slidev-layout`/`k-cover` className, the standard `3rem 4rem` slide
+ * padding, and the dangerouslySetInnerHTML wiring. Callers pass their own
+ * sizing/decoration via `style` (merged after the padding so a caller could
+ * override it).
  */
 export function SlideFrame({
   html,
