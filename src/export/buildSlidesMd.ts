@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { ARTIFACTS } from '../lib/paths';
 
 import { getRenderer, type SlideBlock } from './renderers';
-import { resetDefs, yamlQuoted } from './utils';
+import { slideTone } from './slideTone';
+import { resetDefs, yamlQuoted, type Surface } from './utils';
 
 export type Presentation = {
   title: string;
@@ -35,13 +36,20 @@ export function buildSlidesMd(
 ): string {
   const headmatter = options?.headmatter ?? loadHeadmatter();
 
+  // Fold over slides carrying the previously-resolved tone, so slideTone can
+  // alternate adjacent statements against their real neighbour (KTD5b). The
+  // resolved tone is passed to each renderer as ctx.surface; a renderer with an
+  // explicit block.surface field still wins (KTD5).
+  let prevTone: Surface | null = null;
   const slidesMd = presentation.slides.map((block) => {
     const renderer = getRenderer(block.blockType);
     if (!renderer) {
       throw new Error(`Unknown block type: ${block.blockType}`);
     }
+    const tone = slideTone(block.blockType, prevTone);
+    prevTone = tone;
     resetDefs();
-    return renderer(block as never);
+    return renderer(block as never, { surface: tone });
   });
 
   // Each renderer's output already begins with `---` (its own frontmatter
