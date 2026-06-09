@@ -40,6 +40,10 @@ export const tableSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du tableau'),
+    // NB: kept as an explicit rawField (not surfaceFieldSpec) — table/timeline
+    // default to 'light' with Clair-first options, whereas the shared
+    // surfaceField factory defaults to 'dark'. Consolidating here would flip the
+    // default and reorder options (generate:types drift).
     rawField('surface', surface, optionalAi(z.enum(['dark', 'light'])), {
       type: 'select',
       label: 'Surface',
