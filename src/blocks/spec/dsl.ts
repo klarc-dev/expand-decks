@@ -110,7 +110,14 @@ export const richTextRender = () => z.custom<LexicalRichText>();
 export const optionalRichTextRender = () => z.custom<LexicalRichText>().nullable().optional();
 
 /** Payload field `type` values the emitter knows how to build from raw meta. */
-export type PayloadRawType = 'text' | 'textarea' | 'select' | 'code' | 'array' | 'richText';
+export type PayloadRawType =
+  | 'text'
+  | 'textarea'
+  | 'select'
+  | 'code'
+  | 'array'
+  | 'richText'
+  | 'number';
 
 /** A single `{ label, value }` option for a Payload `select` field. */
 export interface PayloadOption {

@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'twoCols',
-  eyebrow: 'Étape 4 — Sécuriser',
+  eyebrow: 'Étape 2 — Sécuriser',
   title: 'Le critère 3 est une condition de protégeabilité',
   intro: rt(
     "Le **critère 3 est une condition de protégeabilité**, pas une bonne pratique facultative.\n\nSans mesures documentées, l'action en justice pour obtention illicite de secret d'affaires *(L.152-1 ss. C. com.)* échouera — même si l'information est objectivement secrète.\n\n*(L.151-1 C. com., transposant la directive (UE) 2016/943)*",

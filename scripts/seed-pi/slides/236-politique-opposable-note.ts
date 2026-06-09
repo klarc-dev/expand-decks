@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'cardGrid',
-  eyebrow: 'Étape 4 — Sécuriser',
+  eyebrow: 'Étape 2 — Sécuriser',
   title: 'La politique PI n’est pas opposable par elle-même',
   columns: '2',
   sidebarText: rt(

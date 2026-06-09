@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = () => ({
   blockType: 'mermaid',
-  eyebrow: 'Étape 3 — Décider',
+  eyebrow: 'Étape 4 — Décider',
   title: 'Choisir l’outil : apparence',
   surface: 'light',
   source: `flowchart TD

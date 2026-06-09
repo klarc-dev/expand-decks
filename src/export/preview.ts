@@ -11,13 +11,16 @@ import { slideTone } from './slideTone';
  * Tone is resolved with no previous slide (single-slide preview), so it matches
  * what buildSlidesMd would produce for that block at the start of a deck.
  */
-export function renderBlockPreview(block: SlideBlock): { html: string; layout: string } | null {
+export function renderBlockPreview(
+  block: SlideBlock,
+  sections?: string[],
+): { html: string; layout: string } | null {
   const blockType = (block as { blockType: string }).blockType;
   const renderer = getRenderer(blockType);
   if (!renderer) return null;
   let md: string;
   try {
-    md = renderer(block as never, { surface: slideTone(blockType, null) });
+    md = renderer(block as never, { surface: slideTone(blockType, null), sections });
   } catch {
     // A renderer bug must degrade to "no preview", never crash the admin.
     return null;

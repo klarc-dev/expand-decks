@@ -6,11 +6,11 @@ import type { SlideFactory } from '../types';
 const slide: SlideFactory = () => [
   {
     blockType: 'mermaid',
-    eyebrow: 'Étape 3 — Décider',
+    eyebrow: 'Étape 4 — Décider',
     title: 'Choisir l’outil : solution technique (1/2)',
     surface: 'light',
     source: `flowchart TD
-  A["Solution stratégique et exploitable ?"] -->|Non| B["Abandon documenté ou publication défensive (voir S17)"]
+  A["Solution stratégique et exploitable ?"] -->|Non| B["Abandon documenté ou publication défensive"]
   A -->|Oui| C{"Contrefaçon détectable sur le produit/service commercialisé ?"}
   C -->|"Non (procédé interne)"| D["Secret d'affaires si les 3 critères L.151-1 sont tenables"]
   C -->|Oui| E{"Activité inventive solide ?"}
@@ -24,7 +24,7 @@ const slide: SlideFactory = () => [
   },
   {
     blockType: 'mermaid',
-    eyebrow: 'Étape 3 — Décider',
+    eyebrow: 'Étape 4 — Décider',
     title: 'Choisir l’outil : solution technique (2/2)',
     surface: 'light',
     source: `flowchart TD

@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'cardGrid',
-  eyebrow: 'Étape 3 — Décider',
+  eyebrow: 'Étape 4 — Décider',
   title: 'Décider : paramètres transverses',
   columns: '2',
   cards: [

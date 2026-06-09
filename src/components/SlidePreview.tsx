@@ -18,11 +18,26 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     JSON.stringify(formStateToBlockData(fields as never, path)),
   );
 
+  // Deck section titles (in order) so an empty `agenda` block previews its
+  // auto-derived plan — mirrors the ctx.sections buildSlidesMd threads at build.
+  const sectionsJson = useFormFields(([fields]) => {
+    const out: { i: number; title: string }[] = [];
+    for (const key of Object.keys(fields)) {
+      const m = /^slides\.(\d+)\.blockType$/.exec(key);
+      if (!m || fields[key]?.value !== 'section') continue;
+      const i = Number(m[1]);
+      const title = fields[`slides.${i}.title`]?.value;
+      if (typeof title === 'string' && title.trim()) out.push({ i, title: title.trim() });
+    }
+    return JSON.stringify(out.sort((a, b) => a.i - b.i).map((s) => s.title));
+  });
+
   const data = useMemo(() => JSON.parse(blockJson) as Record<string, unknown>, [blockJson]);
+  const sections = useMemo(() => JSON.parse(sectionsJson) as string[], [sectionsJson]);
 
   if (!data?.blockType) return null;
 
-  const res = renderBlockPreview(data as never);
+  const res = renderBlockPreview(data as never, sections);
   if (!res) return null;
   const { html, layout } = res;
 

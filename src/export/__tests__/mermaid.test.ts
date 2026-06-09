@@ -20,8 +20,12 @@ describe('renderMermaid', () => {
     expect(out).toContain('B -->|Yes| C[Build]');
     expect(out).not.toMatch(/&gt;|&lt;|&#39;|&amp;/);
     // Fence sits on its own lines (Slidev codeblock transform needs blank lines).
-    expect(out).toMatch(/\n\n```mermaid\n/);
-    expect(out).toMatch(/\n```\n\n/);
+    // The opening fence carries a Slidev `{scale: N}` info string (autoScale) —
+    // still a top-level fence, just with options after the language tag.
+    expect(out).toMatch(/\n\n```mermaid(?: \{scale: [\d.]+\})?\n/);
+    // Closing fence on its own line — followed by a blank line (when a caption
+    // trails) or end of slide.
+    expect(out).toMatch(/\n```(?:\n\n|\n?$)/);
   });
 
   it('strips an author-pasted outer fence so we never nest fences', () => {

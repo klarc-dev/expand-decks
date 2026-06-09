@@ -3,18 +3,18 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'cardGrid',
-  eyebrow: 'Étape 2 — Capter',
+  eyebrow: 'Étape 3 — Capter',
   title: 'Délais de priorité et exceptions',
   columns: '3',
   sidebarText: rt(
-    'Trois régimes à surveiller : le dessin né de la divulgation, la priorité unioniste et l’unique exception au principe de nouveauté.',
+    'Trois délais à surveiller : le délai de grâce du dessin enregistré, la priorité unioniste et l’unique exception au principe de nouveauté.',
   ),
   cards: [
     {
       number: '01',
-      title: 'Dessin communautaire non enregistré',
+      title: 'Délais à surveiller',
       description: rt(
-        "Le **dessin communautaire non enregistré** *(Règl. 6/2002, art. 11)* naît précisément de la divulgation : la première divulgation dans l'UE fait naître le droit (3 ans, protection contre la copie uniquement). Un **délai de grâce de 12 mois** existe pour le dépôt d'un dessin enregistré *(art. 7(2) Règl. 6/2002 ; L.511-6 CPI)* — ce délai n'existe pas pour les brevets en Europe.",
+        "Un **délai de grâce de 12 mois** permet de déposer un **dessin enregistré** après une première divulgation *(art. 7(2) Règl. 6/2002 ; L.511-6 CPI)* — ce délai n'existe pas pour les brevets en Europe. À noter en contraste : un **dessin communautaire non enregistré** *(Règl. 6/2002, art. 11)* naît automatiquement de la première divulgation dans l'UE (3 ans, protection contre la copie uniquement).",
       ),
     },
     {

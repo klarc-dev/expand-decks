@@ -45,7 +45,11 @@ const slide: SlideFactory = ({ rt }) => ({
     {
       cells: [
         { value: rt('Fixer le barème de rémunération supplémentaire') },
-        { value: rt('Barème annexé au contrat ou à la convention collective') },
+        {
+          value: rt(
+            "Barème défini par l'entreprise — gardé au niveau de la direction, publié, ou annexé au contrat selon le choix de la société",
+          ),
+        },
         { value: rt("L.611-7, 1° CPI — obligation d'ordre public") },
       ],
     },

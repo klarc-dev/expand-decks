@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'twoCols',
-  eyebrow: 'Étape 2 — Capter',
+  eyebrow: 'Étape 3 — Capter',
   title: 'Toute divulgation antérieure au dépôt détruit la nouveauté',
   intro: rt(
     'La nouveauté est une condition de brevetabilité *(L.611-11 CPI ; art. 54 CBE)* et de validité des dessins et modèles *(L.511-2 CPI ; art. 5 Règl. 6/2002)*.\n\nLa destruction de nouveauté est **irréversible** — il n’existe pas de « délai de grâce » en droit européen des brevets (contrairement aux États-Unis, *35 USC §102(b)* : 1 an).',
@@ -12,7 +12,7 @@ const slide: SlideFactory = ({ rt }) => ({
     {
       title: 'Constituent une divulgation',
       description: rt(
-        '- Publication scientifique, preprint, poster, soutenance de thèse\n- Présentation orale à une conférence, un salon, un client\n- Démonstration produit, même en cercle restreint sans NDA\n- Dépôt sur un repository public (GitHub, arXiv)\n- Offre commerciale décrivant l’innovation',
+        '- Publication scientifique, preprint, poster, soutenance de thèse\n- Présentation orale à une conférence, un salon, un client\n- Démonstration produit, même en cercle restreint sans NDA\n- Dépôt sur un repository public (GitHub, arXiv)\n- Offre commerciale décrivant l’innovation\n- Dépôt de brevet dans un pays qui publie immédiatement sans période de confidentialité',
       ),
     },
     {

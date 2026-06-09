@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'twoCols',
-  eyebrow: 'Étape 3 — Décider',
+  eyebrow: 'Étape 4 — Décider',
   title: 'Cas d’application : procédé interne',
   intro: rt(
     "- Le procédé n'est pas identifiable par analyse du produit fini (pas de reverse engineering possible)\n- L'effectif ayant accès au procédé est restreint (<15 personnes)\n- Le confinement organisationnel est réaliste (un site, une équipe)\n\n**Décision : secret d'affaires**, avec mesures documentées (classification, restriction d'accès, NDA).",

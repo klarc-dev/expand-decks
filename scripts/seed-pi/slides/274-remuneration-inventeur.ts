@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'twoCols',
-  eyebrow: 'Étape 2 — Capter',
+  eyebrow: 'Étape 3 — Capter',
   title: 'Rémunération supplémentaire : obligation d’ordre public',
   intro: rt(
     "La rémunération supplémentaire de l'inventeur salarié est due pour toute invention de mission *(L.611-7, 1° CPI)*. Elle ne peut être écartée ni par le contrat, ni par la convention collective, ni par un accord d'entreprise.\n\n- Le droit naît de la déclaration d'invention, indépendamment du dépôt ou de l'exploitation\n- Il n'est pas subordonné à un « intérêt exceptionnel » *(Cass. com., 22 fév. 2005, n° 03-11.027)*\n- Un titre défensif ou de barrage, non exploité, ouvre droit à rémunération\n- Prescription : 3 ans à compter du jour où le salarié a connu ou aurait dû connaître les éléments de calcul\n- Désaccord : saisine de la CNIS *(L.615-21 CPI)* puis, le cas échéant, TJ de Paris",

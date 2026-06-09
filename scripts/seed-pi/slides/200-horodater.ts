@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
-  eyebrow: 'Étape 4 — Sécuriser',
+  eyebrow: 'Étape 2 — Sécuriser',
   title: 'Donner une date certaine et prouver l’intégrité',
   surface: 'light',
   tableVariant: 'reference',
@@ -41,7 +41,7 @@ const slide: SlideFactory = ({ rt }) => ({
         { value: rt('Coût marginal, scalable') },
         {
           value: rt(
-            'Recevable — *TJ Marseille, 20 mars 2025, n° 23/00046* — fiabilité comparable à un dépôt INPI',
+            'Recevable — *TJ Marseille, 20 mars 2025, n° 23/00046* — fiabilité comparable à un dépôt INPI, **sans contrainte géographique** ; peut être doublé d’un **constat d’huissier**',
           ),
         },
       ],

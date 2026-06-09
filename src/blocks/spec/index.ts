@@ -1,5 +1,6 @@
 import type { BlockSpec } from './dsl';
 
+import { agendaSpec } from './agenda';
 import { cardGridSpec } from './cardGrid';
 import { coverSpec } from './cover';
 import { ctaSpec } from './cta';
@@ -27,5 +28,6 @@ export const ALL_SPECS: BlockSpec[] = [
   tableSpec,
   timelineSpec,
   mermaidSpec,
+  agendaSpec,
   markdownSpec,
 ];

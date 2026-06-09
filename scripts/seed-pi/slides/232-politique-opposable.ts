@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
-  eyebrow: 'Étape 4 — Sécuriser',
+  eyebrow: 'Étape 2 — Sécuriser',
   title: 'Opposabilité de la politique PI aux salariés',
   surface: 'light',
   tableVariant: 'reference',

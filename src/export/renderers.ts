@@ -1,4 +1,5 @@
 import type { RenderCtx } from './utils';
+import { renderAgenda, type AgendaBlockData } from './blocks/agenda';
 import { renderCardGrid, type CardGridBlockData } from './blocks/cardGrid';
 import { renderCover, type CoverBlockData } from './blocks/cover';
 import { renderCta, type CtaBlockData } from './blocks/cta';
@@ -13,6 +14,7 @@ import { renderTimeline, type TimelineBlockData } from './blocks/timeline';
 import { renderTwoCols, type TwoColsBlockData } from './blocks/twoCols';
 
 export type SlideBlock =
+  | AgendaBlockData
   | CoverBlockData
   | SectionBlockData
   | StatementBlockData
@@ -35,6 +37,7 @@ export type { RenderCtx };
 
 // Exhaustive by construction: a SlideBlock with no renderer fails to compile.
 export const RENDERERS = {
+  agenda: renderAgenda as Renderer,
   cover: renderCover as Renderer,
   section: renderSection as Renderer,
   statement: renderStatement as Renderer,

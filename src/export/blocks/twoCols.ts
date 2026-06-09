@@ -39,9 +39,10 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   }
 
   const cardList = block.rightCards ?? [];
-  const cards = cardList.map((c) =>
-    card({ title: c.title, body: richTextToHTML(c.description), titleClass: 'text-sm' }),
-  );
+  // No titleClass override: card titles must render at the shared .k-card h3
+  // size (var(--t-h3)) whether the card sits in a cardGrid or a twoCols column.
+  // The old 'text-sm' made twoCols card titles smaller than cardGrid ones.
+  const cards = cardList.map((c) => card({ title: c.title, body: richTextToHTML(c.description) }));
   const stack = cardStack(cards, { layout: 'column' });
   const rightCol = cards.length ? `\n${stack.html}` : '';
 

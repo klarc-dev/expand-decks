@@ -1,0 +1,301 @@
+/**
+ * Deck build as a NATIVE Mastra workflow (`@mastra/core@1.41.0`).
+ *
+ * Replaces the hand-rolled async pipeline that used to live in `orchestrate.ts`.
+ * The graph the old file's comments always promised:
+ *
+ *   gather → structure → map(writerJobs) → foreach(draft) → map(assemble)
+ *     → dountil(validate) → map(injectVisual) → branch(visual|passthrough)
+ *     → map(unwrapBranch) → assemble
+ *
+ * Design notes (verified against the embedded docs in
+ * node_modules/@mastra/core/dist/docs/references/):
+ *  - The heavy "bundle" (dossier/stubs/slides/titles) threads through each
+ *    step's input/output — required so the `.dountil` revise loop can re-feed
+ *    its own output as the next iteration's input.
+ *  - Run-level constants (`visual`, `title`) live in workflow STATE, passed via
+ *    `initialState`, so they don't have to appear in every intermediate schema.
+ *  - The revise cap returns `true` (graceful finish) rather than throwing, which
+ *    would fail the whole run and lose the old `validate:capped` semantics.
+ *  - Sub-phase detail (`validate:revise`, `visual:revise`) is emitted with the
+ *    step `writer` so the Payload route can keep its fine-grained draftStatus.
+ *    `writer.write` MUST be awaited or the stream locks.
+ *  - The schemas below are internal step contracts (data already validated
+ *    upstream), so they use permissive `z.custom`/`z.any` — Mastra only needs a
+ *    Standard-Schema for the graph wiring, not LLM coercion here. TS types are
+ *    layered on top for call-site safety.
+ */
+import { createStep, createWorkflow } from '@mastra/core/workflows';
+import { z } from 'zod';
+
+import { REVISE_MAX_ITERATIONS, SCORE_THRESHOLD, WRITER_CONCURRENCY } from '../lib/agentConfig';
+import { buildSlidesMd } from '../export/buildSlidesMd';
+import type { SlideBlock } from '../export/renderers';
+import type { OutlineStub } from '../blocks/spec/emit/emitDraftSchema';
+import { gather } from './agents/gather';
+import { structure } from './agents/structure';
+import { writeSlide } from './agents/writer';
+import { scoreSlide } from './scorers/rubric';
+import { scoreVisual } from './scorers/visual';
+import { exportSlidePngs } from './tools/exportSlidePngs';
+import type { DeckDossier } from './schemas';
+
+// ── shared shapes ───────────────────────────────────────────────────────────
+
+/** Run-level constants shared across non-adjacent steps (workflow state). */
+const StateSchema = z.object({
+  visual: z.boolean(),
+  title: z.string().optional(),
+});
+export type DeckState = z.infer<typeof StateSchema>;
+
+/** The data bundle threaded step→step (and round-tripped through `.dountil`). */
+export type DeckBundle = {
+  dossier: DeckDossier;
+  stubs: OutlineStub[];
+  slides: SlideBlock[];
+  titles: string[];
+  /** Slides below threshold at the last validate pass (drives the loop + cap). */
+  lastFlagged: number;
+  /** True once the revise loop hit REVISE_MAX_ITERATIONS without converging. */
+  capped: boolean;
+};
+
+const bundle = z.custom<DeckBundle>();
+const dossierT = z.custom<DeckDossier>();
+const slideT = z.custom<SlideBlock>();
+const stubT = z.custom<OutlineStub>();
+
+/** One self-contained writer job — foreach passes only the array element. */
+type WriterJob = { stub: OutlineStub; dossier: DeckDossier; allTitles: string[] };
+const writerJob = z.custom<WriterJob>();
+
+/** Run an array of async thunks with a fixed concurrency cap, preserving order. */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) return;
+      results[i] = await fn(items[i]!, i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+// ── steps (step id === phase name; the route maps payload.stepName → status) ──
+
+const gatherStep = createStep({
+  id: 'gather',
+  inputSchema: z.object({ brief: z.string() }),
+  outputSchema: z.object({ dossier: dossierT }),
+  execute: async ({ inputData }) => ({ dossier: await gather(inputData.brief) }),
+});
+
+const structureStep = createStep({
+  id: 'structure',
+  inputSchema: z.object({ dossier: dossierT }),
+  outputSchema: z.object({ dossier: dossierT, stubs: z.array(stubT) }),
+  execute: async ({ inputData }) => ({
+    dossier: inputData.dossier,
+    stubs: await structure(inputData.dossier),
+  }),
+});
+
+/** foreach body — drafts EXACTLY ONE slide from its self-contained job. */
+const draftStep = createStep({
+  id: 'draft',
+  inputSchema: writerJob,
+  outputSchema: slideT,
+  execute: async ({ inputData }) =>
+    (await writeSlide(inputData.stub, inputData.dossier, inputData.allTitles)) as SlideBlock,
+});
+
+/**
+ * dountil body — score every slide, rewrite the flagged subset (carrying the
+ * scorer's fix forward as added intent), and report how many were flagged so
+ * the loop condition can stop early or the cap can finish gracefully.
+ */
+const validateStep = createStep({
+  id: 'validate',
+  inputSchema: bundle,
+  outputSchema: bundle,
+  execute: async ({ inputData, writer }) => {
+    const { stubs, dossier, titles } = inputData;
+    const scored = await mapWithConcurrency(inputData.slides, WRITER_CONCURRENCY, (slide) =>
+      scoreSlide(slide as Record<string, unknown>),
+    );
+    const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
+
+    if (flagged.length === 0) {
+      await writer.write({ type: 'phase', phase: 'validate:pass' });
+      return { ...inputData, lastFlagged: 0 };
+    }
+    await writer.write({ type: 'phase', phase: 'validate:revise', flagged: flagged.length });
+
+    const next = [...inputData.slides];
+    await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
+      const stub = stubs[i]!;
+      const revisedStub: OutlineStub = {
+        ...stub,
+        intent: `${stub.intent}\n\nCORRECTION DEMANDÉE (critique précédente) : ${fix}`,
+      };
+      next[i] = (await writeSlide(
+        revisedStub,
+        dossier,
+        titles.filter((_, j) => j !== i),
+      )) as SlideBlock;
+    });
+
+    return { ...inputData, slides: next, lastFlagged: flagged.length };
+  },
+});
+
+/**
+ * Visual branch body — build once to per-slide PNGs, score each rendered slide
+ * for real overflow/balance/legibility, and re-write the slides whose RENDER
+ * fails even though their data passed the content rubric. One pass (expensive).
+ */
+const visualStep = createStep({
+  id: 'visual',
+  inputSchema: bundle,
+  outputSchema: bundle,
+  execute: async ({ inputData, getInitData, writer }) => {
+    const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
+    await writer.write({ type: 'phase', phase: 'build' });
+    const md = buildSlidesMd({ title, slides: inputData.slides });
+    const { pngs, cleanup } = await exportSlidePngs(md);
+    try {
+      await writer.write({ type: 'phase', phase: 'visual', pngs: pngs.length });
+      const scored = await mapWithConcurrency(
+        inputData.slides,
+        WRITER_CONCURRENCY,
+        async (slide, i) => {
+          const png = pngs[i]?.base64;
+          if (!png) return { score: 1, fix: '' };
+          return scoreVisual(slide as Record<string, unknown>, png);
+        },
+      );
+      const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
+      if (flagged.length === 0) {
+        await writer.write({ type: 'phase', phase: 'visual:pass' });
+        return inputData;
+      }
+      await writer.write({ type: 'phase', phase: 'visual:revise', flagged: flagged.length });
+
+      const next = [...inputData.slides];
+      await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
+        const stub = inputData.stubs[i]!;
+        const revisedStub: OutlineStub = {
+          ...stub,
+          intent: `${stub.intent}\n\nCORRECTION VISUELLE (rendu réel) : ${fix}`,
+        };
+        next[i] = (await writeSlide(
+          revisedStub,
+          inputData.dossier,
+          inputData.titles.filter((_, j) => j !== i),
+        )) as SlideBlock;
+      });
+      return { ...inputData, slides: next };
+    } finally {
+      cleanup();
+    }
+  },
+});
+
+/** branch sibling — visual:false runs this no-op so schemas stay matched. */
+const visualPassthrough = createStep({
+  id: 'visual-passthrough',
+  inputSchema: bundle,
+  outputSchema: bundle,
+  execute: async ({ inputData }) => inputData,
+});
+
+const assembleStep = createStep({
+  id: 'assemble',
+  inputSchema: bundle,
+  outputSchema: z.object({ dossier: dossierT, slides: z.array(slideT), md: z.string() }),
+  execute: async ({ inputData, getInitData }) => {
+    const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
+    return {
+      dossier: inputData.dossier,
+      slides: inputData.slides,
+      md: buildSlidesMd({ title, slides: inputData.slides }),
+    };
+  },
+});
+
+// ── workflow input/output ────────────────────────────────────────────────────
+
+const InputSchema = z.object({ brief: z.string(), title: z.string().optional() });
+export type DeckWorkflowInput = z.infer<typeof InputSchema>;
+
+const OutputSchema = z.object({ dossier: dossierT, slides: z.array(slideT), md: z.string() });
+export type DeckWorkflowOutput = z.infer<typeof OutputSchema>;
+
+// ── graph ────────────────────────────────────────────────────────────────────
+
+export const deckWorkflow = createWorkflow({
+  id: 'deckWorkflow',
+  inputSchema: InputSchema,
+  outputSchema: OutputSchema,
+  stateSchema: StateSchema,
+})
+  .then(gatherStep)
+  .then(structureStep)
+  // Bake shared context into each writer job — foreach only passes the element.
+  .map(async ({ inputData }) =>
+    inputData.stubs.map(
+      (stub): WriterJob => ({
+        stub,
+        dossier: inputData.dossier,
+        allTitles: inputData.stubs.map((s) => s.title),
+      }),
+    ),
+  )
+  .foreach(draftStep, { concurrency: WRITER_CONCURRENCY })
+  // Re-assemble the bundle from the SlideBlock[] foreach output.
+  .map(async ({ inputData, getStepResult }) => {
+    const slides = inputData as SlideBlock[];
+    const structured = getStepResult(structureStep);
+    return {
+      dossier: structured.dossier,
+      stubs: structured.stubs,
+      slides,
+      titles: structured.stubs.map((s) => s.title),
+      lastFlagged: slides.length, // force ≥1 validate pass
+      capped: false,
+    } satisfies DeckBundle;
+  })
+  .dountil(validateStep, async ({ inputData, iterationCount }) => {
+    if (iterationCount >= REVISE_MAX_ITERATIONS) {
+      (inputData as DeckBundle).capped = (inputData as DeckBundle).lastFlagged > 0;
+      return true; // graceful cap — do NOT throw (that would fail the run)
+    }
+    return (inputData as DeckBundle).lastFlagged === 0;
+  })
+  // Surface the run-level visual flag into branch inputData.
+  .map(async ({ inputData, getInitData }) => ({
+    ...(inputData as DeckBundle),
+    visual: (getInitData() as { visual?: boolean }).visual === true,
+  }))
+  .branch([
+    [async ({ inputData }) => (inputData as { visual: boolean }).visual === true, visualStep],
+    [
+      async ({ inputData }) => (inputData as { visual: boolean }).visual !== true,
+      visualPassthrough,
+    ],
+  ])
+  // Only one branch ran; output is keyed by the executed step id — unwrap it.
+  .map(async ({ inputData }) => {
+    const keyed = inputData as Record<string, DeckBundle>;
+    return (keyed.visual ?? keyed['visual-passthrough']) as DeckBundle;
+  })
+  .then(assembleStep)
+  .commit();

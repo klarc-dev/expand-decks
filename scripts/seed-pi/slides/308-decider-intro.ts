@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'statement',
-  eyebrow: 'Étape 3 — Décider',
+  eyebrow: 'Étape 4 — Décider',
   title: 'Choisir l’outil de protection adapté',
   body: rt(
     "L'analyse porte sur chaque création identifiée, **composant par composant**. Trois familles : solution technique, apparence, code source. Les arbres de décision qui suivent guident le choix.",

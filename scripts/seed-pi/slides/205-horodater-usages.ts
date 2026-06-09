@@ -3,7 +3,7 @@ import type { SlideFactory } from '../types';
 
 const slide: SlideFactory = ({ rt }) => ({
   blockType: 'twoCols',
-  eyebrow: 'Étape 4 — Sécuriser',
+  eyebrow: 'Étape 2 — Sécuriser',
   title: 'Horodatage : usages et mise en œuvre',
   intro: rt(
     "**Ce que l'horodatage permet :**\n\n- Fonder une **possession personnelle antérieure** *(L.613-7 CPI)* — droit d'exploitation personnel si un tiers dépose ultérieurement un brevet sur la même solution\n- Prouver l'antériorité de la création en cas de litige de titularité ou de contrefaçon (droit d'auteur, secret)\n- Documenter les décisions de ne pas déposer — preuve que le secret est intentionnel",
