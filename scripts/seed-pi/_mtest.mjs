@@ -90,10 +90,39 @@ await new Promise((r) => server.listen(8788, r));
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.goto('http://localhost:8788/index.html#1', { waitUntil: 'networkidle' });
-await page.waitForTimeout(3500);
+await page.waitForTimeout(5000);
 const info = await page.evaluate(() => {
-  const svg = document.querySelector('svg[id*="mermaid"], .k-mermaid svg, svg');
-  if (!svg) return { hasSvg: false };
+  // Find the mermaid svg = the one with a viewBox and aria-roledescription, or
+  // any svg containing flowchart node classes; report its full ancestry chain.
+  const all = [...document.querySelectorAll('svg')];
+  const mer =
+    all.find((s) => s.querySelector('.node, .flowchart-link, [class*="flowchart"]')) ||
+    all.find((s) => s.getAttribute('aria-roledescription')?.includes('flowchart'));
+  if (mer) {
+    const chain = [];
+    let n = mer;
+    for (let i = 0; i < 6 && n; i++) {
+      chain.push(
+        n.tagName.toLowerCase() +
+          '.' +
+          (typeof n.className === 'string' ? n.className : n.className.baseVal || ''),
+      );
+      n = n.parentElement;
+    }
+    const r = mer.getBoundingClientRect();
+    const cs = getComputedStyle(mer);
+    return {
+      found: 'mermaid',
+      w: Math.round(r.width),
+      h: Math.round(r.height),
+      bottom: Math.round(r.bottom),
+      attrStyle: mer.getAttribute('style'),
+      computedMaxH: cs.maxHeight,
+      chain,
+    };
+  }
+  const svg = document.querySelector('svg');
+  if (!svg) return { hasSvg: false, totalSvg: all.length };
   const r = svg.getBoundingClientRect();
   const cs = getComputedStyle(svg);
   return {
