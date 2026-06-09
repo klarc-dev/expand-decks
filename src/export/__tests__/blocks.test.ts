@@ -224,6 +224,22 @@ describe('renderStatement()', () => {
     });
     expect(result).not.toContain('text-xl leading-relaxed');
   });
+
+  it('renders footer as an in-flow caption, not an absolute .k-foot bar (U2)', () => {
+    const result = renderStatement({
+      blockType: 'statement',
+      title: 'Statement',
+      footer: lexical('Source note'),
+    });
+    expect(result).toContain('Source note');
+    expect(result).toContain('k-caption');
+    expect(result).not.toContain('k-foot');
+  });
+
+  it('omits the caption when no footer is provided', () => {
+    const result = renderStatement({ blockType: 'statement', title: 'X' });
+    expect(result).not.toContain('k-caption');
+  });
 });
 
 describe('renderTwoCols()', () => {

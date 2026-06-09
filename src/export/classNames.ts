@@ -33,7 +33,7 @@ export const K = {
   timelineDesc: 'k-tl-desc',
   timelineArrow: 'k-tl-arrow',
   timelineBand: 'k-tl-band',
-  foot: 'k-foot',
+  caption: 'k-caption',
   defItem: 'k-def-item',
   defFooter: 'k-def-footer',
   defRef: 'k-def-ref',

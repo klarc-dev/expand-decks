@@ -15,18 +15,22 @@ export function renderStatement(block: StatementBlockData): string {
     ? `\n\n<div class="text-xl leading-relaxed max-w-3xl">\n${bodyHtml}\n</div>`
     : '';
 
+  // Footer renders as an in-flow caption INSIDE the content column — not as an
+  // absolute .k-foot bar, which collided with the deck-level .k-slide-footer
+  // (chrome.ts). The deck footer is the single absolute footer; per-block footer
+  // text is a caption above it.
   const footerHtml = richTextToHTML(block.footer);
   const footer = footerHtml
-    ? `\n\n<div class="${K.foot}">\n  ${footerHtml}\n</div>`
+    ? `\n\n<div class="${K.caption} mt-10">\n  ${footerHtml}\n</div>`
     : '';
 
   const body = `<div class="max-w-4xl px-12">
 ${eyebrow}
 <h1 class="mb-8">
 ${md(block.title)}
-</h1>${bodyText}
+</h1>${bodyText}${footer}
 
-</div>${footer}`;
+</div>`;
 
   return wrapSlide({ layout: 'center', body });
 }
