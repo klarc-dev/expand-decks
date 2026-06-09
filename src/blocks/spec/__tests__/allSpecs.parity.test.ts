@@ -79,6 +79,7 @@ Layouts disponibles :
 
 3. **statement** — Affirmation ou citation mise en avant
    - eyebrow, title (obligatoire), body, footer
+   - variant: centered-hero | pull-quote | big-statement | split — varie la mise en page entre deux statements consécutifs (laisser vide = alternance auto)
 
 4. **twoCols** — Deux colonnes avec cartes à droite
    - eyebrow, title (obligatoire), intro, leftFooter

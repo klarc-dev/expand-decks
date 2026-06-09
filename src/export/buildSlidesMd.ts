@@ -41,6 +41,7 @@ export function buildSlidesMd(
   // resolved tone is passed to each renderer as ctx.surface; a renderer with an
   // explicit block.surface field still wins (KTD5).
   let prevTone: Surface | null = null;
+  let statementIndex = 0; // rotates statement variants when unset (U8/KTD6b)
   const slidesMd = presentation.slides.map((block) => {
     const renderer = getRenderer(block.blockType);
     if (!renderer) {
@@ -48,8 +49,9 @@ export function buildSlidesMd(
     }
     const tone = slideTone(block.blockType, prevTone);
     prevTone = tone;
+    const variantIndex = block.blockType === 'statement' ? statementIndex++ : undefined;
     resetDefs();
-    return renderer(block as never, { surface: tone });
+    return renderer(block as never, { surface: tone, variantIndex });
   });
 
   // Each renderer's output already begins with `---` (its own frontmatter

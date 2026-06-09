@@ -20,6 +20,7 @@ import {
   optionalRender,
   optionalRichTextRender,
   rawField,
+  surfaceFieldSpec,
   titleFieldSpec,
 } from './dsl';
 
@@ -30,6 +31,12 @@ const eyebrow = optionalRender(z.string());
 const title = z.string();
 const body = optionalRichTextRender();
 const footer = optionalRichTextRender();
+// Layout variant (U8): four visually-distinct emphasis treatments. Optional —
+// when unset, buildSlidesMd assigns one by statement-index so the deck gets
+// variety even if the author/AI never picks (the Section-block lesson, KTD6b).
+const STATEMENT_VARIANTS = ['centered-hero', 'pull-quote', 'big-statement', 'split'] as const;
+const variant = optionalRender(z.enum(STATEMENT_VARIANTS));
+const surface = optionalRender(z.enum(['dark', 'light']));
 
 export const statementSpec = block({
   slug: 'statement',
@@ -50,13 +57,24 @@ export const statementSpec = block({
       label: 'Pied de page',
       description: 'Légende ou note en bas de la diapositive',
     }),
+    rawField('variant', variant, optionalAi(z.enum(STATEMENT_VARIANTS)), {
+      type: 'select',
+      label: 'Variante de mise en page',
+      description:
+        'Disposition : centered-hero (centré), pull-quote (citation), big-statement (énoncé large), split (titre/texte). Laisser vide pour une alternance automatique.',
+      options: STATEMENT_VARIANTS.map((v) => ({ label: v, value: v })),
+    }),
+    surfaceFieldSpec(surface),
     factoryField('preview', 'preview', z.any(), false),
   ],
   promptMeta: {
     index: 3,
     heading: 'statement',
     summary: 'Affirmation ou citation mise en avant',
-    lines: ['eyebrow, title (obligatoire), body, footer'],
+    lines: [
+      'eyebrow, title (obligatoire), body, footer',
+      'variant: centered-hero | pull-quote | big-statement | split — varie la mise en page entre deux statements consécutifs (laisser vide = alternance auto)',
+    ],
   },
 });
 
@@ -67,6 +85,9 @@ export const statementRenderSchema = z.object({
   title,
   body,
   footer,
+  variant,
+  surface,
 });
 
 export type StatementBlockData = InferRender<typeof statementRenderSchema>;
+export type StatementVariant = (typeof STATEMENT_VARIANTS)[number];

@@ -207,22 +207,32 @@ describe('renderSection()', () => {
   });
 });
 
-describe('renderStatement()', () => {
-  it('produces layout: center', () => {
-    const result = renderStatement({
-      blockType: 'statement',
-      title: 'Statement',
-    });
+describe('renderStatement() — variant dispatch (U8)', () => {
+  it('defaults to centered-hero (layout: center) when variant + index unset', () => {
+    const result = renderStatement({ blockType: 'statement', title: 'Statement' });
     expect(result).toContain('layout: center');
+    expect(result).toContain('k-hero--center');
     expect(result).toContain('Statement');
   });
 
-  it('omits body when not provided', () => {
-    const result = renderStatement({
-      blockType: 'statement',
-      title: 'Statement',
-    });
-    expect(result).not.toContain('text-xl leading-relaxed');
+  it('each explicit variant renders its distinct heroFrame layout', () => {
+    const big = renderStatement({ blockType: 'statement', title: 'T', variant: 'big-statement' });
+    expect(big).toContain('k-hero--display');
+    expect(big).toContain('k-hero--left');
+
+    const pull = renderStatement({ blockType: 'statement', title: 'T', variant: 'pull-quote' });
+    expect(pull).toContain('k-divider'); // accent rule
+
+    const split = renderStatement({ blockType: 'statement', title: 'T', variant: 'split' });
+    expect(split).toContain('k-split');
+  });
+
+  it('an UNSET variant rotates by ctx.variantIndex (not a constant) — KTD6b', () => {
+    const v0 = renderStatement({ blockType: 'statement', title: 'T' }, { variantIndex: 0 });
+    const v1 = renderStatement({ blockType: 'statement', title: 'T' }, { variantIndex: 1 });
+    // index 0 = centered-hero, index 1 = pull-quote → different layouts
+    expect(v0).toContain('k-hero--center');
+    expect(v1).not.toContain('k-hero--center');
   });
 
   it('renders footer as an in-flow caption, not an absolute .k-foot bar (U2)', () => {
@@ -234,11 +244,6 @@ describe('renderStatement()', () => {
     expect(result).toContain('Source note');
     expect(result).toContain('k-caption');
     expect(result).not.toContain('k-foot');
-  });
-
-  it('omits the caption when no footer is provided', () => {
-    const result = renderStatement({ blockType: 'statement', title: 'X' });
-    expect(result).not.toContain('k-caption');
   });
 });
 

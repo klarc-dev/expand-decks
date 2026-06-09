@@ -196,8 +196,12 @@ ${body}${consumeDefFooter()}`;
 // lives in style.css and structure lives here once.
 // ---------------------------------------------------------------------------
 
-/** Context threaded into every renderer (U5). Carries the resolved slide tone. */
-export type RenderCtx = { surface?: Surface | null };
+/**
+ * Context threaded into every renderer (U5/U8). Carries the resolved slide tone
+ * and, for statement, the index-resolved layout variant (used only when the
+ * block's own `variant` field is unset — KTD6b).
+ */
+export type RenderCtx = { surface?: Surface | null; variantIndex?: number };
 
 /**
  * Slide header: eyebrow + title at the shared `--header-top` baseline, optional
