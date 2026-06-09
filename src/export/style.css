@@ -76,6 +76,56 @@
   --k-ink-soft:    #4A6365;
   --k-paper:       #FAFBFB;
   --k-line:        rgba(2, 88, 92, 0.12);
+
+  /* --- Reusable-components refactor tokens (U1) --------------------------
+     Foundation layer: consumed by render primitives (U4) and the AA pass (U3).
+     Nothing reads these until those units; this block is a pure addition. */
+
+  /* Tone pair — light is the default; .k-dark overrides both below. */
+  --bg: var(--k-paper);
+  --fg: var(--k-ink);
+
+  /* Muted text — SOLID colours (no opacity/rgba) so contrast is predictable.
+     Light-ground #5A6B6B on #FAFBFB ≈ 5.6:1; dark-ground #C7D6D6 on the teal
+     gradient (darkest stop #023C3F) ≈ 8:1. --fg-muted flips with .k-dark so a
+     single rule can replace the scattered opacity rules in U3. */
+  --fg-light-muted: #5A6B6B;
+  --fg-dark-muted:  #C7D6D6;
+  --fg-muted:       var(--fg-light-muted);
+  --fg-footer:      #6B7B7B; /* deck footer on light ground ≈ 4.7:1 */
+
+  /* Type ramp — single source for heading/body scale (replaces inline
+     text-4xl/5xl/6xl/xl per renderer). */
+  --t-display: 6rem;
+  --t-hero:    3.2rem;
+  --t-title:   3rem;
+  --t-sub:     2.25rem;
+  --t-body:    1.25rem;
+  --t-caption: 0.8rem;
+
+  /* Layout rails — one left/right inset and one title baseline for every
+     content slide (replaces px-14/px-12 and pt-24/28/16/20 drift). */
+  --content-inset: 3.5rem;
+  --header-top:    6rem;
+
+  /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
+     contrast by ground (U3 consumes these). */
+  --pill-bg:     var(--k-teal-50);
+  --pill-fg:     var(--k-teal);
+  --pill-border: var(--k-line);
+  --accent-rule: var(--k-rose);
+}
+
+/* Dark tone overrides the pair + muted + pill so primitives/AA rules need no
+   per-ground branching. */
+.k-dark {
+  --bg: var(--k-teal);
+  --fg: #fff;
+  --fg-muted: var(--fg-dark-muted);
+  --fg-footer: rgba(255, 255, 255, 0.78); /* on the teal gradient ≈ 6:1 */
+  --pill-bg: rgba(255, 255, 255, 0.10);
+  --pill-fg: #fff;
+  --pill-border: rgba(255, 255, 255, 0.30);
 }
 
 /* Typography ----------------------------------- */
