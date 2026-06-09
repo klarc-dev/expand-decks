@@ -1,3 +1,4 @@
+import type { RenderCtx } from './utils';
 import { renderCardGrid, type CardGridBlockData } from './blocks/cardGrid';
 import { renderCover, type CoverBlockData } from './blocks/cover';
 import { renderCta, type CtaBlockData } from './blocks/cta';
@@ -23,7 +24,12 @@ export type SlideBlock =
   | TimelineBlockData
   | MarkdownBlockData;
 
-type Renderer = (block: never) => string;
+// Renderers take the resolved per-slide context (tone) as an optional 2nd arg.
+// Optional so call sites can omit it and renderers can ignore it during the
+// incremental migration (U5) — both keep compiling.
+type Renderer = (block: never, ctx?: RenderCtx) => string;
+
+export type { RenderCtx };
 
 // Exhaustive by construction: a SlideBlock with no renderer fails to compile.
 export const RENDERERS = {
