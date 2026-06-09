@@ -83,6 +83,14 @@ describe('draftPresentationSlides() — two-pass plan→fill', () => {
     expect(result.slides).toHaveLength(3);
   });
 
+  it('the outline system prompt carries the U9 pacing rules', async () => {
+    await draftPresentationSlides('un brief suffisamment long');
+    const outlineSystem = mockedDraftObject.mock.calls[0]![0]!.system as string;
+    expect(outlineSystem).toContain('section'); // mandatory divider rule
+    expect(outlineSystem).toMatch(/plus de 2 diapositives consécutives/i); // no >2 consecutive
+    expect(outlineSystem).toContain('quotes'); // route quote-shaped content
+  });
+
   it('forces the planned blockType/title onto each filled slide', async () => {
     mockedDraftObject.mockReset();
     mockedDraftObject
