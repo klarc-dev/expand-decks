@@ -1,9 +1,10 @@
 import type { CollectionConfig } from 'payload';
 
 import { isAdmin, isLoggedIn } from '../access/roles';
+import { COLLECTIONS } from '../lib/collections';
 
 export const Media: CollectionConfig = {
-  slug: 'media',
+  slug: COLLECTIONS.media,
   labels: { singular: 'M\u00e9dia', plural: 'M\u00e9dias' },
   access: {
     create: isLoggedIn,

@@ -2,191 +2,26 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { getPayload } from 'payload';
 import config from '@payload-config';
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
+import type { Presentation } from '@/payload-types';
+import { TypeValidationError } from 'ai';
 import { z } from 'zod';
 
-const eyebrowZod = z.string().optional();
-const surfaceZod = (gradient: boolean) =>
-  (gradient
-    ? z.enum(['dark', 'light', 'gradient'])
-    : z.enum(['dark', 'light'])
-  ).optional();
+import { COLLECTIONS } from '@/lib/collections';
+import { CTX } from '@/lib/context';
+import { deckContext } from '@/lib/deckContext';
+import { mergeAugmentedSlides } from '@/lib/augmentSlides';
+import { draftPresentationSlides } from '@/lib/draftPresentation';
+import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
+import { ROLES } from '@/access/roles';
 
-// image/imagePosition are intentionally omitted from AI drafting — they require an uploaded media id, not an LLM-generated value; authors add images in the admin.
-const coverSchema = z.object({
-  blockType: z.literal('cover'),
-  eyebrow: eyebrowZod,
-  title: z.string(),
-  subtitle: z.string().optional(),
-  footerLeft: z.string().optional(),
-  footerRight: z.string().optional(),
-  surface: surfaceZod(true),
+const requestSchema = z.object({
+  presentationId: z.union([z.string().min(1).max(128), z.number()]),
+  brief: z.string().trim().min(10).max(20000),
+  // 'replace' (default) overwrites the deck wholesale — current behaviour.
+  // 'augment' appends the newly-drafted slides to the existing deck, keeping
+  // every existing slide byte-for-byte (never re-drafted, never re-converted).
+  mode: z.enum(['replace', 'augment']).default('replace'),
 });
-
-const sectionSchema = z.object({
-  blockType: z.literal('section'),
-  number: z.string().optional(),
-  title: z.string(),
-  subtitle: z.string().optional(),
-  surface: surfaceZod(false),
-});
-
-const statementSchema = z.object({
-  blockType: z.literal('statement'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  body: z.string().optional(),
-  footer: z.string().optional(),
-});
-
-// image/imagePosition are intentionally omitted from AI drafting — they require an uploaded media id, not an LLM-generated value; authors add images in the admin.
-const twoColsSchema = z.object({
-  blockType: z.literal('twoCols'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  intro: z.string().optional(),
-  leftFooter: z.string().optional(),
-  rightCards: z
-    .array(
-      z.object({
-        title: z.string(),
-        description: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const cardGridSchema = z.object({
-  blockType: z.literal('cardGrid'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  sidebarText: z.string().optional(),
-  columns: z.enum(['2', '3', '4']).optional(),
-  cards: z
-    .array(
-      z.object({
-        number: z.string().optional(),
-        title: z.string(),
-        description: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const statsSchema = z.object({
-  blockType: z.literal('stats'),
-  eyebrow: eyebrowZod,
-  title: z.string(),
-  surface: surfaceZod(false),
-  stats: z
-    .array(
-      z.object({
-        value: z.string(),
-        label: z.string(),
-      }),
-    )
-    .optional(),
-});
-
-const quotesSchema = z.object({
-  blockType: z.literal('quotes'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  quotes: z
-    .array(
-      z.object({
-        quote: z.string(),
-        authorName: z.string(),
-        authorRole: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
-
-const ctaSchema = z.object({
-  blockType: z.literal('cta'),
-  eyebrow: z.string().optional(),
-  title: z.string(),
-  subtitle: z.string().optional(),
-  primaryAction: z.string().optional(),
-  secondaryAction: z.string().optional(),
-  footerNote: z.string().optional(),
-});
-
-// markdown is intentionally excluded — it is an admin-only escape-hatch block, not AI-draftable.
-// Plain z.union, not z.discriminatedUnion: the latter serializes to JSON
-// Schema `oneOf`, which OpenAI structured outputs rejects ("'oneOf' is not
-// permitted"); z.union produces the accepted `anyOf`. The blockType literal
-// in each member keeps validation equivalent.
-const slideBlockSchema = z.union([
-  coverSchema,
-  sectionSchema,
-  statementSchema,
-  twoColsSchema,
-  cardGridSchema,
-  statsSchema,
-  quotesSchema,
-  ctaSchema,
-]);
-
-const slidesArraySchema = z.object({
-  slides: z.array(slideBlockSchema).min(3).max(20),
-});
-
-const SYSTEM_PROMPT = `Tu génères des diapositives structurées à partir d'un brief en langage naturel.
-
-Tu retournes un tableau de blocs (slides) typés. Chaque bloc a un champ "blockType" qui détermine sa mise en page. Ces blocs sont purement des LAYOUTS : ils ne portent aucune logique métier, seulement une structure visuelle réutilisable.
-
-Layouts disponibles :
-
-1. **cover** — Diapositive d'ouverture
-   - eyebrow: accroche courte au-dessus du titre
-   - title: titre principal (obligatoire)
-   - subtitle: paragraphe descriptif
-   - footerLeft / footerRight: textes en bas de slide
-   - surface: "dark" | "light" | "gradient"
-
-2. **section** — Intercalaire de section
-   - number: numéro (ex. "01")
-   - title: titre (obligatoire)
-   - subtitle: description
-   - surface: "dark" | "light"
-
-3. **statement** — Affirmation ou citation mise en avant
-   - eyebrow, title (obligatoire), body, footer
-
-4. **twoCols** — Deux colonnes avec cartes à droite
-   - eyebrow, title (obligatoire), intro, leftFooter
-   - rightCards: [{title, description}]
-
-5. **cardGrid** — Grille de cartes numérotées
-   - eyebrow, title (obligatoire), sidebarText
-   - columns: "2" | "3" | "4"
-   - cards: [{number, title, description}]
-
-6. **stats** — Chiffres clés en grille
-   - eyebrow, title (obligatoire), surface
-   - stats: [{value, label}]
-
-7. **quotes** — Grille de citations
-   - eyebrow, title (obligatoire)
-   - quotes: [{quote, authorName, authorRole}]
-
-8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
-   - eyebrow, title (obligatoire), subtitle
-   - primaryAction / secondaryAction: libellés de boutons
-   - footerNote: petit texte en bas
-
-Règles :
-- Commence TOUJOURS par un bloc "cover"
-- Termine TOUJOURS par un bloc "cta"
-- Utilise "section" pour structurer le contenu en parties
-- Varie les layouts pour rendre la présentation dynamique
-- Reste dans la langue du brief (français par défaut si ambigu)
-- Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
-- Sinon, génère entre 8 et 15 diapositives selon la complexité du brief
-- Les textes doivent être concis et percutants`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -198,72 +33,97 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { presentationId, brief } = body;
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+    }
 
-    if (!presentationId || !brief) {
+    const parsed = requestSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
         { error: 'presentationId et brief sont requis' },
         { status: 400 },
       );
     }
+    const { presentationId, brief, mode } = parsed.data;
 
-    // Verify the presentation exists and user has access
+    // Verify the presentation exists and user has access. disableErrors makes a
+    // missing/inaccessible id return null instead of throwing NotFound (which
+    // would otherwise fall through to the generic 500 handler).
     const presentation = await payload.findByID({
-      collection: 'presentations',
+      collection: COLLECTIONS.presentations,
       id: presentationId,
       user,
+      disableErrors: true,
     });
 
     if (!presentation) {
       return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
     }
 
-    // Generate slides via the configured OpenAI-compatible endpoint
-    // (OpenAI direct, or a LiteLLM/OpenRouter proxy — model name must match
-    // what that endpoint serves, hence OPENAI_MODEL).
-    const llm = createOpenAI({
-      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-      apiKey: process.env.OPENAI_API_KEY || '',
-    });
-    const { object } = await generateObject({
-      model: llm(process.env.OPENAI_MODEL || 'gpt-5-mini'),
-      schema: slidesArraySchema,
-      system: SYSTEM_PROMPT,
-      prompt: brief,
-      temperature: 0.7,
-      providerOptions: {
-        openai: {
-          // OpenAI strict mode rejects our schema (optional fields without
-          // null, length bounds). Non-strict still guides the model with the
-          // schema; Zod validates the result server-side either way.
-          strictJsonSchema: false,
-        },
-      },
-    });
+    // Authorize the WRITE before spending LLM tokens: only an admin or the
+    // presentation owner may draft into it (read access alone is broader).
+    const createdById =
+      typeof presentation.createdBy === 'object'
+        ? presentation.createdBy?.id
+        : presentation.createdBy;
+    if (user.role !== ROLES.admin && createdById !== user.id) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
 
-    // Write blocks to the presentation
+    // LLM-only: draftPresentationSlides does NOT persist; this route owns the
+    // Payload write below. Prepend the deck's metadata so output is deck-aware.
+    const { slides } = await draftPresentationSlides(deckContext(presentation) + brief);
+    const newSlideCount = slides.length;
+
+    // The LLM emits long fields as markdown strings; convert ONLY the freshly
+    // drafted slides to Lexical editor state. In augment mode the existing
+    // slides are already Lexical and are kept verbatim (never re-converted).
+    const draftedRich = await convertSlidesMarkdownToLexical(slides, payload);
+
+    // In augment mode, append to the existing deck, preserving every existing
+    // slide by reference. In replace mode, overwrite wholesale (default).
+    const existing = (mode === 'augment' && Array.isArray(presentation.slides)
+      ? presentation.slides
+      : []) as NonNullable<Presentation['slides']>;
+    const nextSlides = mergeAugmentedSlides(existing, draftedRich) as Presentation['slides'];
+
     await payload.update({
-      collection: 'presentations',
+      collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: { slides: object.slides },
+      data: { slides: nextSlides },
       user,
-      context: { skipBuildQueue: true },
+      context: { [CTX.skipBuildQueue]: true },
     });
 
     return NextResponse.json({
       success: true,
-      slideCount: object.slides.length,
+      // Slides added this call; in augment mode the deck total is larger.
+      slideCount: newSlideCount,
+      mode,
     });
   } catch (error) {
-    // Authors get a readable French message; the raw provider error (LiteLLM
-    // auth failures, model errors…) goes in `detail` for debugging.
-    const detail = error instanceof Error ? error.message : 'Erreur inconnue';
+    // Never return raw provider errors to the client — they can leak base URLs,
+    // model names, and config hints. Log server-side; send a stable message.
+    if (TypeValidationError.isInstance(error)) {
+      console.error('[draft-presentation] invalid model output', {
+        cause: error.cause instanceof Error ? error.cause.message : undefined,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'La génération a produit un format inattendu. Simplifiez le brief et réessayez.',
+        },
+        { status: 422 },
+      );
+    }
+    console.error('[draft-presentation] generation failed', error);
     return NextResponse.json(
       {
         error:
           'La génération a échoué : le service IA est indisponible ou mal configuré. Réessayez plus tard ou contactez un administrateur.',
-        detail,
       },
       { status: 500 },
     );

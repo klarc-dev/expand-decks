@@ -1,46 +1,57 @@
-import { escape, md, wrapSlide } from '../utils';
+import { K } from '../classNames';
+import { richTextToHTML, type RichText } from '../richtext';
+import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
 export type CardGridBlockData = {
   blockType: 'cardGrid';
   eyebrow?: string | null;
   title: string;
-  sidebarText?: string | null;
+  sidebarText?: RichText;
   columns?: '2' | '3' | '4' | null;
   cards?: Array<{
     number?: string | null;
     title: string;
-    description?: string | null;
+    description?: RichText;
   }> | null;
 };
 
 export function renderCardGrid(block: CardGridBlockData): string {
-  const cols = block.columns ?? '4';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-4', { indent: '    ' });
 
-  const eyebrow = block.eyebrow
-    ? `\n    <div class="k-eyebrow mb-4">${escape(block.eyebrow)}</div>`
+  const sidebarHtml = richTextToHTML(block.sidebarText);
+  const sidebar = sidebarHtml
+    ? `\n  <div class="text-sm text-right max-w-xs opacity-70">\n    ${sidebarHtml}\n  </div>`
     : '';
 
-  const sidebar = block.sidebarText
-    ? `\n  <p class="text-sm text-right max-w-xs opacity-70">\n    ${md(block.sidebarText)}\n  </p>`
-    : '';
-
-  const cards = (block.cards ?? [])
+  const cardList = block.cards ?? [];
+  const cards = cardList
     .map((card) => {
-      const num = card.number ? `\n  <span class="k-num">${escape(card.number)}</span>` : '';
-      const desc = card.description ? `\n  <p>${md(card.description)}</p>` : '';
-      return `<div class="k-card">${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
+      const num = card.number ? `\n  <span class="${K.num}">${escape(card.number)}</span>` : '';
+      const descHtml = richTextToHTML(card.description);
+      const desc = descHtml ? `\n  <div>${descHtml}</div>` : '';
+      return `<div class="${K.card}">${num}\n  <h3>${escape(card.title)}</h3>${desc}\n</div>`;
     })
     .join('\n\n');
 
-  const body = `<div class="px-14 pt-24">
+  // The canvas is a fixed 720px tall. Up to 2 rows of cards fit under the
+  // standard pt-24 header; a 3rd row (5+ cards in 2 cols, or 7+ in 3 cols)
+  // overflows and gets clipped by the slide edge. Shrink the vertical chrome
+  // when the grid is crowded so any card count stays on-canvas.
+  const cols = Math.min(Math.max(Number(block.columns ?? '4'), 2), 4);
+  const rows = Math.ceil(cardList.length / cols);
+  const crowded = rows > 2;
+  const topPad = crowded ? 'pt-16' : 'pt-24';
+  const headerMargin = crowded ? 'mb-6' : 'mb-10';
 
-<div class="flex items-end justify-between mb-10">
+  const body = `<div class="px-14 ${topPad}">
+
+<div class="flex items-end justify-between ${headerMargin}">
   <div>${eyebrow}
     <h2 class="text-5xl">${md(block.title)}</h2>
   </div>${sidebar}
 </div>
 
-<div class="k-grid-${cols}">
+<div class="${gridClass(cols)}">
 
 ${cards}
 

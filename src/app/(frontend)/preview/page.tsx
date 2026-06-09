@@ -5,6 +5,7 @@ import { useLivePreview } from '@payloadcms/live-preview-react';
 
 import { renderBlockPreview } from '@/export/preview';
 import type { SlideBlock } from '@/export/renderers';
+import { SlideFrame, SLIDE_STAGE_BG } from '@/components/SlideFrame';
 
 import '@/export/style.css';
 
@@ -54,11 +55,7 @@ export default function PreviewPage() {
       {rendered.map((slide, i) => (
         <div key={i} style={styles.slideWrapper}>
           <div style={styles.slideNumber}>{i + 1}</div>
-          <div
-            className={`slidev-layout ${slide.layout === 'cover' ? 'k-cover' : ''}`}
-            style={styles.slide}
-            dangerouslySetInnerHTML={{ __html: slide.html }}
-          />
+          <SlideFrame html={slide.html} layout={slide.layout} style={styles.slide} />
         </div>
       ))}
     </div>
@@ -71,7 +68,7 @@ const styles = {
     flexDirection: 'column' as const,
     gap: '2rem',
     padding: '2rem',
-    background: '#1a1a2e',
+    background: SLIDE_STAGE_BG,
     minHeight: '100vh',
     alignItems: 'center',
     fontFamily: "'Roboto', system-ui, sans-serif",
@@ -95,14 +92,13 @@ const styles = {
     borderRadius: '8px',
     boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
     position: 'relative' as const,
-    padding: '3rem 4rem',
   },
   loading: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    background: '#1a1a2e',
+    background: SLIDE_STAGE_BG,
   },
   loadingText: {
     color: 'rgba(255,255,255,0.6)',
@@ -113,7 +109,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    background: '#1a1a2e',
+    background: SLIDE_STAGE_BG,
   },
   emptyText: {
     color: 'rgba(255,255,255,0.5)',

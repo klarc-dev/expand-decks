@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
-import { resolve, extname } from 'node:path';
+import { resolve, relative, isAbsolute, extname } from 'node:path';
 
 import { NextResponse } from 'next/server';
 
-const MEDIA_DIR = resolve(process.cwd(), 'media');
+import { spaDir, INDEX_HTML } from '@/lib/paths';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -38,18 +38,19 @@ export async function serveSpaFile(
   slug: string,
   pathSegments: string[],
 ): Promise<NextResponse> {
-  const filePath = pathSegments.length > 0 ? pathSegments.join('/') : 'index.html';
+  const filePath = pathSegments.length > 0 ? pathSegments.join('/') : INDEX_HTML;
 
   // Prevent path traversal — reject '..' and absolute segments
   if (filePath.includes('..') || pathSegments.some((s) => s.startsWith('/'))) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 
-  const spaRoot = resolve(MEDIA_DIR, 'spa', slug);
+  const spaRoot = spaDir(slug);
   const absolutePath = resolve(spaRoot, filePath);
 
-  // Double-check resolved path stays within the SPA directory
-  if (!absolutePath.startsWith(spaRoot)) {
+  // Boundary-aware containment: a prefix check would let `<root>-evil` pass.
+  const rel = relative(spaRoot, absolutePath);
+  if (rel !== '' && (rel.startsWith('..') || isAbsolute(rel))) {
     return new NextResponse('Forbidden', { status: 403 });
   }
 

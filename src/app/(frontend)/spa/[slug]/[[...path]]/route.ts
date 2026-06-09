@@ -5,8 +5,8 @@ import config from '@payload-config';
 import { NextResponse } from 'next/server';
 
 import { serveSpaFile } from '@/lib/spaFiles';
-
-const SLUG_RE = /^[a-z0-9-]{1,64}$/;
+import { SLUG_RE } from '@/lib/slug';
+import { COLLECTIONS } from '@/lib/collections';
 
 /**
  * Auth-gated viewer for built presentation SPAs (the `spaUrl` shown in the
@@ -32,7 +32,7 @@ export async function GET(
 
   // Only serve SPAs that belong to an actual presentation
   const { totalDocs } = await payload.count({
-    collection: 'presentations',
+    collection: COLLECTIONS.presentations,
     where: { slug: { equals: slug } },
     overrideAccess: true,
   });

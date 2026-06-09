@@ -1,11 +1,15 @@
-import { escape, md, wrapSlide } from '../utils';
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical';
+
+import { K } from '../classNames';
+import { richTextToHTML } from '../richtext';
+import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
 export type QuotesBlockData = {
   blockType: 'quotes';
   eyebrow?: string | null;
   title: string;
   quotes?: Array<{
-    quote: string;
+    quote: SerializedEditorState;
     authorName: string;
     authorRole?: string | null;
   }> | null;
@@ -13,18 +17,17 @@ export type QuotesBlockData = {
 
 export function renderQuotes(block: QuotesBlockData): string {
   const quotes = block.quotes ?? [];
-  const gridClass = `k-grid-${Math.min(quotes.length || 3, 4)}`;
+  const grid = gridClass(quotes.length || 3);
 
-  const eyebrow = block.eyebrow
-    ? `\n    <div class="k-eyebrow mb-4">${escape(block.eyebrow)}</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-4', { indent: '    ' });
 
   const quotesHtml = quotes
     .map((q) => {
       const role = q.authorRole
         ? `<br/>\n    <span>${escape(q.authorRole)}</span>`
         : '';
-      return `<div class="k-card">\n  <p class="k-quote text-base leading-snug mb-6">\n    ${escape(q.quote)}\n  </p>\n  <div class="k-author">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
+      const quoteHtml = richTextToHTML(q.quote);
+      return `<div class="${K.card}">\n  <div class="${K.quote} text-base leading-snug mb-6">\n    ${quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
     })
     .join('\n\n');
 
@@ -34,7 +37,7 @@ export function renderQuotes(block: QuotesBlockData): string {
   <h2 class="text-5xl">${md(block.title)}</h2>
 </div>
 
-<div class="${gridClass}">
+<div class="${grid}">
 
 ${quotesHtml}
 

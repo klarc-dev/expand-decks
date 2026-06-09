@@ -6,6 +6,8 @@ import { renderQuotes, type QuotesBlockData } from './blocks/quotes';
 import { renderSection, type SectionBlockData } from './blocks/section';
 import { renderStatement, type StatementBlockData } from './blocks/statement';
 import { renderStats, type StatsBlockData } from './blocks/stats';
+import { renderTable, type TableBlockData } from './blocks/table';
+import { renderTimeline, type TimelineBlockData } from './blocks/timeline';
 import { renderTwoCols, type TwoColsBlockData } from './blocks/twoCols';
 
 export type SlideBlock =
@@ -17,6 +19,8 @@ export type SlideBlock =
   | StatsBlockData
   | QuotesBlockData
   | CtaBlockData
+  | TableBlockData
+  | TimelineBlockData
   | MarkdownBlockData;
 
 export const RENDERERS: Record<string, (block: never) => string> = {
@@ -28,5 +32,7 @@ export const RENDERERS: Record<string, (block: never) => string> = {
   stats: renderStats as (block: never) => string,
   quotes: renderQuotes as (block: never) => string,
   cta: renderCta as (block: never) => string,
+  table: renderTable as (block: never) => string,
+  timeline: renderTimeline as (block: never) => string,
   markdown: renderMarkdown as (block: never) => string,
 };

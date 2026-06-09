@@ -1,6 +1,12 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdmin, isAdminOrSelf, isLoggedIn } from '../access/roles';
+import { isAdmin, isAdminOrSelf, isLoggedIn, userIsAdmin } from '../access/roles';
+import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
+import { CTX } from '../lib/context';
+import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
+import { isValidSlug, SLUG_MAX } from '../lib/slug';
+import { COLLECTIONS } from '../lib/collections';
+import { BUILD_STATUS, PRESENTATION_STATUS } from '../lib/status';
 import { CoverBlock } from '../blocks/CoverBlock';
 import { SectionBlock } from '../blocks/SectionBlock';
 import { StatementBlock } from '../blocks/StatementBlock';
@@ -9,25 +15,103 @@ import { CardGridBlock } from '../blocks/CardGridBlock';
 import { StatsBlock } from '../blocks/StatsBlock';
 import { QuotesBlock } from '../blocks/QuotesBlock';
 import { CtaBlock } from '../blocks/CtaBlock';
+import { TableBlock } from '../blocks/TableBlock';
+import { TimelineBlock } from '../blocks/TimelineBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
 export const Presentations: CollectionConfig = {
-  slug: 'presentations',
+  slug: COLLECTIONS.presentations,
   labels: { singular: 'Présentation', plural: 'Présentations' },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'client', 'status', 'updatedAt'],
+    defaultColumns: ['title', 'status', 'updatedAt'],
     livePreview: {
       url: '/preview',
     },
   },
   access: {
-    create: isAdminOrSelf,
+    create: isLoggedIn,
     read: isLoggedIn,
     update: isAdminOrSelf,
     delete: isAdmin,
   },
+  endpoints: [
+    {
+      // Trigger a rebuild on demand. Unlike the publish-gated afterChange hook,
+      // this enqueues the same buildSlides job regardless of status. Owner or
+      // admin only; throttled per-presentation via an enqueue-time timestamp so
+      // rapid clicks can't spawn N concurrent Chromium/Slidev processes.
+      path: '/:id/build',
+      method: 'post',
+      handler: async (req: PayloadRequest) => {
+        const user = req.user;
+        if (!user) return Response.json({ error: 'Non authentifié' }, { status: 401 });
+
+        const id = req.routeParams?.id as string | undefined;
+        if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
+
+        // findByID with the user enforces read access; 404 lumps missing +
+        // forbidden, matching the draft route's convention.
+        let presentation;
+        try {
+          presentation = await req.payload.findByID({
+            collection: COLLECTIONS.presentations,
+            id,
+            depth: 0,
+            user,
+            overrideAccess: false,
+          });
+        } catch {
+          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
+        }
+        if (!presentation) {
+          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
+        }
+
+        // Authorize the write before spending a Chromium process.
+        const createdById =
+          typeof presentation.createdBy === 'object'
+            ? presentation.createdBy?.id
+            : presentation.createdBy;
+        if (!userIsAdmin(user) && createdById !== user.id) {
+          return Response.json({ error: 'Accès refusé' }, { status: 403 });
+        }
+
+        // Throttle: reject if a build was requested within the cooldown. Read
+        // the enqueue-time timestamp, NOT lastBuildStatus (which the worker only
+        // flips to 'building' on the next cron tick — too late to gate a burst).
+        const last = presentation.lastBuildRequestedAt
+          ? Date.parse(presentation.lastBuildRequestedAt as string)
+          : 0;
+        if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
+          return Response.json(
+            { error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.' },
+            { status: 429 },
+          );
+        }
+
+        // Stamp the request time atomically before enqueuing, with the
+        // skipBuildQueue flag so this patch doesn't itself trigger the hook.
+        await req.payload.update({
+          collection: COLLECTIONS.presentations,
+          id,
+          data: { lastBuildRequestedAt: new Date().toISOString() },
+          overrideAccess: true,
+          context: { [CTX.skipBuildQueue]: true },
+        });
+
+        // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
+        await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
+          task: BUILD_SLIDES_TASK,
+          input: { presentationId: id },
+          req,
+        });
+
+        return Response.json({ queued: true });
+      },
+    },
+  ],
   hooks: {
     afterChange: [afterPresentationChange],
   },
@@ -69,6 +153,8 @@ export const Presentations: CollectionConfig = {
                 StatsBlock,
                 QuotesBlock,
                 CtaBlock,
+                TableBlock,
+                TimelineBlock,
                 MarkdownBlock,
               ],
             },
@@ -102,14 +188,14 @@ export const Presentations: CollectionConfig = {
                       .toLowerCase()
                       .replace(/[^a-z0-9]+/g, '-')
                       .replace(/^-+|-+$/g, '')
-                      .slice(0, 64)
+                      .slice(0, SLUG_MAX)
                       .replace(/-+$/g, '');
                   },
                 ],
               },
               validate: (value: string | null | undefined) => {
                 if (!value) return 'L\'identifiant est requis';
-                if (!/^[a-z0-9-]{1,64}$/.test(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
+                if (!isValidSlug(value)) return 'Format invalide : 1 à 64 caractères parmi a-z, 0-9, -';
                 return true;
               },
             },
@@ -132,6 +218,48 @@ export const Presentations: CollectionConfig = {
                 { label: 'Anglais', value: 'en' },
               ],
             },
+            {
+              name: 'footer',
+              type: 'group',
+              label: 'Pied de page',
+              admin: {
+                description:
+                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Balises : {org.name} {title} {date} {page} {total}',
+              },
+              fields: [
+                {
+                  name: 'enabled',
+                  type: 'checkbox',
+                  defaultValue: true,
+                  label: 'Afficher le pied de page',
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'left',
+                      type: 'text',
+                      defaultValue: '{org.name}',
+                      label: 'Gauche',
+                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                    },
+                    {
+                      name: 'center',
+                      type: 'text',
+                      label: 'Centre',
+                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                    },
+                    {
+                      name: 'right',
+                      type: 'text',
+                      defaultValue: '{page} / {total}',
+                      label: 'Droite',
+                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
         {
@@ -150,17 +278,17 @@ export const Presentations: CollectionConfig = {
             {
               name: 'lastBuildStatus',
               type: 'select',
-              defaultValue: 'idle',
+              defaultValue: BUILD_STATUS.idle,
               label: 'Statut du dernier build',
               admin: {
                 description: 'État du dernier processus de génération',
                 readOnly: true,
               },
               options: [
-                { label: 'En attente', value: 'idle' },
-                { label: 'En cours', value: 'building' },
-                { label: 'Réussi', value: 'success' },
-                { label: 'Échoué', value: 'failed' },
+                { label: 'En attente', value: BUILD_STATUS.idle },
+                { label: 'En cours', value: BUILD_STATUS.building },
+                { label: 'Réussi', value: BUILD_STATUS.success },
+                { label: 'Échoué', value: BUILD_STATUS.failed },
               ],
             },
             {
@@ -175,7 +303,7 @@ export const Presentations: CollectionConfig = {
             {
               name: 'pdfFile',
               type: 'upload',
-              relationTo: 'media',
+              relationTo: COLLECTIONS.media,
               label: 'Fichier PDF',
               admin: {
                 description: 'PDF généré automatiquement par le système de build',
@@ -185,7 +313,7 @@ export const Presentations: CollectionConfig = {
             {
               name: 'coverImage',
               type: 'upload',
-              relationTo: 'media',
+              relationTo: COLLECTIONS.media,
               label: 'Image de couverture',
               admin: {
                 description: 'Miniature générée à partir de la première diapositive',
@@ -201,6 +329,17 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
               },
             },
+            {
+              name: 'lastBuildRequestedAt',
+              type: 'date',
+              label: 'Dernière demande de build',
+              admin: {
+                description:
+                  'Horodatage de la dernière demande de build à la volée (throttle anti-spam).',
+                readOnly: true,
+                hidden: true,
+              },
+            },
           ],
         },
       ],
@@ -209,22 +348,33 @@ export const Presentations: CollectionConfig = {
       name: 'status',
       type: 'select',
       required: true,
-      defaultValue: 'draft',
+      defaultValue: PRESENTATION_STATUS.draft,
       label: 'Statut',
       admin: {
         description: 'État de publication',
         position: 'sidebar',
       },
       options: [
-        { label: 'Brouillon', value: 'draft' },
-        { label: 'Publiée', value: 'published' },
-        { label: 'Archivée', value: 'archived' },
+        { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
+        { label: 'Publiée', value: PRESENTATION_STATUS.published },
+        { label: 'Archivée', value: PRESENTATION_STATUS.archived },
       ],
+    },
+    {
+      name: 'organisation',
+      type: 'relationship',
+      relationTo: COLLECTIONS.organisations,
+      required: true,
+      label: 'Organisation',
+      admin: {
+        position: 'sidebar',
+        description: 'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
+      },
     },
     {
       name: 'createdBy',
       type: 'relationship',
-      relationTo: 'users',
+      relationTo: COLLECTIONS.users,
       label: 'Créé par',
       admin: {
         readOnly: true,

@@ -5,6 +5,7 @@ import { useFormFields } from '@payloadcms/ui';
 
 import { renderBlockPreview } from '@/export/preview';
 import { formStateToBlockData } from '@/lib/formStateToBlockData';
+import { SlideFrame, SLIDE_STAGE_BG } from '@/components/SlideFrame';
 
 import '@/export/style.css';
 
@@ -31,11 +32,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   return (
     <div style={styles.wrapper}>
       <div style={styles.scaler}>
-        <div
-          className={`slidev-layout ${layout === 'cover' ? 'k-cover' : ''}`}
-          style={styles.slide}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <SlideFrame html={html} layout={layout} style={styles.slide} />
       </div>
     </div>
   );
@@ -47,7 +44,7 @@ const styles = {
     borderRadius: '6px',
     overflow: 'hidden',
     border: '1px solid var(--theme-elevation-150)',
-    background: '#1a1a2e',
+    background: SLIDE_STAGE_BG,
     // Shrink to the scaled slide — without this the wrapper keeps the form
     // column's full width and shows a dead dark band right of the preview.
     width: 'calc(960px * var(--slide-scale, 0.5))',
@@ -66,7 +63,6 @@ const styles = {
     height: '540px',
     overflow: 'hidden',
     position: 'relative' as const,
-    padding: '3rem 4rem',
   },
 } as const;
 

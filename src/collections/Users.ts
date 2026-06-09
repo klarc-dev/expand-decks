@@ -1,10 +1,33 @@
 import type { CollectionConfig } from 'payload';
 
+import { ROLES, isAdmin, isAdminOrSelfUser, isAdminField, userIsAdminOrAuthor } from '../access/roles';
+import { COLLECTIONS } from '../lib/collections';
+
 export const Users: CollectionConfig = {
-  slug: 'users',
+  slug: COLLECTIONS.users,
   auth: true,
   admin: {
     useAsTitle: 'email',
+  },
+  access: {
+    admin: ({ req: { user } }) => userIsAdminOrAuthor(user),
+    create: isAdmin,
+    read: isAdminOrSelfUser,
+    update: isAdminOrSelfUser,
+    delete: isAdmin,
+  },
+  hooks: {
+    beforeChange: [
+      ({ data, operation }) => {
+        // OAuth auto-signup writes via the DB adapter, which bypasses field
+        // defaults — stamp a role so new users never land role-less (and never
+        // as admin). Normal admin-panel creates already carry an explicit role.
+        if (operation === 'create' && !data.role) {
+          data.role = ROLES.author;
+        }
+        return data;
+      },
+    ],
   },
   fields: [
     {
@@ -17,11 +40,15 @@ export const Users: CollectionConfig = {
       name: 'role',
       type: 'select',
       required: true,
-      defaultValue: 'author',
+      defaultValue: ROLES.author,
+      access: {
+        create: isAdminField,
+        update: isAdminField,
+      },
       options: [
-        { label: 'Administrateur', value: 'admin' },
-        { label: 'Auteur', value: 'author' },
-        { label: 'Lecteur', value: 'viewer' },
+        { label: 'Administrateur', value: ROLES.admin },
+        { label: 'Auteur', value: ROLES.author },
+        { label: 'Lecteur', value: ROLES.viewer },
       ],
     },
   ],

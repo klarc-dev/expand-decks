@@ -2,19 +2,38 @@ import { createHash } from 'node:crypto';
 
 import type { CollectionAfterChangeHook } from 'payload';
 
-function slidesHash(slides: unknown): string {
-  return createHash('sha256').update(JSON.stringify(slides ?? [])).digest('hex');
+import { PRESENTATION_STATUS } from '../lib/status';
+import { CTX } from '../lib/context';
+import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
+
+/** Stable id of a relationship value (number id or populated {id}) for hashing. */
+function relId(rel: unknown): unknown {
+  return rel && typeof rel === 'object' ? (rel as { id?: unknown }).id : rel;
 }
 
 /**
- * Only differences in non-builder fields matter.
- * Returns true when the slides content has changed between previous and current doc.
+ * Fingerprint of every field that affects the built output. Anything that
+ * changes the generated deck — slides, the organisation (theme/logo/font), the
+ * footer config, title, language — must be here, or an edit to it on an already
+ * published deck would silently NOT rebuild.
  */
-function slidesContentChanged(
+function buildFingerprint(doc: Record<string, unknown>): string {
+  const inputs = {
+    slides: doc.slides ?? [],
+    organisation: relId(doc.organisation),
+    footer: doc.footer ?? null,
+    title: doc.title ?? '',
+    language: doc.language ?? '',
+  };
+  return createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
+}
+
+/** True when any build-affecting input changed between previous and current doc. */
+export function buildInputsChanged(
   doc: Record<string, unknown>,
   previousDoc: Record<string, unknown>,
 ): boolean {
-  return slidesHash(doc.slides) !== slidesHash(previousDoc.slides);
+  return buildFingerprint(doc) !== buildFingerprint(previousDoc);
 }
 
 export const afterPresentationChange: CollectionAfterChangeHook = async ({
@@ -24,24 +43,24 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
   operation,
 }) => {
   // Skip if explicitly flagged (builder patching back results)
-  if (req.context?.skipBuildQueue) return doc;
+  if (req.context?.[CTX.skipBuildQueue]) return doc;
 
   // Only queue on create/update when status is published
   if (operation !== 'create' && operation !== 'update') return doc;
-  if (doc.status !== 'published') return doc;
+  if (doc.status !== PRESENTATION_STATUS.published) return doc;
 
   // On update: only queue if it's a fresh publish or slides content changed
   if (operation === 'update' && previousDoc) {
-    const wasPublished = previousDoc.status === 'published';
-    const contentChanged = slidesContentChanged(doc, previousDoc);
+    const wasPublished = previousDoc.status === PRESENTATION_STATUS.published;
+    const contentChanged = buildInputsChanged(doc, previousDoc);
 
-    // Already published and slides haven't changed — skip
+    // Already published and no build-affecting input changed — skip
     if (wasPublished && !contentChanged) return doc;
   }
 
   // Cast needed until `payload generate:types` adds buildSlides to TypedJobs
   await (req.payload.jobs.queue as Function)({
-    task: 'buildSlides',
+    task: BUILD_SLIDES_TASK,
     input: { presentationId: doc.id as string },
     req,
   });

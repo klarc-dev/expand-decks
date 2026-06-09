@@ -6,6 +6,8 @@ const HTML_ENTITIES: Record<string, string> = {
   "'": '&#39;',
 };
 
+import { K } from './classNames';
+
 const HTML_ENTITY_RE = /[&<>"']/g;
 const DEF_RE = /\{\{def:(.+?)\}\}/g;
 
@@ -15,8 +17,51 @@ export function escape(text: string | null | undefined): string {
   return (text ?? '').replace(HTML_ENTITY_RE, (ch) => HTML_ENTITIES[ch] ?? ch);
 }
 
-export function eyebrow(text: string | null | undefined, marginClass = 'mb-8'): string {
-  return text ? `\n<div class="k-eyebrow ${marginClass}">${escape(text)}</div>` : '';
+// opts reproduce per-renderer variants byte-for-byte: indent (leading spaces
+// before <div>), extraClass (e.g. CTA dark), multiline (text on its own line).
+export function eyebrow(
+  text: string | null | undefined,
+  marginClass = 'mb-8',
+  opts?: { indent?: string; extraClass?: string; multiline?: boolean },
+): string {
+  if (!text) return '';
+  const indent = opts?.indent ?? '';
+  const cls = `${K.eyebrow}${opts?.extraClass ? ` ${opts.extraClass}` : ''} ${marginClass}`;
+  const inner = opts?.multiline ? `\n  ${escape(text)}\n` : escape(text);
+  return `\n${indent}<div class="${cls}">${inner}</div>`;
+}
+
+// Serialize a string as a YAML scalar, double-quoting only when the value
+// contains characters that could break — or inject keys into — the slide's
+// frontmatter (quote, colon, newline, leading indicator…). Plain tokens like
+// `cover` or `image-right` stay unquoted so downstream layout detection (which
+// matches `layout === 'cover'`) keeps working. Defends against author titles
+// such as `Foo"\nlayout: x`.
+const YAML_PLAIN_RE = /^[A-Za-z0-9/](?:[A-Za-z0-9 _.\-/]*[A-Za-z0-9_.\-/])?$/;
+
+function yamlEscapeQuoted(value: string): string {
+  const esc = value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
+  return `"${esc}"`;
+}
+
+export function yamlScalar(s: string | null | undefined): string {
+  const value = s ?? '';
+  if (value !== '' && YAML_PLAIN_RE.test(value) && !value.includes('  ')) {
+    return value;
+  }
+  return yamlEscapeQuoted(value);
+}
+
+// Always double-quoted — used for the deck title, which is wrapped in quotes by
+// convention in hand-written Slidev headmatter.
+export function yamlQuoted(s: string | null | undefined): string {
+  return yamlEscapeQuoted(s ?? '');
 }
 
 let _slideDefs: string[] = [];
@@ -28,10 +73,10 @@ export function resetDefs(): void {
 function consumeDefFooter(): string {
   if (_slideDefs.length === 0) return '';
   const items = _slideDefs
-    .map((d, i) => `<span class="k-def-item"><sup>${i + 1}</sup>${escape(d)}</span>`)
+    .map((d, i) => `<span class="${K.defItem}"><sup>${i + 1}</sup>${escape(d)}</span>`)
     .join('');
   _slideDefs = [];
-  return `\n\n<div class="k-def-footer">${items}</div>`;
+  return `\n\n<div class="${K.defFooter}">${items}</div>`;
 }
 
 /**
@@ -39,6 +84,30 @@ function consumeDefFooter(): string {
  * {{def:content}} which collects definitions for the slide-level footnote band
  * and emits a superscript reference inline.
  */
+// Allow only safe link targets. Browsers ignore leading control chars/whitespace
+// in href, so `\njavascript:` still executes — strip control chars and lowercase
+// before testing the scheme, then emit the original (already entity-escaped) URL.
+function safeHref(raw: string): string | null {
+  const probe = raw.trim().replace(/[\x00-\x1f]/g, '').toLowerCase();
+  if (/^(https?:|mailto:)/.test(probe)) return raw;
+  if (!/^[a-z][a-z0-9+.-]*:/.test(probe)) return raw;
+  return null;
+}
+
+// Collect {{def:...}} literals from an HTML string into the slide-scoped
+// footnote band and replace each with a superscript reference. Shared by md()
+// (plain fields) and richTextToHTML (Lexical fields) so both feed _slideDefs.
+// Operates on already-escaped/converted HTML; { } : are not entity-escaped so
+// DEF_RE still matches.
+export function applyDefs(html: string): string {
+  return html
+    .replace(DEF_RE, (_, content) => {
+      _slideDefs.push(content);
+      return `\x00DEF${_slideDefs.length}\x00`;
+    })
+    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
+}
+
 export function md(text: string | null | undefined): string {
   const escaped = escape(text).replace(DEF_RE, (_, content) => {
     _slideDefs.push(content);
@@ -47,8 +116,11 @@ export function md(text: string | null | undefined): string {
   return escaped
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="k-def-ref">${n}</sup>`);
+    .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label, url) => {
+      const href = safeHref(url);
+      return href ? `<a href="${href}">${label}</a>` : label;
+    })
+    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
 }
 
 export const STAGGER_DELAY_MS = 100;
@@ -59,7 +131,16 @@ export function vMotion(_index: number): string {
 export type Surface = 'dark' | 'light' | 'gradient';
 
 export function surfaceClass(surface?: Surface | null): string {
-  return surface === 'light' ? 'relative' : 'relative k-dark';
+  return surface === 'light' ? 'relative' : `relative ${K.dark}`;
+}
+
+/**
+ * Derive a grid utility class for a column count, clamped to the [2,4] range
+ * actually defined in style.css. There is no `.k-grid-1` rule, so a single
+ * item must still land in a styled 2-col grid rather than an unstyled element.
+ */
+export function gridClass(n: number): string {
+  return `k-grid-${Math.min(Math.max(n, 2), 4)}`;
 }
 
 export type SlideImage = {
@@ -99,10 +180,10 @@ export function wrapSlide({
   const effectiveLayout = image?.url
     ? `image-${image.position ?? 'right'}`
     : layout;
-  const imageLine = image?.url ? `\nimage: ${image.url}` : '';
+  const imageLine = image?.url ? `\nimage: ${yamlScalar(image.url)}` : '';
   return `---
-layout: ${effectiveLayout}
-class: ${cls}${imageLine}${chromeFlag}
+layout: ${yamlScalar(effectiveLayout)}
+class: ${yamlScalar(cls)}${imageLine}${chromeFlag}
 ---
 
 ${body}${consumeDefFooter()}`;

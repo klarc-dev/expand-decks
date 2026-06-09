@@ -2,6 +2,7 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 
 import { resolveShareLink, isLive } from '@/lib/shareLinks';
+import { COLLECTIONS } from '@/lib/collections';
 
 // The (frontend) layout owns the html/body shell; rendering another shell
 // here nests them — invalid DOM + React hydration mismatches.
@@ -55,7 +56,7 @@ export default async function SharePage({
 
   // Increment viewCount and update lastViewedAt
   await payload.update({
-    collection: 'share-links',
+    collection: COLLECTIONS.shareLinks,
     id: link.id,
     data: {
       viewCount: (link.viewCount ?? 0) + 1,

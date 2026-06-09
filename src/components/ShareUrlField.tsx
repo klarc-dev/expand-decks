@@ -3,6 +3,15 @@
 import React, { useCallback, useState } from 'react';
 import { useDocumentInfo } from '@payloadcms/ui';
 
+import {
+  dashedHintStyle,
+  errorBoxStyle,
+  mutedTextStyle,
+  panelStyle,
+  primaryButtonStyle,
+} from '@/components/adminUi/styles';
+import { adminPost } from '@/lib/adminFetch';
+
 /**
  * Reveal-on-demand share URL. The raw token is never stored (only its
  * SHA-256), so the URL cannot be displayed after the fact — instead this
@@ -21,12 +30,8 @@ const ShareUrlField: React.FC = () => {
     setError('');
     setCopied(false);
     try {
-      const res = await fetch(`/api/share-links/${id}/rotate`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const { ok, data } = await adminPost(`/api/share-links/${id}/rotate`);
+      if (!ok) {
         setError(data.error || 'Erreur lors de la génération du lien');
         return;
       }
@@ -51,44 +56,20 @@ const ShareUrlField: React.FC = () => {
 
   if (!id) {
     return (
-      <div
-        style={{
-          padding: '12px 16px',
-          marginBottom: '20px',
-          border: '1px dashed var(--theme-elevation-150)',
-          borderRadius: '4px',
-          color: 'var(--theme-elevation-500)',
-          fontSize: '13px',
-        }}
-      >
+      <div style={dashedHintStyle}>
         Enregistrez d&apos;abord le lien de partage, puis générez l&apos;URL à transmettre.
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        padding: '16px',
-        marginBottom: '20px',
-        border: '1px solid var(--theme-elevation-150)',
-        borderRadius: '4px',
-        backgroundColor: 'var(--theme-elevation-50)',
-      }}
-    >
+    <div style={{ ...panelStyle, padding: '16px' }}>
       <label
         style={{ display: 'block', fontWeight: 600, marginBottom: '8px', fontSize: '14px' }}
       >
         URL de partage
       </label>
-      <p
-        style={{
-          fontSize: '13px',
-          color: 'var(--theme-elevation-500)',
-          marginTop: 0,
-          marginBottom: '12px',
-        }}
-      >
+      <p style={{ ...mutedTextStyle, marginTop: 0, marginBottom: '12px' }}>
         Le jeton n&apos;est jamais stocké en clair : l&apos;URL n&apos;est visible qu&apos;au
         moment de sa génération. Générer une nouvelle URL invalide la précédente.
       </p>
@@ -99,15 +80,9 @@ const ShareUrlField: React.FC = () => {
           onClick={handleGenerate}
           disabled={loading}
           style={{
+            ...primaryButtonStyle(loading),
             padding: '8px 16px',
-            backgroundColor: loading
-              ? 'var(--theme-elevation-200)'
-              : 'var(--theme-success-500)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
             cursor: loading ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
             fontSize: '13px',
           }}
         >
@@ -150,21 +125,7 @@ const ShareUrlField: React.FC = () => {
         )}
       </div>
 
-      {error && (
-        <div
-          style={{
-            marginTop: '12px',
-            padding: '10px',
-            backgroundColor: 'var(--theme-error-50)',
-            border: '1px solid var(--theme-error-500)',
-            borderRadius: '4px',
-            color: 'var(--theme-error-500)',
-            fontSize: '13px',
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div style={errorBoxStyle}>{error}</div>}
     </div>
   );
 };

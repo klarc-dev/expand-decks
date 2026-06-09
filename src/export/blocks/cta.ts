@@ -1,42 +1,47 @@
-import { escape, md, wrapSlide } from '../utils';
+import { K } from '../classNames';
+import { richTextToHTML, type RichText } from '../richtext';
+import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
 export type CtaBlockData = {
   blockType: 'cta';
   eyebrow?: string | null;
   title: string;
-  subtitle?: string | null;
+  subtitle?: RichText;
   primaryAction?: string | null;
   secondaryAction?: string | null;
-  footerNote?: string | null;
+  footerNote?: RichText;
 };
 
 export function renderCta(block: CtaBlockData): string {
-  const eyebrow = block.eyebrow
-    ? `\n<div class="k-eyebrow k-eyebrow-dark mb-10">\n  ${escape(block.eyebrow)}\n</div>`
-    : '';
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-10', {
+    extraClass: K.eyebrowDark,
+    multiline: true,
+  });
 
-  const subtitle = block.subtitle
-    ? `\n\n<p class="k-cta-sub mb-12">\n  ${md(block.subtitle)}\n</p>`
+  const subtitleHtml = richTextToHTML(block.subtitle);
+  const subtitle = subtitleHtml
+    ? `\n\n<div class="${K.ctaSub} mb-12">\n  ${subtitleHtml}\n</div>`
     : '';
 
   const buttons: string[] = [];
   if (block.primaryAction) {
-    buttons.push(`<div class="k-btn">${escape(block.primaryAction)}</div>`);
+    buttons.push(`<div class="${K.btn}">${escape(block.primaryAction)}</div>`);
   }
   if (block.secondaryAction) {
-    buttons.push(`<div class="k-btn-ghost">${escape(block.secondaryAction)}</div>`);
+    buttons.push(`<div class="${K.btnGhost}">${escape(block.secondaryAction)}</div>`);
   }
   const buttonsHtml = buttons.length > 0
     ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
     : '';
 
-  const footerNote = block.footerNote
-    ? `\n\n<div class="text-xs tracking-[0.3em] uppercase opacity-40 mt-16">\n  ${escape(block.footerNote)}\n</div>`
+  const footerNoteHtml = richTextToHTML(block.footerNote);
+  const footerNote = footerNoteHtml
+    ? `\n\n<div class="text-xs tracking-[0.3em] uppercase opacity-40 mt-16">\n  ${footerNoteHtml}\n</div>`
     : '';
 
   const body = `<div class="text-center max-w-5xl px-12 w-full">
 ${eyebrow}
-<h1 class="k-cta-title mb-4">
+<h1 class="${K.ctaTitle} mb-4">
 ${md(block.title)}
 </h1>${subtitle}${buttonsHtml}${footerNote}
 
@@ -44,7 +49,7 @@ ${md(block.title)}
 
   return wrapSlide({
     layout: 'center',
-    classAttr: 'relative k-dark',
+    classAttr: surfaceClass('dark'),
     hideChrome: true,
     body,
   });

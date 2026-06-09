@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 
 import type { Payload } from 'payload';
 
+import { COLLECTIONS } from './collections';
+
 export function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -12,7 +14,7 @@ export function isLive(link: { expiresAt: string | Date }): boolean {
 
 export async function resolveShareLink(payload: Payload, token: string, depth = 0) {
   const { docs } = await payload.find({
-    collection: 'share-links',
+    collection: COLLECTIONS.shareLinks,
     where: { tokenHash: { equals: sha256(token) } },
     limit: 1,
     overrideAccess: true,

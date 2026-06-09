@@ -15,14 +15,26 @@ import { promisify } from 'node:util';
 import type { TaskConfig } from 'payload';
 
 import { buildSlidesMd } from '../export/buildSlidesMd';
+import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
+import {
+  buildFooterHeadmatter,
+  buildFooterLayer,
+  buildLogoLayer,
+  type FooterConfig,
+} from '../export/chrome';
+import { SLUG_RE } from '../lib/slug';
+import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
+import { COLLECTIONS } from '../lib/collections';
+import { BUILD_STATUS } from '../lib/status';
+import { CTX } from '../lib/context';
+
+export const BUILD_SLIDES_TASK = 'buildSlides' as const;
 
 const execFile = promisify(execFileCb);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SLUG_RE = /^[a-z0-9-]{1,64}$/;
 const SLIDEV_WORKSPACE = resolve(__dirname, '../../slidev-workspace');
 const EXPORT_DIR = resolve(__dirname, '../export');
-const MEDIA_DIR = resolve(__dirname, '../../media');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -38,6 +50,9 @@ async function runSlidev(
   return execFile(npxPath, args, {
     cwd,
     timeout: EXEC_TIMEOUT_MS,
+    // Slidev/Vite/Playwright are chatty; the default 1 MiB cap would kill the
+    // child mid-build and surface as a misleading failure.
+    maxBuffer: 32 * 1024 * 1024,
     env: {
       ...process.env,
       // Strip secrets the builder doesn't need
@@ -47,7 +62,7 @@ async function runSlidev(
 }
 
 export const buildSlidesTask: TaskConfig<any> = {
-  slug: 'buildSlides',
+  slug: BUILD_SLIDES_TASK,
   label: 'Build Slidev Presentation',
   inputSchema: [
     {
@@ -73,15 +88,15 @@ export const buildSlidesTask: TaskConfig<any> = {
     try {
       // 1. Set status to building
       await req.payload.update({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
-        data: { lastBuildStatus: 'building', lastBuildError: '' },
-        context: { skipBuildQueue: true },
+        data: { lastBuildStatus: BUILD_STATUS.building, lastBuildError: '' },
+        context: { [CTX.skipBuildQueue]: true },
       });
 
       // 2. Fetch the full presentation
       const presentation = await req.payload.findByID({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
         depth: 0,
       });
@@ -91,8 +106,53 @@ export const buildSlidesTask: TaskConfig<any> = {
         throw new Error(`Invalid slug format: "${slug}"`);
       }
 
-      // 3. Generate slides.md
-      const slidesMd = buildSlidesMd(presentation as any);
+      // 2b. Resolve the organisation explicitly (presentation is fetched at
+      // depth:0 to keep relationships as ids for the rebuild fingerprint; this
+      // targeted depth:1 fetch hydrates the brand + logo without bloating it).
+      const orgRel = (presentation as { organisation?: number | { id: number } })
+        .organisation;
+      const orgId = typeof orgRel === 'object' && orgRel ? orgRel.id : orgRel;
+      const org = orgId
+        ? await req.payload.findByID({
+            collection: COLLECTIONS.organisations,
+            id: orgId,
+            depth: 1,
+          })
+        : null;
+      const brand = org as (OrgBrand & Record<string, unknown>) | null;
+
+      // 2c. Resolve footer config + chrome vars + logo URL. The footer stores
+      // templates with placeholders; static vars are resolved here, live vars
+      // ({page}/{total}) stay in the layer. Logo resolves via the media symlink.
+      const footer = (presentation as { footer?: Partial<FooterConfig> }).footer;
+      const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
+      const logoUrl =
+        logoRel && typeof logoRel === 'object' && logoRel.filename
+          ? `/media/${logoRel.filename}`
+          : null;
+      const chromeVars = {
+        'org.name': (brand?.name as string) ?? '',
+        title: presentation.title as string,
+        date: new Date().toLocaleDateString(
+          presentation.language === 'en' ? 'en-GB' : 'fr-FR',
+        ),
+      };
+
+      // 3. Generate slides.md with org/presentation-specific headmatter +
+      // footer/logo config embedded so the generated Vue layers can read it.
+      const baseHeadmatter = readFileSync(
+        join(EXPORT_DIR, ARTIFACTS.headmatter),
+        'utf-8',
+      ).trim();
+      const themedHeadmatter = buildHeadmatter(
+        baseHeadmatter,
+        brand,
+        presentation.language as string | undefined,
+      );
+      const chromeHeadmatter = buildFooterHeadmatter(footer, chromeVars, logoUrl);
+      const slidesMd = buildSlidesMd(presentation as any, {
+        headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
+      });
 
       // 4. Create temp workdir
       workdir = mkdtempSync(join(tmpdir(), 'slidev-build-'));
@@ -115,20 +175,45 @@ export const buildSlidesTask: TaskConfig<any> = {
       }
 
       // Write slides.md
-      writeFileSync(join(workdir, 'slides.md'), slidesMd, 'utf-8');
+      writeFileSync(join(workdir, ARTIFACTS.slidesMd), slidesMd, 'utf-8');
 
-      // Copy style.css
-      cpSync(join(EXPORT_DIR, 'style.css'), join(workdir, 'style.css'));
+      // Write style.css = base CSS + per-organisation :root override. The
+      // override is appended (last :root wins) so an org's 4 brand colors
+      // re-derive all --k-* tokens while empty fields fall back to base.
+      const baseCss = readFileSync(join(EXPORT_DIR, ARTIFACTS.styleCss), 'utf-8');
+      writeFileSync(
+        join(workdir, ARTIFACTS.styleCss),
+        `${baseCss}\n${buildThemeCss(brand)}`,
+        'utf-8',
+      );
 
       // Copy headmatter.yaml (for reference, already embedded in slides.md)
-      cpSync(join(EXPORT_DIR, 'headmatter.yaml'), join(workdir, 'headmatter.yaml'));
+      cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));
 
-      // Copy fonts if they exist
-      const fontsDir = join(EXPORT_DIR, 'fonts');
+      // Copy the brand fonts into the deck's `public/fonts/` so Slidev bundles
+      // them into the built SPA AND the PDF export. style.css references them as
+      // `/fonts/<file>.ttf`; Slidev serves a deck-root `public/` at the SPA root,
+      // so the absolute URL resolves in the standalone dist and in PDF rendering
+      // (it previously only worked because Next served public/fonts at runtime —
+      // the dist itself shipped no fonts, so the PDF fell back to a system font).
       try {
-        cpSync(fontsDir, join(workdir, 'fonts'), { recursive: true });
+        cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), {
+          recursive: true,
+        });
       } catch {
-        // Fonts directory may not exist yet — not critical
+        // public/fonts missing — non-fatal; the deck falls back to system fonts.
+      }
+
+      // Write the per-slide footer + logo Vue layers (only when configured).
+      // slide-bottom.vue (not global-bottom) carries correct per-slide state
+      // into the PDF export without needing --per-slide.
+      const footerLayer = buildFooterLayer(Boolean(footer?.enabled));
+      if (footerLayer) {
+        writeFileSync(join(workdir, ARTIFACTS.footerLayer), footerLayer, 'utf-8');
+      }
+      const logoLayer = buildLogoLayer(Boolean(logoUrl));
+      if (logoLayer) {
+        writeFileSync(join(workdir, ARTIFACTS.logoLayer), logoLayer, 'utf-8');
       }
 
       // 5. Build SPA with a relative base so assets resolve wherever the dist
@@ -137,12 +222,12 @@ export const buildSlidesTask: TaskConfig<any> = {
       await runSlidev(['build', '--base', './'], workdir);
 
       // 6. Export PDF
-      await runSlidev(['export', '--format', 'pdf', '--output', 'slides.pdf'], workdir);
+      await runSlidev(['export', '--format', 'pdf', '--output', ARTIFACTS.pdf], workdir);
 
       // 7. Upload PDF to Payload Media
-      const pdfBuffer = readFileSync(join(workdir, 'slides.pdf'));
+      const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
       const pdfMedia = await req.payload.create({
-        collection: 'media',
+        collection: COLLECTIONS.media,
         data: { alt: `${presentation.title} — PDF` },
         file: {
           data: pdfBuffer,
@@ -153,25 +238,25 @@ export const buildSlidesTask: TaskConfig<any> = {
       });
 
       // 8. Copy SPA dist to media/spa/<slug>/
-      const spaTargetDir = join(MEDIA_DIR, 'spa', slug);
+      const spaTargetDir = spaDir(slug);
       // Remove previous build if it exists
       rmSync(spaTargetDir, { recursive: true, force: true });
-      cpSync(join(workdir, 'dist'), spaTargetDir, { recursive: true });
+      cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
 
       // 9. Patch presentation with build artifacts
       await req.payload.update({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
         data: {
           pdfFile: pdfMedia.id,
           // index.html explicitly: the dist uses relative asset URLs, which
           // only resolve against a path ending in a filename or trailing
           // slash (Next strips trailing slashes with a 308).
-          spaUrl: `/spa/${slug}/index.html`,
-          lastBuildStatus: 'success',
+          spaUrl: spaUrl(slug),
+          lastBuildStatus: BUILD_STATUS.success,
           lastBuildError: '',
         },
-        context: { skipBuildQueue: true },
+        context: { [CTX.skipBuildQueue]: true },
       });
 
       return { output: { success: true } };
@@ -181,13 +266,13 @@ export const buildSlidesTask: TaskConfig<any> = {
         err instanceof Error ? err.message : String(err);
 
       await req.payload.update({
-        collection: 'presentations',
+        collection: COLLECTIONS.presentations,
         id: presentationId,
         data: {
-          lastBuildStatus: 'failed',
+          lastBuildStatus: BUILD_STATUS.failed,
           lastBuildError: errorMessage.slice(0, 5000),
         },
-        context: { skipBuildQueue: true },
+        context: { [CTX.skipBuildQueue]: true },
       });
 
       throw err;

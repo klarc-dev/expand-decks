@@ -1,12 +1,14 @@
-import { escape, md, wrapSlide, type SlideImage } from '../utils';
+import { K } from '../classNames';
+import { richTextToHTML, type RichText } from '../richtext';
+import { eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
 export type CoverBlockData = {
   blockType: 'cover';
   eyebrow?: string | null;
   title: string;
-  subtitle?: string | null;
-  footerLeft?: string | null;
-  footerRight?: string | null;
+  subtitle?: RichText;
+  footerLeft?: RichText;
+  footerRight?: RichText;
   surface?: 'dark' | 'light' | 'gradient' | null;
   image?: { url: string } | null;
   imagePosition?: 'right' | 'left' | null;
@@ -20,20 +22,21 @@ export function renderCover(block: CoverBlockData): string {
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
 
-  const eyebrow = block.eyebrow
-    ? `\n      <div class="k-eyebrow mb-8">${escape(block.eyebrow)}</div>`
+  const eyebrow = renderEyebrow(block.eyebrow, 'mb-8', { indent: '      ' });
+
+  const subtitleHtml = richTextToHTML(block.subtitle);
+  const subtitle = subtitleHtml
+    ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>`
     : '';
 
-  const subtitle = block.subtitle
-    ? `\n      <p class="k-hero-sub">${md(block.subtitle)}</p>`
+  const footerLeftHtml = richTextToHTML(block.footerLeft);
+  const footerLeft = footerLeftHtml
+    ? `\n    <div class="flex gap-4">\n      <div class="${K.btn}">${footerLeftHtml}</div>\n    </div>`
     : '';
 
-  const footerLeft = block.footerLeft
-    ? `\n    <div class="flex gap-4">\n      <div class="k-btn">${escape(block.footerLeft)}</div>\n    </div>`
-    : '';
-
-  const footerRight = block.footerRight
-    ? `\n    <div class="text-right text-xs opacity-60 tracking-wider uppercase">\n      ${escape(block.footerRight)}\n    </div>`
+  const footerRightHtml = richTextToHTML(block.footerRight);
+  const footerRight = footerRightHtml
+    ? `\n    <div class="text-right text-xs opacity-60 tracking-wider uppercase">\n      ${footerRightHtml}\n    </div>`
     : '';
 
   const footerRow = footerLeft || footerRight
@@ -50,7 +53,7 @@ export function renderCover(block: CoverBlockData): string {
   const body = `<div class="${wrapperClass}">
   <div class="flex-1 flex items-center">
     <div class="max-w-4xl">${eyebrow}
-      <h1 class="k-hero-big mb-10">${md(block.title)}</h1>${subtitle}
+      <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}
     </div>
   </div>${footerRow}
 </div>`;

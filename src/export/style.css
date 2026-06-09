@@ -114,9 +114,9 @@
 /* Dark variant for cover / section -------------- */
 .k-dark {
   background:
-    radial-gradient(1200px 600px at 85% -10%, rgba(245,163,176,0.22), transparent 60%),
-    radial-gradient(900px 500px at 10% 110%, rgba(2,88,92,0.55), transparent 60%),
-    linear-gradient(135deg, #02585C 0%, #023C3F 100%) !important;
+    radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb, var(--k-rose) 22%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, color-mix(in srgb, var(--k-teal) 55%, transparent), transparent 60%),
+    linear-gradient(135deg, var(--k-teal) 0%, var(--k-teal-700) 100%) !important;
   color: #fff !important;
 }
 
@@ -224,6 +224,16 @@
   letter-spacing: 0.1em;
 }
 
+/* Crowded-column variant: a tall stack of cards on the fixed 720px canvas
+   (e.g. 4+ cards in a twoCols right column) overflows with default padding.
+   .k-tight shrinks each card's box so the whole stack stays on-slide. */
+.k-tight .k-card {
+  padding: 0.85rem 1.1rem;
+  border-radius: 14px;
+}
+.k-tight .k-card h3 { margin-bottom: 0.2rem; }
+.k-tight .k-card p { font-size: 0.82rem; line-height: 1.35; }
+
 .k-stat {
   display: flex;
   flex-direction: column;
@@ -247,6 +257,140 @@
 }
 
 .k-dark .k-stat .lbl { color: rgba(255,255,255,0.7); }
+
+.k-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.92rem;
+  border: 1px solid var(--k-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.k-table th {
+  font-family: 'Gilroy', sans-serif;
+  font-weight: 600;
+  text-align: left;
+  color: #fff;
+  background: var(--k-teal);
+  padding: 0.7rem 1rem;
+  letter-spacing: 0.01em;
+}
+
+.k-table td {
+  padding: 0.65rem 1rem;
+  color: var(--k-ink);
+  border-top: 1px solid var(--k-line);
+  vertical-align: top;
+  line-height: 1.35;
+}
+
+.k-table td:first-child {
+  font-weight: 500;
+  color: var(--k-teal);
+}
+
+.k-table tbody tr:nth-child(even) { background: var(--k-teal-50); }
+
+.k-table strong { color: var(--k-teal-700); }
+
+.k-dark .k-table {
+  border-color: rgba(255,255,255,0.18);
+}
+
+.k-dark .k-table th {
+  background: var(--k-teal-900);
+}
+
+.k-dark .k-table td {
+  color: rgba(255,255,255,0.88);
+  border-top-color: rgba(255,255,255,0.12);
+}
+
+.k-dark .k-table td:first-child { color: var(--k-rose); }
+
+.k-dark .k-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.05); }
+
+.k-dark .k-table strong { color: #fff; }
+
+.k-timeline {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.k-tl-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 0.6rem;
+}
+
+.k-tl-dot {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--k-teal);
+  color: #fff;
+  font-family: 'Gilroy', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+  box-shadow: 0 6px 16px -8px rgba(2, 88, 92, 0.5);
+}
+
+.k-tl-label {
+  font-family: 'Gilroy', sans-serif;
+  font-size: 1.05rem;
+  color: var(--k-teal);
+  margin: 0 0 0.35rem;
+}
+
+.k-tl-desc {
+  font-size: 0.82rem;
+  color: var(--k-ink-soft);
+  line-height: 1.4;
+  margin: 0;
+  max-width: 14rem;
+}
+
+.k-tl-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--k-rose);
+  padding-top: 6px;
+  flex: 0 0 auto;
+}
+
+.k-tl-band {
+  margin-top: 2.4rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 999px;
+  background: var(--k-teal-50);
+  border: 1px solid var(--k-line);
+  color: var(--k-teal-700);
+  font-size: 0.85rem;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+.k-dark .k-tl-dot { background: #fff; color: var(--k-teal-900); }
+.k-dark .k-tl-label { color: #fff; }
+.k-dark .k-tl-desc { color: rgba(255, 255, 255, 0.72); }
+.k-dark .k-tl-arrow { color: var(--k-rose); }
+.k-dark .k-tl-band {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.85);
+}
 
 .k-divider {
   width: 40px;
@@ -430,6 +574,18 @@
 .k-dark .k-slide-header .brand,
 .k-dark .k-slide-footer .page { color: #fff; }
 
+.k-slide-logo {
+  position: absolute;
+  top: 1.4rem;
+  left: 3.5rem;
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 5;
+}
+
 /* CTA-specific text classes — replace inline styles -------------- */
 .k-cta-title {
   color: #fff;
@@ -505,3 +661,23 @@
   padding: 0.6rem 0;
   border-top: 1px solid var(--k-line);
 }
+
+/* RichText normalization -------------------------------------------------- */
+/* convertLexicalToHTML wraps every field in <div class="payload-richtext">
+   with block-level <p> children carrying default browser margins. In small
+   single-line containers (button pills, footer bars, table cells, eyebrows)
+   those margins inflate the box — a one-word pill became an 81px circle.
+   Collapse the wrapper and drop the paragraph margins so richText sits flush. */
+.payload-richtext { display: contents; }
+.payload-richtext > p { margin: 0; }
+
+/* Multi-paragraph prose (statement body, twoCols intro): keep spacing between
+   paragraphs but no leading/trailing margin so the block stays centered. */
+.payload-richtext > p + p { margin-top: 0.7em; }
+
+/* On dark surfaces, `.k-dark p` forces white text. A richText <p> living inside
+   a button/footer must take the container's own color instead, or white pill
+   labels (cover footerLeft, CTA actions) render invisible white-on-white. */
+.k-btn p,
+.k-btn-ghost p,
+.k-foot p { color: inherit; }
