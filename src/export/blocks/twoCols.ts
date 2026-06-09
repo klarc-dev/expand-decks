@@ -1,20 +1,18 @@
 import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
-import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
+import { card, cardStack, contentFrame, slideHeader, wrapSlide, type RenderCtx, type SlideImage } from '../utils';
 
 export type { TwoColsBlockData };
 
-export function renderTwoCols(block: TwoColsBlockData): string {
+export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string {
   const image: SlideImage | null = block.image?.url
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
 
-  const eyebrow = renderEyebrow(block.eyebrow, 'mb-6');
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
 
-  // Use <div> not <p>: richTextToHTML emits its own block-level <p>, which Vue's
-  // HTML parser refuses to nest inside another <p> (block content auto-closes the
-  // paragraph, making the explicit </p> an unbalanced tag).
+  // <div> not <p>: richTextToHTML emits its own block-level <p>.
   const introHtml = richTextToHTML(block.intro);
   const intro = introHtml
     ? `\n\n<hr class="${K.divider}"/>\n\n<div class="text-base leading-relaxed mb-8 max-w-md">\n${introHtml}\n</div>`
@@ -22,54 +20,27 @@ export function renderTwoCols(block: TwoColsBlockData): string {
 
   const leftFooterHtml = richTextToHTML(block.leftFooter);
   const leftFooter = leftFooterHtml
-    ? `\n\n<div class="mt-12 max-w-md">\n  <div class="text-sm opacity-70">${leftFooterHtml}</div>\n</div>`
+    ? `\n\n<div class="mt-12 max-w-md">\n  <div class="text-sm k-side-note">${leftFooterHtml}</div>\n</div>`
     : '';
 
-  // When an image is set, it takes the right column slot via Slidev's
-  // image-right layout, so we drop k-split and rightCards, and render a single
-  // content column. rightCards are intentionally ignored in this branch
-  // (documented in the block schema's admin description).
+  // Image variant: image takes the right slot via Slidev's image-right layout;
+  // rightCards are intentionally dropped (single content column).
   if (image) {
-    const body = `<div class="px-14 pt-28">
-
-${eyebrow}
-<h2 class="text-5xl mb-6">${md(block.title)}</h2>${intro}${leftFooter}
-
-</div>`;
+    const body = contentFrame(`${header}${intro}${leftFooter}`);
     return wrapSlide({ image, body });
   }
 
   const cardList = block.rightCards ?? [];
-  const cards = cardList
-    .map((card) => {
-      // <div>, not <p>: richTextToHTML emits its own block-level <p>, which
-      // Vue's parser refuses to nest inside another <p>.
-      const descHtml = richTextToHTML(card.description);
-      const desc = descHtml ? `\n\n<div>\n${descHtml}\n</div>` : '';
-      return `<div class="${K.card}">\n  <h3 class="text-sm">${escape(card.title)}</h3>${desc}\n</div>`;
-    })
-    .join('\n\n');
+  const cards = cardList.map((c) =>
+    card({ title: c.title, body: richTextToHTML(c.description), titleClass: 'text-sm' }),
+  );
+  const stack = cardStack(cards, { layout: 'column' });
+  const rightCol = cards.length ? `\n${stack.html}` : '';
 
-  // The right column is a vertical stack on a fixed 720px canvas. 4+ stacked
-  // cards under the standard pt-28 header overflow and clip the last card.
-  // Tighten the top padding, the inter-card gap, AND each card's box (.k-tight)
-  // when the column is tall, so the whole stack stays on-slide.
-  const crowded = cardList.length >= 4;
-  const topPad = crowded ? 'pt-20' : 'pt-28';
-  const cardGap = crowded ? 'space-y-2' : 'space-y-3';
-  const tight = crowded ? ' k-tight' : '';
+  const left = `<div>\n${header}${intro}${leftFooter}\n</div>`;
+  const body = contentFrame(`<div class="${K.split}">\n${left}${rightCol}\n</div>`, {
+    crowded: stack.crowded,
+  });
 
-  const rightCol = cards ? `\n<div class="${cardGap}${tight}">\n\n${cards}\n\n</div>` : '';
-
-  const body = `<div class="${K.split} px-14 ${topPad}">
-
-<div>
-${eyebrow}
-<h2 class="text-5xl mb-6">${md(block.title)}</h2>${intro}${leftFooter}
-
-</div>
-${rightCol}
-</div>`;
-
-  return wrapSlide({ body });
+  return wrapSlide({ surface: ctx?.surface, body });
 }
