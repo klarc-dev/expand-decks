@@ -1,19 +1,9 @@
+import type { CardGridBlockData } from '../../blocks/spec/cardGrid';
 import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
+import { richTextToHTML } from '../richtext';
 import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
-export type CardGridBlockData = {
-  blockType: 'cardGrid';
-  eyebrow?: string | null;
-  title: string;
-  sidebarText?: RichText;
-  columns?: '2' | '3' | '4' | null;
-  cards?: Array<{
-    number?: string | null;
-    title: string;
-    description?: RichText;
-  }> | null;
-};
+export type { CardGridBlockData };
 
 export function renderCardGrid(block: CardGridBlockData): string {
   const eyebrow = renderEyebrow(block.eyebrow, 'mb-4', { indent: '    ' });

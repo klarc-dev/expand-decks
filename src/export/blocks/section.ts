@@ -1,16 +1,9 @@
+import type { SectionBlockData } from '../../blocks/spec/section';
 import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
+import { richTextToHTML } from '../richtext';
 import { escape, md, surfaceClass, wrapSlide, type SlideImage } from '../utils';
 
-export type SectionBlockData = {
-  blockType: 'section';
-  number?: string | null;
-  title: string;
-  subtitle?: RichText;
-  surface?: 'dark' | 'light' | null;
-  image?: { url: string } | null;
-  imagePosition?: 'right' | 'left' | null;
-};
+export type { SectionBlockData };
 
 export function renderSection(block: SectionBlockData): string {
   const image: SlideImage | null = block.image?.url

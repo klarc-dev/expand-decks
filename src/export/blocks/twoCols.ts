@@ -1,20 +1,9 @@
+import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
+import { richTextToHTML } from '../richtext';
 import { escape, eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
-export type TwoColsBlockData = {
-  blockType: 'twoCols';
-  eyebrow?: string | null;
-  title: string;
-  intro?: RichText;
-  leftFooter?: RichText;
-  rightCards?: Array<{
-    title: string;
-    description?: RichText;
-  }> | null;
-  image?: { url: string } | null;
-  imagePosition?: 'right' | 'left' | null;
-};
+export type { TwoColsBlockData };
 
 export function renderTwoCols(block: TwoColsBlockData): string {
   const image: SlideImage | null = block.image?.url

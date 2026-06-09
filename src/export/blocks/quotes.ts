@@ -1,19 +1,9 @@
-import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical';
-
+import type { QuotesBlockData } from '../../blocks/spec/quotes';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
 import { escape, eyebrow as renderEyebrow, gridClass, md, wrapSlide } from '../utils';
 
-export type QuotesBlockData = {
-  blockType: 'quotes';
-  eyebrow?: string | null;
-  title: string;
-  quotes?: Array<{
-    quote: SerializedEditorState;
-    authorName: string;
-    authorRole?: string | null;
-  }> | null;
-};
+export type { QuotesBlockData };
 
 export function renderQuotes(block: QuotesBlockData): string {
   const quotes = block.quotes ?? [];

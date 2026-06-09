@@ -1,18 +1,9 @@
+import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
+import { richTextToHTML } from '../richtext';
 import { eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
 
-export type CoverBlockData = {
-  blockType: 'cover';
-  eyebrow?: string | null;
-  title: string;
-  subtitle?: RichText;
-  footerLeft?: RichText;
-  footerRight?: RichText;
-  surface?: 'dark' | 'light' | 'gradient' | null;
-  image?: { url: string } | null;
-  imagePosition?: 'right' | 'left' | null;
-};
+export type { CoverBlockData };
 
 export function renderCover(block: CoverBlockData): string {
   const isDark = block.surface !== 'light';

@@ -1,16 +1,9 @@
+import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
-import { richTextToHTML, type RichText } from '../richtext';
+import { richTextToHTML } from '../richtext';
 import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
-export type CtaBlockData = {
-  blockType: 'cta';
-  eyebrow?: string | null;
-  title: string;
-  subtitle?: RichText;
-  primaryAction?: string | null;
-  secondaryAction?: string | null;
-  footerNote?: RichText;
-};
+export type { CtaBlockData };
 
 export function renderCta(block: CtaBlockData): string {
   const eyebrow = renderEyebrow(block.eyebrow, 'mb-10', {

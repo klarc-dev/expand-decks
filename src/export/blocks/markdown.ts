@@ -1,9 +1,6 @@
-export type MarkdownBlockData = {
-  blockType: 'markdown';
-  layout?: string | null;
-  frontmatter?: string | null;
-  content?: string | null;
-};
+import type { MarkdownBlockData } from '../../blocks/spec/markdown';
+
+export type { MarkdownBlockData };
 
 /** Passthrough renderer — admin-only block, content is not escaped. */
 export function renderMarkdown(block: MarkdownBlockData): string {

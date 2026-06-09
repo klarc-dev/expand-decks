@@ -1,16 +1,8 @@
+import type { StatsBlockData } from '../../blocks/spec/stats';
 import { K } from '../classNames';
 import { escape, eyebrow as renderEyebrow, md, surfaceClass, wrapSlide } from '../utils';
 
-export type StatsBlockData = {
-  blockType: 'stats';
-  eyebrow?: string | null;
-  title: string;
-  surface?: 'dark' | 'light' | null;
-  stats?: Array<{
-    value: string;
-    label: string;
-  }> | null;
-};
+export type { StatsBlockData };
 
 export function renderStats(block: StatsBlockData): string {
   const stats = block.stats ?? [];
