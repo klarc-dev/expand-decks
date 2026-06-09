@@ -50,12 +50,15 @@ export const twoColsSpec = block({
       'rightCards',
       z.array(z.unknown()),
       optionalAi(
-        z.array(
-          z.object({
-            title: z.string(),
-            description: optionalAi(z.string()),
-          }),
-        ),
+        z
+          .array(
+            z.object({
+              title: z.string(),
+              description: optionalAi(z.string()),
+            }),
+          )
+          .min(1)
+          .max(5),
       ),
       {
         type: 'array',

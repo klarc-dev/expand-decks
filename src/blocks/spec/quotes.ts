@@ -37,13 +37,16 @@ export const quotesSpec = block({
       'quotes',
       z.array(z.unknown()),
       optionalAi(
-        z.array(
-          z.object({
-            quote: z.string(),
-            authorName: z.string(),
-            authorRole: optionalAi(z.string()),
-          }),
-        ),
+        z
+          .array(
+            z.object({
+              quote: z.string(),
+              authorName: z.string(),
+              authorRole: optionalAi(z.string()),
+            }),
+          )
+          .min(1)
+          .max(4),
       ),
       {
         type: 'array',

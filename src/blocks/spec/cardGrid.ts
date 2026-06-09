@@ -55,13 +55,16 @@ export const cardGridSpec = block({
       'cards',
       z.array(z.unknown()),
       optionalAi(
-        z.array(
-          z.object({
-            number: optionalAi(z.string()),
-            title: z.string(),
-            description: optionalAi(z.string()),
-          }),
-        ),
+        z
+          .array(
+            z.object({
+              number: optionalAi(z.string()),
+              title: z.string(),
+              description: optionalAi(z.string()),
+            }),
+          )
+          .min(2)
+          .max(6),
       ),
       {
         type: 'array',

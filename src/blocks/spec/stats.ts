@@ -38,12 +38,15 @@ export const statsSpec = block({
       'stats',
       z.array(z.unknown()),
       optionalAi(
-        z.array(
-          z.object({
-            value: z.string(),
-            label: z.string(),
-          }),
-        ),
+        z
+          .array(
+            z.object({
+              value: z.string(),
+              label: z.string(),
+            }),
+          )
+          .min(2)
+          .max(4),
       ),
       {
         type: 'array',
