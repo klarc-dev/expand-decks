@@ -60,6 +60,7 @@ Règles :
 - Utilise "section" pour structurer le contenu en parties
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
 - Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes reliées de gauche à droite)
+- Utilise "mermaid" pour un diagramme de flux, un organigramme ou un workflow (à partir de code Mermaid)
 - Varie les layouts pour rendre la présentation dynamique
 - Reste dans la langue du brief (français par défaut si ambigu)
 - Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)

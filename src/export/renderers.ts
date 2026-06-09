@@ -3,6 +3,7 @@ import { renderCardGrid, type CardGridBlockData } from './blocks/cardGrid';
 import { renderCover, type CoverBlockData } from './blocks/cover';
 import { renderCta, type CtaBlockData } from './blocks/cta';
 import { renderMarkdown, type MarkdownBlockData } from './blocks/markdown';
+import { renderMermaid, type MermaidBlockData } from './blocks/mermaid';
 import { renderQuotes, type QuotesBlockData } from './blocks/quotes';
 import { renderSection, type SectionBlockData } from './blocks/section';
 import { renderStatement, type StatementBlockData } from './blocks/statement';
@@ -22,6 +23,7 @@ export type SlideBlock =
   | CtaBlockData
   | TableBlockData
   | TimelineBlockData
+  | MermaidBlockData
   | MarkdownBlockData;
 
 // Renderers take the resolved per-slide context (tone) as an optional 2nd arg.
@@ -43,6 +45,7 @@ export const RENDERERS = {
   cta: renderCta as Renderer,
   table: renderTable as Renderer,
   timeline: renderTimeline as Renderer,
+  mermaid: renderMermaid as Renderer,
   markdown: renderMarkdown as Renderer,
 } satisfies Record<SlideBlock['blockType'], Renderer>;
 

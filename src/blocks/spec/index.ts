@@ -4,6 +4,7 @@ import { cardGridSpec } from './cardGrid';
 import { coverSpec } from './cover';
 import { ctaSpec } from './cta';
 import { markdownSpec } from './markdown';
+import { mermaidSpec } from './mermaid';
 import { quotesSpec } from './quotes';
 import { sectionSpec } from './section';
 import { statementSpec } from './statement';
@@ -25,5 +26,6 @@ export const ALL_SPECS: BlockSpec[] = [
   ctaSpec,
   tableSpec,
   timelineSpec,
+  mermaidSpec,
   markdownSpec,
 ];

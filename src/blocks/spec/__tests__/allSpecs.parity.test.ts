@@ -11,6 +11,7 @@ import { StatementBlock } from '../../StatementBlock';
 import { StatsBlock } from '../../StatsBlock';
 import { TableBlock } from '../../TableBlock';
 import { TimelineBlock } from '../../TimelineBlock';
+import { MermaidBlock } from '../../MermaidBlock';
 import { TwoColsBlock } from '../../TwoColsBlock';
 import { aiSchemaOf } from '../dsl';
 import { ALL_SPECS } from '../index';
@@ -35,13 +36,21 @@ const EXPECTED_DRAFTABLE = [
   'cta',
   'table',
   'timeline',
+  'mermaid',
 ] as const;
 
-// Minimal valid object for a draftable member: blockType + title. Built and
-// proven against the spec's OWN aiSchema (not hand-coded) so it tracks any
-// future required field instead of silently weakening the union assertions.
+// Minimal valid object for a draftable member: blockType + title + any other
+// required top-level string field (e.g. mermaid `source`), derived from the
+// spec's OWN aiSchema so it tracks future required fields instead of silently
+// weakening the union assertions.
 const minimalSlide = (spec: (typeof ALL_SPECS)[number]) => {
+  const shape = (aiSchemaOf(spec) as z.ZodObject).shape as Record<string, z.ZodType>;
   const slide: Record<string, unknown> = { blockType: spec.blockType, title: 'x' };
+  for (const [key, field] of Object.entries(shape)) {
+    if (key in slide) continue;
+    if (field.safeParse(undefined).success) continue; // optional → skip
+    if (field.safeParse('x').success) slide[key] = 'x'; // required string → fill
+  }
   expect(aiSchemaOf(spec).safeParse(slide).success, `${spec.blockType} minimal`).toBe(true);
   return slide;
 };
@@ -113,12 +122,17 @@ Layouts disponibles :
    - eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)
    - steps: [{label, description}] — 2 à 6 étapes, dans l’ordre, affichées de gauche à droite
 
+11. **mermaid** — Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)
+   - eyebrow, title (obligatoire), surface ("light" | "dark"), caption
+   - source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs \`\`\`
+
 Règles :
 - Commence TOUJOURS par un bloc "cover"
 - Termine TOUJOURS par un bloc "cta"
 - Utilise "section" pour structurer le contenu en parties
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
 - Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes reliées de gauche à droite)
+- Utilise "mermaid" pour un diagramme de flux, un organigramme ou un workflow (à partir de code Mermaid)
 - Varie les layouts pour rendre la présentation dynamique
 - Reste dans la langue du brief (français par défaut si ambigu)
 - Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
@@ -136,6 +150,7 @@ const BLOCKS = {
   cta: CtaBlock,
   table: TableBlock,
   timeline: TimelineBlock,
+  mermaid: MermaidBlock,
   markdown: MarkdownBlock,
 } as const;
 
@@ -196,7 +211,7 @@ describe('ALL_SPECS parity', () => {
     expect(markdown?.promptMeta).toBeUndefined();
   });
 
-  it('keeps exactly the 10 AI-draftable layouts in the draft union', () => {
+  it('keeps exactly the 11 AI-draftable layouts in the draft union', () => {
     const draftable = ALL_SPECS.filter((s) => s.aiDraftable).map((s) => s.blockType);
     expect(draftable).toEqual([...EXPECTED_DRAFTABLE]);
   });
