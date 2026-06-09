@@ -6,10 +6,11 @@ export type { StatementBlockData };
 
 const VARIANTS: StatementVariant[] = ['centered-hero', 'pull-quote', 'big-statement', 'split'];
 
-/** Map each variant to heroFrame's align/scale/accentRule axes. */
+/** Map each variant to heroFrame's align/scale/accentRule axes (typed off
+ * heroFrame's own params so adding an axis updates one place). */
 const VARIANT_LAYOUT: Record<
   StatementVariant,
-  { align: 'center' | 'left' | 'split'; scale: 'hero' | 'display' | 'title'; accentRule?: boolean }
+  Pick<Parameters<typeof heroFrame>[0], 'align' | 'scale' | 'accentRule'>
 > = {
   'centered-hero': { align: 'center', scale: 'hero' },
   'big-statement': { align: 'left', scale: 'display' },
@@ -20,10 +21,12 @@ const VARIANT_LAYOUT: Record<
 export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): string {
   // The block's explicit variant wins; otherwise rotate by the index
   // buildSlidesMd assigns, so unset statements still vary (KTD6b — the
-  // Section-block lesson: a told-not-enforced capability goes unused).
+  // Section-block lesson: a told-not-enforced capability goes unused). Guard
+  // against an out-of-enum value from a pre-variant DB row by validating against
+  // the known set before indexing VARIANT_LAYOUT.
+  const explicit = block.variant && VARIANTS.includes(block.variant) ? block.variant : null;
   const variant: StatementVariant =
-    (block.variant as StatementVariant | null | undefined) ??
-    VARIANTS[(ctx?.variantIndex ?? 0) % VARIANTS.length]!;
+    explicit ?? VARIANTS[(ctx?.variantIndex ?? 0) % VARIANTS.length]!;
   const layout = VARIANT_LAYOUT[variant];
 
   return heroFrame({

@@ -1,11 +1,14 @@
 import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
-import { eyebrow as renderEyebrow, md, wrapSlide, type SlideImage } from '../utils';
+import { eyebrow as renderEyebrow, md, wrapSlide, type RenderCtx, type SlideImage } from '../utils';
 
 export type { CoverBlockData };
 
-export function renderCover(block: CoverBlockData): string {
+// ctx is accepted for signature parity with the other renderers (the RENDERERS
+// map types every entry with the optional ctx arg). The cover defines its own
+// tone (dark unless surface:'light'), so the resolved deck tone is ignored here.
+export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   const isDark = block.surface !== 'light';
   const darkClass = isDark ? ' k-dark' : '';
 
@@ -27,7 +30,7 @@ export function renderCover(block: CoverBlockData): string {
 
   const footerRightHtml = richTextToHTML(block.footerRight);
   const footerRight = footerRightHtml
-    ? `\n    <div class="text-right text-xs opacity-60 tracking-wider uppercase">\n      ${footerRightHtml}\n    </div>`
+    ? `\n    <div class="${K.caption} k-caption--upper text-right">\n      ${footerRightHtml}\n    </div>`
     : '';
 
   const footerRow = footerLeft || footerRight

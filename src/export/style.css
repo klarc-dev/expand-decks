@@ -812,3 +812,5 @@
 .k-btn p,
 .k-btn-ghost p,
 .k-caption p { color: inherit; }
+/* Uppercase tracked caption (cta footer note). */
+.k-caption--upper { text-transform: uppercase; letter-spacing: 0.3em; }

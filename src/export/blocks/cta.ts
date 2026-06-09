@@ -27,10 +27,11 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
     ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
     : '';
 
-  // mt-16 caption; uses the AA-safe k-caption token, not opacity-40.
+  // mt-16 caption; uses the AA-safe k-caption token (+ uppercase modifier), not
+  // opacity-40 or an inline style.
   const footerNoteHtml = richTextToHTML(block.footerNote);
   const footerNote = footerNoteHtml
-    ? `\n\n<div class="${K.caption} text-center mx-auto mt-16" style="text-transform:uppercase;letter-spacing:0.3em">\n  ${footerNoteHtml}\n</div>`
+    ? `\n\n<div class="${K.caption} k-caption--upper text-center mx-auto mt-16">\n  ${footerNoteHtml}\n</div>`
     : '';
 
   const body = `<div class="k-center-hero w-full">

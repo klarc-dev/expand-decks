@@ -253,6 +253,9 @@ export function cardStack(
   cards: string[],
   opts: { layout: 'grid' | 'column'; cols?: number },
 ): { html: string; crowded: boolean } {
+  // No cards → no container (a freshly-added block with empty fields must not
+  // emit a stray empty grid div in the live preview).
+  if (cards.length === 0) return { html: '', crowded: false };
   const inner = cards.join('\n\n');
   if (opts.layout === 'grid') {
     const cols = Math.min(Math.max(opts.cols ?? 4, 2), 4);
@@ -305,9 +308,12 @@ export function heroFrame(opts: {
     : '';
   const heading = `<h1 class="k-hero-title">\n${md(opts.title)}\n</h1>`;
 
-  if (opts.align === 'split') {
+  // Split is a two-column layout only when there's a body for the right column;
+  // with no body it would emit an empty grid cell, so fall through to the
+  // single-column left treatment instead.
+  if (opts.align === 'split' && opts.body) {
     const left = `<div>${eb}${rule}\n${heading}\n</div>`;
-    const right = `<div class="k-hero-body">\n${opts.body ?? ''}\n</div>`;
+    const right = `<div class="k-hero-body">\n${opts.body}\n</div>`;
     const inner = `<div class="${K.split}">\n${left}\n${right}\n</div>${caption}`;
     return wrapSlide({
       layout: 'default',

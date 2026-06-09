@@ -7,19 +7,25 @@ export type { TableBlockData };
 
 /**
  * Local status-pill helper (U10/KTD7b — kept here, not promoted to utils, until
- * a 2nd consumer appears). Maps a status token in a matrix cell to a coloured
- * pill, replacing inline ✅/⚠️/❌ emoji. Recognises both the emoji and the
- * ok/warn/blocked / oui/non vocabulary; anything else passes through unchanged.
+ * a 2nd consumer appears). When a matrix cell's ENTIRE text is a status token
+ * (emoji ✅/⚠️/❌, ASCII ✓/⚠/✗, or the ok/warn/blocked vocabulary), replace it
+ * with a coloured pill. Any cell that is prose — even prose containing "non" or
+ * "ok" mid-sentence — is left untouched (the match is whole-cell, not substring,
+ * so "non-applicable" or "personne non organisée" never get a pill).
  */
+const STATUS_PATTERNS: Array<[RegExp, 'ok' | 'warn' | 'blocked']> = [
+  [/^(✅|✓|ok|oui|automatique)$/, 'ok'],
+  [/^(⚠️|⚠|warn|attention|conditionnel|conditionnelle)$/, 'warn'],
+  [/^(❌|✗|ko|non|blocked|aucune)$/, 'blocked'],
+];
+
 function statusPill(cellHtml: string): string {
   const t = cellHtml.replace(/<[^>]+>/g, '').trim().toLowerCase();
-  let kind: 'ok' | 'warn' | 'blocked' | null = null;
-  if (/✅|✓|\bok\b|\boui\b|automatique/.test(t)) kind = 'ok';
-  else if (/⚠️|⚠|\bwarn\b|attention|conditionnel/.test(t)) kind = 'warn';
-  else if (/❌|✗|\bko\b|\bnon\b|blocked|aucune/.test(t)) kind = 'blocked';
-  if (!kind) return cellHtml;
+  const match = STATUS_PATTERNS.find(([re]) => re.test(t));
+  if (!match) return cellHtml; // prose cell — untouched
+  const kind = match[1];
   const label = { ok: '✓', warn: '⚠', blocked: '✗' }[kind];
-  return `<span class="k-pill k-pill--${kind}">${label}</span> ${cellHtml}`;
+  return `<span class="${K.pill} ${K.pill}--${kind}">${label}</span>`;
 }
 
 export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
@@ -33,8 +39,9 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     : '';
 
   // Pad/truncate each row to the column count so a model cell-count mismatch
-  // can never produce a ragged, broken table. In matrix mode, the 2nd column
-  // (the status column by convention) renders status pills.
+  // can never produce a ragged, broken table. In matrix mode, ANY cell whose
+  // whole text is a status token becomes a pill (self-classifying — not a
+  // hardcoded column index), so status can live in any column.
   const body = rows
     .map((r) => {
       const cells = (r.cells ?? []).map((c) => richTextToHTML(c.value));
@@ -42,7 +49,7 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
         ? Array.from({ length: colCount }, (_, i) => cells[i] ?? '')
         : cells;
       return `<tr>${aligned
-        .map((v, i) => `<td>${isMatrix && i === 1 ? statusPill(v) : v}</td>`)
+        .map((v) => `<td>${isMatrix ? statusPill(v) : v}</td>`)
         .join('')}</tr>`;
     })
     .join('\n');
