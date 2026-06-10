@@ -12,7 +12,10 @@ const colorField = (name: string, label: string, description: string, defaultVal
   required: true,
   defaultValue,
   label,
-  admin: { description },
+  admin: {
+    description,
+    components: { Field: '/components/ColorField#default' },
+  },
   validate: (value: string | null | undefined) =>
     value && HEX_RE.test(value) ? true : 'Couleur hexadécimale requise (ex. #02585C)',
 });
