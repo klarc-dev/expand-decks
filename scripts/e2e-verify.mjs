@@ -16,7 +16,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { getPayload } from 'payload';
 import config from '../src/payload.config.ts';
-import { draftPresentationSlides } from '../src/lib/draftPresentation.ts';
+import { runDeckFromBrief } from '../src/agents/runFromBrief.ts';
 import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite.ts';
 import { buildSlidesTask } from '../src/jobs/buildSlides.ts';
 
@@ -33,7 +33,7 @@ if (!process.env.REDRAFT && existsSync('/tmp/draft-eval.json')) {
 } else {
   const brief = readFileSync(briefFile, 'utf8');
   console.log(`drafting ${briefFile} (${brief.length} chars) via LLM…`);
-  ({ slides } = await draftPresentationSlides(brief));
+  ({ slides } = await runDeckFromBrief(brief));
   console.log(`drafted ${slides.length} slides`);
 }
 

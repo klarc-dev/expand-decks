@@ -187,15 +187,6 @@ export const Presentations: CollectionConfig = {
           description: 'Rédigez le contenu de la présentation.',
           fields: [
             {
-              name: 'agentDraftFromBrief',
-              type: 'ui',
-              admin: {
-                components: {
-                  Field: '/components/AgentDraftButton#default',
-                },
-              },
-            },
-            {
               name: 'slides',
               type: 'blocks',
               label: 'Diapositives',
@@ -218,6 +209,57 @@ export const Presentations: CollectionConfig = {
                 AgendaBlock,
                 MarkdownBlock,
               ],
+            },
+          ],
+        },
+        {
+          label: 'IA',
+          description:
+            "Build agentique : l'agent recherche, structure, rédige, critique et corrige la présentation à partir d'un brief.",
+          fields: [
+            {
+              name: 'agentDraftFromBrief',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: '/components/AgentDraftButton#default',
+                },
+              },
+            },
+            {
+              name: 'draftStatus',
+              type: 'select',
+              defaultValue: DRAFT_STATUS.idle,
+              label: 'Statut du build agentique',
+              admin: {
+                description: "État du dernier build par l'agent IA",
+                readOnly: true,
+              },
+              options: [
+                { label: 'En attente', value: DRAFT_STATUS.idle },
+                { label: 'Recherche', value: DRAFT_STATUS.gathering },
+                { label: 'Plan', value: DRAFT_STATUS.structuring },
+                { label: 'Rédaction', value: DRAFT_STATUS.drafting },
+                { label: 'Validation', value: DRAFT_STATUS.validating },
+                { label: 'Build visuel', value: DRAFT_STATUS.building },
+                { label: 'Terminé', value: DRAFT_STATUS.done },
+                { label: 'Échoué', value: DRAFT_STATUS.failed },
+              ],
+            },
+            {
+              name: 'draftEvents',
+              type: 'json',
+              label: "Journal de l'agent",
+              admin: {
+                description: 'Progression détaillée du dernier build agentique',
+                readOnly: true,
+                hidden: true,
+              },
+            },
+            {
+              name: 'draftRunId',
+              type: 'text',
+              admin: { hidden: true, readOnly: true },
             },
           ],
         },
@@ -353,40 +395,6 @@ export const Presentations: CollectionConfig = {
                 { label: 'Réussi', value: BUILD_STATUS.success },
                 { label: 'Échoué', value: BUILD_STATUS.failed },
               ],
-            },
-            {
-              name: 'draftStatus',
-              type: 'select',
-              defaultValue: DRAFT_STATUS.idle,
-              label: 'Statut du build agentique',
-              admin: {
-                description: "État du dernier build par l'agent IA",
-                readOnly: true,
-              },
-              options: [
-                { label: 'En attente', value: DRAFT_STATUS.idle },
-                { label: 'Recherche', value: DRAFT_STATUS.gathering },
-                { label: 'Plan', value: DRAFT_STATUS.structuring },
-                { label: 'Rédaction', value: DRAFT_STATUS.drafting },
-                { label: 'Validation', value: DRAFT_STATUS.validating },
-                { label: 'Build visuel', value: DRAFT_STATUS.building },
-                { label: 'Terminé', value: DRAFT_STATUS.done },
-                { label: 'Échoué', value: DRAFT_STATUS.failed },
-              ],
-            },
-            {
-              name: 'draftEvents',
-              type: 'json',
-              label: "Journal de l'agent",
-              admin: {
-                description: 'Progression détaillée du dernier build agentique',
-                readOnly: true,
-              },
-            },
-            {
-              name: 'draftRunId',
-              type: 'text',
-              admin: { hidden: true, readOnly: true },
             },
             {
               name: 'spaUrl',

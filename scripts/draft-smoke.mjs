@@ -1,4 +1,4 @@
-import { draftPresentationSlides } from '../src/lib/draftPresentation.ts';
+import { runDeckFromBrief } from '../src/agents/runFromBrief.ts';
 
 const DEFAULT_BRIEF =
   'Présentation de 6 diapositives sur les avantages du télétravail pour une PME : productivité, coûts, attractivité.';
@@ -6,7 +6,7 @@ const DEFAULT_BRIEF =
 const brief = process.argv[2] ?? DEFAULT_BRIEF;
 
 try {
-  const result = await draftPresentationSlides(brief);
+  const result = await runDeckFromBrief(brief);
   const blockTypes = result.slides.map((s) => s.blockType);
   console.log(`slides: ${result.slides.length}`);
   console.log(`blockTypes: ${blockTypes.join(', ')}`);

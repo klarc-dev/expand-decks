@@ -2,16 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { ALL_SPECS } from '../../blocks/spec';
 import { emitSlidesArraySchema } from '../../blocks/spec/emit/emitDraftSchema';
-import { BATCH_SIZE, MAX_SLIDES, MIN_SLIDES } from '../draftConfig';
+import { MAX_SLIDES, MIN_SLIDES } from '../draftConfig';
 
 const slide = { blockType: 'cover', title: 'X' };
 const deck = (n: number) => ({ slides: Array.from({ length: n }, () => slide) });
 
 describe('draftConfig', () => {
-  it('keeps BATCH_SIZE at the documented value (fill-pass behaviour unchanged)', () => {
-    expect(BATCH_SIZE).toBe(3);
-  });
-
   it('drives the slide-array bounds from the config consts, not inline literals', () => {
     const schema = emitSlidesArraySchema(ALL_SPECS);
 

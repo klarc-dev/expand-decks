@@ -21,8 +21,14 @@ import type { z } from 'zod';
 
 import { DRAFT_MODEL, nineRouter } from '../lib/ai';
 
-/** Per-call wall-clock budget; the gateway buffers the whole non-streamed body. */
-const DEFAULT_TIMEOUT_MS = 110_000;
+/**
+ * Per-call wall-clock budget; the gateway buffers the whole non-streamed body.
+ * omniroute (vs the old 9router) regularly takes >110s on the long structured
+ * calls (structure/draft emit big tool-argument blobs), and an abort surfaces
+ * as the opaque `finishReason=tripwire` — so the budget is generous. The
+ * fire-and-forget agent route tolerates it (maxDuration 800s).
+ */
+const DEFAULT_TIMEOUT_MS = 300_000;
 
 /**
  * The model instance every agent shares (forceNonStreamFetch is baked in).
@@ -44,6 +50,27 @@ export const draftModel = nineRouter(DRAFT_MODEL) as any;
  */
 /** An image part for multimodal prompts (e.g. a slide PNG to critique). */
 export type ImagePart = { base64: string; mimeType?: string };
+
+/** Gateway hiccups worth one retry (omniroute occasionally 502s under load). */
+const TRANSIENT_RE =
+  /bad gateway|gateway timeout|502|503|504|ECONNRESET|fetch failed|socket hang up/i;
+const TRANSIENT_RETRIES = 2;
+const TRANSIENT_BACKOFF_MS = 5_000;
+
+async function withTransientRetry<R>(name: string, fn: () => Promise<R>): Promise<R> {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const msg = String((error as Error)?.message ?? error);
+      if (i >= TRANSIENT_RETRIES || !TRANSIENT_RE.test(msg)) throw error;
+      console.warn(
+        `[${name}] transient gateway error (retry ${i + 1}/${TRANSIENT_RETRIES}): ${msg}`,
+      );
+      await new Promise((r) => setTimeout(r, TRANSIENT_BACKOFF_MS * (i + 1)));
+    }
+  }
+}
 
 export async function generateStructured<T>({
   name,
@@ -106,11 +133,18 @@ export async function generateStructured<T>({
   // error so the model corrects only what failed (mirrors lib/ai.ts draftObject).
   let userPrompt = prompt;
   for (let attempt = 0; ; attempt++) {
-    const res = await agent.generate(buildInput(userPrompt) as never, {
-      toolChoice: 'required',
-      maxSteps: 2,
-      abortSignal: AbortSignal.timeout(timeoutMs),
-    });
+    // maxSteps:1 — we only need the validated args of the forced `emit` call
+    // from the FIRST response. A second step would send the tool result back
+    // with toolChoice still forced; omniroute's Claude identity rejects that
+    // multi-turn shape ("Thinking may not be enabled when tool_choice forces
+    // tool use", HTTP 400) even when the request sets thinking:disabled.
+    const res = await withTransientRetry(name, () =>
+      agent.generate(buildInput(userPrompt) as never, {
+        toolChoice: 'required',
+        maxSteps: 1,
+        abortSignal: AbortSignal.timeout(timeoutMs),
+      }),
+    );
 
     const call = res.toolCalls?.find((c) => c?.payload?.toolName === 'emit') ?? res.toolCalls?.[0];
     const args = call?.payload?.args;

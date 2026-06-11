@@ -68,7 +68,7 @@ export const rubricScorer = createScorer({
   description: 'Judges a slide against the interesting-expert-content rules (0..1).',
 })
   .analyze(async ({ run }) => {
-    const slide = (run.input as { slide?: unknown })?.slide ?? run.input;
+    const slide = (run.output as { slide?: unknown })?.slide ?? run.output;
     const verdict = await judge(slide);
     return { result: verdict };
   })
@@ -86,6 +86,6 @@ export const rubricScorer = createScorer({
 export async function scoreSlide(
   slide: Record<string, unknown>,
 ): Promise<{ score: number; fix: string }> {
-  const res = await rubricScorer.run({ input: { slide }, output: {} } as never);
+  const res = await rubricScorer.run({ output: { slide } });
   return { score: res.score ?? 0, fix: (res.reason as string) ?? '' };
 }

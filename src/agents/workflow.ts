@@ -29,6 +29,7 @@ import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
 
 import { REVISE_MAX_ITERATIONS, SCORE_THRESHOLD, WRITER_CONCURRENCY } from '../lib/agentConfig';
+import { mapWithConcurrency } from '../lib/concurrency';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import type { SlideBlock } from '../export/renderers';
 import type { OutlineStub } from '../blocks/spec/emit/emitDraftSchema';
@@ -70,25 +71,6 @@ const stubT = z.custom<OutlineStub>();
 type WriterJob = { stub: OutlineStub; dossier: DeckDossier; allTitles: string[] };
 const writerJob = z.custom<WriterJob>();
 
-/** Run an array of async thunks with a fixed concurrency cap, preserving order. */
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (true) {
-      const i = next++;
-      if (i >= items.length) return;
-      results[i] = await fn(items[i]!, i);
-    }
-  });
-  await Promise.all(workers);
-  return results;
-}
-
 // ── steps (step id === phase name; the route maps payload.stepName → status) ──
 
 const gatherStep = createStep({
@@ -126,7 +108,7 @@ const validateStep = createStep({
   id: 'validate',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData, writer }) => {
+  execute: async ({ inputData }) => {
     const { stubs, dossier, titles } = inputData;
     const scored = await mapWithConcurrency(inputData.slides, WRITER_CONCURRENCY, (slide) =>
       scoreSlide(slide as Record<string, unknown>),
@@ -134,10 +116,8 @@ const validateStep = createStep({
     const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
 
     if (flagged.length === 0) {
-      await writer.write({ type: 'phase', phase: 'validate:pass' });
       return { ...inputData, lastFlagged: 0 };
     }
-    await writer.write({ type: 'phase', phase: 'validate:revise', flagged: flagged.length });
 
     const next = [...inputData.slides];
     await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
@@ -166,13 +146,11 @@ const visualStep = createStep({
   id: 'visual',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData, getInitData, writer }) => {
+  execute: async ({ inputData, getInitData }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
-    await writer.write({ type: 'phase', phase: 'build' });
     const md = buildSlidesMd({ title, slides: inputData.slides });
     const { pngs, cleanup } = await exportSlidePngs(md);
     try {
-      await writer.write({ type: 'phase', phase: 'visual', pngs: pngs.length });
       const scored = await mapWithConcurrency(
         inputData.slides,
         WRITER_CONCURRENCY,
@@ -184,10 +162,8 @@ const visualStep = createStep({
       );
       const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
       if (flagged.length === 0) {
-        await writer.write({ type: 'phase', phase: 'visual:pass' });
         return inputData;
       }
-      await writer.write({ type: 'phase', phase: 'visual:revise', flagged: flagged.length });
 
       const next = [...inputData.slides];
       await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {

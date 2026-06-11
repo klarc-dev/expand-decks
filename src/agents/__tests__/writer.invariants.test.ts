@@ -20,6 +20,7 @@ const dossier: DeckDossier = {
   keyPoints: ['BLUF works'],
   data: ['Garner 2013'],
   sources: ['Garner, Legal Writing in Plain English'],
+  rawBrief: '',
 };
 
 const stub: OutlineStub = {

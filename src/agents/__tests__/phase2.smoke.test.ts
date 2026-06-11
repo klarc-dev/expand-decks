@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { draftDeck } from '../orchestrate';
+import { mastra } from '../mastra';
 import { ALL_SPECS } from '../../blocks/spec';
 
 const live = process.env.OPENAI_API_KEY ? describe : describe.skip;
@@ -14,11 +14,14 @@ const DRAFTABLE = new Set(ALL_SPECS.map((s) => s.blockType));
 const BRIEF =
   'Court deck (5–6 slides) for corporate lawyers: why leading with the conclusion (BLUF) makes an expert legal talk land. Cover the cognitive reason, one concrete example, and the main objection refuted.';
 
-live('Phase 2 live (full draftDeck)', () => {
+live('Phase 2 live (deckWorkflow)', () => {
   it('drafts renderable slides and assembles markdown', { timeout: 300_000 }, async () => {
-    const deck = await draftDeck(BRIEF, {
-      onPhase: (p, d) => console.log(`[phase2] ${p}${d ? ' ' + JSON.stringify(d) : ''}`),
-    });
+    const run = await mastra.getWorkflow('deckWorkflow').createRun();
+    const res = await run.start({ inputData: { brief: BRIEF }, initialState: { visual: false } });
+
+    expect(res.status).toBe('success');
+    if (res.status !== 'success') return;
+    const deck = res.result;
 
     expect(deck.slides.length).toBeGreaterThanOrEqual(3);
     // Every slide is a known block type and carries its locked discriminant.

@@ -2,7 +2,7 @@ import type React from 'react';
 
 /**
  * Shared admin-UI style objects used across the custom field components
- * (DraftFromBriefButton, ShareUrlField). Kept as plain React.CSSProperties
+ * (AgentDraftButton, ShareUrlField). Kept as plain React.CSSProperties
  * so the rendered DOM/styles stay byte-identical to the previous inline
  * objects.
  */

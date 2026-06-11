@@ -8,7 +8,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { draftDeck } from '../orchestrate';
+import { mastra } from '../mastra';
 
 const slidevBin = join(process.cwd(), 'slidev-workspace', 'node_modules', '.bin', 'slidev');
 const ready = process.env.OPENAI_API_KEY && existsSync(slidevBin);
@@ -19,10 +19,12 @@ const BRIEF =
 
 maybe('Phase 4 full run (visual pass)', () => {
   it('builds, visually scores, and assembles a deck end to end', { timeout: 480_000 }, async () => {
-    const deck = await draftDeck(BRIEF, {
-      visual: true,
-      onPhase: (p, d) => console.log(`[phase4] ${p}${d ? ' ' + JSON.stringify(d) : ''}`),
-    });
+    const run = await mastra.getWorkflow('deckWorkflow').createRun();
+    const res = await run.start({ inputData: { brief: BRIEF }, initialState: { visual: true } });
+
+    expect(res.status).toBe('success');
+    if (res.status !== 'success') return;
+    const deck = res.result;
 
     expect(deck.slides.length).toBeGreaterThanOrEqual(3);
     expect(deck.md).toContain('---');

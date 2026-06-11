@@ -11,7 +11,7 @@
  */
 import { ALL_SPECS } from '../../blocks/spec';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
-import { DRAFT_SYSTEM_PROMPT } from '../../lib/draftPresentation';
+import { DRAFT_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import type { DeckDossier } from '../schemas';

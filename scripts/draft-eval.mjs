@@ -12,20 +12,20 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { getPayload } from 'payload';
 import config from '../src/payload.config.ts';
-import { draftPresentationSlides } from '../src/lib/draftPresentation.ts';
+import { runDeckFromBrief } from '../src/agents/runFromBrief.ts';
+// NOTE: model override is now via OPENAI_MODEL env (model arg dropped)
 import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite.ts';
 import { buildSlidesMd } from '../src/export/buildSlidesMd.ts';
 
 const briefFile = process.argv[2] ?? 'scripts/pi-brief.txt';
-const model = process.argv[3];
 
 const brief = readFileSync(briefFile, 'utf8');
 console.log(`brief: ${briefFile} (${brief.length} chars)`);
-console.log(`model: ${model ?? process.env.OPENAI_MODEL ?? 'default'}`);
+console.log(`model: ${process.env.OPENAI_MODEL ?? 'default'}`);
 
 const t0 = Date.now();
 try {
-  const result = await draftPresentationSlides(brief, model ? { model } : undefined);
+  const result = await runDeckFromBrief(brief);
   const ms = Date.now() - t0;
   const slides = result.slides;
   console.log(`\nOK in ${(ms / 1000).toFixed(1)}s — ${slides.length} slides\n`);

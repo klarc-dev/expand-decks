@@ -27,6 +27,11 @@ export const DeckDossierSchema = z.object({
   sources: z
     .array(z.string())
     .describe('Source references for the facts/claims, where available (may be empty).'),
+  rawBrief: z
+    .string()
+    .describe(
+      'The original natural-language brief, verbatim — used for the deterministic explicit-slide fast-path.',
+    ),
 });
 
 export type DeckDossier = z.infer<typeof DeckDossierSchema>;

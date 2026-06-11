@@ -54,7 +54,7 @@ export const visualScorer = createScorer({
   description: 'Judges a rendered slide PNG for overflow, balance, and legibility (0..1).',
 })
   .analyze(async ({ run }) => {
-    const verdict = await judgeVisual(run.input as VisualInput);
+    const verdict = await judgeVisual(run.output as VisualInput);
     return { result: verdict };
   })
   .generateScore(({ results }) => {
@@ -72,6 +72,6 @@ export async function scoreVisual(
   slide: Record<string, unknown>,
   png: string,
 ): Promise<{ score: number; fix: string }> {
-  const res = await visualScorer.run({ input: { slide, png }, output: {} } as never);
+  const res = await visualScorer.run({ output: { slide, png } });
   return { score: res.score ?? 0, fix: (res.reason as string) ?? '' };
 }

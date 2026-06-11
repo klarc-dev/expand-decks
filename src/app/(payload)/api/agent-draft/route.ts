@@ -15,6 +15,12 @@ import { persistSlides } from '@/agents/tools/persist';
 
 export const maxDuration = 800; // self-hosted; the agentic run is long-running
 
+// A wedged step must not leave draftStatus stuck in an ACTIVE phase forever (it
+// also permanently trips the re-entrancy guard below). stream() exposes no
+// abortSignal in @mastra/core@1.41.0, so we race the consume loop against this
+// timer and throw on expiry → the catch path persists `failed` for retry.
+const RUN_TIMEOUT_MS = (maxDuration - 30) * 1000;
+
 const requestSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
   brief: z.string().trim().min(10).max(20000),
@@ -101,30 +107,47 @@ export async function POST(req: NextRequest) {
     try {
       await mirror('gather');
 
-      // Step ids ARE the draftStatus phases: workflow-step-start carries
-      // payload.stepName, foreach writers emit workflow-step-progress, and the
-      // validate/visual steps emit custom `phase` chunks via writer.write.
-      const run = await mastra.getWorkflow('deckWorkflow').createRun();
+      // Each step id is a draftStatus phase: workflow-step-start fires as a step
+      // begins (payload.id = the step id), and the foreach writers emit
+      // workflow-step-progress per drafted slide.
+      const run = await mastra
+        .getWorkflow('deckWorkflow')
+        .createRun({ resourceId: String(presentationId) });
+      await payload.update({
+        collection: COLLECTIONS.presentations,
+        id: presentationId,
+        data: { draftRunId: run.runId },
+        user,
+        context: { [CTX.skipBuildQueue]: true },
+      });
       const stream = run.stream({
         inputData: { brief: deckContext(presentation) + brief },
         initialState: { visual, title: presentation.title ?? undefined },
       });
 
-      for await (const chunk of stream) {
-        if (chunk.type === 'workflow-step-start') {
-          await mirror(chunk.payload.stepName);
-        } else if (chunk.type === 'workflow-step-progress') {
-          await mirror('draft', {
-            completed: chunk.payload.completedCount,
-            total: chunk.payload.totalCount,
-          });
-        } else if (chunk.type === 'phase') {
-          const { phase, ...detail } = chunk.payload as { phase: string };
-          await mirror(phase, Object.keys(detail).length ? detail : undefined);
-        }
-      }
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`run exceeded ${RUN_TIMEOUT_MS}ms`)),
+          RUN_TIMEOUT_MS,
+        );
+      });
 
-      const result = await stream.result;
+      const consume = (async () => {
+        for await (const chunk of stream) {
+          if (chunk.type === 'workflow-step-start') {
+            await mirror(chunk.payload.id);
+          } else if (chunk.type === 'workflow-step-progress') {
+            await mirror('draft', {
+              completed: chunk.payload.completedCount,
+              total: chunk.payload.totalCount,
+            });
+          }
+        }
+        return stream.result;
+      })();
+
+      const result = await Promise.race([consume, timeout]).finally(() => clearTimeout(timer));
       if (result.status !== 'success') {
         throw new Error(
           `[deckWorkflow] run ${result.status}` +

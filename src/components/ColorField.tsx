@@ -15,9 +15,9 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
  * source of truth for save-time validation; the swatch only ever emits valid
  * `#rrggbb`, and the text input normalises to lowercase.
  */
-const ColorField: TextFieldClientComponent = ({ field, path, validate }) => {
+const ColorField: TextFieldClientComponent = ({ field, path }) => {
   const { label, required } = field;
-  const { value, setValue, showError, errorMessage } = useField<string>({ path, validate });
+  const { value, setValue, showError, errorMessage } = useField<string>({ path });
 
   const current = typeof value === 'string' ? value : '';
   // The native swatch requires a valid #rrggbb; fall back so it never renders empty.

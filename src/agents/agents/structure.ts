@@ -7,10 +7,14 @@
  * dossier keyPoint must map to >= 1 stub, else re-plan (capped). Reuses the
  * existing OUTLINE_SYSTEM catalogue prompt and emitOutlineSchema so the layout
  * vocabulary stays SSOT-driven.
+ *
+ * Fast-path: if dossier.rawBrief follows the deterministic "S1 — … Sn —"
+ * format (≥3 slides), the outline is parsed locally with no LLM call.
  */
 import { ALL_SPECS } from '../../blocks/spec';
 import { emitOutlineSchema, type OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
-import { DRAFT_SYSTEM_PROMPT } from '../../lib/draftPresentation';
+import { INTENT_MAX } from '../../lib/draftConfig';
+import { DRAFT_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import type { DeckDossier } from '../schemas';
@@ -66,7 +70,62 @@ export function uncoveredKeyPoints(dossier: DeckDossier, stubs: OutlineStub[]): 
   });
 }
 
+// ---------------------------------------------------------------------------
+// Deterministic fast-path helpers (verbatim from draftPresentation.ts)
+// ---------------------------------------------------------------------------
+
+function parseSlideBySlideBrief(brief: string): OutlineStub[] | null {
+  const matches = [...brief.matchAll(/^S(\d+)\s*[—-]\s*(.+)$/gm)];
+  if (matches.length < 3) return null;
+
+  return matches.map((match, index) => {
+    const number = Number(match[1]);
+    const heading = match[2]!.trim();
+    const start = match.index! + match[0].length;
+    const end = matches[index + 1]?.index ?? brief.length;
+    const chunk = brief.slice(start, end).trim();
+    const title = titleForExplicitSlide(heading, chunk);
+    return {
+      blockType: blockTypeForExplicitSlide(number, heading, chunk, index === matches.length - 1),
+      title,
+      intent: chunk.slice(0, INTENT_MAX),
+    };
+  });
+}
+
+function titleForExplicitSlide(heading: string, chunk: string): string {
+  if (!/^titre$/i.test(heading.trim())) return heading;
+  return chunk.match(/[«"]([^»"]+)[»"]/)?.[1]?.trim() ?? heading;
+}
+
+function blockTypeForExplicitSlide(
+  number: number,
+  heading: string,
+  chunk: string,
+  isLast: boolean,
+): string {
+  const head = heading.toLowerCase();
+  const text = `${heading}\n${chunk}`.toLowerCase();
+  if (number === 1) return 'cover';
+  if (isLast || /\bcta\b|appel à l.?action/.test(text)) return 'cta';
+  if (/tableau|matrice|niveaux de confidentialité|échelle|socle contractuel/.test(text)) {
+    return 'table';
+  }
+  if (/cycle de vie|process en \d+ temps|→.*→/.test(head)) return 'timeline';
+  if (/arbre de décision|plan 90 jours|pertes évitables/.test(text)) return 'cardGrid';
+  if (/minimum vital|kpi|annuité/.test(text)) return 'stats';
+  if (/socle contractuel|dataroom|offboarding|déclaration d'invention/.test(text)) {
+    return 'twoCols';
+  }
+  return 'statement';
+}
+
+// ---------------------------------------------------------------------------
+
 export async function structure(dossier: DeckDossier): Promise<OutlineStub[]> {
+  const explicit = parseSlideBySlideBrief(dossier.rawBrief);
+  if (explicit) return explicit;
+
   let prompt = dossierPrompt(dossier);
 
   for (let attempt = 0; ; attempt++) {
