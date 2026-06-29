@@ -14,6 +14,7 @@
     "jobs:run": "payload jobs:run --queue default",
     "login": "node --env-file=.env scripts/login.mjs",
     "test": "vitest run",
+    "test:e2e": "node --env-file=.env node_modules/@playwright/test/cli.js test",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

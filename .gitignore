@@ -17,3 +17,11 @@ tsconfig.tsbuildinfo
 
 # Playwright MCP browser-automation dumps
 .playwright-mcp/
+
+# Playwright e2e run artifacts
+test-results/
+playwright-report/
+
+# MCP config with secrets (OpenWebUI API key)
+.mcp.json
+mcp.json
