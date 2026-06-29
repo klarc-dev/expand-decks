@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { useFormFields } from '@payloadcms/ui';
 
 import { renderBlockPreview } from '@/export/preview';
+import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import { formStateToBlockData } from '@/lib/formStateToBlockData';
 import { SlideFrame, SLIDE_STAGE_BG } from '@/components/SlideFrame';
 
@@ -39,12 +40,18 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
 
   const res = renderBlockPreview(data as never, sections);
   if (!res) return null;
-  const { html, layout } = res;
+  const { className, html, image, layout } = res;
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.scaler}>
-        <SlideFrame html={html} layout={layout} style={styles.slide} />
+        <SlideFrame
+          className={className}
+          html={html}
+          image={image}
+          layout={layout}
+          style={styles.slide}
+        />
       </div>
     </div>
   );
@@ -59,20 +66,20 @@ const styles = {
     background: SLIDE_STAGE_BG,
     // Shrink to the scaled slide — without this the wrapper keeps the form
     // column's full width and shows a dead dark band right of the preview.
-    width: 'calc(960px * var(--slide-scale, 0.5))',
+    width: `calc(${SLIDE_CANVAS_WIDTH}px * var(--slide-scale, 0.375))`,
     maxWidth: '100%',
   },
   scaler: {
-    width: '960px',
-    height: '540px',
-    transform: 'scale(var(--slide-scale, 0.5))',
+    width: `${SLIDE_CANVAS_WIDTH}px`,
+    height: `${SLIDE_CANVAS_HEIGHT}px`,
+    transform: 'scale(var(--slide-scale, 0.375))',
     transformOrigin: 'top left',
-    marginBottom: 'calc(-540px * (1 - var(--slide-scale, 0.5)))',
-    marginRight: 'calc(-960px * (1 - var(--slide-scale, 0.5)))',
+    marginBottom: `calc(-${SLIDE_CANVAS_HEIGHT}px * (1 - var(--slide-scale, 0.375)))`,
+    marginRight: `calc(-${SLIDE_CANVAS_WIDTH}px * (1 - var(--slide-scale, 0.375)))`,
   },
   slide: {
-    width: '960px',
-    height: '540px',
+    width: `${SLIDE_CANVAS_WIDTH}px`,
+    height: `${SLIDE_CANVAS_HEIGHT}px`,
     overflow: 'hidden',
     position: 'relative' as const,
   },
