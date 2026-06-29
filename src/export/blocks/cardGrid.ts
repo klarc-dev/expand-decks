@@ -12,10 +12,7 @@ function balancedGridColumns(requested: number, count: number): number {
 }
 
 export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): string {
-  const sidebarHtml = richTextToHTML(block.sidebarText);
-  const sidebar = sidebarHtml
-    ? `<div class="text-sm text-right max-w-xs k-side-note">\n    ${sidebarHtml}\n  </div>`
-    : undefined;
+  const leadHtml = richTextToHTML(block.sidebarText);
 
   const cardList = block.cards ?? [];
   const cards = cardList.map((c) =>
@@ -25,8 +22,13 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
   const requestedCols = Number(block.columns ?? '4');
   const cols = balancedGridColumns(requestedCols, cardList.length);
   const stack = cardStack(cards, { layout: 'grid', cols });
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, sidebar });
-  const body = contentFrame(stack.html, { header, crowded: stack.crowded });
+  const lead = leadHtml ? `<div class="k-cardgrid-lead">\n${leadHtml}\n</div>` : '';
+  const main =
+    lead || stack.html
+      ? `<div class="k-cardgrid-body">\n${lead}${lead && stack.html ? '\n' : ''}${stack.html}\n</div>`
+      : '';
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title });
+  const body = contentFrame(main, { header, crowded: stack.crowded, mainAlign: 'stretch' });
 
   return wrapSlide({ surface: ctx?.surface, body });
 }

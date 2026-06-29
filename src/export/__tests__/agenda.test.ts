@@ -42,4 +42,18 @@ describe('renderAgenda', () => {
     expect(out).toContain('k-ag-item--active');
     expect(out).toContain('k-ag-item--dim');
   });
+
+  it('keeps small agendas (<4 rows) centered without the fitted treatment', () => {
+    const out = renderAgenda(base, { sections: ['One', 'Two', 'Three'] });
+    expect(out).not.toContain('k-agenda--fit');
+    expect(out).toContain('k-content-main--center');
+  });
+
+  it('switches to the height-fitted layout once the list can crowd the canvas', () => {
+    const out = renderAgenda(base, { sections: ['One', 'Two', 'Three', 'Four', 'Five'] });
+    // Fitted mode: list fills the content-main row and shares it across rows, so
+    // the canvas bounds the layout regardless of count — no overflow into chrome.
+    expect(out).toContain('k-agenda--fit');
+    expect(out).toContain('k-content-main--stretch');
+  });
 });

@@ -7,8 +7,26 @@ import {
   heroFrame,
   resetDefs,
   slideHeader,
+  surfaceClass,
   wrapSlide,
 } from '../utils';
+
+describe('surfaceClass()', () => {
+  it('maps light to a bare relative class (no dark wash)', () => {
+    expect(surfaceClass('light')).toBe('relative');
+  });
+
+  it('maps dark to the solid dark surface', () => {
+    expect(surfaceClass('dark')).toBe('relative k-dark');
+  });
+
+  it('gives gradient a distinct class so it differs from plain dark', () => {
+    const gradient = surfaceClass('gradient');
+    expect(gradient).toContain('k-dark');
+    expect(gradient).toContain('k-gradient');
+    expect(gradient).not.toBe(surfaceClass('dark'));
+  });
+});
 
 describe('slideHeader()', () => {
   it('emits eyebrow + title with the lg heading scale by default', () => {

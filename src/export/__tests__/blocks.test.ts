@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { renderAgenda } from '../blocks/agenda';
 import { renderCardGrid } from '../blocks/cardGrid';
 import { renderCover } from '../blocks/cover';
 import { renderCta } from '../blocks/cta';
@@ -12,7 +13,7 @@ import { renderStats } from '../blocks/stats';
 import { renderTable } from '../blocks/table';
 import { renderTimeline } from '../blocks/timeline';
 import { renderTwoCols } from '../blocks/twoCols';
-import { escape, md } from '../utils';
+import { escape, md, resetDefs } from '../utils';
 
 // Minimal valid Lexical editor state (root > paragraph > text) for richText
 // fields in fixtures, matching what convertLexicalToHTML expects.
@@ -129,6 +130,17 @@ describe('renderCover()', () => {
     expect(result).not.toContain('k-dark');
   });
 
+  it('reserves a footer slot inside the full-height cover frame', () => {
+    resetDefs();
+    const result = renderCover({
+      blockType: 'cover',
+      title: 'Cover {{def:Source}}',
+    });
+    expect(result).toContain('k-def-footer');
+    expect(result).not.toContain('k-def-footer-slot');
+    expect(result).toMatch(/k-cover[\s\S]*k-def-footer/);
+  });
+
   it('escapes XSS in title', () => {
     const result = renderCover({
       blockType: 'cover',
@@ -193,6 +205,17 @@ describe('renderSection()', () => {
       title: 'Section Title',
     });
     expect(result).toContain('layout: center');
+  });
+
+  it('reserves a footer slot inside the full-height section frame', () => {
+    resetDefs();
+    const result = renderSection({
+      blockType: 'section',
+      title: 'Section {{def:Source}}',
+    });
+    expect(result).toContain('k-def-footer');
+    expect(result).not.toContain('k-def-footer-slot');
+    expect(result).toMatch(/k-center-hero[\s\S]*k-def-footer/);
   });
 
   it('includes section number when provided', () => {
@@ -271,16 +294,26 @@ describe('renderStatement() — variant dispatch (U8)', () => {
     expect(result).toContain('k-caption');
     expect(result).not.toContain('k-foot');
   });
+
+  it('reserves a footer slot inside the full-height statement hero frame', () => {
+    resetDefs();
+    const result = renderStatement({ blockType: 'statement', title: 'Statement {{def:Source}}' });
+    expect(result).toContain('k-def-footer');
+    expect(result).not.toContain('k-def-footer-slot');
+    expect(result).toMatch(/k-hero[\s\S]*k-def-footer/);
+  });
 });
 
 describe('renderTwoCols()', () => {
-  it('produces layout: default with k-split', () => {
+  it('produces layout: default with k-split inside the shared content frame', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'Two Cols',
     });
     expect(result).toContain('layout: default');
     expect(result).toContain('k-split');
+    expect(result).toContain('k-content-header');
+    expect(result).toContain('k-content-main');
   });
 
   it('renders right cards in the second split column even when left body is empty', () => {
@@ -376,6 +409,41 @@ describe('renderCardGrid()', () => {
       expect(result).toContain(`>${t}<`);
     }
   });
+
+  it('renders sidebarText as an in-flow lead band above the cards, not a floating header sidebar', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      sidebarText: lexical('Contexte de la partie'),
+      cards: oneCard,
+    });
+    // The lead is a structural band in the body, not a right-aligned header aside.
+    expect(result).toContain('k-cardgrid-lead');
+    expect(result).toContain('Contexte de la partie');
+    expect(result).not.toContain('k-content-header--split');
+    expect(result).not.toContain('k-side-note');
+    // Lead reads before the card grid so the slide has a clear top-down hierarchy.
+    expect(result.indexOf('k-cardgrid-lead')).toBeLessThan(result.indexOf('k-card-stack'));
+  });
+
+  it('stretches the card body to own the content row so cards align to one baseline', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+    });
+    expect(result).toContain('k-cardgrid-body');
+    expect(result).toContain('k-content-main--stretch');
+  });
+
+  it('omits the lead band when no sidebarText is provided', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+    });
+    expect(result).not.toContain('k-cardgrid-lead');
+  });
 });
 
 describe('renderStats()', () => {
@@ -400,6 +468,12 @@ describe('renderStats()', () => {
     expect(result).toContain('Expertises');
     expect(result).toContain('>360<');
     expect(result).toContain('Couverture');
+  });
+
+  it('uses the shared content header/body frame', () => {
+    const result = renderStats({ blockType: 'stats', title: 'Stats' });
+    expect(result).toContain('k-content-header');
+    expect(result).toContain('k-content-main');
   });
 
   it('uses production-safe clamped grid classes', () => {
@@ -450,6 +524,35 @@ describe('renderQuotes()', () => {
     expect(result).toContain('k-grid-1');
     expect(result).toContain('k-quote-card');
   });
+
+  it('uses a dense two-column layout for four long quotes', () => {
+    const long =
+      'Une citation longue avec plusieurs propositions qui resterait illisible dans quatre colonnes étroites.';
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Quotes',
+      quotes: [
+        { quote: lexical(long), authorName: 'A' },
+        { quote: lexical(long), authorName: 'B' },
+        { quote: lexical(long), authorName: 'C' },
+        { quote: lexical(long), authorName: 'D' },
+      ],
+    });
+    expect(result).toContain('k-grid-2');
+    expect(result).toContain('k-content-tight');
+    // 2x2 grid is only 2 rows, so force the tight quote typography explicitly.
+    expect(result).toContain('k-card-stack--grid k-tight');
+  });
+
+  it('uses the shared content header/body frame', () => {
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Quotes',
+      quotes: [{ quote: lexical('Q'), authorName: 'A' }],
+    });
+    expect(result).toContain('k-content-header');
+    expect(result).toContain('k-content-main');
+  });
 });
 
 describe('renderCta()', () => {
@@ -484,25 +587,72 @@ describe('renderCta()', () => {
     expect(result).toContain('Title');
     expect(result).not.toContain('k-btn');
   });
+
+  it('reserves a footer slot inside the full-height cta frame', () => {
+    resetDefs();
+    const result = renderCta({ blockType: 'cta', title: 'CTA {{def:Source}}' });
+    expect(result).toContain('k-def-footer');
+    expect(result).not.toContain('k-def-footer-slot');
+    expect(result).toMatch(/k-center-hero[\s\S]*k-def-footer/);
+  });
+});
+
+describe('renderAgenda()', () => {
+  it('keeps short agendas at default density', () => {
+    const result = renderAgenda({
+      blockType: 'agenda',
+      title: 'Agenda',
+      items: [
+        { label: 'One', description: null },
+        { label: 'Two', description: null },
+      ],
+    });
+    expect(result).toContain('k-content-header');
+    expect(result).toContain('k-content-main');
+    expect(result).not.toContain('k-agenda--dense');
+  });
+
+  it('switches long agendas to the dense layout', () => {
+    const result = renderAgenda({
+      blockType: 'agenda',
+      title: 'Agenda',
+      items: [
+        { label: 'One', description: null },
+        { label: 'Two', description: null },
+        { label: 'Three', description: null },
+        { label: 'Four', description: null },
+        { label: 'Five', description: null },
+        { label: 'Six', description: null },
+      ],
+    });
+    expect(result).toContain('k-agenda--dense');
+    expect(result).toContain('k-content-tight');
+  });
 });
 
 describe('renderTimeline()', () => {
-  it('keeps short timelines horizontal', () => {
+  it('keeps short timelines horizontal on a rail', () => {
     const result = renderTimeline({
       blockType: 'timeline',
       title: 'Process',
       steps: [
         { label: 'A', description: 'Short' },
         { label: 'B', description: 'Short' },
+        { label: 'C', description: 'Short' },
+        { label: 'D', description: null },
       ],
     });
     expect(result).toContain('k-content-header');
     expect(result).toContain('k-content-main');
     expect(result).toContain('k-timeline--horizontal');
+    expect(result).toContain('--k-tl-count:4');
+    expect(result).not.toContain('k-timeline--vertical');
     expect(result).not.toContain('k-timeline--cards');
+    expect(result).not.toContain('k-tl-arrow');
+    expect(result).not.toContain('→');
   });
 
-  it('switches long or five-step timelines to readable cards', () => {
+  it('switches long or five-step timelines to a readable vertical rail', () => {
     const result = renderTimeline({
       blockType: 'timeline',
       title: 'Process',
@@ -513,10 +663,29 @@ describe('renderTimeline()', () => {
         { label: 'D', description: 'Texte long qui doit rester lisible' },
         { label: 'E', description: 'Texte long qui doit rester lisible' },
       ],
+      footer: 'À retenir',
     });
-    expect(result).toContain('k-timeline--cards');
+    expect(result).toContain('k-timeline--vertical');
+    expect(result).toContain('--k-tl-count:5');
     expect(result).toContain('k-content-tight');
+    expect(result).toContain('k-tl-band');
+    expect(result).not.toContain('k-timeline--horizontal');
+    expect(result).not.toContain('k-timeline--cards');
+    // Rail connectors are CSS pseudo-elements, not inline arrow glyphs.
+    expect(result).not.toContain('k-tl-arrow');
     expect(result).not.toContain('→');
+  });
+
+  it('renders an empty timeline container without throwing', () => {
+    const result = renderTimeline({
+      blockType: 'timeline',
+      title: 'Process',
+      steps: [],
+    });
+
+    expect(result).toContain('k-timeline k-timeline--horizontal');
+    expect(result).toContain('--k-tl-count:1');
+    expect(result).not.toContain('k-tl-band');
   });
 });
 
@@ -531,6 +700,19 @@ describe('renderMermaid()', () => {
     expect(result).toContain('```mermaid');
     expect(result).toContain('flowchart TD');
     expect(result).not.toContain('<div class="mermaid">');
+  });
+
+  it('keeps definition footers in the diagram slide grid without wrapping the mermaid fence', () => {
+    resetDefs();
+    const result = renderMermaid({
+      blockType: 'mermaid',
+      title: 'Diagram {{def:Source}}',
+      source: 'flowchart TD\nA-->B',
+    });
+    expect(result).toContain('k-diagram-slide');
+    expect(result).toContain('k-def-footer');
+    expect(result).not.toContain('k-def-footer-slot');
+    expect(result).toContain('\n```mermaid');
   });
 
   it('rejects embedded markdown fences that would close the mermaid block', () => {
@@ -566,7 +748,7 @@ describe('renderMarkdown()', () => {
     expect(result).toContain('<div class="custom">Raw HTML</div>');
   });
 
-  it('includes frontmatter YAML', () => {
+  it('includes frontmatter YAML and preserves the mandatory markdown rail class', () => {
     const result = renderMarkdown({
       blockType: 'markdown',
       layout: 'default',
@@ -574,7 +756,7 @@ describe('renderMarkdown()', () => {
       content: '# Hello',
     });
     expect(result).toContain('layout: default');
-    expect(result).toContain('class: relative k-dark');
+    expect(result).toContain('class: relative k-dark k-markdown-slide');
     expect(result).toContain('# Hello');
   });
 
@@ -608,6 +790,8 @@ describe('renderTable() — reference vs matrix variant + StatusPill (U10)', () 
     });
     expect(r).not.toContain('k-pill');
     expect(r).not.toContain('k-table--matrix');
+    expect(r).toContain('k-content-header');
+    expect(r).toContain('k-content-main k-content-main--start');
   });
 
   it('matrix variant maps whole-cell status tokens to the right pill', () => {

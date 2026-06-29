@@ -190,6 +190,63 @@ describe('buildSlidesMd()', () => {
     expect(parsed.headmatter.title).toBe('Test Deck');
   });
 
+  // Sources-wiring contract: authored "Sources / Notes" must surface as a
+  // numbered footer band on EVERY non-markdown template (emitPayloadBlock injects
+  // the footnotes repeater everywhere but markdown; buildSlidesMd seeds the band
+  // before each renderer). One representative fixture per block type proves the
+  // guarantee holds for all 12, not just the handful with bespoke def-footer tests.
+  describe('authored sources surface on every non-markdown template', () => {
+    const FIXTURES: Array<{ type: string; block: Record<string, unknown> }> = [
+      { type: 'cover', block: { title: 'Cover' } },
+      { type: 'section', block: { title: 'Section' } },
+      { type: 'statement', block: { title: 'Statement' } },
+      { type: 'twoCols', block: { title: 'Two Cols', intro: lexical('Intro') } },
+      {
+        type: 'cardGrid',
+        block: { title: 'Grid', cards: [{ number: '01', title: 'A', description: lexical('D') }] },
+      },
+      { type: 'stats', block: { title: 'Stats', stats: [{ value: '1', label: 'L' }] } },
+      {
+        type: 'quotes',
+        block: { title: 'Quotes', quotes: [{ quote: lexical('Q'), authorName: 'A' }] },
+      },
+      { type: 'cta', block: { title: 'CTA' } },
+      {
+        type: 'table',
+        block: {
+          title: 'Table',
+          columns: [{ header: 'H' }],
+          rows: [{ cells: [{ value: lexical('c') }] }],
+        },
+      },
+      {
+        type: 'timeline',
+        block: { title: 'Timeline', steps: [{ label: 'S', description: null }] },
+      },
+      { type: 'mermaid', block: { title: 'Diagram', source: 'flowchart TD\nA-->B' } },
+      { type: 'agenda', block: { title: 'Agenda', items: [{ label: 'One', description: null }] } },
+    ];
+
+    for (const { type, block } of FIXTURES) {
+      it(`${type} renders a numbered source band from authored footnotes`, () => {
+        const result = build([
+          { blockType: type, ...block, footnotes: [{ text: 'Source : CGI art. 256' }] } as never,
+        ]);
+        expect(result).toContain('k-def-footer');
+        expect(result).toContain('<sup>1</sup>Source : CGI art. 256');
+        // The slot marker must always be resolved, never leaked into output.
+        expect(result).not.toContain('k-def-footer-slot');
+      });
+    }
+
+    it('markdown is intentionally excluded from the sources repeater', () => {
+      const result = build([
+        { blockType: 'markdown', content: '# Hi', footnotes: [{ text: 'x' }] } as never,
+      ]);
+      expect(result).not.toContain('k-def-footer');
+    });
+  });
+
   it('handles a full deck with all block types', () => {
     const slides: Presentation['slides'] = [
       { blockType: 'cover', title: 'Cover', eyebrow: 'Tag', subtitle: lexical('Sub') },
@@ -224,11 +281,32 @@ describe('buildSlidesMd()', () => {
         primaryAction: 'Go',
         footerNote: lexical('site.example'),
       },
+      {
+        blockType: 'table',
+        title: 'Table',
+        columns: [{ header: 'H' }],
+        rows: [{ cells: [{ value: lexical('Cell') }] }],
+      },
+      {
+        blockType: 'timeline',
+        title: 'Timeline',
+        steps: [{ label: 'S', description: 'D' }],
+      },
+      {
+        blockType: 'mermaid',
+        title: 'Diagram',
+        source: 'flowchart TD\nA-->B',
+      },
+      {
+        blockType: 'agenda',
+        title: 'Agenda',
+        items: [{ label: 'One', description: null }],
+      },
       { blockType: 'markdown', layout: 'center', content: '# Raw' },
     ];
 
     const md = build(slides);
     const parsed = parseDeck(md);
-    expect(parsed.slides.length).toBe(9);
+    expect(parsed.slides.length).toBe(13);
   });
 });

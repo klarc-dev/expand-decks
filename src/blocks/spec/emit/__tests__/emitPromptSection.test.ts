@@ -59,7 +59,7 @@ Règles :
 - Termine TOUJOURS par un bloc "cta"
 - Utilise "section" pour structurer le contenu en parties
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
-- Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes reliées de gauche à droite)
+- Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes ordonnées reliées par une ligne de progression)
 - Utilise "mermaid" pour un diagramme de flux, un organigramme ou un workflow (à partir de code Mermaid)
 - Varie les layouts pour structurer l'information
 - Reste dans la langue du brief (français par défaut si ambigu)

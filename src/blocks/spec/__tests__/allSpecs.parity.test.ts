@@ -122,9 +122,9 @@ Layouts disponibles :
    - columns: [{header}] — 2 à 5 colonnes
    - rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre
 
-10. **timeline** — Frise horizontale d’étapes ordonnées reliées par des flèches (cycle de vie, processus, parcours chronologique)
+10. **timeline** — Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)
    - eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)
-   - steps: [{label, description}] — 2 à 6 étapes, dans l’ordre, affichées de gauche à droite
+   - steps: [{label, description}] — 2 à 6 étapes, dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)
 
 11. **mermaid** — Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)
    - eyebrow, title (obligatoire), surface ("light" | "dark"), caption
@@ -139,7 +139,7 @@ Règles :
 - Termine TOUJOURS par un bloc "cta"
 - Utilise "section" pour structurer le contenu en parties
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
-- Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes reliées de gauche à droite)
+- Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes ordonnées reliées par une ligne de progression)
 - Utilise "mermaid" pour un diagramme de flux, un organigramme ou un workflow (à partir de code Mermaid)
 - Varie les layouts pour structurer l'information
 - Reste dans la langue du brief (français par défaut si ambigu)

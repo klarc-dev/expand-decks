@@ -2,6 +2,7 @@ import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
 import {
+  defFooterSlot,
   escape,
   eyebrow as renderEyebrow,
   md,
@@ -43,11 +44,13 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
     : '';
 
   const body = `<div class="k-center-hero w-full">
+  <div class="k-center-hero-main">
 ${eyebrow}
 <h1 class="${K.ctaTitle} mb-4">
 ${md(block.title)}
 </h1>${subtitle}${buttonsHtml}${footerNote}
-
+  </div>
+  ${defFooterSlot()}
 </div>`;
 
   // cta is the dark closing slide by default; a resolved tone can still override.

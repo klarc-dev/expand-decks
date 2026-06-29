@@ -1,5 +1,5 @@
 import type { MermaidBlockData } from '../../blocks/spec/mermaid';
-import { md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
+import { defFooterSlot, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { MermaidBlockData };
 
@@ -64,7 +64,7 @@ export function renderMermaid(block: MermaidBlockData, ctx?: RenderCtx): string 
   // The k-diagram-slide class (added to the slide's own class attr) supplies the
   // horizontal inset + centers Slidev's emitted .mermaid output — done in CSS on
   // the slide root rather than a wrapper div, so the fence stays unwrapped.
-  const body = [header, diagram, caption].filter(Boolean).join('\n\n');
+  const body = [header, diagram, caption, defFooterSlot()].filter(Boolean).join('\n\n');
 
   const tone = surfaceClass(block.surface ?? ctx?.surface);
   return wrapSlide({ classAttr: `${tone} k-diagram-slide`, body });

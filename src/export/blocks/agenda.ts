@@ -4,6 +4,16 @@ import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx 
 
 export type { AgendaBlockData };
 
+function needsDenseAgenda(items: NonNullable<AgendaBlockData['items']>): boolean {
+  const descriptionLengths = items.map((item) => item.description?.length ?? 0);
+  const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
+  return (
+    items.length >= 6 ||
+    totalDescriptionLength > 360 ||
+    descriptionLengths.some((length) => length > 90)
+  );
+}
+
 export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
   // Authored items win; an empty agenda auto-derives its list from the deck's
   // `section` titles (passed in via ctx.sections) — drop the block in and it
@@ -12,6 +22,7 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     block.items && block.items.length > 0
       ? block.items
       : (ctx?.sections ?? []).map((label) => ({ label, description: null }));
+  const dense = needsDenseAgenda(items);
   // `active` is 1-based; only emphasize when it points at a real item.
   const active = block.active ?? 0;
   const hasActive = active >= 1 && active <= items.length;
@@ -34,9 +45,15 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     .join('\n');
 
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
-  const bodyHtml = contentFrame(`<ol class="${K.agenda}">\n${rows}\n</ol>`, {
+  const fit = dense || items.length >= 4;
+  const agendaClass = [K.agenda, dense ? 'k-agenda--dense' : '', fit ? 'k-agenda--fit' : '']
+    .filter(Boolean)
+    .join(' ');
+  const bodyHtml = contentFrame(`<ol class="${agendaClass}">\n${rows}\n</ol>`, {
     header,
     wFull: true,
+    crowded: dense,
+    mainAlign: fit ? 'stretch' : 'center',
   });
 
   return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });

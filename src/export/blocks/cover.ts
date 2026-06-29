@@ -1,7 +1,14 @@
 import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
-import { eyebrow as renderEyebrow, md, wrapSlide, type RenderCtx, type SlideImage } from '../utils';
+import {
+  defFooterSlot,
+  eyebrow as renderEyebrow,
+  md,
+  wrapSlide,
+  type RenderCtx,
+  type SlideImage,
+} from '../utils';
 
 export type { CoverBlockData };
 
@@ -44,11 +51,12 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
     : `${darkClass.trim()} absolute inset-0 flex flex-col justify-between k-cover`.trim();
 
   const body = `<div class="${wrapperClass}">
-  <div class="flex-1 flex items-center">
+  <div class="k-cover-main">
     <div class="max-w-4xl">${eyebrow}
       <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}
     </div>
   </div>${footerRow}
+  ${defFooterSlot()}
 </div>`;
 
   return wrapSlide({ layout: 'cover', classAttr: '', hideChrome: true, image, body });

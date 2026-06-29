@@ -49,7 +49,7 @@ export const timelineSpec = block({
     rawField('steps', z.array(z.unknown()), optionalAi(z.array(aiStep).min(2).max(6)), {
       type: 'array',
       label: 'Étapes',
-      description: 'Étapes ordonnées, reliées de gauche à droite par des flèches (2 à 6)',
+      description: 'Étapes ordonnées, reliées par une ligne de progression (2 à 6)',
       fields: [
         rawField('label', z.string(), optionalAi(z.string()), {
           type: 'text',
@@ -75,10 +75,10 @@ export const timelineSpec = block({
     index: 10,
     heading: 'timeline',
     summary:
-      'Frise horizontale d’étapes ordonnées reliées par des flèches (cycle de vie, processus, parcours chronologique)',
+      'Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)',
     lines: [
       'eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)',
-      'steps: [{label, description}] — 2 à 6 étapes, dans l’ordre, affichées de gauche à droite',
+      'steps: [{label, description}] — 2 à 6 étapes, dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)',
     ],
   },
 });

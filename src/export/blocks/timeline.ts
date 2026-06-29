@@ -4,7 +4,10 @@ import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx 
 
 export type { TimelineBlockData };
 
-function needsCardTimeline(steps: NonNullable<TimelineBlockData['steps']>): boolean {
+// Dense progressions (many steps, or long copy) read better stacked vertically
+// than crammed into narrow horizontal columns — switch layout on the same signal
+// the slide uses for its `crowded` density treatment.
+function needsVerticalTimeline(steps: NonNullable<TimelineBlockData['steps']>): boolean {
   const descriptionLengths = steps.map((s) => s.description?.length ?? 0);
   const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
   return (
@@ -16,16 +19,18 @@ function needsCardTimeline(steps: NonNullable<TimelineBlockData['steps']>): bool
 
 export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): string {
   const steps = block.steps ?? [];
-  const dense = needsCardTimeline(steps);
+  const vertical = needsVerticalTimeline(steps);
 
+  // Each step is a self-contained node; the connecting rail is drawn purely in
+  // CSS (a pseudo-element behind the numbered dots), so no arrow glyphs or
+  // connector divs leak into the markup. Horizontal mode relies on the parent
+  // grid to lock every dot / label / description onto a shared row.
   const nodes = steps
     .map((s, i) => {
-      const arrow = !dense && i > 0 ? `<div class="${K.timelineArrow}">→</div>` : '';
       const desc = s.description
         ? `\n    <p class="${K.timelineDesc}">${md(s.description)}</p>`
         : '';
-      return `${arrow}
-  <div class="${K.timelineStep}">
+      return `  <div class="${K.timelineStep}">
     <div class="${K.timelineDot}">${i + 1}</div>
     <h3 class="${K.timelineLabel}">${md(s.label)}</h3>${desc}
   </div>`;
@@ -33,16 +38,14 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
     .join('\n');
 
   const band = block.footer ? `\n\n<div class="${K.timelineBand}">${md(block.footer)}</div>` : '';
-  const timelineClass = dense
-    ? `${K.timeline} k-timeline--cards`
-    : `${K.timeline} k-timeline--horizontal`;
-  const timeline = `<div class="${timelineClass}">\n${nodes}\n</div>${band}`;
+  const variant = vertical ? K.timelineVertical : K.timelineHorizontal;
+  const timeline = `<div class="${K.timeline} ${variant}" style="--k-tl-count:${steps.length || 1}">\n${nodes}\n</div>${band}`;
 
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
   const bodyHtml = contentFrame(timeline, {
     header,
     wFull: true,
-    crowded: dense,
+    crowded: vertical,
   });
 
   return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });

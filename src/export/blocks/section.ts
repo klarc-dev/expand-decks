@@ -1,7 +1,15 @@
 import type { SectionBlockData } from '../../blocks/spec/section';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
-import { escape, md, surfaceClass, wrapSlide, type RenderCtx, type SlideImage } from '../utils';
+import {
+  defFooterSlot,
+  escape,
+  md,
+  surfaceClass,
+  wrapSlide,
+  type RenderCtx,
+  type SlideImage,
+} from '../utils';
 
 export type { SectionBlockData };
 
@@ -25,11 +33,13 @@ export function renderSection(block: SectionBlockData, ctx?: RenderCtx): string 
   const wrapperClass = image ? 'k-center-hero k-center-hero--left' : 'k-center-hero';
 
   const body = `<div class="${wrapperClass}">
+  <div class="k-center-hero-main">
 ${number}
 <h1 class="k-center-hero-title">
 ${md(block.title)}
 </h1>${subtitle}
-
+  </div>
+  ${defFooterSlot()}
 </div>`;
 
   // section/cover/cta default dark; an explicit block.surface or resolved tone wins.

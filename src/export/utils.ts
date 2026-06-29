@@ -67,6 +67,10 @@ export function yamlQuoted(s: string | null | undefined): string {
 
 const DEF_FOOTER_SLOT = '<!-- k-def-footer-slot -->';
 
+export function defFooterSlot(): string {
+  return DEF_FOOTER_SLOT;
+}
+
 let _slideDefs: string[] = [];
 
 export function resetDefs(): void {
@@ -153,7 +157,11 @@ export function md(text: string | null | undefined): string {
 export type Surface = 'dark' | 'light' | 'gradient';
 
 export function surfaceClass(surface?: Surface | null): string {
-  return surface === 'light' ? 'relative' : `relative ${K.dark}`;
+  if (surface === 'light') return 'relative';
+  // gradient is a distinct dark surface (k-dark paints the base dark tone,
+  // k-gradient adds the diagonal wash) so the admin/AI choice has a real effect.
+  if (surface === 'gradient') return `relative ${K.dark} k-gradient`;
+  return `relative ${K.dark}`;
 }
 
 /**
@@ -363,7 +371,7 @@ export function heroFrame(opts: {
     return wrapSlide({
       layout: 'default',
       surface: opts.surface,
-      body: `<div class="k-hero k-hero--${opts.scale} k-hero--left">\n${inner}\n</div>`,
+      body: `<div class="k-hero k-hero--${opts.scale} k-hero--left">\n  <div class="k-hero-main">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
     });
   }
 
@@ -373,6 +381,6 @@ export function heroFrame(opts: {
   return wrapSlide({
     layout: opts.align === 'center' ? 'center' : 'default',
     surface: opts.surface,
-    body: `<div class="k-hero k-hero--${opts.scale} ${alignClass}">\n${inner}\n</div>`,
+    body: `<div class="k-hero k-hero--${opts.scale} ${alignClass}">\n  <div class="k-hero-main">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
   });
 }
