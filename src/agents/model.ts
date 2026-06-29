@@ -52,6 +52,8 @@ export const draftModel = nineRouter(DRAFT_MODEL) as any;
 /** An image part for multimodal prompts (e.g. a slide PNG to critique). */
 export type ImagePart = { base64: string; mimeType?: string };
 
+const DEFAULT_RESEARCH_MAX_STEPS = 6;
+
 /** Gateway hiccups worth one retry (omniroute occasionally 502s under load). */
 const TRANSIENT_RE =
   /bad gateway|gateway timeout|502|503|504|ECONNRESET|fetch failed|socket hang up/i;
@@ -71,6 +73,62 @@ async function withTransientRetry<R>(name: string, fn: () => Promise<R>): Promis
       await new Promise((r) => setTimeout(r, TRANSIENT_BACKOFF_MS * (i + 1)));
     }
   }
+}
+
+function textFromGenerateResult(res: unknown): string {
+  const value = res as {
+    text?: unknown;
+    content?: unknown;
+    object?: unknown;
+    response?: { messages?: unknown };
+  };
+  if (typeof value.text === 'string') return value.text;
+  if (typeof value.content === 'string') return value.content;
+  if (Array.isArray(value.content)) {
+    return value.content
+      .map((part) =>
+        part && typeof part === 'object' && 'text' in part
+          ? String((part as { text?: unknown }).text ?? '')
+          : '',
+      )
+      .filter(Boolean)
+      .join('\n');
+  }
+  if (value.object !== undefined) return JSON.stringify(value.object);
+  return '';
+}
+
+export async function researchWithSources({
+  name,
+  instructions,
+  prompt,
+  toolsets,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  maxSteps = DEFAULT_RESEARCH_MAX_STEPS,
+}: {
+  name: string;
+  instructions: string;
+  prompt: string;
+  toolsets: unknown;
+  timeoutMs?: number;
+  maxSteps?: number;
+}): Promise<string> {
+  const agent = new Agent({
+    id: name,
+    name,
+    instructions,
+    model: draftModel,
+  });
+
+  const res = await withTransientRetry(name, () =>
+    agent.generate(prompt as never, {
+      toolsets: toolsets as never,
+      maxSteps,
+      abortSignal: AbortSignal.timeout(timeoutMs),
+    }),
+  );
+
+  return textFromGenerateResult(res).trim();
 }
 
 export async function generateStructured<T>({

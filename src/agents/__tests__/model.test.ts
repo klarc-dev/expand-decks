@@ -18,7 +18,7 @@ vi.mock('../../lib/ai', () => ({
 }));
 
 import { z } from 'zod';
-import { generateStructured } from '../model';
+import { generateStructured, researchWithSources } from '../model';
 
 describe('generateStructured emit tool selection', () => {
   beforeEach(() => {
@@ -60,5 +60,34 @@ describe('generateStructured emit tool selection', () => {
         maxRepairs: 0,
       }),
     ).resolves.toEqual({ ok: true });
+  });
+});
+
+describe('researchWithSources', () => {
+  beforeEach(() => {
+    generateMock.mockReset();
+  });
+
+  it('passes toolsets with multiple steps and does not force tool choice', async () => {
+    generateMock.mockResolvedValue({ text: 'research notes' });
+
+    await expect(
+      researchWithSources({
+        name: 'research',
+        instructions: 'Use sources',
+        prompt: 'find facts',
+        toolsets: { source: {} },
+        maxSteps: 4,
+      }),
+    ).resolves.toBe('research notes');
+
+    expect(generateMock).toHaveBeenCalledWith(
+      'find facts',
+      expect.objectContaining({
+        toolsets: { source: {} },
+        maxSteps: 4,
+      }),
+    );
+    expect(generateMock.mock.calls[0]![1]).not.toHaveProperty('toolChoice');
   });
 });

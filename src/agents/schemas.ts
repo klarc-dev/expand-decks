@@ -9,6 +9,14 @@
  */
 import { z } from 'zod';
 
+export const EvidenceSchema = z.object({
+  sourceId: z.string(),
+  sourceLabel: z.string(),
+  summary: z.string(),
+  url: z.string().url().optional(),
+});
+export type DeckEvidence = z.infer<typeof EvidenceSchema>;
+
 export const DeckDossierSchema = z.object({
   coreIdea: z
     .string()

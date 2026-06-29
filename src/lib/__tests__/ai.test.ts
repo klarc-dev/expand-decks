@@ -33,6 +33,20 @@ describe('forceNonStreamFetch()', () => {
     expect(JSON.parse(capturedBody())).toEqual({ model: 'cc/x', stream: true });
   });
 
+  it('injects disabled thinking when tools are present without forced tool_choice', async () => {
+    await forceNonStreamFetch('https://x/v1/chat/completions', {
+      method: 'POST',
+      body: JSON.stringify({ model: 'cc/x', tools: [{ type: 'function' }] }),
+    });
+
+    expect(JSON.parse(capturedBody())).toEqual({
+      model: 'cc/x',
+      stream: false,
+      tools: [{ type: 'function' }],
+      thinking: { type: 'disabled' },
+    });
+  });
+
   it('passes a non-JSON body through unchanged', async () => {
     await forceNonStreamFetch('https://x/v1/chat/completions', { method: 'POST', body: 'hello' });
 

@@ -257,6 +257,25 @@ export const Presentations: CollectionConfig = {
               type: 'text',
               admin: { hidden: true, readOnly: true },
             },
+            {
+              name: 'draftSources',
+              type: 'json',
+              label: 'Sources utilisées par l’agent',
+              admin: {
+                description: 'Sources sélectionnées pour le dernier build agentique',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'draftEvidence',
+              type: 'json',
+              label: 'Preuves des sources',
+              admin: {
+                description: 'Extraits de preuve collectés auprès des sources (diagnostic)',
+                readOnly: true,
+                hidden: true,
+              },
+            },
           ],
         },
         {

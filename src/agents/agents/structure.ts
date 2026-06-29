@@ -19,6 +19,7 @@ import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
+import { researchSources } from './research';
 
 const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
 
@@ -121,7 +122,16 @@ function blockTypeForExplicitSlide(
 
 // ---------------------------------------------------------------------------
 
-export async function structure(dossier: DeckDossier): Promise<OutlineStub[]> {
+const STRUCTURE_RESEARCH_INSTRUCTIONS = `Tu es le chercheur. Le plan en cours ne couvre pas encore certains points clés du dossier.
+
+Interroge les sources sélectionnées pour trouver des faits, exemples ou angles qui aident à couvrir précisément ces points.
+- N'utilise QUE ce que les sources renvoient ; ne fabrique rien.
+- Reste centré sur les points non couverts ; pas de remplissage hors sujet.`;
+
+export async function structure(
+  dossier: DeckDossier,
+  sourceIds?: readonly string[],
+): Promise<OutlineStub[]> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
     return explicit;
@@ -143,6 +153,23 @@ export async function structure(dossier: DeckDossier): Promise<OutlineStub[]> {
     if (uncovered.length === 0 || attempt >= MAX_COVERAGE_RETRIES) {
       return slides;
     }
-    prompt = `${dossierPrompt(dossier)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}`;
+
+    // When sources are selected and key points remain uncovered, consult the
+    // sources for targeted material before the next re-plan.
+    let sourceNotes = '';
+    if (sourceIds && sourceIds.length > 0) {
+      const { notes } = await researchSources(sourceIds, {
+        name: 'structure:research',
+        instructions: STRUCTURE_RESEARCH_INSTRUCTIONS,
+        prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
+      });
+      sourceNotes = notes;
+    }
+
+    prompt = `${dossierPrompt(dossier)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
+      sourceNotes
+        ? `\n\n---\nNOTES DE RECHERCHE (sources sélectionnées — n'utilise que le pertinent) :\n${sourceNotes}`
+        : ''
+    }`;
   }
 }

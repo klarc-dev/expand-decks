@@ -17,7 +17,7 @@ const BRIEF =
 
 live('Phase 1 live (gather → structure)', () => {
   it('produces a valid dossier and a covering outline', { timeout: 240_000 }, async () => {
-    const dossier = await gather(BRIEF);
+    const { dossier } = await gather(BRIEF);
     expect(DeckDossierSchema.safeParse(dossier).success).toBe(true);
     expect(dossier.keyPoints.length).toBeGreaterThan(0);
 

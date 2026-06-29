@@ -39,7 +39,7 @@ import { writeSlide } from './agents/writer';
 import { scoreSlide } from './scorers/rubric';
 import { scoreVisual } from './scorers/visual';
 import { exportSlidePngs } from './tools/exportSlidePngs';
-import type { DeckDossier } from './schemas';
+import type { DeckDossier, DeckEvidence } from './schemas';
 
 // ── shared shapes ───────────────────────────────────────────────────────────
 
@@ -53,6 +53,8 @@ export type DeckState = z.infer<typeof StateSchema>;
 /** The data bundle threaded step→step (and round-tripped through `.dountil`). */
 export type DeckBundle = {
   dossier: DeckDossier;
+  evidence: DeckEvidence[];
+  sourceIds: string[];
   stubs: OutlineStub[];
   slides: SlideBlock[];
   titles: string[];
@@ -64,6 +66,7 @@ export type DeckBundle = {
 
 const bundle = z.custom<DeckBundle>();
 const dossierT = z.custom<DeckDossier>();
+const evidenceT = z.custom<DeckEvidence>();
 const slideT = z.custom<SlideBlock>();
 const stubT = z.custom<OutlineStub>();
 
@@ -75,18 +78,36 @@ const writerJob = z.custom<WriterJob>();
 
 const gatherStep = createStep({
   id: 'gather',
-  inputSchema: z.object({ brief: z.string() }),
-  outputSchema: z.object({ dossier: dossierT }),
-  execute: async ({ inputData }) => ({ dossier: await gather(inputData.brief) }),
+  inputSchema: z.object({ brief: z.string(), sourceIds: z.array(z.string()).default([]) }),
+  outputSchema: z.object({
+    dossier: dossierT,
+    evidence: z.array(evidenceT),
+    sourceIds: z.array(z.string()),
+  }),
+  execute: async ({ inputData }) => {
+    const { dossier, evidence } = await gather(inputData.brief, inputData.sourceIds);
+    return { dossier, evidence, sourceIds: inputData.sourceIds };
+  },
 });
 
 const structureStep = createStep({
   id: 'structure',
-  inputSchema: z.object({ dossier: dossierT }),
-  outputSchema: z.object({ dossier: dossierT, stubs: z.array(stubT) }),
+  inputSchema: z.object({
+    dossier: dossierT,
+    evidence: z.array(evidenceT),
+    sourceIds: z.array(z.string()),
+  }),
+  outputSchema: z.object({
+    dossier: dossierT,
+    evidence: z.array(evidenceT),
+    sourceIds: z.array(z.string()),
+    stubs: z.array(stubT),
+  }),
   execute: async ({ inputData }) => ({
     dossier: inputData.dossier,
-    stubs: await structure(inputData.dossier),
+    evidence: inputData.evidence,
+    sourceIds: inputData.sourceIds,
+    stubs: await structure(inputData.dossier, inputData.sourceIds),
   }),
 });
 
@@ -196,23 +217,41 @@ const visualPassthrough = createStep({
 const assembleStep = createStep({
   id: 'assemble',
   inputSchema: bundle,
-  outputSchema: z.object({ dossier: dossierT, slides: z.array(slideT), md: z.string() }),
+  outputSchema: z.object({
+    dossier: dossierT,
+    slides: z.array(slideT),
+    md: z.string(),
+    evidence: z.array(evidenceT),
+    sourceIds: z.array(z.string()),
+  }),
   execute: async ({ inputData, getInitData }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
     return {
       dossier: inputData.dossier,
       slides: inputData.slides,
       md: buildSlidesMd({ title, slides: inputData.slides }),
+      evidence: inputData.evidence,
+      sourceIds: inputData.sourceIds,
     };
   },
 });
 
 // ── workflow input/output ────────────────────────────────────────────────────
 
-const InputSchema = z.object({ brief: z.string(), title: z.string().optional() });
+const InputSchema = z.object({
+  brief: z.string(),
+  title: z.string().optional(),
+  sourceIds: z.array(z.string()).default([]),
+});
 export type DeckWorkflowInput = z.infer<typeof InputSchema>;
 
-const OutputSchema = z.object({ dossier: dossierT, slides: z.array(slideT), md: z.string() });
+const OutputSchema = z.object({
+  dossier: dossierT,
+  slides: z.array(slideT),
+  md: z.string(),
+  evidence: z.array(evidenceT),
+  sourceIds: z.array(z.string()),
+});
 export type DeckWorkflowOutput = z.infer<typeof OutputSchema>;
 
 // ── graph ────────────────────────────────────────────────────────────────────
@@ -242,6 +281,8 @@ export const deckWorkflow = createWorkflow({
     const structured = getStepResult(structureStep);
     return {
       dossier: structured.dossier,
+      evidence: structured.evidence,
+      sourceIds: structured.sourceIds,
       stubs: structured.stubs,
       slides,
       titles: structured.stubs.map((s) => s.title),

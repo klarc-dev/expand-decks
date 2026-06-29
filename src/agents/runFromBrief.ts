@@ -7,11 +7,11 @@ import type { DeckWorkflowOutput } from './workflow';
 
 export async function runDeckFromBrief(
   brief: string,
-  opts: { visual?: boolean } = {},
+  opts: { visual?: boolean; sourceIds?: string[] } = {},
 ): Promise<DeckWorkflowOutput> {
   const run = await mastra.getWorkflow('deckWorkflow').createRun();
   const result = await run.start({
-    inputData: { brief },
+    inputData: { brief, sourceIds: opts.sourceIds ?? [] },
     initialState: { visual: opts.visual === true },
   });
   if (result.status !== 'success') {

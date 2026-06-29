@@ -12,6 +12,8 @@ import { deckContext } from '@/lib/deckContext';
 import { ROLES } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { persistSlides } from '@/agents/tools/persist';
+import { resolveSources } from '@/lib/sources/resolve';
+import { TooManySourcesError, UnknownSourceError } from '@/lib/sources/types';
 
 export const maxDuration = 800; // Vercel hint; RUN_TIMEOUT_MS below enforces local timeout.
 
@@ -26,6 +28,7 @@ const requestSchema = z.object({
   brief: z.string().trim().min(10).max(20000),
   mode: z.enum(['replace', 'augment']).default('replace'),
   visual: z.boolean().default(true),
+  sourceIds: z.array(z.string()).optional(),
 });
 
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
@@ -67,7 +70,24 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { presentationId, brief, mode, visual } = parsed.data;
+  const { presentationId, brief, mode, visual, sourceIds: requestedSourceIds } = parsed.data;
+
+  // Validate selected sources against the runtime registry before starting a run.
+  let sourceIds: string[] = [];
+  try {
+    sourceIds = resolveSources(requestedSourceIds).map((s) => s.id);
+  } catch (err) {
+    if (err instanceof UnknownSourceError) {
+      return Response.json(
+        { error: `Unknown source id(s): ${err.unknownIds.join(', ')}` },
+        { status: 400 },
+      );
+    }
+    if (err instanceof TooManySourcesError) {
+      return Response.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
 
   const presentation = await payload.findByID({
     collection: COLLECTIONS.presentations,
@@ -139,7 +159,7 @@ export async function POST(req: NextRequest) {
         context: { [CTX.skipBuildQueue]: true },
       });
       const stream = run.stream({
-        inputData: { brief: deckContext(presentation) + brief },
+        inputData: { brief: deckContext(presentation) + brief, sourceIds },
         initialState: { visual, title: presentation.title ?? undefined },
       });
 
@@ -200,7 +220,11 @@ export async function POST(req: NextRequest) {
       await payload.update({
         collection: COLLECTIONS.presentations,
         id: presentationId,
-        data: { draftStatus: DRAFT_STATUS.done },
+        data: {
+          draftStatus: DRAFT_STATUS.done,
+          draftSources: sourceIds,
+          draftEvidence: deck.evidence ?? [],
+        },
         user,
         context: { [CTX.skipBuildQueue]: true },
       });

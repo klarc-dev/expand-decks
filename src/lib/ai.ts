@@ -57,12 +57,19 @@ export const forceNonStreamFetch: typeof fetch = async (input, init) => {
         parsed.stream = false;
         changed = true;
       }
+      // Anthropic rejects thinking whenever tools are in play through this
+      // gateway — not only on a *forced* tool_choice. The structured-output path
+      // forces a single `emit`; the source-aware research path passes tools with
+      // an unforced (auto) choice and multiple steps. Both must disable thinking
+      // or omniroute's Claude identity returns HTTP 400 ("Thinking may not be
+      // enabled when tool_choice forces tool use" / multi-turn tool shapes).
+      const hasTools = Array.isArray(parsed.tools) && parsed.tools.length > 0;
       const tc = parsed.tool_choice as { type?: string } | string | undefined;
       const forcedTool =
         tc === 'required' ||
         (typeof tc === 'object' &&
           (tc?.type === 'function' || tc?.type === 'tool' || tc?.type === 'any'));
-      if (forcedTool && parsed.thinking === undefined) {
+      if ((forcedTool || hasTools) && parsed.thinking === undefined) {
         parsed.thinking = { type: 'disabled' };
         changed = true;
       }

@@ -11,11 +11,12 @@ import {
   panelStyle,
   primaryButtonStyle,
 } from '@/components/adminUi/styles';
-import { adminPost } from '@/lib/adminFetch';
+import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
 
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
 type DraftMode = 'replace' | 'augment';
+type SourceOption = { id: string; label: string };
 
 const PHASE_LABEL: Record<string, string> = {
   gather: 'Recherche du dossier…',
@@ -77,6 +78,10 @@ const AgentDraftButton: React.FC = () => {
   const [brief, setBrief] = useState('');
   const [mode, setMode] = useState<DraftMode>('replace');
   const [visual, setVisual] = useState(true);
+  const [sources, setSources] = useState<SourceOption[]>([]);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [maxSources, setMaxSources] = useState<number>(0);
+  const [sourcesLoaded, setSourcesLoaded] = useState(false);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState<string>('idle');
   const [events, setEvents] = useState<DraftEvent[]>([]);
@@ -130,6 +135,31 @@ const AgentDraftButton: React.FC = () => {
     pollRef.current = setInterval(poll, 2000);
   }, [poll, stopPolling]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { ok, data } = await adminGet('/api/agent-sources');
+      if (cancelled) return;
+      if (ok && Array.isArray(data.sources)) {
+        setSources(data.sources);
+        setMaxSources(
+          typeof data.maxSelected === 'number' ? data.maxSelected : data.sources.length,
+        );
+        if (typeof data.error === 'string') setError(data.error);
+      } else {
+        setError(data.error || 'Impossible de charger les sources externes.');
+      }
+      setSourcesLoaded(true);
+    })().catch((err) => {
+      if (cancelled) return;
+      setError(err instanceof Error ? err.message : 'Impossible de charger les sources externes.');
+      setSourcesLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Resume a run already in flight (e.g. the user reloaded or switched tabs):
   // the run state lives on the doc, so one fetch tells us whether to poll.
   useEffect(() => {
@@ -167,6 +197,17 @@ const AgentDraftButton: React.FC = () => {
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
+  const toggleSource = useCallback(
+    (sourceId: string) => {
+      setSelectedSources((current) => {
+        if (current.includes(sourceId)) return current.filter((id) => id !== sourceId);
+        if (maxSources > 0 && current.length >= maxSources) return current;
+        return [...current, sourceId];
+      });
+    },
+    [maxSources],
+  );
+
   const handleStart = useCallback(async () => {
     if (!brief.trim() || !id) return;
     setRunning(true);
@@ -182,6 +223,7 @@ const AgentDraftButton: React.FC = () => {
         brief,
         mode,
         visual,
+        sourceIds: selectedSources,
       });
       if (!ok) {
         setError(data.error || `Erreur (HTTP ${httpStatus})`);
@@ -194,7 +236,7 @@ const AgentDraftButton: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Erreur réseau');
       setRunning(false);
     }
-  }, [brief, id, mode, visual, startPolling]);
+  }, [brief, id, mode, selectedSources, visual, startPolling]);
 
   if (!id) {
     return (
@@ -285,6 +327,31 @@ const AgentDraftButton: React.FC = () => {
           Critique visuelle (plus lent, meilleur rendu)
         </label>
       </div>
+
+      {sourcesLoaded && sources.length > 0 && (
+        <div style={{ marginTop: '16px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+            Sources externes{maxSources > 0 ? ` (max ${maxSources})` : ''}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+            {sources.map((source) => {
+              const checked = selectedSources.includes(source.id);
+              const atCap = maxSources > 0 && selectedSources.length >= maxSources;
+              return (
+                <label key={source.id} style={checkboxRowStyle}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleSource(source.id)}
+                    disabled={running || (!checked && atCap)}
+                  />
+                  {source.label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
         <button

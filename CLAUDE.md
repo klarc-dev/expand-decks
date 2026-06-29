@@ -85,8 +85,20 @@ The `@/*` and `@payload-config` path aliases are defined in `tsconfig.json`.
 
 `@ai-stack/payloadcms` is **not** wired up — it crashed the admin client-side render. AI drafting goes through the custom `draft-presentation` route. The block Zod schema and system prompt are **not** hand-written there: they are derived from the block-spec SSOT (`src/blocks/spec`) by `src/lib/draftPresentation.ts`, which exports `SLIDES_SCHEMA` (`emitSlidesArraySchema(ALL_SPECS)`), `DRAFT_SYSTEM_PROMPT` (`buildSystemPrompt(...)` over each spec's `promptMeta`), and `draftPresentationSlides(brief)`. The route and the `scripts/draft-smoke.mjs` live check both call that one surface. The provider (`src/lib/ai.ts`) targets any OpenAI-compatible endpoint (9router by default) and uses **tool calling** rather than `response_format: json_schema` (most proxies don't implement structured outputs) — see that file's header. The prompt is deliberately use-case-agnostic — keep `promptMeta` free of domain vocabulary, company names, or industry terms; the LLM picks up tone from the user's brief.
 
+### Source-aware agentic builds
+
+There are **two generation paths**. The single-shot `draft-presentation` route above is the quick path. The richer path is the Mastra **`deckWorkflow`** (`src/agents/workflow.ts`), invoked by `POST /api/agent-draft` and surfaced by the `AgentDraftButton` field — it runs gather → structure → draft → validate → assemble with a critique/revise loop.
+
+Authors can attach **external knowledge sources** per draft (the brief is the same; sources just ground it). Sources are **runtime-configured**, not a Payload collection: the `AGENT_SOURCE_REGISTRY_JSON` env var holds a JSON array of source descriptors (`src/lib/sources/types.ts` — discriminated on `transport: 'stdio' | 'http'`, MCP being the first connector family). The registry layer lives in `src/lib/sources/`:
+
+- `registry.ts` — parses/caches the env, exposes `listSourceDescriptors()` (full, server-only) and `listSourceOptions()` (id/label only, safe to send to the browser).
+- `resolve.ts` — `resolveSources(ids)` validates+dedups+caps selection (`MAX_SELECTED_SOURCES = 8`), throwing `UnknownSourceError` (→ HTTP 400) on unknown ids.
+- `mcpConnector.ts` — `openSourceToolsets(sources)` opens a Mastra `MCPClient` and returns `{ toolsets, disconnect }`.
+
+**Only `gather` and `structure` get source tools** (`src/agents/agents/research.ts`); the per-slide writers stay small-context with no tools. To keep secrets (commands, urls, env) out of Mastra's PostgresStore step snapshots, the workflow threads only plain `sourceIds: string[]` — the research helper resolves, opens, and `disconnect()`s the MCP client **locally** in the web process (the route's fire-and-forget `run.stream`, not the worker). Collected evidence is persisted as build metadata only (`draftSources` / `draftEvidence` on the presentation), not as visible slide citations. The admin source picker is fed by `GET /api/agent-sources` (auth-gated; returns options + `maxSelected`).
+
 ## Environment
 
-Required: `DATABASE_URL`, `PAYLOAD_SECRET`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXT_PUBLIC_SERVER_URL`. Optional: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`. See `.env.example`.
+Required: `DATABASE_URL`, `PAYLOAD_SECRET`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXT_PUBLIC_SERVER_URL`. Optional: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `AGENT_SOURCE_REGISTRY_JSON` (runtime external source registry for agentic drafts; defaults to no sources). See `.env.example`.
 
 Production runs three services (`docker-compose.yaml`): `postgres`, `payload` (web), `payload-worker` (runs `pnpm jobs:run` in a loop). Media is a shared host volume mounted at `/app/media` on both `payload` and `payload-worker` so the worker can write `spa/<slug>/` where the web process serves it.
