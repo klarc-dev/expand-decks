@@ -9,10 +9,14 @@ export type { MermaidBlockData };
  * break Slidev's codeblock transform.
  */
 function bareSource(source: string): string {
-  return source
+  const bare = source
     .replace(/^\s*```[\w]*\s*\n/, '')
     .replace(/\n```\s*$/, '')
     .trim();
+  if (/```|^---\s*$/m.test(bare)) {
+    throw new Error('Mermaid source cannot contain markdown fences or slide separators');
+  }
+  return bare;
 }
 
 /**

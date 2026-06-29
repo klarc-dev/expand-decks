@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto';
+
 import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdmin, isAdminOrSelf, isLoggedIn, userIsAdmin } from '../access/roles';
+import { isAdmin, isAdminOrAuthor, isAdminOrSelf, userIsAdmin } from '../access/roles';
 import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
 import { CTX } from '../lib/context';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
@@ -29,18 +31,10 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
-    components: {
-      edit: {
-        // Export button beside Save: rebuilds the deck and regenerates a fresh
-        // PDF from the current content (the build job always replaces pdfFile,
-        // so no stale artifact survives).
-        beforeDocumentControls: ['/components/ExportButton#default'],
-      },
-    },
   },
   access: {
-    create: isLoggedIn,
-    read: isLoggedIn,
+    create: isAdminOrAuthor,
+    read: isAdminOrSelf,
     update: isAdminOrSelf,
     delete: isAdmin,
   },
@@ -99,12 +93,14 @@ export const Presentations: CollectionConfig = {
           );
         }
 
-        // Stamp the request time atomically before enqueuing, with the
-        // skipBuildQueue flag so this patch doesn't itself trigger the hook.
+        const buildToken = randomUUID();
+
+        // Stamp the request time + token before enqueuing, with the skipBuildQueue
+        // flag so this patch doesn't itself trigger the hook.
         await req.payload.update({
           collection: COLLECTIONS.presentations,
           id,
-          data: { lastBuildRequestedAt: new Date().toISOString() },
+          data: { lastBuildRequestedAt: new Date().toISOString(), lastBuildToken: buildToken },
           overrideAccess: true,
           context: { [CTX.skipBuildQueue]: true },
         });
@@ -112,7 +108,7 @@ export const Presentations: CollectionConfig = {
         // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
         await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
           task: BUILD_SLIDES_TASK,
-          input: { presentationId: id },
+          input: { presentationId: id, buildToken },
           req,
         });
 
@@ -444,6 +440,11 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+            },
+            {
+              name: 'lastBuildToken',
+              type: 'text',
+              admin: { readOnly: true, hidden: true },
             },
           ],
         },

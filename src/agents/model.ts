@@ -20,6 +20,7 @@ import { createTool } from '@mastra/core/tools';
 import type { z } from 'zod';
 
 import { DRAFT_MODEL, nineRouter } from '../lib/ai';
+import { StylePolicyError } from './prompts/style';
 
 /**
  * Per-call wall-clock budget; the gateway buffers the whole non-streamed body.
@@ -80,6 +81,8 @@ export async function generateStructured<T>({
   images,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   maxRepairs = 1,
+  validate,
+  maxValidationRepairs = 1,
 }: {
   name: string;
   instructions: string;
@@ -89,6 +92,9 @@ export async function generateStructured<T>({
   images?: ImagePart[];
   timeoutMs?: number;
   maxRepairs?: number;
+  /** Optional semantic/deterministic validation after schema validation succeeds. */
+  validate?: (value: T) => string[];
+  maxValidationRepairs?: number;
 }): Promise<T> {
   const emit = createTool({
     id: 'emit',
@@ -132,7 +138,9 @@ export async function generateStructured<T>({
   // an array field. The repair turn re-states the prompt plus the validation
   // error so the model corrects only what failed (mirrors lib/ai.ts draftObject).
   let userPrompt = prompt;
-  for (let attempt = 0; ; attempt++) {
+  let schemaRepairs = 0;
+  let validationRepairs = 0;
+  for (;;) {
     // maxSteps:1 — we only need the validated args of the forced `emit` call
     // from the FIRST response. A second step would send the tool result back
     // with toolChoice still forced; omniroute's Claude identity rejects that
@@ -146,22 +154,37 @@ export async function generateStructured<T>({
       }),
     );
 
-    const call = res.toolCalls?.find((c) => c?.payload?.toolName === 'emit') ?? res.toolCalls?.[0];
+    const call = res.toolCalls?.find((c) => c?.payload?.toolName === 'emit');
     const args = call?.payload?.args;
     if (args === undefined) {
       throw new Error(
-        `[${name}] model did not emit structured output (finishReason=${res.finishReason})`,
+        `[${name}] model did not emit via the emit tool (finishReason=${res.finishReason})`,
       );
     }
 
     const parsed = schema.safeParse(args);
-    if (parsed.success) return parsed.data;
+    if (!parsed.success) {
+      if (schemaRepairs >= maxRepairs) throw parsed.error;
+      schemaRepairs++;
+      userPrompt = `${prompt}\n\n---\nLa sortie précédente a échoué la validation du schéma :\n${parsed.error.issues
+        .map((i) => `- ${i.path.join('.') || '(racine)'} : ${i.message}`)
+        .join(
+          '\n',
+        )}\nCorrige UNIQUEMENT ces champs et réémets via l'outil la sortie complète et conforme.`;
+      continue;
+    }
 
-    if (attempt >= maxRepairs) throw parsed.error;
-    userPrompt = `${prompt}\n\n---\nLa sortie précédente a échoué la validation du schéma :\n${parsed.error.issues
-      .map((i) => `- ${i.path.join('.') || '(racine)'} : ${i.message}`)
+    const violations = validate?.(parsed.data) ?? [];
+    if (violations.length === 0) return parsed.data;
+
+    if (validationRepairs >= maxValidationRepairs) {
+      throw new StylePolicyError(violations);
+    }
+    validationRepairs++;
+    userPrompt = `${prompt}\n\n---\nLa sortie précédente respecte le schéma, mais viole le style rédactionnel informationnel :\n${violations
+      .map((v) => `- ${v}`)
       .join(
         '\n',
-      )}\nCorrige UNIQUEMENT ces champs et réémets via l'outil la sortie complète et conforme.`;
+      )}\nRéécris uniquement les formulations concernées : retire slogans, superlatifs, adjectifs décoratifs et points d'exclamation ; conserve les faits, le sens et le schéma complet ; réémets via l'outil la sortie complète et conforme.`;
   }
 }

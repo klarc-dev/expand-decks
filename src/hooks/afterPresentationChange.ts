@@ -1,40 +1,14 @@
-import { createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { CollectionAfterChangeHook } from 'payload';
 
 import { PRESENTATION_STATUS } from '../lib/status';
 import { CTX } from '../lib/context';
+import { COLLECTIONS } from '../lib/collections';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
+import { buildInputsChanged } from '../lib/buildFingerprint';
 
-/** Stable id of a relationship value (number id or populated {id}) for hashing. */
-function relId(rel: unknown): unknown {
-  return rel && typeof rel === 'object' ? (rel as { id?: unknown }).id : rel;
-}
-
-/**
- * Fingerprint of every field that affects the built output. Anything that
- * changes the generated deck — slides, the organisation (theme/logo/font), the
- * footer config, title, language — must be here, or an edit to it on an already
- * published deck would silently NOT rebuild.
- */
-function buildFingerprint(doc: Record<string, unknown>): string {
-  const inputs = {
-    slides: doc.slides ?? [],
-    organisation: relId(doc.organisation),
-    footer: doc.footer ?? null,
-    title: doc.title ?? '',
-    language: doc.language ?? '',
-  };
-  return createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
-}
-
-/** True when any build-affecting input changed between previous and current doc. */
-export function buildInputsChanged(
-  doc: Record<string, unknown>,
-  previousDoc: Record<string, unknown>,
-): boolean {
-  return buildFingerprint(doc) !== buildFingerprint(previousDoc);
-}
+export { buildFingerprint, buildInputsChanged } from '../lib/buildFingerprint';
 
 export const afterPresentationChange: CollectionAfterChangeHook = async ({
   doc,
@@ -58,10 +32,18 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
     if (wasPublished && !contentChanged) return doc;
   }
 
+  const buildToken = randomUUID();
+  await req.payload.update({
+    collection: COLLECTIONS.presentations,
+    id: doc.id as string,
+    data: { lastBuildToken: buildToken },
+    context: { [CTX.skipBuildQueue]: true },
+  });
+
   // Cast needed until `payload generate:types` adds buildSlides to TypedJobs
   await (req.payload.jobs.queue as Function)({
     task: BUILD_SLIDES_TASK,
-    input: { presentationId: doc.id as string },
+    input: { presentationId: doc.id as string, buildToken },
     req,
   });
 

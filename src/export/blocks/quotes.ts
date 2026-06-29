@@ -13,12 +13,12 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
   const quoteCards = quotes.map((q) => {
     const role = q.authorRole ? `<br/>\n    <span>${escape(q.authorRole)}</span>` : '';
     const quoteHtml = richTextToHTML(q.quote);
-    return `<div class="${K.card}">\n  <div class="${K.quote} text-base leading-snug mb-6">\n    ${quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
+    return `<div class="${K.card} k-quote-card">\n  <div class="${K.quote} text-base leading-snug">\n    ${quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
   });
 
-  const stack = cardStack(quoteCards, { layout: 'grid', cols: quotes.length || 3 });
+  const stack = cardStack(quoteCards, { layout: 'grid', cols: quotes.length || 1 });
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title });
-  const body = contentFrame(`${header}\n\n${stack.html}`, { crowded: stack.crowded });
+  const body = contentFrame(stack.html, { header, crowded: stack.crowded });
 
   return wrapSlide({ surface: ctx?.surface, body });
 }

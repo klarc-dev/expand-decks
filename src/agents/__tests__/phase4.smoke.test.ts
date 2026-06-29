@@ -1,7 +1,7 @@
 /**
  * Phase 4 LIVE smoke — the FULL single run incl. the exportBuild + visual scorer
  * pass: gather → structure → draft → rubric-revise → build PNGs → visual-score →
- * assemble. Gated on a key + the slidev binary. This is the end-to-end proof.
+ * assemble. Opt-in only: set RUN_LIVE_AGENT_TESTS=1 plus OPENAI_API_KEY and the slidev binary. This is the end-to-end proof.
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +11,8 @@ import { describe, expect, it } from 'vitest';
 import { mastra } from '../mastra';
 
 const slidevBin = join(process.cwd(), 'slidev-workspace', 'node_modules', '.bin', 'slidev');
-const ready = process.env.OPENAI_API_KEY && existsSync(slidevBin);
+const ready =
+  process.env.RUN_LIVE_AGENT_TESTS === '1' && process.env.OPENAI_API_KEY && existsSync(slidevBin);
 const maybe = ready ? describe : describe.skip;
 
 const BRIEF =

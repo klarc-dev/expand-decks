@@ -13,6 +13,10 @@ export const buildSlidesTask: TaskConfig = {
       type: 'text',
       required: true,
     },
+    {
+      name: 'buildToken',
+      type: 'text',
+    },
   ],
   outputSchema: [
     {

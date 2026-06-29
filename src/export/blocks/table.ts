@@ -56,7 +56,7 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const tableCls = isMatrix ? `${K.table} k-table--matrix` : K.table;
   const table = `<table class="${tableCls}">\n${head}\n<tbody>\n${body}\n</tbody>\n</table>`;
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
-  const bodyHtml = contentFrame(`${header}\n\n${table}`, { wFull: true });
+  const bodyHtml = contentFrame(table, { header, wFull: true, mainAlign: 'start' });
 
   // Explicit block.surface wins over the resolved tone (KTD5).
   return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });

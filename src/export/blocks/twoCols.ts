@@ -23,32 +23,41 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   // <div> not <p>: richTextToHTML emits its own block-level <p>.
   const introHtml = richTextToHTML(block.intro);
   const intro = introHtml
-    ? `\n\n<hr class="${K.divider}"/>\n\n<div class="text-base leading-relaxed mb-8 max-w-md">\n${introHtml}\n</div>`
+    ? `\n<hr class="${K.divider}"/>\n\n<div class="k-copy-stack k-copy-stack--lead">\n${introHtml}\n</div>`
     : '';
 
   const leftFooterHtml = richTextToHTML(block.leftFooter);
   const leftFooter = leftFooterHtml
-    ? `\n\n<div class="mt-12 max-w-md">\n  <div class="text-sm k-side-note">${leftFooterHtml}</div>\n</div>`
+    ? `\n<div class="k-copy-stack k-copy-stack--note k-side-note">${leftFooterHtml}</div>`
     : '';
 
+  const leftBody =
+    intro || leftFooter ? `<div class="k-copy-column">${intro}${leftFooter}\n</div>` : '';
+  const cardList = block.rightCards ?? [];
+
   // Image variant: image takes the right slot via Slidev's image-right layout;
-  // rightCards are intentionally dropped (single content column).
+  // rightCards, when present, stay in the content column instead of being dropped.
   if (image) {
-    const body = contentFrame(`${header}${intro}${leftFooter}`);
-    return wrapSlide({ image, body });
+    const cards = cardList.map((c) =>
+      card({ title: c.title, body: richTextToHTML(c.description) }),
+    );
+    const stack = cardStack(cards, { layout: 'column' });
+    const body = [leftBody, stack.html].filter(Boolean).join('\n\n');
+    return wrapSlide({ image, body: contentFrame(body, { header, crowded: stack.crowded }) });
   }
 
-  const cardList = block.rightCards ?? [];
   // No titleClass override: card titles must render at the shared .k-card h3
   // size (var(--t-h3)) whether the card sits in a cardGrid or a twoCols column.
   // The old 'text-sm' made twoCols card titles smaller than cardGrid ones.
   const cards = cardList.map((c) => card({ title: c.title, body: richTextToHTML(c.description) }));
   const stack = cardStack(cards, { layout: 'column' });
-  const rightCol = cards.length ? `\n${stack.html}` : '';
-
-  const left = `<div>\n${header}${intro}${leftFooter}\n</div>`;
-  const body = contentFrame(`<div class="${K.split}">\n${left}${rightCol}\n</div>`, {
+  const rightCol = cards.length ? `\n<div class="k-split-cards">${stack.html}\n</div>` : '';
+  const leftCol = leftBody || (rightCol ? '<div></div>' : '');
+  const main = `<div class="${K.split} k-split--body">\n${leftCol}${rightCol}\n</div>`;
+  const body = contentFrame(main, {
+    header,
     crowded: stack.crowded,
+    mainAlign: 'center',
   });
 
   return wrapSlide({ surface: ctx?.surface, body });

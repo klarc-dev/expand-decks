@@ -13,7 +13,7 @@ import { ROLES } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { persistSlides } from '@/agents/tools/persist';
 
-export const maxDuration = 800; // self-hosted; the agentic run is long-running
+export const maxDuration = 800; // Vercel hint; RUN_TIMEOUT_MS below enforces local timeout.
 
 // A wedged step must not leave draftStatus stuck in an ACTIVE phase forever (it
 // also permanently trips the re-entrancy guard below). stream() exposes no
@@ -62,7 +62,10 @@ export async function POST(req: NextRequest) {
   }
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'presentationId et brief sont requis' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Requête invalide', issues: parsed.error.issues.map((i) => i.message) },
+      { status: 400 },
+    );
   }
   const { presentationId, brief, mode, visual } = parsed.data;
 
@@ -90,8 +93,20 @@ export async function POST(req: NextRequest) {
   }
 
   const events: DraftEvent[] = [];
+  let currentRunId: string | undefined;
+  const isCurrentRun = async () => {
+    if (!currentRunId) return true;
+    const latest = await payload.findByID({
+      collection: COLLECTIONS.presentations,
+      id: presentationId,
+      user,
+      disableErrors: true,
+    });
+    return latest?.draftRunId === currentRunId;
+  };
   const mirror = async (phase: string, detail?: unknown) => {
     events.push({ ts: Date.now(), phase, detail });
+    if (!(await isCurrentRun())) return;
     const mapped = PHASE_STATUS[phase.split(':')[0]!];
     await payload.update({
       collection: COLLECTIONS.presentations,
@@ -102,17 +117,20 @@ export async function POST(req: NextRequest) {
     });
   };
 
+  // Claim before returning so a second click sees an active draftStatus.
+  await mirror('gather');
+
   // Fire-and-forget: the run is long; the button polls draftStatus/draftEvents.
   void (async () => {
+    let timedOut = false;
     try {
-      await mirror('gather');
-
       // Each step id is a draftStatus phase: workflow-step-start fires as a step
       // begins (payload.id = the step id), and the foreach writers emit
       // workflow-step-progress per drafted slide.
       const run = await mastra
         .getWorkflow('deckWorkflow')
         .createRun({ resourceId: String(presentationId) });
+      currentRunId = run.runId;
       await payload.update({
         collection: COLLECTIONS.presentations,
         id: presentationId,
@@ -127,14 +145,18 @@ export async function POST(req: NextRequest) {
 
       let timer: ReturnType<typeof setTimeout> | undefined;
       const timeout = new Promise<never>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`run exceeded ${RUN_TIMEOUT_MS}ms`)),
-          RUN_TIMEOUT_MS,
-        );
+        timer = setTimeout(() => {
+          timedOut = true;
+          // Best-effort cancel so the run stops spending tokens; ignore if the
+          // installed Mastra build doesn't support cancel().
+          void (run as { cancel?: () => Promise<void> }).cancel?.().catch(() => {});
+          reject(new Error(`run exceeded ${RUN_TIMEOUT_MS}ms`));
+        }, RUN_TIMEOUT_MS);
       });
 
       const consume = (async () => {
         for await (const chunk of stream) {
+          if (timedOut) break;
           if (chunk.type === 'workflow-step-start') {
             await mirror(chunk.payload.id);
           } else if (chunk.type === 'workflow-step-progress') {
@@ -155,15 +177,26 @@ export async function POST(req: NextRequest) {
         );
       }
       const deck = result.result;
+      const latest =
+        mode === 'augment'
+          ? await payload.findByID({
+              collection: COLLECTIONS.presentations,
+              id: presentationId,
+              user,
+              disableErrors: true,
+            })
+          : null;
 
+      if (!(await isCurrentRun())) return;
       await persistSlides({
         payload,
         presentationId,
         slides: deck.slides,
         mode,
-        existing: mode === 'augment' ? (presentation.slides as Presentation['slides']) : undefined,
+        existing: mode === 'augment' ? (latest?.slides as Presentation['slides']) : undefined,
         user,
       });
+      if (!(await isCurrentRun())) return;
       await payload.update({
         collection: COLLECTIONS.presentations,
         id: presentationId,
@@ -174,13 +207,19 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       console.error('[agent-draft] run failed', error);
       events.push({ ts: Date.now(), phase: 'failed', detail: String((error as Error)?.message) });
-      await payload.update({
-        collection: COLLECTIONS.presentations,
-        id: presentationId,
-        data: { draftStatus: DRAFT_STATUS.failed, draftEvents: events },
-        user,
-        context: { [CTX.skipBuildQueue]: true },
-      });
+      try {
+        if (await isCurrentRun()) {
+          await payload.update({
+            collection: COLLECTIONS.presentations,
+            id: presentationId,
+            data: { draftStatus: DRAFT_STATUS.failed, draftEvents: events },
+            user,
+            context: { [CTX.skipBuildQueue]: true },
+          });
+        }
+      } catch (statusError) {
+        console.error('[agent-draft] failed to persist failed status', statusError);
+      }
     }
   })();
 

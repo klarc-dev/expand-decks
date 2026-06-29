@@ -29,6 +29,7 @@ import { CTX } from '../lib/context';
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
 import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
+import { buildFingerprint } from '../lib/buildFingerprint';
 
 const execFile = promisify(execFileCb);
 
@@ -99,22 +100,31 @@ function stageBuildDir({ slidesMd, themeCss, footerEnabled, logoPresent }: Stage
 }
 
 export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildSlides'>) {
-  const { presentationId } = input as { presentationId: string };
+  const { presentationId, buildToken } = input as { presentationId: string; buildToken?: string };
   let workdir: string | null = null;
 
   try {
+    const presentation = await req.payload.findByID({
+      collection: COLLECTIONS.presentations,
+      id: presentationId,
+      depth: 0,
+    });
+    if (buildToken && (presentation as { lastBuildToken?: string }).lastBuildToken !== buildToken) {
+      req.payload.logger.info(
+        `Presentation ${presentationId} has a newer build token; skipped stale job.`,
+      );
+      return { output: { success: false, skipped: 'stale' } };
+    }
+
     await req.payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
       data: { lastBuildStatus: BUILD_STATUS.building, lastBuildError: '' },
       context: { [CTX.skipBuildQueue]: true },
     });
-
-    const presentation = await req.payload.findByID({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      depth: 0,
-    });
+    const initialFingerprint = buildFingerprint(presentation as unknown as Record<string, unknown>);
+    const previousPdfId =
+      typeof presentation.pdfFile === 'object' ? presentation.pdfFile?.id : presentation.pdfFile;
 
     const slug = presentation.slug as string;
     if (!SLUG_RE.test(slug)) {
@@ -194,6 +204,21 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       workdir,
     );
 
+    const latest = await req.payload.findByID({
+      collection: COLLECTIONS.presentations,
+      id: presentationId,
+      depth: 0,
+    });
+    if (
+      (buildToken && (latest as { lastBuildToken?: string }).lastBuildToken !== buildToken) ||
+      buildFingerprint(latest as unknown as Record<string, unknown>) !== initialFingerprint
+    ) {
+      req.payload.logger.info(
+        `Presentation ${presentationId} changed during build; skipped stale artifact write.`,
+      );
+      return { output: { success: false, skipped: 'stale' } };
+    }
+
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
     const pdfMedia = await req.payload.create({
       collection: COLLECTIONS.media,
@@ -221,6 +246,14 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       },
       context: { [CTX.skipBuildQueue]: true },
     });
+
+    if (previousPdfId && previousPdfId !== pdfMedia.id) {
+      await req.payload
+        .delete({ collection: COLLECTIONS.media, id: previousPdfId, overrideAccess: true })
+        .catch((err) =>
+          req.payload.logger.warn(`Failed to delete old PDF ${previousPdfId}: ${err}`),
+        );
+    }
 
     return { output: { success: true } };
   } catch (err) {

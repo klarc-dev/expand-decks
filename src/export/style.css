@@ -117,6 +117,9 @@
      content slide (replaces px-14/px-12 and pt-24/28/16/20 drift). */
   --content-inset: 3.5rem;
   --header-top: 6rem;
+  --content-bottom: 4.25rem;
+  --content-gap: 2rem;
+  --content-gap-tight: 1.1rem;
 
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
      contrast by ground (U3 consumes these). */
@@ -151,8 +154,15 @@
      Zero the base horizontal padding so `--content-inset` is the single rail and
      content uses the full width, flush with the footer. Vertical padding stays:
      blocks own their top offset via `--header-top`. */
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.k-markdown-slide {
+  padding: var(--header-top) var(--content-inset) var(--content-bottom);
+  box-sizing: border-box;
 }
 
 .slidev-layout h1,
@@ -329,10 +339,25 @@
   line-height: 1.35;
 }
 
+.k-stat-grid {
+  max-width: 58rem;
+  margin: 0 auto;
+  gap: 1.25rem;
+}
+
+.k-stat-card {
+  background: color-mix(in srgb, var(--bg) 86%, #fff);
+  border: 1px solid var(--pill-border);
+  border-radius: 18px;
+  padding: 1.5rem 1.3rem;
+  text-align: center;
+}
+
 .k-stat {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
+  align-items: center;
 }
 
 .k-stat .val {
@@ -474,8 +499,15 @@
    so we restore the horizontal inset the base layout zeroes out, and CENTER the
    diagram across the full width (it was rendering left-anchored at ~28% width). */
 .k-diagram-slide {
-  padding-left: var(--content-inset);
-  padding-right: var(--content-inset);
+  box-sizing: border-box;
+  height: 100%;
+  padding: var(--header-top) var(--content-inset) var(--content-bottom);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  row-gap: 1.25rem;
+}
+.k-diagram-slide .k-content-header {
+  align-self: start;
 }
 /* Slidev wraps the rendered diagram in .mermaid — center it and cap its height
    so a tall TD flowchart fits under the header instead of overflowing/clipping. */
@@ -511,9 +543,20 @@
 }
 
 .k-timeline {
+  width: 100%;
+}
+
+.k-timeline--horizontal {
   display: flex;
   align-items: stretch;
   gap: 0;
+}
+
+.k-timeline--cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: stretch;
 }
 
 .k-tl-step {
@@ -523,6 +566,15 @@
   align-items: center;
   text-align: center;
   padding: 0 0.6rem;
+}
+
+.k-timeline--cards .k-tl-step {
+  align-items: flex-start;
+  text-align: left;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--k-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 88%, #fff);
 }
 
 .k-tl-dot {
@@ -541,11 +593,23 @@
   box-shadow: 0 6px 16px -8px rgba(2, 88, 92, 0.5);
 }
 
+.k-timeline--cards .k-tl-dot {
+  width: 32px;
+  height: 32px;
+  font-size: var(--t-small);
+  margin-bottom: 0.65rem;
+}
+
 .k-tl-label {
   font-family: "Gilroy", sans-serif;
   font-size: var(--t-h3);
   color: var(--k-teal);
   margin: 0 0 0.35rem;
+}
+
+.k-timeline--cards .k-tl-label {
+  font-size: var(--t-body);
+  line-height: 1.15;
 }
 
 .k-tl-desc {
@@ -556,13 +620,18 @@
   max-width: 14rem;
 }
 
+.k-timeline--cards .k-tl-desc {
+  max-width: none;
+  line-height: 1.35;
+}
+
 .k-tl-arrow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   font-size: 1.6rem;
   color: var(--k-rose);
-  padding-top: 6px;
+  padding-top: 0.35rem;
   flex: 0 0 auto;
 }
 
@@ -578,6 +647,10 @@
   letter-spacing: 0.01em;
 }
 
+.k-dark .k-timeline--cards .k-tl-step {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
 .k-dark .k-tl-dot {
   background: #fff;
   color: var(--k-teal-900);
@@ -709,6 +782,20 @@
   font-weight: 400;
 }
 
+.k-quote-card {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.k-quote-card .k-quote {
+  margin-bottom: 1.2rem;
+}
+
+.k-quote-card .k-author {
+  margin-top: auto;
+}
+
 .k-btn {
   display: inline-flex;
   align-items: center;
@@ -745,6 +832,13 @@
 }
 
 /* Grids ---------------------------------------- */
+.k-grid-1 {
+  display: grid;
+  grid-template-columns: minmax(0, min(46rem, 100%));
+  justify-content: center;
+  gap: 1.2rem;
+}
+
 .k-grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -805,12 +899,59 @@
    (--content-inset) and one title baseline (--header-top) replace the per-
    renderer px-14/px-12 + pt-24/28/16/20 drift. */
 .k-content {
-  padding: var(--header-top) var(--content-inset) 0;
+  box-sizing: border-box;
+  height: 100%;
+  padding: var(--header-top) var(--content-inset) var(--content-bottom);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: var(--content-gap);
 }
 .k-content-tight {
-  padding-top: calc(var(--header-top) - 3rem);
+  row-gap: var(--content-gap-tight);
+}
+.k-content-header {
+  min-width: 0;
+  align-self: start;
+}
+.k-content-header--split {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.k-content-header--center {
+  text-align: center;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+.k-content-header h1,
+.k-content-header h2 {
+  margin: 0;
+}
+.k-content-main {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.k-content-main--start {
+  justify-content: flex-start;
+}
+.k-content-main--stretch {
+  justify-content: stretch;
+}
+.k-content-main--stretch > * {
+  flex: 1;
+}
+.k-card-stack {
+  width: 100%;
+  min-height: 0;
+}
+.k-card-stack--grid {
+  align-items: stretch;
 }
 /* Crowded grids (3+ rows) tighten their row gap so the last row stays on-canvas. */
+.k-grid-1.k-tight,
 .k-grid-2.k-tight,
 .k-grid-3.k-tight,
 .k-grid-4.k-tight {
@@ -900,14 +1041,21 @@
    so they compose this + wrapSlide rather than heroFrame, per KTD6c). One rail,
    one hero-scale title token. */
 .k-center-hero {
+  box-sizing: border-box;
+  min-height: 100%;
   padding: 0 var(--content-inset);
   max-width: 64rem;
   margin: 0 auto;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .k-center-hero--left {
   text-align: left;
   margin: 0;
+  align-items: flex-start;
 }
 .k-center-hero-title {
   font-family: "Gilroy", "Roboto", sans-serif;
@@ -956,9 +1104,13 @@
   font-style: italic;
 }
 
-/* Cover surface fix — prevent default slide padding from clipping */
+/* Cover surface fix — prevent default slide padding from clipping. Renderer emits
+   only the semantic k-cover class; CSS owns the rail so image/no-image branches
+   cannot drift via competing Tailwind padding. */
 .k-cover {
-  padding: 3.5rem 4rem !important;
+  box-sizing: border-box;
+  padding: 3.5rem 4rem;
+  min-height: 100%;
 }
 
 /* Slide chrome (compound base) — header (brand) + footer (page indicator)
@@ -1077,6 +1229,37 @@
   grid-template-columns: 1.05fr 1fr;
   gap: 3rem;
   align-items: start;
+}
+
+.k-split--body {
+  width: 100%;
+  align-items: center;
+}
+
+.k-copy-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  max-width: 31rem;
+}
+
+.k-split-cards {
+  min-width: 0;
+}
+
+.k-copy-stack {
+  font-size: var(--t-body);
+  line-height: 1.5;
+}
+
+.k-copy-stack--lead {
+  font-size: var(--t-lead);
+}
+
+.k-copy-stack--note {
+  border-top: 1px solid var(--k-line);
+  padding-top: 1rem;
+  font-size: var(--t-small);
 }
 
 /* Inline label (used in service detail slides) */

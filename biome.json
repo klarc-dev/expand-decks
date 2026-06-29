@@ -20,6 +20,7 @@
       "!**/dogfood-output",
       "!**/.agents/skills",
       "!**/.claude/skills",
+      "!**/.claude/worktrees",
       "!**/scripts/seed-pi/*-workflow.js"
     ]
   },
@@ -45,6 +46,7 @@
     "rules": {
       "recommended": true,
       "style": {
+        "noDescendingSpecificity": "off",
         "noNonNullAssertion": "off",
         "useTemplate": "off",
         "useImportType": "off"

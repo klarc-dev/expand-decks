@@ -103,9 +103,11 @@ const AgentDraftButton: React.FC = () => {
       if (Array.isArray(doc.draftEvents)) setEvents(doc.draftEvents);
 
       // The per-step mirror drives live progress, but a recycled/dead run can
-      // freeze it on an ACTIVE phase forever. Cross-check the durable Mastra run
-      // status so reconcileRunState can detect a run that died between writes.
-      const durable = await fetchDurableStatus(doc.draftRunId);
+      // freeze it on an ACTIVE phase forever. Only cross-check Mastra while the
+      // mirror is active; terminal/idle states avoid a second request per poll.
+      const durable = ACTIVE_STATUSES.has(mirror)
+        ? await fetchDurableStatus(doc.draftRunId)
+        : undefined;
       const state = reconcileRunState(mirror, durable);
 
       if (state === 'done' || state === 'failed') {

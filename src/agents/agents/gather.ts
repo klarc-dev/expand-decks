@@ -11,6 +11,7 @@
  */
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
+import { findInformationalStyleViolations, INFORMATIONAL_STYLE_PROMPT } from '../prompts/style';
 import { DeckDossierSchema, type DeckDossier } from '../schemas';
 
 const LLM_SCHEMA = DeckDossierSchema.omit({ rawBrief: true });
@@ -27,6 +28,8 @@ Tu extrais :
 
 ${RUBRIC_PROMPT}
 
+${INFORMATIONAL_STYLE_PROMPT}
+
 Reste dans la langue du brief. Ne rédige pas de diapositives — seulement le dossier.`;
 
 export async function gather(brief: string): Promise<DeckDossier> {
@@ -35,6 +38,8 @@ export async function gather(brief: string): Promise<DeckDossier> {
     instructions: GATHER_INSTRUCTIONS,
     schema: LLM_SCHEMA,
     prompt: brief,
+    validate: findInformationalStyleViolations,
+    maxValidationRepairs: 3,
   });
   return { ...dossier, rawBrief: brief };
 }

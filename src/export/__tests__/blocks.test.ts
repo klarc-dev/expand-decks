@@ -4,11 +4,13 @@ import { renderCardGrid } from '../blocks/cardGrid';
 import { renderCover } from '../blocks/cover';
 import { renderCta } from '../blocks/cta';
 import { renderMarkdown } from '../blocks/markdown';
+import { renderMermaid } from '../blocks/mermaid';
 import { renderQuotes } from '../blocks/quotes';
 import { renderSection } from '../blocks/section';
 import { renderStatement } from '../blocks/statement';
 import { renderStats } from '../blocks/stats';
 import { renderTable } from '../blocks/table';
+import { renderTimeline } from '../blocks/timeline';
 import { renderTwoCols } from '../blocks/twoCols';
 import { escape, md } from '../utils';
 
@@ -160,6 +162,7 @@ describe('renderCover()', () => {
     expect(result).toContain('layout: image-right');
     expect(result).toContain('image: /media/photo.jpg');
     expect(result).not.toContain('absolute inset-0');
+    expect(result).not.toContain('p-14');
   });
 
   it('emits image-left when imagePosition is left', () => {
@@ -280,7 +283,7 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('k-split');
   });
 
-  it('renders right cards', () => {
+  it('renders right cards in the second split column even when left body is empty', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'Title',
@@ -292,20 +295,24 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('Card 1');
     expect(result).toContain('Desc 1');
     expect(result).toContain('Card 2');
+    expect(result).toMatch(
+      /<div class="k-split k-split--body">\n<div><\/div>\n<div class="k-split-cards">/,
+    );
   });
 
-  it('emits image-right and drops k-split + rightCards when image is set', () => {
+  it('emits image-right and keeps rightCards in the content column when image is set', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'TwoCols with photo',
       intro: lexical('Some intro'),
       image: { url: '/media/photo.jpg' },
-      rightCards: [{ title: 'Should be ignored', description: lexical('And so should this') }],
+      rightCards: [{ title: 'Should remain', description: lexical('And so should this') }],
     });
     expect(result).toContain('layout: image-right');
     expect(result).toContain('image: /media/photo.jpg');
     expect(result).not.toContain('k-split');
-    expect(result).not.toContain('Should be ignored');
+    expect(result).toContain('Should remain');
+    expect(result).toContain('And so should this');
     expect(result).toContain('Some intro');
   });
 });
@@ -320,6 +327,17 @@ describe('renderCardGrid()', () => {
       cards: oneCard,
     });
     expect(result).toContain('k-grid-4');
+  });
+
+  it('separates header and body in the shared content frame', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+    });
+    expect(result).toContain('k-content-header');
+    expect(result).toContain('k-content-main');
+    expect(result.indexOf('k-content-header')).toBeLessThan(result.indexOf('k-content-main'));
   });
 
   it('respects columns setting', () => {
@@ -350,6 +368,7 @@ describe('renderCardGrid()', () => {
         { number: '06', title: 'F', description: lexical('Desc F') },
       ],
     });
+    expect(result).toContain('k-grid-3');
     for (const n of ['01', '02', '03', '04', '05', '06']) {
       expect(result).toContain(`>${n}<`);
     }
@@ -382,6 +401,32 @@ describe('renderStats()', () => {
     expect(result).toContain('>360<');
     expect(result).toContain('Couverture');
   });
+
+  it('uses production-safe clamped grid classes', () => {
+    expect(
+      renderStats({
+        blockType: 'stats',
+        title: 'Stats',
+        stats: [
+          { value: '1', label: 'A' },
+          { value: '2', label: 'B' },
+        ],
+      }),
+    ).toContain('k-grid-2');
+    expect(
+      renderStats({
+        blockType: 'stats',
+        title: 'Stats',
+        stats: [
+          { value: '1', label: 'A' },
+          { value: '2', label: 'B' },
+          { value: '3', label: 'C' },
+          { value: '4', label: 'D' },
+          { value: '5', label: 'E' },
+        ],
+      } as never),
+    ).toContain('k-grid-4');
+  });
 });
 
 describe('renderQuotes()', () => {
@@ -394,6 +439,16 @@ describe('renderQuotes()', () => {
     expect(result).toContain('Great service');
     expect(result).toContain('John');
     expect(result).toContain('CEO');
+  });
+
+  it('centers a single quote instead of stranding it in a two-column grid', () => {
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Quotes',
+      quotes: [{ quote: lexical('Single'), authorName: 'A' }],
+    });
+    expect(result).toContain('k-grid-1');
+    expect(result).toContain('k-quote-card');
   });
 });
 
@@ -431,14 +486,83 @@ describe('renderCta()', () => {
   });
 });
 
+describe('renderTimeline()', () => {
+  it('keeps short timelines horizontal', () => {
+    const result = renderTimeline({
+      blockType: 'timeline',
+      title: 'Process',
+      steps: [
+        { label: 'A', description: 'Short' },
+        { label: 'B', description: 'Short' },
+      ],
+    });
+    expect(result).toContain('k-content-header');
+    expect(result).toContain('k-content-main');
+    expect(result).toContain('k-timeline--horizontal');
+    expect(result).not.toContain('k-timeline--cards');
+  });
+
+  it('switches long or five-step timelines to readable cards', () => {
+    const result = renderTimeline({
+      blockType: 'timeline',
+      title: 'Process',
+      steps: [
+        { label: 'A', description: 'Texte long qui doit rester lisible' },
+        { label: 'B', description: 'Texte long qui doit rester lisible' },
+        { label: 'C', description: 'Texte long qui doit rester lisible' },
+        { label: 'D', description: 'Texte long qui doit rester lisible' },
+        { label: 'E', description: 'Texte long qui doit rester lisible' },
+      ],
+    });
+    expect(result).toContain('k-timeline--cards');
+    expect(result).toContain('k-content-tight');
+    expect(result).not.toContain('→');
+  });
+});
+
+describe('renderMermaid()', () => {
+  it('emits a root-level mermaid fence inside the diagram slide layout', () => {
+    const result = renderMermaid({
+      blockType: 'mermaid',
+      title: 'Diagram',
+      source: 'flowchart TD\nA-->B',
+    });
+    expect(result).toContain('k-diagram-slide');
+    expect(result).toContain('```mermaid');
+    expect(result).toContain('flowchart TD');
+    expect(result).not.toContain('<div class="mermaid">');
+  });
+
+  it('rejects embedded markdown fences that would close the mermaid block', () => {
+    expect(() =>
+      renderMermaid({
+        blockType: 'mermaid',
+        title: 'Diagram',
+        source: 'flowchart TD\nA-->B\n```\n# escaped',
+      }),
+    ).toThrow(/markdown fences/);
+  });
+
+  it('rejects standalone slide separators inside the diagram source', () => {
+    expect(() =>
+      renderMermaid({
+        blockType: 'mermaid',
+        title: 'Diagram',
+        source: 'flowchart TD\nA-->B\n---\nB-->C',
+      }),
+    ).toThrow(/slide separators/);
+  });
+});
+
 describe('renderMarkdown()', () => {
-  it('passes content through without escaping', () => {
+  it('passes content through without escaping and adds a safe default class', () => {
     const result = renderMarkdown({
       blockType: 'markdown',
       layout: 'center',
       content: '<div class="custom">Raw HTML</div>',
     });
     expect(result).toContain('layout: center');
+    expect(result).toContain('class: relative k-markdown-slide');
     expect(result).toContain('<div class="custom">Raw HTML</div>');
   });
 
@@ -452,6 +576,17 @@ describe('renderMarkdown()', () => {
     expect(result).toContain('layout: default');
     expect(result).toContain('class: relative k-dark');
     expect(result).toContain('# Hello');
+  });
+
+  it('rejects frontmatter boundary injection', () => {
+    expect(() =>
+      renderMarkdown({
+        blockType: 'markdown',
+        layout: 'default',
+        frontmatter: 'class: ok\n---\nlayout: injected',
+        content: '# Hello',
+      }),
+    ).toThrow(/YAML boundary/);
   });
 });
 

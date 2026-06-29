@@ -1,13 +1,14 @@
 /**
  * Storage wiring smoke — proves the PostgresStore wired onto the Mastra instance
  * initializes idempotently and answers the run-query API the durable status
- * endpoint relies on. Skipped without DATABASE_URL. No LLM/network call.
+ * endpoint relies on. Opt-in only with RUN_DB_SMOKE_TESTS=1 and DATABASE_URL. No LLM/network call.
  */
 import { describe, expect, it } from 'vitest';
 
 import { mastra } from '../mastra';
 
-const live = process.env.DATABASE_URL ? describe : describe.skip;
+const live =
+  process.env.RUN_DB_SMOKE_TESTS === '1' && process.env.DATABASE_URL ? describe : describe.skip;
 
 live('Mastra storage wiring', () => {
   it('lists workflow runs without crashing on schema init', { timeout: 30_000 }, async () => {

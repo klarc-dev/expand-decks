@@ -40,8 +40,8 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   // half). Drop `absolute inset-0` so the content flows in Slidev's content
   // slot rather than going full-bleed over the image.
   const wrapperClass = image
-    ? `${darkClass.trim()} h-full flex flex-col justify-between p-14 k-cover`.trim()
-    : `${darkClass.trim()} absolute inset-0 flex flex-col justify-between p-14 k-cover`.trim();
+    ? `${darkClass.trim()} h-full flex flex-col justify-between k-cover`.trim()
+    : `${darkClass.trim()} absolute inset-0 flex flex-col justify-between k-cover`.trim();
 
   const body = `<div class="${wrapperClass}">
   <div class="flex-1 flex items-center">

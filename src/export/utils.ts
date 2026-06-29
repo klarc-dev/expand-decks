@@ -65,6 +65,8 @@ export function yamlQuoted(s: string | null | undefined): string {
   return yamlEscapeQuoted(s ?? '');
 }
 
+const DEF_FOOTER_SLOT = '<!-- k-def-footer-slot -->';
+
 let _slideDefs: string[] = [];
 
 export function resetDefs(): void {
@@ -156,11 +158,11 @@ export function surfaceClass(surface?: Surface | null): string {
 
 /**
  * Derive a grid utility class for a column count, clamped to the [2,4] range
- * actually defined in style.css. There is no `.k-grid-1` rule, so a single
- * item must still land in a styled 2-col grid rather than an unstyled element.
+ * actually defined in style.css. A single item gets `.k-grid-1`, centered on
+ * the shared content rail instead of being stranded in the left half of a 2-col grid.
  */
 export function gridClass(n: number): string {
-  return `k-grid-${Math.min(Math.max(n, 2), 4)}`;
+  return `k-grid-${Math.min(Math.max(n, 1), 4)}`;
 }
 
 export type SlideImage = {
@@ -199,12 +201,16 @@ export function wrapSlide({
   const chromeFlag = hideChrome ? '\nhideChrome: true' : '';
   const effectiveLayout = image?.url ? `image-${image.position ?? 'right'}` : layout;
   const imageLine = image?.url ? `\nimage: ${yamlScalar(image.url)}` : '';
+  const defFooter = consumeDefFooter();
+  const bodyWithFooter = body.includes(DEF_FOOTER_SLOT)
+    ? body.replace(DEF_FOOTER_SLOT, defFooter)
+    : `${body}${defFooter}`;
   return `---
 layout: ${yamlScalar(effectiveLayout)}
 class: ${yamlScalar(cls)}${imageLine}${chromeFlag}
 ---
 
-${body}${consumeDefFooter()}`;
+${bodyWithFooter}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -233,21 +239,23 @@ export function slideHeader(opts: {
   title: string;
   size?: 'lg' | 'md';
   sidebar?: string;
+  align?: 'left' | 'center';
 }): string {
   const eb = eyebrow(opts.eyebrow, 'mb-4', { indent: '    ' });
   const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
   const heading = `<h2 class="${sizeClass}">${md(opts.title)}</h2>`;
   if (opts.sidebar) {
-    return `<div class="flex items-end justify-between mb-10">
+    return `<header class="k-content-header k-content-header--split">
   <div>${eb}
     ${heading}
   </div>
   ${opts.sidebar}
-</div>`;
+</header>`;
   }
-  return `<div class="mb-10">${eb}
+  const alignClass = opts.align === 'center' ? ' k-content-header--center' : '';
+  return `<header class="k-content-header${alignClass}">${eb}
   ${heading}
-</div>`;
+</header>`;
 }
 
 /** One card box: optional number badge, title, optional rich-body slot. */
@@ -278,27 +286,47 @@ export function cardStack(
   if (cards.length === 0) return { html: '', crowded: false };
   const inner = cards.join('\n\n');
   if (opts.layout === 'grid') {
-    const cols = Math.min(Math.max(opts.cols ?? 4, 2), 4);
+    const cols = Math.min(Math.max(opts.cols ?? 4, 1), 4);
     const rows = Math.ceil(cards.length / cols);
     const crowded = rows > 2;
-    // When crowded, also shrink each card box (.k-tight) — trimming only the
-    // top padding isn't enough to keep a 3rd row on the 720px canvas.
+    // When crowded, also shrink each card box (.k-tight) — density belongs to the
+    // body region, not the slide title baseline.
     const tight = crowded ? ' k-tight' : '';
-    return { html: `<div class="${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`, crowded };
+    return {
+      html: `<div class="k-card-stack k-card-stack--grid ${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`,
+      crowded,
+    };
   }
   const crowded = cards.length >= 4;
   const gap = crowded ? 'space-y-2 k-tight' : 'space-y-3';
-  return { html: `<div class="${gap}">\n\n${inner}\n\n</div>`, crowded };
+  return {
+    html: `<div class="k-card-stack k-card-stack--column ${gap}">\n\n${inner}\n\n</div>`,
+    crowded,
+  };
 }
 
 /**
- * Outer content frame: the single `--content-inset` rail + `--header-top`
- * baseline. Replaces the per-renderer `<div class="px-14 pt-NN [w-full]">`
- * openers. `crowded` shrinks the top padding when content is tall.
+ * Outer content frame: one stable `--header-top` baseline + a measured body row.
+ * The main slot can be centered for visual bodies (cards/stats/timeline/agenda),
+ * start-aligned for scan-first tables, or stretched for custom full-height bodies.
  */
-export function contentFrame(body: string, opts?: { crowded?: boolean; wFull?: boolean }): string {
+export function contentFrame(
+  main: string,
+  opts?: {
+    header?: string;
+    crowded?: boolean;
+    wFull?: boolean;
+    mainAlign?: 'center' | 'start' | 'stretch';
+  },
+): string {
   const cls = `k-content${opts?.crowded ? ' k-content-tight' : ''}${opts?.wFull ? ' w-full' : ''}`;
-  return `<div class="${cls}">\n\n${body}\n\n</div>`;
+  const align = opts?.mainAlign ?? 'center';
+  const mainCls = `k-content-main k-content-main--${align}`;
+  const header = opts?.header ? `\n${opts.header}` : '';
+  return `<div class="${cls}">${header}
+  <div class="${mainCls}">\n\n${main}\n\n  </div>
+  ${DEF_FOOTER_SLOT}
+</div>`;
 }
 
 /**

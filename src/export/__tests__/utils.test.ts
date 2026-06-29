@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { card, cardStack, contentFrame, heroFrame, slideHeader } from '../utils';
+import {
+  card,
+  cardStack,
+  contentFrame,
+  heroFrame,
+  resetDefs,
+  slideHeader,
+  wrapSlide,
+} from '../utils';
 
 describe('slideHeader()', () => {
   it('emits eyebrow + title with the lg heading scale by default', () => {
@@ -21,9 +29,9 @@ describe('slideHeader()', () => {
     expect(h).toContain('T');
   });
 
-  it('places a sidebar in a justify-between row when provided', () => {
+  it('places a sidebar in the semantic split header when provided', () => {
     const h = slideHeader({ title: 'T', sidebar: '<aside>side</aside>' });
-    expect(h).toContain('justify-between');
+    expect(h).toContain('k-content-header--split');
     expect(h).toContain('side');
   });
 });
@@ -67,8 +75,8 @@ describe('cardStack()', () => {
     expect(r.html).not.toContain('k-tight');
   });
 
-  it('grid uses a clamped gridClass', () => {
-    expect(cardStack(['a'], { layout: 'grid', cols: 1 }).html).toContain('k-grid-2');
+  it('grid uses a clamped gridClass including centered one-card grids', () => {
+    expect(cardStack(['a'], { layout: 'grid', cols: 1 }).html).toContain('k-grid-1');
     expect(cardStack(['a'], { layout: 'grid', cols: 9 }).html).toContain('k-grid-4');
   });
 });
@@ -78,6 +86,23 @@ describe('contentFrame()', () => {
     expect(contentFrame('X')).toContain('k-content');
     expect(contentFrame('X', { crowded: true })).toContain('k-content-tight');
     expect(contentFrame('X', { wFull: true })).toContain('w-full');
+  });
+
+  it('separates the stable header row from the measured main row', () => {
+    const html = contentFrame('Body', { header: '<header>Title</header>', mainAlign: 'start' });
+    expect(html).toContain('<header>Title</header>');
+    expect(html).toContain('k-content-main');
+    expect(html).toContain('k-content-main--start');
+    expect(html.indexOf('<header>Title</header>')).toBeLessThan(html.indexOf('Body'));
+  });
+
+  it('keeps generated definition footers inside the full-height content frame', () => {
+    resetDefs();
+    const body = contentFrame('Body', { header: slideHeader({ title: 'Title {{def:Source}}' }) });
+    const html = wrapSlide({ body });
+    expect(html).toContain('k-def-footer');
+    expect(html).not.toContain('k-def-footer-slot');
+    expect(html).toMatch(/<div class="k-content"[\s\S]*<div class="k-def-footer">/);
   });
 });
 

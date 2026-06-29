@@ -1,7 +1,7 @@
 /**
  * Phase 1 LIVE smoke — gather → structure against the real 9router gateway.
- * Skipped automatically when OPENAI_API_KEY is absent (CI without secrets).
- * Run with: pnpm vitest run src/agents/__tests__/phase1.smoke.test.ts
+ * Opt-in only: set RUN_LIVE_AGENT_TESTS=1 plus OPENAI_API_KEY.
+ * Run with: RUN_LIVE_AGENT_TESTS=1 pnpm vitest run src/agents/__tests__/phase1.smoke.test.ts
  */
 import { describe, expect, it } from 'vitest';
 
@@ -9,7 +9,8 @@ import { gather } from '../agents/gather';
 import { structure, uncoveredKeyPoints } from '../agents/structure';
 import { DeckDossierSchema } from '../schemas';
 
-const live = process.env.OPENAI_API_KEY ? describe : describe.skip;
+const live =
+  process.env.RUN_LIVE_AGENT_TESTS === '1' && process.env.OPENAI_API_KEY ? describe : describe.skip;
 
 const BRIEF =
   "Webinaire de 45 minutes pour des juristes d'entreprise : comment rendre une présentation d'expert juridique réellement intéressante. Couvre : mener par la conclusion (BLUF), réfuter l'objection adverse, et ancrer chaque point par un exemple concret.";

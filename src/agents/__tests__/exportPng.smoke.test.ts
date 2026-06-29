@@ -1,6 +1,6 @@
 /**
  * Phase 4 LIVE smoke (no LLM) — verify the real Slidev per-slide PNG export.
- * Runs Chromium via slidev-workspace; gated on the binary being present.
+ * Runs Chromium via slidev-workspace; opt-in only with RUN_SLIDEV_SMOKE_TESTS=1 and the binary present.
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +11,7 @@ import { exportSlidePngs } from '../tools/exportSlidePngs';
 import { buildSlidesMd } from '../../export/buildSlidesMd';
 
 const slidevBin = join(process.cwd(), 'slidev-workspace', 'node_modules', '.bin', 'slidev');
-const hasSlidev = existsSync(slidevBin);
+const hasSlidev = process.env.RUN_SLIDEV_SMOKE_TESTS === '1' && existsSync(slidevBin);
 const maybe = hasSlidev ? describe : describe.skip;
 
 maybe('exportSlidePngs (real Slidev)', () => {

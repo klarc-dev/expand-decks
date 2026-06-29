@@ -1,7 +1,7 @@
 /**
  * Phase 4 LIVE multimodal smoke — proves the 9router gateway accepts image
  * inputs through Mastra, end to end: render a real slide PNG, then have the
- * visualScorer judge it. Gated on both a key and the slidev binary.
+ * visualScorer judge it. Opt-in only: set RUN_LIVE_AGENT_TESTS=1 plus OPENAI_API_KEY and the slidev binary.
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,7 +13,8 @@ import { scoreVisual } from '../scorers/visual';
 import { buildSlidesMd } from '../../export/buildSlidesMd';
 
 const slidevBin = join(process.cwd(), 'slidev-workspace', 'node_modules', '.bin', 'slidev');
-const ready = process.env.OPENAI_API_KEY && existsSync(slidevBin);
+const ready =
+  process.env.RUN_LIVE_AGENT_TESTS === '1' && process.env.OPENAI_API_KEY && existsSync(slidevBin);
 const maybe = ready ? describe : describe.skip;
 
 maybe('visualScorer (multimodal via 9router)', () => {

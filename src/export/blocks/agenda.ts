@@ -34,7 +34,8 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     .join('\n');
 
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
-  const bodyHtml = contentFrame(`${header}\n\n<ol class="${K.agenda}">\n${rows}\n</ol>`, {
+  const bodyHtml = contentFrame(`<ol class="${K.agenda}">\n${rows}\n</ol>`, {
+    header,
     wFull: true,
   });
 

@@ -251,7 +251,6 @@ export const deckWorkflow = createWorkflow({
   })
   .dountil(validateStep, async ({ inputData, iterationCount }) => {
     if (iterationCount >= REVISE_MAX_ITERATIONS) {
-      (inputData as DeckBundle).capped = (inputData as DeckBundle).lastFlagged > 0;
       return true; // graceful cap — do NOT throw (that would fail the run)
     }
     return (inputData as DeckBundle).lastFlagged === 0;

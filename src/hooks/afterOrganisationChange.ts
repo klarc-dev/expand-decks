@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { CollectionAfterChangeHook } from 'payload';
 
 import { COLLECTIONS } from '../lib/collections';
@@ -22,32 +24,36 @@ export const afterOrganisationChange: CollectionAfterChangeHook = async ({
   if (req.context?.[CTX.skipBuildQueue]) return doc;
   if (operation !== 'update') return doc;
 
-  const refs = await req.payload.find({
-    collection: COLLECTIONS.presentations,
-    depth: 0,
-    limit: 1000,
-    where: {
-      and: [
-        { organisation: { equals: doc.id } },
-        { status: { equals: PRESENTATION_STATUS.published } },
-      ],
-    },
-  });
-
-  // Surface (don't silently swallow) the rare case of an org reused beyond the
-  // page cap, so the un-rebuilt decks are visible in logs rather than stale.
-  if (refs.totalDocs > refs.docs.length) {
-    req.payload.logger.warn(
-      `afterOrganisationChange: org ${doc.id} has ${refs.totalDocs} published decks; only ${refs.docs.length} were queued for rebuild.`,
-    );
-  }
-
-  for (const presentation of refs.docs) {
-    await (req.payload.jobs.queue as Function)({
-      task: BUILD_SLIDES_TASK,
-      input: { presentationId: String(presentation.id) },
-      req,
+  for (let page = 1; ; page++) {
+    const refs = await req.payload.find({
+      collection: COLLECTIONS.presentations,
+      depth: 0,
+      limit: 1000,
+      page,
+      where: {
+        and: [
+          { organisation: { equals: doc.id } },
+          { status: { equals: PRESENTATION_STATUS.published } },
+        ],
+      },
     });
+
+    for (const presentation of refs.docs) {
+      const buildToken = randomUUID();
+      await req.payload.update({
+        collection: COLLECTIONS.presentations,
+        id: String(presentation.id),
+        data: { lastBuildToken: buildToken },
+        context: { [CTX.skipBuildQueue]: true },
+      });
+      await (req.payload.jobs.queue as Function)({
+        task: BUILD_SLIDES_TASK,
+        input: { presentationId: String(presentation.id), buildToken },
+        req,
+      });
+    }
+
+    if (!refs.hasNextPage) break;
   }
 
   return doc;

@@ -17,6 +17,7 @@ import { INTENT_MAX } from '../../lib/draftConfig';
 import { DRAFT_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
+import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 
 const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
@@ -108,15 +109,13 @@ function blockTypeForExplicitSlide(
   const text = `${heading}\n${chunk}`.toLowerCase();
   if (number === 1) return 'cover';
   if (isLast || /\bcta\b|appel à l.?action/.test(text)) return 'cta';
-  if (/tableau|matrice|niveaux de confidentialité|échelle|socle contractuel/.test(text)) {
+  if (/tableau|matrice|échelle/.test(text)) {
     return 'table';
   }
   if (/cycle de vie|process en \d+ temps|→.*→/.test(head)) return 'timeline';
-  if (/arbre de décision|plan 90 jours|pertes évitables/.test(text)) return 'cardGrid';
-  if (/minimum vital|kpi|annuité/.test(text)) return 'stats';
-  if (/socle contractuel|dataroom|offboarding|déclaration d'invention/.test(text)) {
-    return 'twoCols';
-  }
+  if (/arbre de décision|plan \d+ jours/.test(text)) return 'cardGrid';
+  if (/kpi|indicateurs?|métriques?|chiffres? clés?/.test(text)) return 'stats';
+  if (/deux colonnes|comparaison|avant\s*\/\s*après|points? clés?/.test(text)) return 'twoCols';
   return 'statement';
 }
 
@@ -124,7 +123,9 @@ function blockTypeForExplicitSlide(
 
 export async function structure(dossier: DeckDossier): Promise<OutlineStub[]> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
-  if (explicit) return explicit;
+  if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
+    return explicit;
+  }
 
   let prompt = dossierPrompt(dossier);
 
@@ -134,6 +135,8 @@ export async function structure(dossier: DeckDossier): Promise<OutlineStub[]> {
       instructions: STRUCTURE_INSTRUCTIONS,
       schema: OUTLINE_SCHEMA,
       prompt,
+      validate: findInformationalStyleViolations,
+      maxValidationRepairs: 3,
     });
 
     const uncovered = uncoveredKeyPoints(dossier, slides);

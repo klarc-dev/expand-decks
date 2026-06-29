@@ -6,7 +6,10 @@
  */
 import { ALL_SPECS } from '../../blocks/spec';
 import { buildSystemPrompt } from '../../blocks/spec/emit/emitPromptSection';
+import { INFORMATIONAL_STYLE_PROMPT } from './style';
 
-export const DRAFT_SYSTEM_PROMPT = buildSystemPrompt(
+export const DRAFT_SYSTEM_PROMPT = `${buildSystemPrompt(
   ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : [])),
-);
+)}
+
+${INFORMATIONAL_STYLE_PROMPT}`;

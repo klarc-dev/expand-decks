@@ -1,12 +1,13 @@
 /**
  * Phase 3 LIVE smoke — the native Mastra rubricScorer scores a known-bad slide
- * low (topic headline + overclaim) and a good slide high. Skipped without a key.
+ * low (topic headline + overclaim) and a good slide high. Opt-in only: set RUN_LIVE_AGENT_TESTS=1 plus OPENAI_API_KEY.
  */
 import { describe, expect, it } from 'vitest';
 
 import { scoreSlide } from '../scorers/rubric';
 
-const live = process.env.OPENAI_API_KEY ? describe : describe.skip;
+const live =
+  process.env.RUN_LIVE_AGENT_TESTS === '1' && process.env.OPENAI_API_KEY ? describe : describe.skip;
 
 live('rubricScorer (Mastra createScorer)', () => {
   it('scores a topic-headline/overclaim slide below a strong assertion slide', {

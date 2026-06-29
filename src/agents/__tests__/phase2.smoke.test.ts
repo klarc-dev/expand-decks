@@ -1,14 +1,15 @@
 /**
  * Phase 2 LIVE smoke — full gather → structure → foreach(writer) → assemble.
  * Asserts every drafted slide renders (buildSlidesMd throws on unknown/invalid
- * blocks) and the assembled markdown is non-trivial. Skipped without an API key.
+ * blocks) and the assembled markdown is non-trivial. Opt-in only: set RUN_LIVE_AGENT_TESTS=1 plus OPENAI_API_KEY.
  */
 import { describe, expect, it } from 'vitest';
 
 import { mastra } from '../mastra';
 import { ALL_SPECS } from '../../blocks/spec';
 
-const live = process.env.OPENAI_API_KEY ? describe : describe.skip;
+const live =
+  process.env.RUN_LIVE_AGENT_TESTS === '1' && process.env.OPENAI_API_KEY ? describe : describe.skip;
 const DRAFTABLE = new Set(ALL_SPECS.map((s) => s.blockType));
 
 const BRIEF =

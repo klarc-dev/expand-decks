@@ -34,11 +34,11 @@ const RULES = `Règles :
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
 - Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes reliées de gauche à droite)
 - Utilise "mermaid" pour un diagramme de flux, un organigramme ou un workflow (à partir de code Mermaid)
-- Varie les layouts pour rendre la présentation dynamique
+- Varie les layouts pour structurer l'information
 - Reste dans la langue du brief (français par défaut si ambigu)
 - Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
 - Sinon, génère entre 8 et 15 diapositives selon la complexité du brief
-- Les textes doivent être concis et percutants`;
+- Les textes doivent être concis et factuels`;
 
 /** Optional knobs for prompt assembly (reserved for future tuning). */
 export interface BuildSystemPromptOptions {

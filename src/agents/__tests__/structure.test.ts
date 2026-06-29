@@ -138,22 +138,16 @@ describe('structure() parser — blockType keyword routing', () => {
     expect(stubs[1]!.blockType).toBe('stats');
   });
 
-  it('routes "minimum vital" keyword to stats', async () => {
+  it('routes "indicateurs" keyword to stats', async () => {
     const brief =
-      'S1 — Titre\nChapeau.\nS2 — Minimum vital\nSeuil de survie de la structure.\nS3 — Fin\nCloture.';
+      'S1 — Titre\nChapeau.\nS2 — Indicateurs principaux\nMétriques clés de performance.\nS3 — Fin\nCloture.';
     const stubs = await structure(baseDossier(brief));
     expect(stubs[1]!.blockType).toBe('stats');
   });
 
-  it('routes "dataroom" keyword to twoCols', async () => {
-    const brief = 'S1 — Titre\nChapeau.\nS2 — Dataroom\nDocuments requis.\nS3 — Fin\nCloture.';
-    const stubs = await structure(baseDossier(brief));
-    expect(stubs[1]!.blockType).toBe('twoCols');
-  });
-
-  it('routes "offboarding" keyword to twoCols', async () => {
+  it('routes visual two-column cues to twoCols', async () => {
     const brief =
-      'S1 — Titre\nChapeau.\nS2 — Offboarding\nProcédure de départ.\nS3 — Fin\nCloture.';
+      'S1 — Titre\nChapeau.\nS2 — Comparaison\nAvant / après en deux colonnes.\nS3 — Fin\nCloture.';
     const stubs = await structure(baseDossier(brief));
     expect(stubs[1]!.blockType).toBe('twoCols');
   });

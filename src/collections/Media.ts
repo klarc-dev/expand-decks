@@ -9,7 +9,7 @@ export const Media: CollectionConfig = {
   access: {
     create: isLoggedIn,
     read: isLoggedIn,
-    update: isLoggedIn,
+    update: isAdmin,
     delete: isAdmin,
   },
   upload: {
