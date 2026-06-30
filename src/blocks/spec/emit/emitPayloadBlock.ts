@@ -51,6 +51,11 @@ function emitRawField(field: FieldSpec): Field {
   }
   result.admin = admin;
   if (payload.options !== undefined) result.options = payload.options;
+  if (payload.relationTo !== undefined) result.relationTo = payload.relationTo;
+  if (payload.hasMany !== undefined) result.hasMany = payload.hasMany;
+  if (payload.maxDepth !== undefined) result.maxDepth = payload.maxDepth;
+  if (payload.minRows !== undefined) result.minRows = payload.minRows;
+  if (payload.maxRows !== undefined) result.maxRows = payload.maxRows;
   if (payload.type === 'array' && payload.fields !== undefined) {
     result.fields = payload.fields.flatMap(emitField);
   }
@@ -90,13 +95,14 @@ export function emitPayloadBlock(spec: BlockSpec): Block {
   // keep Payload's default label.
   const hasTitle = spec.fields.some((f) => f.factory === 'title');
 
-  // Every block except `markdown` gets the shared "Sources / Notes" repeater.
-  // It carries no render/AI data (no renderer reads it; buildSlidesMd seeds the
-  // footnote band directly from the Payload value), so it is injected here at
-  // L1 only — once — instead of in 11 spec field arrays. Placed before any
-  // trailing `preview` UI field so the form ends on the live preview.
+  // Every block except `markdown` and `cover` gets the shared "Sources / Notes"
+  // repeater. Cover/title slides should stay presentation metadata, not source
+  // carriers. It carries no render/AI data (no renderer reads it; buildSlidesMd
+  // seeds the footnote band directly from the Payload value), so it is injected
+  // here at L1 only — once — instead of in 11 spec field arrays. Placed before
+  // any trailing `preview` UI field so the form ends on the live preview.
   const fields = spec.fields.flatMap(emitField);
-  if (spec.slug !== 'markdown') {
+  if (spec.slug !== 'markdown' && spec.slug !== 'cover') {
     const previewIdx = fields.findIndex((f) => 'name' in f && f.name === 'preview');
     const note = footnotesField();
     if (previewIdx === -1) fields.push(note);

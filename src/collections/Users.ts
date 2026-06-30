@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload';
 import {
   ROLES,
   isAdmin,
+  isAdminOrAuthor,
   isAdminOrSelfUser,
   isAdminField,
   userIsAdminOrAuthor,
@@ -18,7 +19,7 @@ export const Users: CollectionConfig = {
   access: {
     admin: ({ req: { user } }) => userIsAdminOrAuthor(user),
     create: isAdmin,
-    read: isAdminOrSelfUser,
+    read: isAdminOrAuthor,
     update: isAdminOrSelfUser,
     delete: isAdmin,
   },
@@ -41,6 +42,19 @@ export const Users: CollectionConfig = {
       type: 'text',
       label: 'Nom',
       admin: { description: 'Nom affiché (rempli automatiquement via Google)' },
+    },
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Titre / fonction',
+      admin: { description: 'Titre public affiché sur les cartes intervenants' },
+    },
+    {
+      name: 'avatar',
+      type: 'upload',
+      relationTo: COLLECTIONS.media,
+      label: 'Avatar',
+      admin: { description: 'Image affichée sur les cartes intervenants' },
     },
     {
       name: 'role',

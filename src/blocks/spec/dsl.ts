@@ -117,6 +117,7 @@ export type PayloadRawType =
   | 'code'
   | 'array'
   | 'richText'
+  | 'relationship'
   | 'number';
 
 /** A single `{ label, value }` option for a Payload `select` field. */
@@ -151,6 +152,16 @@ export interface PayloadFieldMeta {
   access?: 'isAdminField';
   /** Nested field specs for `type: 'array'` blocks. */
   fields?: FieldSpec[];
+  /** Relationship target collection slug for `type: 'relationship'` fields. */
+  relationTo?: string;
+  /** Allow selecting multiple relationship values. */
+  hasMany?: boolean;
+  /** Maximum population depth for relationships. */
+  maxDepth?: number;
+  /** Minimum rows for `type: 'array'` fields. */
+  minRows?: number;
+  /** Maximum rows for `type: 'array'` fields. */
+  maxRows?: number;
   /** Args forwarded to the named `_shared` factory for factory fields. */
   factoryArgs?: FactoryArgs;
 }
