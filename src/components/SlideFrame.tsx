@@ -1,7 +1,15 @@
 import React from 'react';
 
+import { MermaidPreview } from './MermaidPreview';
+
 /** Dark stage background behind rendered slides. */
 export const SLIDE_STAGE_BG = '#1a1a2e';
+
+export type SlideChrome = {
+  footer?: { left: string; center: string; right: string };
+  hidden?: boolean;
+  logoUrl?: string;
+};
 
 /**
  * Presentational inner slide frame used by the admin per-slide SlidePreview.
@@ -12,15 +20,19 @@ export const SLIDE_STAGE_BG = '#1a1a2e';
  */
 export function SlideFrame({
   className,
+  chrome,
   html,
   image,
   layout,
+  mermaid,
   style,
 }: {
   className?: string;
+  chrome?: SlideChrome;
   html: string;
   image?: string;
   layout: string;
+  mermaid?: { source: string };
   style?: React.CSSProperties;
 }) {
   const classes = ['slidev-layout', layout === 'cover' ? 'k-cover' : '', className ?? 'relative']
@@ -38,13 +50,53 @@ export function SlideFrame({
 
     return (
       <div className={classes} style={{ ...styles.imageLayout, ...style }}>
+        <SlideChromeLayer chrome={chrome} />
         {imageSide === 'left' ? imagePane : contentPane}
         {imageSide === 'left' ? contentPane : imagePane}
       </div>
     );
   }
 
-  return <div className={classes} style={style} dangerouslySetInnerHTML={{ __html: html }} />;
+  if (mermaid) {
+    const [before, after] = splitMermaidFence(html);
+    return (
+      <div className={classes} style={style}>
+        <SlideChromeLayer chrome={chrome} />
+        <div style={styles.contents} dangerouslySetInnerHTML={{ __html: before }} />
+        <MermaidPreview source={mermaid.source} />
+        <div style={styles.contents} dangerouslySetInnerHTML={{ __html: after }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={classes} style={style}>
+      <SlideChromeLayer chrome={chrome} />
+      <div style={styles.contents} dangerouslySetInnerHTML={{ __html: html }} />
+    </div>
+  );
+}
+
+function SlideChromeLayer({ chrome }: { chrome?: SlideChrome }) {
+  if (!chrome || chrome.hidden) return null;
+  return (
+    <>
+      {chrome.logoUrl ? <img className="k-slide-logo" src={chrome.logoUrl} alt="" /> : null}
+      {chrome.footer ? (
+        <footer className="k-slide-footer">
+          <span>{chrome.footer.left}</span>
+          <span>{chrome.footer.center}</span>
+          <span className="page">{chrome.footer.right}</span>
+        </footer>
+      ) : null}
+    </>
+  );
+}
+
+function splitMermaidFence(html: string): [string, string] {
+  const match = html.match(/\n*```mermaid\n[\s\S]*?\n```\n*/);
+  if (!match || match.index === undefined) return [html, ''];
+  return [html.slice(0, match.index), html.slice(match.index + match[0].length)];
 }
 
 const styles = {
@@ -63,5 +115,8 @@ const styles = {
     minHeight: 0,
     backgroundPosition: 'center',
     backgroundSize: 'cover',
+  },
+  contents: {
+    display: 'contents',
   },
 } satisfies Record<string, React.CSSProperties>;

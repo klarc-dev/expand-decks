@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useFormFields } from '@payloadcms/ui';
 
 import { renderBlockPreview } from '@/export/preview';
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import { formStateToBlockData } from '@/lib/formStateToBlockData';
+import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { SlideFrame, SLIDE_STAGE_BG } from '@/components/SlideFrame';
 
 import '@/export/style.css';
@@ -32,30 +33,104 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     }
     return JSON.stringify(out.sort((a, b) => a.i - b.i).map((s) => s.title));
   });
+  const chromeInputJson = useFormFields(([fields]) => {
+    const block = formStateToBlockData(fields as never, path);
+    const slideBlockTypes: Record<string, unknown> = {};
+    for (const key of Object.keys(fields)) {
+      if (/^slides\.\d+\.blockType$/.test(key)) slideBlockTypes[key] = fields[key]?.value;
+    }
+    return JSON.stringify({
+      block,
+      fields: {
+        ...slideBlockTypes,
+        'footer.center': fields['footer.center']?.value,
+        'footer.enabled': fields['footer.enabled']?.value,
+        'footer.left': fields['footer.left']?.value,
+        'footer.right': fields['footer.right']?.value,
+        language: fields.language?.value,
+        organisation: fields.organisation?.value,
+        title: fields.title?.value,
+      },
+    });
+  });
 
   const data = useMemo(() => JSON.parse(blockJson) as Record<string, unknown>, [blockJson]);
   const sections = useMemo(() => JSON.parse(sectionsJson) as string[], [sectionsJson]);
+  const chromeInput = useMemo(
+    () =>
+      JSON.parse(chromeInputJson) as {
+        block?: Record<string, unknown>;
+        fields: Record<string, unknown>;
+      },
+    [chromeInputJson],
+  );
+  const organisationId = relationshipId(chromeInput.fields.organisation);
+  const [resolvedOrganisation, setResolvedOrganisation] = useState<unknown>(null);
+
+  useEffect(() => {
+    if (!organisationId) {
+      setResolvedOrganisation(null);
+      return;
+    }
+    const controller = new AbortController();
+    async function loadOrganisation() {
+      try {
+        const res = await fetch(`/api/organisations/${organisationId}?depth=1`, {
+          signal: controller.signal,
+        });
+        setResolvedOrganisation(res.ok ? await res.json() : null);
+      } catch {
+        if (!controller.signal.aborted) setResolvedOrganisation(null);
+      }
+    }
+    void loadOrganisation();
+    return () => controller.abort();
+  }, [organisationId]);
+
+  const chrome = useMemo(() => {
+    const fieldMap = Object.fromEntries(
+      Object.entries(chromeInput.fields).map(([key, value]) => [key, { value }]),
+    );
+    if (resolvedOrganisation) fieldMap.organisation = { value: resolvedOrganisation };
+    const preview = chromeInput.block?.blockType
+      ? renderBlockPreview(chromeInput.block as never)
+      : null;
+    return buildSlidePreviewChrome(fieldMap, path, Boolean(preview?.hideChrome));
+  }, [chromeInput, path, resolvedOrganisation]);
 
   if (!data?.blockType) return null;
 
   const res = renderBlockPreview(data as never, sections);
   if (!res) return null;
-  const { className, html, image, layout } = res;
+  const { className, html, image, layout, mermaid } = res;
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.scaler}>
         <SlideFrame
           className={className}
+          chrome={chrome}
           html={html}
           image={image}
           layout={layout}
+          mermaid={mermaid}
           style={styles.slide}
         />
       </div>
     </div>
   );
 };
+
+function relationshipId(value: unknown): string | null {
+  if (typeof value === 'string' || typeof value === 'number') return String(value);
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.id === 'string' || typeof record.id === 'number') return String(record.id);
+  if (typeof record.value === 'string' || typeof record.value === 'number') {
+    return String(record.value);
+  }
+  return null;
+}
 
 const styles = {
   wrapper: {

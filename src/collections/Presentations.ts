@@ -279,9 +279,53 @@ export const Presentations: CollectionConfig = {
           ],
         },
         {
-          label: 'Métadonnées',
-          description: 'Informations de classement et de publication.',
+          label: 'Réglages',
+          description: 'Réglages de classement et de publication.',
           fields: [
+            {
+              name: 'status',
+              type: 'select',
+              required: true,
+              defaultValue: PRESENTATION_STATUS.draft,
+              label: 'Statut',
+              admin: {
+                description: 'État de publication',
+              },
+              options: [
+                { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
+                { label: 'Publiée', value: PRESENTATION_STATUS.published },
+                { label: 'Archivée', value: PRESENTATION_STATUS.archived },
+              ],
+            },
+            {
+              name: 'organisation',
+              type: 'relationship',
+              relationTo: COLLECTIONS.organisations,
+              required: true,
+              label: 'Organisation',
+              admin: {
+                description:
+                  'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
+              },
+            },
+            {
+              name: 'createdBy',
+              type: 'relationship',
+              relationTo: COLLECTIONS.users,
+              label: 'Créé par',
+              admin: {
+                readOnly: true,
+                description: 'Auteur de la présentation',
+              },
+              hooks: {
+                beforeChange: [
+                  ({ req, operation }) => {
+                    if (operation === 'create') return req.user?.id;
+                    return undefined;
+                  },
+                ],
+              },
+            },
             {
               name: 'slug',
               type: 'text',
@@ -468,52 +512,6 @@ export const Presentations: CollectionConfig = {
           ],
         },
       ],
-    },
-    {
-      name: 'status',
-      type: 'select',
-      required: true,
-      defaultValue: PRESENTATION_STATUS.draft,
-      label: 'Statut',
-      admin: {
-        description: 'État de publication',
-        position: 'sidebar',
-      },
-      options: [
-        { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
-        { label: 'Publiée', value: PRESENTATION_STATUS.published },
-        { label: 'Archivée', value: PRESENTATION_STATUS.archived },
-      ],
-    },
-    {
-      name: 'organisation',
-      type: 'relationship',
-      relationTo: COLLECTIONS.organisations,
-      required: true,
-      label: 'Organisation',
-      admin: {
-        position: 'sidebar',
-        description: 'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
-      },
-    },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: COLLECTIONS.users,
-      label: 'Créé par',
-      admin: {
-        readOnly: true,
-        position: 'sidebar',
-        description: 'Auteur de la présentation',
-      },
-      hooks: {
-        beforeChange: [
-          ({ req, operation }) => {
-            if (operation === 'create') return req.user?.id;
-            return undefined;
-          },
-        ],
-      },
     },
   ],
 };
