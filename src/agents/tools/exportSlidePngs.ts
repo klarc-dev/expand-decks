@@ -13,6 +13,7 @@ import { execFile as execFileCb } from 'node:child_process';
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -59,6 +60,15 @@ export async function exportSlidePngs(
     const baseCss = readFileSync(join(EXPORT_DIR, ARTIFACTS.styleCss), 'utf-8');
     writeFileSync(join(workdir, ARTIFACTS.styleCss), baseCss, 'utf-8');
     cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));
+    mkdirSync(join(workdir, ARTIFACTS.setupDir), { recursive: true });
+    cpSync(
+      join(EXPORT_DIR, ARTIFACTS.mermaidSetupSrc),
+      join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
+    );
+    cpSync(
+      join(EXPORT_DIR, 'mermaidConfig.ts'),
+      join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'),
+    );
     if (existsSync(PUBLIC_FONTS_DIR)) {
       cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), { recursive: true });
     }

@@ -21,3 +21,13 @@ export const REVISE_MAX_ITERATIONS = numberEnv('REVISE_MAX_ITERATIONS', 2, 0, 8)
  * Slides below this are revised (or, post-build, re-examined by the visual scorer).
  */
 export const SCORE_THRESHOLD = numberEnv('SCORE_THRESHOLD', 0.7, 0, 1);
+
+export const VISUAL_IMAGE_MAX_WIDTH = numberEnv('VISUAL_IMAGE_MAX_WIDTH', 1280, 320, 1920);
+export const VISUAL_IMAGE_MAX_HEIGHT = numberEnv('VISUAL_IMAGE_MAX_HEIGHT', 720, 180, 1080);
+export const VISUAL_IMAGE_MAX_BYTES = numberEnv(
+  'VISUAL_IMAGE_MAX_BYTES',
+  750_000,
+  100_000,
+  2_000_000,
+);
+export const VISUAL_IMAGE_JPEG_QUALITY = numberEnv('VISUAL_IMAGE_JPEG_QUALITY', 78, 40, 95);

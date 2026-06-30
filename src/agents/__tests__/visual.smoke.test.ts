@@ -30,7 +30,10 @@ maybe('visualScorer (multimodal via 9router)', () => {
     const { pngs, cleanup } = await exportSlidePngs(md);
     try {
       expect(pngs.length).toBe(1);
-      const { score, fix } = await scoreVisual(slide, pngs[0]!.base64);
+      const { score, fix } = await scoreVisual(slide, {
+        base64: pngs[0]!.base64,
+        mimeType: 'image/png',
+      });
       console.log(`[visual] score=${score} fix="${fix}"`);
       // The proof point: a numeric 0..1 verdict came back — vision works.
       expect(typeof score).toBe('number');

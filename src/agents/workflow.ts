@@ -176,9 +176,12 @@ const visualStep = createStep({
         inputData.slides,
         WRITER_CONCURRENCY,
         async (slide, i) => {
-          const png = pngs[i]?.base64;
+          const png = pngs[i];
           if (!png) return { score: 1, fix: '' };
-          return scoreVisual(slide as Record<string, unknown>, png);
+          return scoreVisual(slide as Record<string, unknown>, {
+            base64: png.base64,
+            mimeType: 'image/png',
+          });
         },
       );
       const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);

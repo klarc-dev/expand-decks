@@ -12,7 +12,8 @@
 import { createScorer } from '@mastra/core/evals';
 import { z } from 'zod';
 
-import { generateStructured } from '../model';
+import { boundVisualImage } from '../tools/visualImage';
+import { generateStructured, type ImagePart } from '../model';
 
 export const VisualVerdict = z.object({
   score: z
@@ -36,7 +37,7 @@ Tu IGNORES la qualité rédactionnelle (jugée ailleurs). Renvoie score 0..1, le
 - 1.0 : propre, aéré, lisible, équilibré.
 - < 0.5 : déborde, coupé, ou illisible.`;
 
-export type VisualInput = { slide: Record<string, unknown>; png: string };
+export type VisualInput = { slide: Record<string, unknown>; image: ImagePart };
 
 async function judgeVisual(input: VisualInput): Promise<z.infer<typeof VisualVerdict>> {
   return generateStructured({
@@ -44,7 +45,7 @@ async function judgeVisual(input: VisualInput): Promise<z.infer<typeof VisualVer
     instructions: VISUAL_INSTRUCTIONS,
     schema: VisualVerdict,
     prompt: `Évalue le rendu visuel de cette diapositive (type: ${input.slide.blockType}, titre: ${String(input.slide.title ?? '')}).`,
-    images: [{ base64: input.png, mimeType: 'image/png' }],
+    images: [input.image],
   });
 }
 
@@ -70,8 +71,9 @@ export const visualScorer = createScorer({
 /** Convenience: score one rendered slide, return { score, fix }. */
 export async function scoreVisual(
   slide: Record<string, unknown>,
-  png: string,
+  image: ImagePart,
 ): Promise<{ score: number; fix: string }> {
-  const res = await visualScorer.run({ output: { slide, png } });
+  const bounded = await boundVisualImage(image);
+  const res = await visualScorer.run({ output: { slide, image: bounded } });
   return { score: res.score ?? 0, fix: (res.reason as string) ?? '' };
 }
