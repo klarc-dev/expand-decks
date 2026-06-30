@@ -28,3 +28,7 @@ playwright-report/
 # MCP config with secrets (OpenWebUI API key)
 .mcp.json
 mcp.json
+
+# Scratch dir + throwaway one-off scripts
+tmp/
+scripts/tmp-*

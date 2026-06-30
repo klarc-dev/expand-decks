@@ -27,5 +27,9 @@ export default defineConfig({
   test: {
     include: ['src/**/__tests__/**/*.test.ts'],
     env: loadDotenv(),
+    // Node 20.20.x + undici@8 (pulled by Payload) crashes on import because
+    // undici calls worker_threads.markAsUncloneable, absent in this runtime.
+    // The setup file installs a no-op shim before any test module loads undici.
+    setupFiles: ['./vitest.setup.ts'],
   },
 });
