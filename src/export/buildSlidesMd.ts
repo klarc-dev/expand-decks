@@ -73,9 +73,9 @@ function foldSlides(presentation: Presentation, headmatter: string): string {
     const variantIndex = block.blockType === 'statement' ? statementIndex++ : undefined;
     resetDefs();
     // Seed authored "Sources / Notes" before rendering so they're numbered
-    // ahead of any inline {{def:…}} refs; markdown blocks carry no footnotes
-    // field and never flush the band.
-    if (block.blockType !== 'markdown') {
+    // ahead of any inline {{def:…}} refs; markdown and cover blocks carry no
+    // footnotes field and never flush the band.
+    if (block.blockType !== 'markdown' && block.blockType !== 'cover') {
       seedFootnotes(
         (block as { footnotes?: ({ text?: string | null } | null)[] | null }).footnotes,
       );

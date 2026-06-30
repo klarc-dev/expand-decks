@@ -23,6 +23,45 @@ const footerRight = optionalRichTextRender();
 const surface = optionalRender(z.enum(['dark', 'light', 'gradient']));
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
+const mediaRelationship = z.union([
+  z.string(),
+  z.number(),
+  z
+    .object({
+      id: z.union([z.string(), z.number()]),
+      url: optionalRender(z.string()),
+      thumbnailURL: optionalRender(z.string()),
+      sizes: optionalRender(
+        z.object({
+          thumbnail: optionalRender(z.object({ url: optionalRender(z.string()) }).passthrough()),
+          card: optionalRender(z.object({ url: optionalRender(z.string()) }).passthrough()),
+        }),
+      ),
+    })
+    .passthrough(),
+]);
+const userRelationship = z.union([
+  z.string(),
+  z.number(),
+  z
+    .object({
+      id: z.union([z.string(), z.number()]),
+      name: optionalRender(z.string()),
+      email: optionalRender(z.string()),
+      title: optionalRender(z.string()),
+      avatar: optionalRender(mediaRelationship),
+    })
+    .passthrough(),
+]);
+const intervenants = optionalRender(
+  z.array(
+    z
+      .object({
+        user: userRelationship.nullable().optional(),
+      })
+      .passthrough(),
+  ),
+);
 
 export const coverSpec = block({
   slug: 'cover',
@@ -37,6 +76,22 @@ export const coverSpec = block({
       type: 'richText',
       label: 'Sous-titre',
       description: 'Paragraphe descriptif sous le titre',
+    }),
+    rawField('intervenants', intervenants, false, {
+      type: 'array',
+      label: 'Intervenants',
+      description: 'Personnes affichées sur la diapositive de couverture',
+      maxRows: 4,
+      fields: [
+        rawField('user', userRelationship, false, {
+          type: 'relationship',
+          relationTo: 'users',
+          required: true,
+          maxDepth: 2,
+          label: 'Utilisateur',
+          description: 'Utilisateur affiché comme intervenant',
+        }),
+      ],
     }),
     rawField('footerLeft', footerLeft, optionalAi(z.string()), {
       type: 'richText',
@@ -71,6 +126,7 @@ export const coverRenderSchema = z.object({
   eyebrow,
   title,
   subtitle,
+  intervenants,
   footerLeft,
   footerRight,
   surface,
