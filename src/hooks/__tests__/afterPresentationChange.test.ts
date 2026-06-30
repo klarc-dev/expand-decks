@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { buildInputsChanged } from '../afterPresentationChange';
+import { CTX } from '../../lib/context';
+import { BUILD_SLIDES_TASK } from '../../jobs/buildSlides';
+import { afterPresentationChange, buildInputsChanged } from '../afterPresentationChange';
 
 const base = {
   slides: [{ blockType: 'cover', title: 'A' }],
@@ -9,6 +11,55 @@ const base = {
   title: 'Deck',
   language: 'fr',
 };
+
+describe('afterPresentationChange', () => {
+  it('queues a build on every update save, even when the presentation is not published', async () => {
+    const update = vi.fn().mockResolvedValue({});
+    const queue = vi.fn().mockResolvedValue({});
+    const doc = { id: 'presentation-1', status: 'draft', ...base };
+
+    const result = await afterPresentationChange({
+      doc,
+      operation: 'update',
+      req: { context: {}, payload: { update, jobs: { queue } } },
+    } as never);
+
+    expect(result).toBe(doc);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'presentations',
+        id: 'presentation-1',
+        context: { [CTX.skipBuildQueue]: true },
+      }),
+    );
+    expect(update.mock.calls[0]?.[0].data.lastBuildToken).toEqual(expect.any(String));
+    expect(queue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: BUILD_SLIDES_TASK,
+        input: {
+          presentationId: 'presentation-1',
+          buildToken: update.mock.calls[0]?.[0].data.lastBuildToken,
+        },
+      }),
+    );
+  });
+
+  it('does not queue when the internal skipBuildQueue flag is set', async () => {
+    const update = vi.fn();
+    const queue = vi.fn();
+    const doc = { id: 'presentation-1', status: 'published', ...base };
+
+    const result = await afterPresentationChange({
+      doc,
+      operation: 'update',
+      req: { context: { [CTX.skipBuildQueue]: true }, payload: { update, jobs: { queue } } },
+    } as never);
+
+    expect(result).toBe(doc);
+    expect(update).not.toHaveBeenCalled();
+    expect(queue).not.toHaveBeenCalled();
+  });
+});
 
 describe('buildInputsChanged — rebuild fingerprint', () => {
   it('is false when nothing build-affecting changed', () => {
