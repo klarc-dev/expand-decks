@@ -1318,6 +1318,9 @@
   letter-spacing: 0.04em;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-rule) 55%, transparent);
 }
+.k-person-initials {
+  font-size: 0.88rem;
+}
 .k-person-body {
   min-width: 0;
 }
