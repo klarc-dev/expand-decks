@@ -313,7 +313,20 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('layout: default');
     expect(result).toContain('k-split');
     expect(result).toContain('k-content-header');
-    expect(result).toContain('k-content-main');
+    expect(result).toContain('k-content-main k-content-main--start');
+  });
+
+  it('places the intro separator in the heading-adjacent body row', () => {
+    const result = renderTwoCols({
+      blockType: 'twoCols',
+      title: 'Title',
+      intro: lexical('Lead copy'),
+      rightCards: [{ title: 'Card 1', description: lexical('Desc 1') }],
+    });
+    expect(result).toContain('k-content-main k-content-main--start');
+    expect(result).toMatch(
+      /k-content-header[\s\S]*k-content-main k-content-main--start[\s\S]*<hr class="k-divider"\/>/,
+    );
   });
 
   it('renders right cards in the second split column even when left body is empty', () => {

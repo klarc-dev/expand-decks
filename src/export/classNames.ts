@@ -44,6 +44,8 @@ export const K = {
   caption: 'k-caption',
   pill: 'k-pill',
   defItem: 'k-def-item',
+  defIndex: 'k-def-index',
+  defText: 'k-def-text',
   defFooter: 'k-def-footer',
   defRef: 'k-def-ref',
 } as const;

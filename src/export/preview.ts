@@ -1,9 +1,11 @@
+import { bareMermaidSource } from './blocks/mermaid';
 import { getRenderer, type SlideBlock } from './renderers';
 import { slideTone } from './slideTone';
 
 type PreviewFrontmatter = {
   body: string;
   className: string;
+  hideChrome: boolean;
   image?: string;
   layout: string;
 };
@@ -24,12 +26,13 @@ function frontmatterValue(frontmatter: string, key: string): string | null {
 function parsePreviewFrontmatter(markdown: string): PreviewFrontmatter {
   const match = markdown.match(/^---\n([\s\S]*?)\n---\n*/);
   if (!match) {
-    return { body: markdown, className: 'relative', layout: 'default' };
+    return { body: markdown, className: 'relative', hideChrome: false, layout: 'default' };
   }
   const frontmatter = match[1] ?? '';
   return {
     body: markdown.slice(match[0].length),
     className: frontmatterValue(frontmatter, 'class') ?? 'relative',
+    hideChrome: frontmatterValue(frontmatter, 'hideChrome') === 'true',
     image: frontmatterValue(frontmatter, 'image') ?? undefined,
     layout: frontmatterValue(frontmatter, 'layout') ?? 'default',
   };
@@ -49,13 +52,25 @@ function parsePreviewFrontmatter(markdown: string): PreviewFrontmatter {
 export function renderBlockPreview(
   block: SlideBlock,
   sections?: string[],
-): { className: string; html: string; image?: string; layout: string } | null {
+): {
+  className: string;
+  html: string;
+  hideChrome: boolean;
+  image?: string;
+  layout: string;
+  mermaid?: { source: string };
+} | null {
   const blockType = (block as { blockType: string }).blockType;
   const renderer = getRenderer(blockType);
   if (!renderer) return null;
   let md: string;
+  let mermaid: { source: string } | undefined;
   try {
     md = renderer(block as never, { surface: slideTone(blockType, null), sections });
+    if (blockType === 'mermaid') {
+      const source = bareMermaidSource((block as { source?: string | null }).source ?? '');
+      if (source) mermaid = { source };
+    }
   } catch {
     // A renderer bug must degrade to "no preview", never crash the admin.
     return null;
@@ -64,7 +79,9 @@ export function renderBlockPreview(
   return {
     className: parsed.className,
     html: parsed.body,
+    hideChrome: parsed.hideChrome,
     image: parsed.image,
     layout: parsed.layout,
+    mermaid,
   };
 }

@@ -51,15 +51,20 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
 describe('style.css source pills', () => {
   it('renders source items as rounded integrated pills instead of a ruled footer', () => {
     const footerBlock = css.match(/\.k-def-footer\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(footerBlock).toMatch(/gap:\s*0\.35rem/);
+    expect(footerBlock).toMatch(/gap:\s*0\.32rem/);
     // No detached legal-footer rule above the band.
     expect(footerBlock).not.toMatch(/border-top:/);
-    expect(css).toMatch(/\.k-def-item\s*\{[^}]*display:\s*inline-flex/);
+    expect(css).toMatch(/\.k-def-item\s*\{[^}]*display:\s*inline-grid/);
+    expect(css).toMatch(/\.k-def-item\s*\{[^}]*height:\s*var\(--k-def-pill-h\)/);
+    expect(css).toMatch(/\.k-def-item\s*\{[^}]*border:\s*0/);
     expect(css).toMatch(/\.k-def-item\s*\{[^}]*border-radius:\s*999px/);
   });
 
-  it('uses a compact numbered badge inside each source pill', () => {
-    expect(css).toMatch(/\.k-def-item\s+sup\s*\{[\s\S]*display:\s*inline-flex/);
-    expect(css).toMatch(/\.k-def-item\s+sup\s*\{[\s\S]*background:\s*var\(--accent-rule\)/);
+  it('uses a full-height merged number segment inside each source pill', () => {
+    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*display:\s*inline-flex/);
+    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*height:\s*100%/);
+    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*border-radius:\s*999px 0 0 999px/);
+    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*background:\s*linear-gradient\(/);
+    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*var\(--accent-rule\)/);
   });
 });

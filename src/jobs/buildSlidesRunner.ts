@@ -82,6 +82,10 @@ function stageBuildDir({ slidesMd, themeCss, footerEnabled, logoPresent }: Stage
     join(EXPORT_DIR, ARTIFACTS.mermaidSetupSrc),
     join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
   );
+  cpSync(
+    join(EXPORT_DIR, 'mermaidConfig.ts'),
+    join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'),
+  );
 
   if (existsSync(PUBLIC_FONTS_DIR)) {
     cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), { recursive: true });

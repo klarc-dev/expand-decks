@@ -8,38 +8,13 @@
  * this dependency-free.
  *
  * Two jobs:
- *  - `flowchart.useMaxWidth: true` makes Mermaid emit an SVG with `max-width:
- *    100%` instead of a hard pixel width, so the .k-mermaid CSS can scale it to
- *    fit the fixed 1280×720 canvas (the diagrams were overflowing the slide and
- *    getting clipped to near-blank in the PDF export).
+ *  - `flowchart.useMaxWidth: false` lets Mermaid emit an intrinsic SVG/viewBox.
+ *    The shared .k-diagram-slide CSS then sizes that SVG with a centered
+ *    "contain" layout, so diagrams fit the 1280×720 canvas without transform
+ *    scaling, dead bands, or PDF clipping.
  *  - `theme: 'base' + themeVariables` paints the graph in the Klarc palette
  *    (teal nodes/edges, rose accents) instead of Mermaid's default lavender.
  */
-const KLARC = {
-  teal: '#02585c',
-  teal700: '#023c3f',
-  teal50: '#ecf7f7',
-  rose: '#f5a3b0',
-  ink: '#0f2a2b',
-  line: '#cfe0e0',
-  white: '#ffffff',
-};
+import { buildMermaidConfig } from './mermaidConfig';
 
-export default () => ({
-  theme: 'base',
-  flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
-  themeVariables: {
-    fontFamily: 'Roboto, ui-sans-serif, system-ui, sans-serif',
-    // Process / task nodes
-    primaryColor: KLARC.teal50,
-    primaryBorderColor: KLARC.teal,
-    primaryTextColor: KLARC.ink,
-    // Edges + labels
-    lineColor: KLARC.teal700,
-    edgeLabelBackground: KLARC.white,
-    // Decision nodes / secondary
-    secondaryColor: KLARC.white,
-    tertiaryColor: KLARC.teal50,
-    tertiaryBorderColor: KLARC.rose,
-  },
-});
+export default () => buildMermaidConfig();

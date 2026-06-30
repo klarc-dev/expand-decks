@@ -8,7 +8,7 @@ export type { MermaidBlockData };
  * ```mermaid … ``` block — we re-emit our own fence, so a nested one would
  * break Slidev's codeblock transform.
  */
-function bareSource(source: string): string {
+export function bareMermaidSource(source: string): string {
   const bare = source
     .replace(/^\s*```[\w]*\s*\n/, '')
     .replace(/\n```\s*$/, '')
@@ -19,39 +19,19 @@ function bareSource(source: string): string {
   return bare;
 }
 
-/**
- * Pick a Slidev mermaid {scale} so the diagram fits the ~26rem of vertical space
- * under the slide header on the 1280×720 canvas. Mermaid sizes a flowchart by
- * its node/row count; without down-scaling a tall `flowchart TD` overflows the
- * slide and gets clipped to near-blank in the PDF export. Heuristic by line
- * count (each edge/decl ≈ one row): more rows → smaller scale. Authors can still
- * pin an explicit scale by starting the source with a `%%{scale}%%`-style hint,
- * but the heuristic covers the common case with zero per-slide tuning.
- */
-function autoScale(source: string): number {
-  // Tight band (0.46–0.62) so sibling decision-tree slides render at a visually
-  // CONSISTENT text size, and even a sparse 3-node TD tree (tall decision
-  // diamonds) doesn't overflow the frame at the top of the range.
-  const lines = source.split('\n').filter((l) => l.trim().length > 0).length;
-  if (lines <= 4) return 0.62;
-  if (lines <= 7) return 0.56;
-  if (lines <= 10) return 0.42;
-  return 0.36;
-}
-
 export function renderMermaid(block: MermaidBlockData, ctx?: RenderCtx): string {
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
 
-  const source = bareSource(block.source ?? '');
-  const scale = autoScale(source);
+  const source = bareMermaidSource(block.source ?? '');
 
   // CRITICAL: the ```mermaid fence is emitted at ROOT markdown level (NOT wrapped
   // in a <div>). Slidev's <Mermaid> transform only fires for a fence that sits at
   // markdown top level with blank lines around it; nesting it inside block-level
   // HTML leaves an empty <div class="mermaid"> and the diagram renders unsized /
-  // outside the flow (verified: the HTML-wrapped form exported blank). The native
-  // {scale} option is how Slidev sizes the SVG — no CSS height-hacking needed.
-  const diagram = source ? `\`\`\`mermaid {scale: ${scale}}\n${source}\n\`\`\`` : '';
+  // outside the flow (verified: the HTML-wrapped form exported blank). Sizing is
+  // handled centrally by .k-diagram-slide CSS as a pure SVG "contain" layout, so
+  // every diagram stays centered and clipped-free without per-slide scale hints.
+  const diagram = source ? `\`\`\`mermaid\n${source}\n\`\`\`` : '';
 
   const caption = block.caption ? `<p class="k-mermaid-caption">${md(block.caption)}</p>` : '';
 

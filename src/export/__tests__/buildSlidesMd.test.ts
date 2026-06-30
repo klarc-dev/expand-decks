@@ -105,9 +105,13 @@ describe('buildSlidesMd()', () => {
     ]);
     expect(result).toContain('k-def-footer');
     // First note numbered ¹, second ², in author order.
-    expect(result).toContain('<sup>1</sup>Source : Gartner, 2025');
+    expect(result).toContain(
+      '<span class="k-def-index">1</span><span class="k-def-text">Source : Gartner, 2025</span>',
+    );
     // md() turns the inline link into an anchor.
-    expect(result).toContain('<sup>2</sup>Voir <a href="https://x.test">étude</a>');
+    expect(result).toContain(
+      '<span class="k-def-index">2</span><span class="k-def-text">Voir <a href="https://x.test">étude</a></span>',
+    );
   });
 
   it('skips blank footnote texts and emits no band when all empty', () => {
@@ -233,7 +237,9 @@ describe('buildSlidesMd()', () => {
           { blockType: type, ...block, footnotes: [{ text: 'Source : CGI art. 256' }] } as never,
         ]);
         expect(result).toContain('k-def-footer');
-        expect(result).toContain('<sup>1</sup>Source : CGI art. 256');
+        expect(result).toContain(
+          '<span class="k-def-index">1</span><span class="k-def-text">Source : CGI art. 256</span>',
+        );
         // The slot marker must always be resolved, never leaked into output.
         expect(result).not.toContain('k-def-footer-slot');
       });

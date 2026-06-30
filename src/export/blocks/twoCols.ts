@@ -57,7 +57,7 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   const body = contentFrame(main, {
     header,
     crowded: stack.crowded,
-    mainAlign: 'center',
+    mainAlign: 'start',
   });
 
   return wrapSlide({ surface: ctx?.surface, body });

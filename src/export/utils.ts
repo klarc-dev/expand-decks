@@ -96,7 +96,10 @@ function consumeDefFooter(): string {
   // md() (not escape) so a note can carry an inline [texte](url) link or *emphasis*;
   // md() escapes HTML entities itself, so this stays injection-safe.
   const items = _slideDefs
-    .map((d, i) => `<span class="${K.defItem}"><sup>${i + 1}</sup>${md(d)}</span>`)
+    .map(
+      (d, i) =>
+        `<span class="${K.defItem}"><span class="${K.defIndex}">${i + 1}</span><span class="${K.defText}">${md(d)}</span></span>`,
+    )
     .join('');
   _slideDefs = [];
   return `\n\n<div class="${K.defFooter}">${items}</div>`;
