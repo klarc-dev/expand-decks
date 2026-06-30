@@ -1,10 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 vi.mock('../model', () => ({ generateStructured: vi.fn() }));
 
 import { generateStructured } from '../model';
 import { structure } from '../agents/structure';
 import type { DeckDossier } from '../schemas';
+
+const mockedGenerateStructured = vi.mocked(generateStructured);
+
+beforeEach(() => mockedGenerateStructured.mockReset());
 
 const baseDossier = (rawBrief: string): DeckDossier => ({
   coreIdea: 'x',
@@ -34,7 +38,7 @@ describe('structure() explicit-brief fast-path', () => {
   });
 
   it('falls through to the LLM when the brief is not slide-by-slide', async () => {
-    (generateStructured as any).mockResolvedValue({
+    mockedGenerateStructured.mockResolvedValue({
       slides: [
         { blockType: 'cover', title: 't', intent: 'i' },
         { blockType: 'cta', title: 't2', intent: 'i2' },
@@ -43,6 +47,30 @@ describe('structure() explicit-brief fast-path', () => {
     const stubs = await structure(baseDossier('un brief libre sans marqueurs S1'));
     expect(generateStructured).toHaveBeenCalled();
     expect(Array.isArray(stubs)).toBe(true);
+  });
+
+  it('does not expose dossier sources in the structure prompt while keeping grounded data', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      slides: [
+        { blockType: 'cover', title: 'A', intent: 'i' },
+        { blockType: 'statement', title: 'B', intent: 'i2' },
+        { blockType: 'cta', title: 'C', intent: 'i3' },
+      ],
+    });
+
+    const stubs = await structure({
+      ...baseDossier('brief libre'),
+      data: ['42% adoption in 2026'],
+      sources: ['Private KB — internal memo'],
+    });
+
+    const prompt = mockedGenerateStructured.mock.calls[0]![0].prompt;
+    const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
+    expect(stubs).toHaveLength(3);
+    expect(prompt).toContain('42% adoption in 2026');
+    expect(prompt).not.toContain('SOURCES :');
+    expect(prompt).not.toContain('Private KB — internal memo');
+    expect(instructions).toContain('ne planifie jamais une diapositive ou une intention "Sources"');
   });
 });
 
@@ -162,7 +190,7 @@ describe('structure() parser — blockType keyword routing', () => {
 
 describe('structure() parser — brief with fewer than 3 S-markers falls to LLM', () => {
   it('does not fast-path when only 2 S-markers are present', async () => {
-    (generateStructured as any).mockResolvedValue({
+    mockedGenerateStructured.mockResolvedValue({
       slides: [
         { blockType: 'cover', title: 'A', intent: 'i' },
         { blockType: 'cta', title: 'B', intent: 'i' },

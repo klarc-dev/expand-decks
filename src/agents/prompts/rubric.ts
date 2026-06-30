@@ -16,6 +16,6 @@ export const RUBRIC_PROMPT = `Règles de contenu expert (ce qui rend une diaposi
 5. Charge cognitive minimale : peu de mots, groupés en 3 à 5 unités ; le visuel porte la structure, pas un mur de texte.
 6. Deux côtés : nomme la principale objection d'un public expert et réfute-la, plutôt que de l'ignorer.
 7. Style factuel : énonce les faits clairement, nuance les interprétations selon les preuves. Pas de survente, de superlatif, de slogan ni d'exagération.
-8. Cite la source quand une donnée ou une affirmation l'exige.
+8. Vérifie les données et affirmations avec les sources disponibles, mais ne rends pas de rubrique bibliographique visible ; les sources restent en métadonnées.
 
 Le public est expert : ne ré-explique pas les fondamentaux qu'il maîtrise ; va à la frontière utile et nouvelle.`;

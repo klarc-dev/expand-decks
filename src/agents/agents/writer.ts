@@ -32,6 +32,7 @@ Règles de rédaction :
 - Conserve EXACTEMENT le blockType et le title imposés.
 - Remplis tous les champs pertinents du layout à partir du dossier et de l'intention.
 - Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
+- Les sources servent seulement à vérifier les faits ; les preuves sont conservées en métadonnées. Ne rédige jamais de rubrique bibliographique visible ("Sources :", "Références :", citations brutes).
 - Textes concis et factuels ; reste dans la langue du dossier ; ne répète pas le contenu d'une autre diapositive.`;
 
 function dossierExcerpt(dossier: DeckDossier): string {
@@ -41,7 +42,6 @@ function dossierExcerpt(dossier: DeckDossier): string {
     dossier.data.length
       ? `DONNÉES DISPONIBLES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}`
       : '',
-    dossier.sources.length ? `SOURCES :\n${dossier.sources.map((s) => `- ${s}`).join('\n')}` : '',
   ]
     .filter(Boolean)
     .join('\n');

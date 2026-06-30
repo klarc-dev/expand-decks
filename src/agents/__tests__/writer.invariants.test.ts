@@ -59,6 +59,19 @@ describe('writeSlide invariants', () => {
     expect(prompt).toContain('Lead with the conclusion.');
   });
 
+  it('does not expose dossier sources in the writer prompt while keeping grounded data', async () => {
+    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+
+    await writeSlide(stub, dossier, []);
+
+    const prompt = mocked.mock.calls[0]![0].prompt;
+    const instructions = mocked.mock.calls[0]![0].instructions;
+    expect(prompt).toContain('Garner 2013');
+    expect(prompt).not.toContain('SOURCES :');
+    expect(prompt).not.toContain('Garner, Legal Writing in Plain English');
+    expect(instructions).toContain('Ne rédige jamais de rubrique bibliographique visible');
+  });
+
   it('returns a minimal block for non-aiDraftable types without calling the model', async () => {
     const md: OutlineStub = { blockType: 'markdown', title: 'Raw', intent: 'x' };
     const out = await writeSlide(md, dossier, []);

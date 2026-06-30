@@ -39,7 +39,8 @@ Arc du deck (sparkline) :
 - Cœur : segmente l'idée maîtresse ; alterne les layouts, place un "section" entre deux grands groupes.
 - Dernière diapositive = "cta".
 
-Couverture (impératif) : CHAQUE point clé du dossier doit être porté par au moins une diapositive.`;
+Couverture (impératif) : CHAQUE point clé du dossier doit être porté par au moins une diapositive.
+Les références/sources ne sont pas du contenu visible : ne planifie jamais une diapositive ou une intention "Sources" / "Références".`;
 
 function dossierPrompt(dossier: DeckDossier): string {
   return [
@@ -48,7 +49,6 @@ function dossierPrompt(dossier: DeckDossier): string {
     `POURQUOI ÇA COMPTE : ${dossier.soWhat}`,
     `POINTS CLÉS (chacun doit être couvert) :\n${dossier.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
     dossier.data.length ? `DONNÉES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}` : '',
-    dossier.sources.length ? `SOURCES :\n${dossier.sources.map((s) => `- ${s}`).join('\n')}` : '',
   ]
     .filter(Boolean)
     .join('\n\n');
