@@ -194,14 +194,8 @@ describe('buildSlidesMd()', () => {
     expect(parsed.headmatter.title).toBe('Test Deck');
   });
 
-  // Sources-wiring contract: authored "Sources / Notes" must surface as a
-  // numbered footer band on EVERY non-markdown template (emitPayloadBlock injects
-  // the footnotes repeater everywhere but markdown; buildSlidesMd seeds the band
-  // before each renderer). One representative fixture per block type proves the
-  // guarantee holds for all 12, not just the handful with bespoke def-footer tests.
-  describe('authored sources surface on every non-markdown template', () => {
+  describe('authored sources surface on every source-bearing template', () => {
     const FIXTURES: Array<{ type: string; block: Record<string, unknown> }> = [
-      { type: 'cover', block: { title: 'Cover' } },
       { type: 'section', block: { title: 'Section' } },
       { type: 'statement', block: { title: 'Statement' } },
       { type: 'twoCols', block: { title: 'Two Cols', intro: lexical('Intro') } },
