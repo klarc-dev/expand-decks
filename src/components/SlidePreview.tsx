@@ -65,7 +65,9 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     [chromeInputJson],
   );
   const organisationId = relationshipId(chromeInput.fields.organisation);
+  const intervenantIdsJson = useMemo(() => JSON.stringify(intervenantUserIds(data)), [data]);
   const [resolvedOrganisation, setResolvedOrganisation] = useState<unknown>(null);
+  const [resolvedUsers, setResolvedUsers] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     if (!organisationId) {
@@ -87,6 +89,42 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     return () => controller.abort();
   }, [organisationId]);
 
+  // Relationship fields inside blocks (cover intervenants → users) arrive as
+  // bare IDs in form state. Resolve them client-side (depth:1 hydrates the
+  // avatar) so the preview shows the same avatar cards a build would, mirroring
+  // the organisation resolver above. Cards degrade to initials while loading.
+  useEffect(() => {
+    const ids = JSON.parse(intervenantIdsJson) as string[];
+    if (ids.length === 0) {
+      setResolvedUsers({});
+      return;
+    }
+    const controller = new AbortController();
+    async function loadUsers() {
+      const entries = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const res = await fetch(`/api/users/${id}?depth=1`, { signal: controller.signal });
+            return res.ok ? ([id, await res.json()] as const) : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (controller.signal.aborted) return;
+      setResolvedUsers(
+        Object.fromEntries(entries.filter((e): e is readonly [string, unknown] => Boolean(e))),
+      );
+    }
+    void loadUsers();
+    return () => controller.abort();
+  }, [intervenantIdsJson]);
+
+  const previewData = useMemo(
+    () => hydrateIntervenants(data, resolvedUsers),
+    [data, resolvedUsers],
+  );
+
   const chrome = useMemo(() => {
     const fieldMap = Object.fromEntries(
       Object.entries(chromeInput.fields).map(([key, value]) => [key, { value }]),
@@ -98,9 +136,9 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     return buildSlidePreviewChrome(fieldMap, path, Boolean(preview?.hideChrome));
   }, [chromeInput, path, resolvedOrganisation]);
 
-  if (!data?.blockType) return null;
+  if (!previewData?.blockType) return null;
 
-  const res = renderBlockPreview(data as never, sections);
+  const res = renderBlockPreview(previewData as never, sections);
   if (!res) return null;
   const { className, html, image, layout, mermaid } = res;
 
@@ -130,6 +168,38 @@ function relationshipId(value: unknown): string | null {
     return String(record.value);
   }
   return null;
+}
+
+function intervenantUserIds(block: Record<string, unknown>): string[] {
+  if (block.blockType !== 'cover' || !Array.isArray(block.intervenants)) return [];
+  return Array.from(
+    new Set(
+      block.intervenants
+        .map((row) =>
+          row && typeof row === 'object'
+            ? relationshipId((row as Record<string, unknown>).user)
+            : null,
+        )
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+}
+
+function hydrateIntervenants(
+  block: Record<string, unknown>,
+  usersById: Record<string, unknown>,
+): Record<string, unknown> {
+  if (block.blockType !== 'cover' || !Array.isArray(block.intervenants)) return block;
+
+  return {
+    ...block,
+    intervenants: block.intervenants.map((row) => {
+      if (!row || typeof row !== 'object') return row;
+      const record = row as Record<string, unknown>;
+      const id = relationshipId(record.user);
+      return id && usersById[id] ? { ...record, user: usersById[id] } : row;
+    }),
+  };
 }
 
 const styles = {

@@ -2,7 +2,7 @@ import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
 import {
-  defFooterSlot,
+  escape,
   eyebrow as renderEyebrow,
   md,
   wrapSlide,
@@ -11,6 +11,97 @@ import {
 } from '../utils';
 
 export type { CoverBlockData };
+
+type PersonCard = {
+  avatarUrl?: string;
+  initials: string;
+  name: string;
+  title?: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+function asNonEmptyString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function avatarUrl(value: unknown): string | undefined {
+  const avatar = asRecord(value);
+  if (!avatar) return undefined;
+
+  const sizes = asRecord(avatar.sizes);
+  const thumbnail = asRecord(sizes?.thumbnail);
+  const card = asRecord(sizes?.card);
+  return (
+    asNonEmptyString(thumbnail?.url) ??
+    asNonEmptyString(card?.url) ??
+    asNonEmptyString(avatar.thumbnailURL) ??
+    asNonEmptyString(avatar.url) ??
+    undefined
+  );
+}
+
+function initialsFor(label: string): string {
+  const parts = label
+    .replace(/@.*/, '')
+    .split(/[\s._-]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const initials = parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+  return initials || '•';
+}
+
+function userToPerson(user: unknown): PersonCard | null {
+  const record = asRecord(user);
+  // Unresolved relationship IDs are intentionally ignored. The build runner
+  // hydrates relationships; admin preview resolves selected users separately.
+  if (!record) return null;
+
+  const email = asNonEmptyString(record.email);
+  const name = asNonEmptyString(record.name) ?? email?.split('@')[0] ?? 'Intervenant';
+  const title = asNonEmptyString(record.title) ?? undefined;
+
+  return {
+    avatarUrl: avatarUrl(record.avatar),
+    initials: initialsFor(name),
+    name,
+    title,
+  };
+}
+
+function renderPeople(block: CoverBlockData): string {
+  const rows = block.intervenants ?? [];
+  const people = rows
+    .map((row) => userToPerson(asRecord(row)?.user))
+    .filter((person): person is PersonCard => Boolean(person))
+    .slice(0, 4);
+
+  if (people.length === 0) return '';
+
+  const cards = people
+    .map((person) => {
+      const avatar = person.avatarUrl
+        ? `<img class="${K.personAvatar}" src="${escape(person.avatarUrl)}" alt="" />`
+        : `<span class="${K.personAvatar} ${K.personInitials}" aria-hidden="true">${escape(person.initials)}</span>`;
+      const title = person.title
+        ? `\n      <div class="${K.personTitle}">${escape(person.title)}</div>`
+        : '';
+      return `<div class="${K.personCard}">
+    ${avatar}
+    <div class="${K.personBody}">
+      <div class="${K.personName}">${escape(person.name)}</div>${title}
+    </div>
+  </div>`;
+    })
+    .join('\n');
+
+  return `\n      <div class="${K.coverPeople}" aria-label="Intervenants">\n${cards}\n      </div>`;
+}
 
 // ctx is accepted for signature parity with the other renderers (the RENDERERS
 // map types every entry with the optional ctx arg). The cover defines its own
@@ -27,6 +118,7 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
 
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
+  const people = renderPeople(block);
 
   const footerLeftHtml = richTextToHTML(block.footerLeft);
   const footerLeft = footerLeftHtml
@@ -40,23 +132,22 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
 
   const footerRow =
     footerLeft || footerRight
-      ? `\n  <div class="flex items-end justify-between">${footerLeft}${footerRight}\n  </div>`
+      ? `\n  <div class="k-cover-footer">${footerLeft}${footerRight}\n  </div>`
       : '';
 
   // With image: half-slide layout (Slidev image-right/-left supplies the other
   // half). Drop `absolute inset-0` so the content flows in Slidev's content
   // slot rather than going full-bleed over the image.
   const wrapperClass = image
-    ? `${darkClass.trim()} h-full flex flex-col justify-between k-cover`.trim()
-    : `${darkClass.trim()} absolute inset-0 flex flex-col justify-between k-cover`.trim();
+    ? `${darkClass.trim()} h-full k-cover`.trim()
+    : `${darkClass.trim()} absolute inset-0 k-cover`.trim();
 
   const body = `<div class="${wrapperClass}">
   <div class="k-cover-main">
-    <div class="max-w-4xl">${eyebrow}
-      <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}
+    <div class="k-cover-copy max-w-4xl">${eyebrow}
+      <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}${people}
     </div>
   </div>${footerRow}
-  ${defFooterSlot()}
 </div>`;
 
   return wrapSlide({ layout: 'cover', classAttr: '', hideChrome: true, image, body });

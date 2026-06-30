@@ -146,6 +146,17 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       : null;
     const brand = org as (OrgBrand & Record<string, unknown>) | null;
 
+    // Render from a hydrated document so relationship fields inside blocks (for
+    // example cover intervenants → users → avatar media) resolve to objects for
+    // the pure renderers. The depth-0 `presentation` above stays the
+    // fingerprint/stale source so relationship population never changes build
+    // identity.
+    const renderPresentation = await req.payload.findByID({
+      collection: COLLECTIONS.presentations,
+      id: presentationId,
+      depth: 2,
+    });
+
     const footer = (presentation as { footer?: Partial<FooterConfig> }).footer;
     const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
     const logoUrl =
@@ -159,11 +170,11 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     // {date}/{total}. Adding a field to either collection makes {thatField} work
     // with no code change here.
     const vars: Record<string, unknown> = {
-      ...presentation,
+      ...renderPresentation,
       organisation: org ?? undefined,
       org: org ?? undefined,
       date: new Date().toLocaleDateString(presentation.language === 'en' ? 'en-GB' : 'fr-FR'),
-      total: (presentation.slides as unknown[] | undefined)?.length ?? 0,
+      total: (renderPresentation.slides as unknown[] | undefined)?.length ?? 0,
     };
 
     // Pre-resolve static tokens in footer templates; {page}/{total} stay live in
@@ -184,7 +195,7 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       presentation.language as string | undefined,
     );
     const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
-    const slidesMd = buildSlidesMd(presentation as never, {
+    const slidesMd = buildSlidesMd(renderPresentation as never, {
       headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
       vars,
     });
