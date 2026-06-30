@@ -120,21 +120,6 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
   const people = renderPeople(block);
 
-  const footerLeftHtml = richTextToHTML(block.footerLeft);
-  const footerLeft = footerLeftHtml
-    ? `\n    <div class="flex gap-4">\n      <div class="${K.btn}">${footerLeftHtml}</div>\n    </div>`
-    : '';
-
-  const footerRightHtml = richTextToHTML(block.footerRight);
-  const footerRight = footerRightHtml
-    ? `\n    <div class="${K.caption} k-caption--upper text-right">\n      ${footerRightHtml}\n    </div>`
-    : '';
-
-  const footerRow =
-    footerLeft || footerRight
-      ? `\n  <div class="k-cover-footer">${footerLeft}${footerRight}\n  </div>`
-      : '';
-
   // With image: half-slide layout (Slidev image-right/-left supplies the other
   // half). Drop `absolute inset-0` so the content flows in Slidev's content
   // slot rather than going full-bleed over the image.
@@ -147,7 +132,7 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
     <div class="k-cover-copy max-w-4xl">${eyebrow}
       <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}${people}
     </div>
-  </div>${footerRow}
+  </div>
 </div>`;
 
   return wrapSlide({ layout: 'cover', classAttr: '', hideChrome: true, image, body });

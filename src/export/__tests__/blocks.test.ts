@@ -156,8 +156,6 @@ describe('renderCover()', () => {
       title: 'Minimal',
       eyebrow: null,
       subtitle: null,
-      footerLeft: null,
-      footerRight: null,
     });
     expect(result).toContain('Minimal');
     expect(result).not.toContain('k-eyebrow');

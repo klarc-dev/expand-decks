@@ -25,7 +25,8 @@ const RebuildMenuItem: React.FC = () => {
       if (!ok) {
         toast.error(data?.error || `Échec du démarrage (HTTP ${httpStatus})`);
       } else {
-        toast.success('Rebuild lancé — reconstruction du PDF…');
+        toast.success('Rebuild demandé — statut visible dans l’onglet Sortie.');
+        window.dispatchEvent(new CustomEvent('presentation-build-requested'));
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur réseau');

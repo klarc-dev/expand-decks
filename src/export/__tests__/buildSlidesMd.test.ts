@@ -194,6 +194,29 @@ describe('buildSlidesMd()', () => {
     expect(parsed.headmatter.title).toBe('Test Deck');
   });
 
+  it('bakes 1-indexed kPage and a constant kTotal into every slide frontmatter', () => {
+    // These let the footer counter resolve from frontmatter instead of live nav,
+    // which is what makes the single-pass (no --per-slide) PDF export number
+    // correctly. One block === one slide === one page, deterministically.
+    const slides: Presentation['slides'] = [
+      { blockType: 'cover', title: 'Cover' },
+      { blockType: 'statement', title: 'Statement' },
+      { blockType: 'cta', title: 'Thanks' },
+    ];
+
+    const parsed = parseDeck(build(slides));
+
+    // Slide 1's frontmatter is merged into the headmatter block, so its kPage/
+    // kTotal live there (and parsed.slides[0] is the cover's body with no fm).
+    expect(parsed.headmatter.kPage).toBe(1);
+    expect(parsed.headmatter.kTotal).toBe(3);
+    // Remaining slides carry their own 1-indexed page and the same total.
+    expect(parsed.slides[1]?.frontmatter.kPage).toBe(2);
+    expect(parsed.slides[1]?.frontmatter.kTotal).toBe(3);
+    expect(parsed.slides[2]?.frontmatter.kPage).toBe(3);
+    expect(parsed.slides[2]?.frontmatter.kTotal).toBe(3);
+  });
+
   describe('authored sources surface on every source-bearing template', () => {
     const FIXTURES: Array<{ type: string; block: Record<string, unknown> }> = [
       { type: 'section', block: { title: 'Section' } },

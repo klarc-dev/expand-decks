@@ -95,8 +95,6 @@ const coverRenderSchema = z.object({
   title: z.string(),
   subtitle: optionalRichTextRender(),
   intervenants: coverIntervenants,
-  footerLeft: optionalRichTextRender(),
-  footerRight: optionalRichTextRender(),
   surface: optionalRender(z.enum(['dark', 'light', 'gradient'])),
   image: z.object({ url: z.string() }).nullable().optional(),
   imagePosition: optionalRender(z.enum(['right', 'left'])),

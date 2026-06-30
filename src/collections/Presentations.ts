@@ -100,12 +100,21 @@ export const Presentations: CollectionConfig = {
 
         const buildToken = randomUUID();
 
+        const requestedAt = new Date().toISOString();
+
         // Stamp the request time + token before enqueuing, with the skipBuildQueue
-        // flag so this patch doesn't itself trigger the hook.
+        // flag so this patch doesn't itself trigger the hook. Set the visible
+        // status immediately: the worker cron may not pick the job up for up to a
+        // minute, but authors need confirmation in the Sortie tab right away.
         await req.payload.update({
           collection: COLLECTIONS.presentations,
           id,
-          data: { lastBuildRequestedAt: new Date().toISOString(), lastBuildToken: buildToken },
+          data: {
+            lastBuildRequestedAt: requestedAt,
+            lastBuildToken: buildToken,
+            lastBuildStatus: BUILD_STATUS.building,
+            lastBuildError: '',
+          },
           overrideAccess: true,
           context: { [CTX.skipBuildQueue]: true },
         });
@@ -117,7 +126,12 @@ export const Presentations: CollectionConfig = {
           req,
         });
 
-        return Response.json({ queued: true });
+        return Response.json({
+          queued: true,
+          buildToken,
+          lastBuildStatus: BUILD_STATUS.building,
+          lastBuildRequestedAt: requestedAt,
+        });
       },
     },
     {

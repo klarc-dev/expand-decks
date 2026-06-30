@@ -31,6 +31,8 @@ import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
 
+import { buildSlidevExportArgs, parsePositiveInt } from './slidevExportArgs';
+
 const execFile = promisify(execFileCb);
 
 const PROJECT_ROOT = join(/* turbopackIgnore: true */ process.cwd());
@@ -207,17 +209,32 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       logoPresent: Boolean(logoUrl),
     });
 
-    await runSlidev(['build', '--base', './'], workdir);
-    // --per-slide renders each slide independently so per-slide nav state ($page,
-    //   layout) resolves correctly — without it the footer page counter sticks at
-    //   "1" for every page in export (global currentPage never advances).
-    // --wait lets async client-rendered content (Mermaid SVGs paint only AFTER
-    //   networkidle) settle before each page is captured; without it diagram
-    //   slides export blank. Generous budget for first-mermaid lazy init.
-    await runSlidev(
-      ['export', '--format', 'pdf', '--output', ARTIFACTS.pdf, '--per-slide', '--wait', '4000'],
-      workdir,
-    );
+    const slides = (renderPresentation.slides as { blockType?: string }[] | undefined) ?? [];
+    const hasMermaid = slides.some((block) => block?.blockType === 'mermaid');
+
+    // Native Slidev export flags, centralized and tested in slidevExportArgs.ts.
+    // Single-pass is default. `--per-slide` is an escape hatch only: it renders /
+    // navigates each slide independently and is slower; buildSlidesMd bakes
+    // kPage/kTotal into slide frontmatter so the footer counter no longer needs
+    // live nav state. `--range` support lives in the helper for future partial-PDF
+    // cache work, but this build job always exports the full deck artifact.
+    const exportArgs = buildSlidevExportArgs({
+      output: ARTIFACTS.pdf,
+      hasMermaid,
+      perSlide: process.env.SLIDEV_EXPORT_PER_SLIDE === '1',
+      timeoutMs: parsePositiveInt(process.env.SLIDEV_EXPORT_TIMEOUT_MS, 120_000),
+      withToc: process.env.SLIDEV_EXPORT_WITH_TOC === '1',
+    });
+
+    // build (SPA dist/) and export (PDF) are independent — disjoint outputs, no
+    // shared mutable state — so run them concurrently. They share the Vite dep
+    // cache under the symlinked node_modules/.vite, which already tolerates the
+    // up-to-5 concurrent jobs autoRun permits; two processes here is no new class
+    // of contention.
+    await Promise.all([
+      runSlidev(['build', '--base', './'], workdir),
+      runSlidev(exportArgs, workdir),
+    ]);
 
     const latest = await req.payload.findByID({
       collection: COLLECTIONS.presentations,

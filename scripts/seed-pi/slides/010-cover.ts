@@ -1,10 +1,9 @@
 // S1 — Titre / couverture.
 import type { SlideFactory } from '../types';
 
-const slide: SlideFactory = ({ rt }) => ({
+const slide: SlideFactory = () => ({
   blockType: 'cover',
   title: "Gérer la PI dans une entreprise d'innovation",
-  footerLeft: rt('Joachim Brindeau'),
   surface: 'light',
 });
 

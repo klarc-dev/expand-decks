@@ -70,8 +70,6 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
       blockType: 'cover',
       eyebrow: 'BLOOM FORMATION',
       title: 'Optimiser et sécuriser ses contrats R&D',
-      footerLeft: rt('Joachim BRINDEAU'),
-      footerRight: rt('Document actualisé le 1er décembre 2025.'),
       surface: 'light',
     },
 

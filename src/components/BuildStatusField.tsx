@@ -5,10 +5,14 @@ import { useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
 import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
 
+type MediaRef = number | { id?: number; url?: string | null; filename?: string | null } | null;
+
 type BuildInfo = {
   lastBuildStatus?: BuildStatus | null;
   spaUrl?: string | null;
   lastBuildError?: string | null;
+  lastBuildRequestedAt?: string | null;
+  pdfFile?: MediaRef;
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -26,36 +30,64 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
   },
 };
 
-// Poll fast while a build is in flight; stop entirely on a terminal state so an
-// idle tab never holds a perpetual interval.
 const BUILDING_POLL_MS = 2000;
 
-/**
- * Live build status — uses Payload's native `usePayloadAPI` to read the document
- * (no hand-rolled fetch/state) and re-fetches on a short interval only while the
- * build is in progress, so authors see En attente → En cours → Réussi/Échoué.
- */
+// A manual rebuild flips status to "building" synchronously, but a save-triggered
+// build only does so once the worker cron picks the job up (~1 min). Within this
+// window the field keeps polling even on a terminal status so authors see the
+// transition without a manual refresh.
+const RECENT_REQUEST_MS = 90_000;
+
+function pdfUrl(pdf: MediaRef | undefined): string | null {
+  if (pdf && typeof pdf === 'object' && typeof pdf.url === 'string') return pdf.url;
+  return null;
+}
+
+function formatRequestedAt(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return null;
+  return new Date(ts).toLocaleString('fr-FR');
+}
+
 const BuildStatusField: React.FC = () => {
   const { id } = useDocumentInfo();
+  // depth:1 populates pdfFile so the artifact link reflects the latest build
+  // without a full document reload.
   const [{ data }, { setParams }] = usePayloadAPI(id ? `/api/presentations/${id}` : '', {
-    initialParams: { depth: 0 },
+    initialParams: { depth: 1 },
   });
 
   const info = (data ?? null) as BuildInfo | null;
   const status = info?.lastBuildStatus ?? BUILD_STATUS.idle;
 
+  const requestedAtMs = info?.lastBuildRequestedAt
+    ? Date.parse(info.lastBuildRequestedAt)
+    : Number.NaN;
+  const requestIsRecent =
+    !Number.isNaN(requestedAtMs) && Date.now() - requestedAtMs < RECENT_REQUEST_MS;
+  const shouldPoll = status === BUILD_STATUS.building || requestIsRecent;
+
   useEffect(() => {
-    // Only poll while building; success/failed/idle need no refresh loop.
-    if (!id || status !== BUILD_STATUS.building) return;
+    if (!id || !shouldPoll) return;
     const timer = setInterval(() => {
-      setParams({ depth: 0, t: Date.now() });
+      setParams({ depth: 1, t: Date.now() });
     }, BUILDING_POLL_MS);
     return () => clearInterval(timer);
-  }, [id, status, setParams]);
+  }, [id, shouldPoll, setParams]);
+
+  useEffect(() => {
+    if (!id) return;
+    const refresh = () => setParams({ depth: 1, t: Date.now() });
+    window.addEventListener('presentation-build-requested', refresh);
+    return () => window.removeEventListener('presentation-build-requested', refresh);
+  }, [id, setParams]);
 
   if (!id || !info) return null;
 
   const meta = STATUS_LABELS[status] ?? STATUS_LABELS[BUILD_STATUS.idle]!;
+  const requestedAtLabel = formatRequestedAt(info.lastBuildRequestedAt);
+  const pdf = pdfUrl(info.pdfFile);
 
   return (
     <div
@@ -84,14 +116,24 @@ const BuildStatusField: React.FC = () => {
       >
         {meta.label}
       </span>
-      {status === BUILD_STATUS.building && (
+      {shouldPoll && (
         <span style={{ fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
           mise à jour automatique…
+        </span>
+      )}
+      {requestedAtLabel && (
+        <span style={{ fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
+          Demandé le {requestedAtLabel}
         </span>
       )}
       {status === BUILD_STATUS.success && info.spaUrl && (
         <a href={info.spaUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px' }}>
           Ouvrir la présentation web ↗
+        </a>
+      )}
+      {status === BUILD_STATUS.success && pdf && (
+        <a href={pdf} target="_blank" rel="noreferrer" style={{ fontSize: '13px' }}>
+          Télécharger le PDF ↗
         </a>
       )}
       {status === BUILD_STATUS.failed && info.lastBuildError && (

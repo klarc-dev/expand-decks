@@ -51,8 +51,6 @@ describe('dogfood all templates', () => {
           title: 'Product strategy 2026',
           eyebrow: 'Dogfood',
           subtitle: lexical('A realistic deck used to stress every slide template.'),
-          footerLeft: 'Internal',
-          footerRight: 'v1',
         },
         { blockType: 'section', title: '01 — Narrative spine', number: '01' },
         {

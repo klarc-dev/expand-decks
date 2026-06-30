@@ -48,27 +48,30 @@ function jsonInline(value: unknown): string {
 }
 
 /**
- * `slide-bottom.vue`: resolves the LIVE `{page}`/`{total}` tokens against nav
- * state (static tokens are already resolved at build), hides itself on
- * `hideChrome` slides. Returns '' when no footer config is present.
+ * `slide-bottom.vue`: resolves the `{page}`/`{total}` tokens (static tokens are
+ * already resolved at build), hides itself on `hideChrome` slides. Returns ''
+ * when no footer config is present.
+ *
+ * page/total come from per-slide frontmatter (`kPage`/`kTotal`) baked at build
+ * time by buildSlidesMd — NOT from live nav state (`$page`/`useNav`). That makes
+ * the footer counter correct in a SINGLE-PASS PDF export (no `--per-slide`),
+ * where the global nav.currentPage stays stuck at 1 because every slide renders
+ * at once. The mapping is deterministic (one block → one slide → one page), so a
+ * baked literal is exactly the live nav value, minus the export-mode caveat.
  */
 export function buildFooterLayer(hasFooter: boolean): string {
   if (!hasFooter) return '';
   return `<script setup lang="ts">
 import { computed } from 'vue'
-import { useNav, useSlideContext } from '@slidev/client'
-// $page is THIS slide instance's own 1-indexed page number — correct in PDF
-// export, where the global nav.currentPage stays stuck at 1 for every page
-// (all slides render at once). total comes from nav (constant across slides).
-const { total } = useNav()
-const { $slidev, $frontmatter, $page } = useSlideContext()
+import { useSlideContext } from '@slidev/client'
+const { $slidev, $frontmatter } = useSlideContext()
 const cfg = computed(() => $slidev?.configs?.klarcFooter)
 const hidden = computed(() => $frontmatter?.hideChrome === true)
 function resolve(t: string): string {
   if (!t) return ''
   return t.replace(/\\{(page|total)\\}/g, (_m, k) => {
-    if (k === 'page') return String($page?.value ?? $page ?? '')
-    return String(total.value)
+    if (k === 'page') return String($frontmatter?.kPage ?? '')
+    return String($frontmatter?.kTotal ?? '')
   })
 }
 const left = computed(() => resolve(cfg.value?.left ?? ''))

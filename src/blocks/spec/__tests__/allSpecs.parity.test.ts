@@ -81,7 +81,7 @@ Layouts disponibles :
    - eyebrow: accroche courte au-dessus du titre
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
-   - footerLeft / footerRight: textes en bas de slide
+   - intervenants: personnes affichées en cartes avatar (sélection manuelle)
    - surface: "dark" | "light" | "gradient"
 
 2. **section** — Intercalaire de section

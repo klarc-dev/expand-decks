@@ -15,11 +15,9 @@ import {
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-// subtitle + footers are rich text (Lexical); their render Zod is the editor
-// state, while their AI Zod stays a markdown string (converted to Lexical on write).
+// subtitle is rich text (Lexical); its render Zod is the editor state, while
+// its AI Zod stays a markdown string (converted to Lexical on write).
 const subtitle = optionalRichTextRender();
-const footerLeft = optionalRichTextRender();
-const footerRight = optionalRichTextRender();
 const surface = optionalRender(z.enum(['dark', 'light', 'gradient']));
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
@@ -93,16 +91,6 @@ export const coverSpec = block({
         }),
       ],
     }),
-    rawField('footerLeft', footerLeft, optionalAi(z.string()), {
-      type: 'richText',
-      label: 'Pied de page gauche',
-      description: 'Texte en bas à gauche (ex. lien ou action)',
-    }),
-    rawField('footerRight', footerRight, optionalAi(z.string()), {
-      type: 'richText',
-      label: 'Pied de page droit',
-      description: 'Texte en bas à droite (ex. date ou note)',
-    }),
     surfaceFieldSpec(surface, true),
     factoryField('image', 'image', z.never(), false),
     factoryField('preview', 'preview', z.never(), false),
@@ -115,7 +103,7 @@ export const coverSpec = block({
       'eyebrow: accroche courte au-dessus du titre',
       'title: titre principal (obligatoire)',
       'subtitle: paragraphe descriptif',
-      'footerLeft / footerRight: textes en bas de slide',
+      'intervenants: personnes affichées en cartes avatar (sélection manuelle)',
       'surface: "dark" | "light" | "gradient"',
     ],
   },
@@ -127,8 +115,6 @@ export const coverRenderSchema = z.object({
   title,
   subtitle,
   intervenants,
-  footerLeft,
-  footerRight,
   surface,
   image,
   imagePosition,

@@ -30,12 +30,17 @@ describe('buildFooterHeadmatter', () => {
 });
 
 describe('buildFooterLayer / buildLogoLayer', () => {
-  it('generates a slide-bottom layer that resolves page/total live and respects hideChrome', () => {
+  it('generates a slide-bottom layer that resolves page/total from baked frontmatter and respects hideChrome', () => {
     const layer = buildFooterLayer(true);
-    expect(layer).toContain('useNav');
+    // page/total come from per-slide frontmatter (kPage/kTotal) baked by
+    // buildSlidesMd, NOT live nav — this is what makes a single-pass PDF export
+    // (no --per-slide) number correctly.
+    expect(layer).toContain('$frontmatter?.kPage');
+    expect(layer).toContain('$frontmatter?.kTotal');
+    expect(layer).not.toContain('useNav');
     expect(layer).toContain('hideChrome');
     expect(layer).toContain('k-slide-footer');
-    // only the live page/total tokens remain in the Vue resolver
+    // only the page/total tokens remain in the Vue resolver
     expect(layer).toContain('page|total');
     expect(layer).not.toContain('cfg.value?.vars');
   });

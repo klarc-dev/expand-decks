@@ -68,6 +68,15 @@ services:
     pull_policy: always
     restart: always
     mem_limit: 2g
+    # Run N worker replicas so independent presentation builds process in
+    # parallel instead of draining one queue tick serially. Payload locks each
+    # job row while processing, so replicas never double-run the same build, and
+    # the runner's buildToken stale-skip drops superseded jobs. Default 2; tune
+    # via the WORKER_REPLICAS env. Keep it <= host cores - 1 (each build spawns
+    # Chromium + Vite); RAM is the real ceiling at mem_limit 2g per replica.
+    deploy:
+      mode: replicated
+      replicas: ${WORKER_REPLICAS:-2}
     # long-lived scheduler: bare `jobs:run` is one-shot (exits 0, drains once)
     # which under restart:always caused an endless ~60s flap loop. --cron keeps
     # the process alive and runs the default queue every minute.

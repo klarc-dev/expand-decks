@@ -83,6 +83,21 @@ function foldSlides(presentation: Presentation, headmatter: string): string {
     return renderer(block as never, { surface: tone, variantIndex, sections });
   });
 
+  // Bake the 1-indexed page number and the deck total into each slide's
+  // frontmatter (kPage / kTotal). Every renderer's output opens with `---\n`, so
+  // injecting right after it lands inside the frontmatter fence. The mapping is
+  // exactly one block → one slide → one exported page (no renderer emits an
+  // internal slide separator, and these decks have no click steps), so the index
+  // is the page number deterministically. The footer Vue layer reads these
+  // instead of live nav state ($page/useNav), which is what previously forced the
+  // PDF export to run with `--per-slide` (global currentPage stays stuck at 1 when
+  // all slides render at once). With the numbers baked, a single-pass export is
+  // correct — see buildSlidesRunner.
+  const total = presentation.slides.length;
+  const paged = slidesMd.map((slide, i) =>
+    slide.replace(/^---\n/, `---\nkPage: ${i + 1}\nkTotal: ${total}\n`),
+  );
+
   // Each renderer's output already begins with `---` (its own frontmatter
   // open), which doubles as the Slidev slide separator. Joining with a blank
   // line is sufficient — adding another `---` would produce `---\n---\n` which
@@ -93,11 +108,11 @@ function foldSlides(presentation: Presentation, headmatter: string): string {
   // an empty phantom first slide in the built SPA / exported PDF.
   const headOpen = `---\ntitle: ${yamlQuoted(presentation.title)}\n${headmatter}`;
 
-  if (slidesMd.length === 0) {
+  if (paged.length === 0) {
     return `${headOpen}\n---\n`;
   }
 
-  const [first, ...rest] = slidesMd;
+  const [first, ...rest] = paged;
   const firstMatch = first!.match(/^---\n([\s\S]*?)\n---\n*/);
   const firstFm = firstMatch ? firstMatch[1] : '';
   const firstBody = firstMatch ? first!.slice(firstMatch[0].length) : first!;

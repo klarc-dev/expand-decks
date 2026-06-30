@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CTX } from '../../lib/context';
 import { BUILD_SLIDES_TASK } from '../../jobs/buildSlides';
+import { BUILD_STATUS } from '../../lib/status';
 import { afterPresentationChange, buildInputsChanged } from '../afterPresentationChange';
 
 const base = {
@@ -16,12 +17,13 @@ describe('afterPresentationChange', () => {
   it('queues a build on every update save, even when the presentation is not published', async () => {
     const update = vi.fn().mockResolvedValue({});
     const queue = vi.fn().mockResolvedValue({});
+    const run = vi.fn().mockResolvedValue({});
     const doc = { id: 'presentation-1', status: 'draft', ...base };
 
     const result = await afterPresentationChange({
       doc,
       operation: 'update',
-      req: { context: {}, payload: { update, jobs: { queue } } },
+      req: { context: {}, payload: { update, jobs: { queue, run } } },
     } as never);
 
     expect(result).toBe(doc);
@@ -32,7 +34,13 @@ describe('afterPresentationChange', () => {
         context: { [CTX.skipBuildQueue]: true },
       }),
     );
-    expect(update.mock.calls[0]?.[0].data.lastBuildToken).toEqual(expect.any(String));
+    expect(update.mock.calls[0]?.[0].data).toEqual({
+      lastBuildToken: expect.any(String),
+      lastBuildRequestedAt: expect.any(String),
+      lastBuildStatus: BUILD_STATUS.building,
+      lastBuildError: '',
+    });
+    expect(Date.parse(update.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
     expect(queue).toHaveBeenCalledWith(
       expect.objectContaining({
         task: BUILD_SLIDES_TASK,
@@ -42,6 +50,10 @@ describe('afterPresentationChange', () => {
         },
       }),
     );
+    // The hook kicks the queue on-demand (fire-and-forget) to avoid waiting for
+    // the next autoRun tick. It runs in a void-ed microtask, so flush before asserting.
+    await Promise.resolve();
+    expect(run).toHaveBeenCalled();
   });
 
   it('does not queue when the internal skipBuildQueue flag is set', async () => {

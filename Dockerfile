@@ -13,9 +13,9 @@ RUN pnpm install --frozen-lockfile
 
 # -- Stage: slidev-deps --
 FROM base AS slidev-deps
-COPY slidev-workspace/package.json ./slidev-workspace/
+COPY slidev-workspace/package.json slidev-workspace/pnpm-lock.yaml ./slidev-workspace/
 WORKDIR /app/slidev-workspace
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # -- Stage: builder --
 FROM base AS builder
