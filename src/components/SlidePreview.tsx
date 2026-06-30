@@ -3,13 +3,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useFormFields } from '@payloadcms/ui';
 
-import { renderBlockPreview } from '@/export/preview';
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import { formStateToBlockData } from '@/lib/formStateToBlockData';
-import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
-import { SlideFrame, SLIDE_STAGE_BG } from '@/components/SlideFrame';
+import { SlideFrame, SLIDE_STAGE_BG, type SlideChrome } from '@/components/SlideFrame';
 
 import '@/export/style.css';
+
+type PreviewResult = {
+  chrome?: SlideChrome;
+  preview: {
+    className: string;
+    html: string;
+    hideChrome: boolean;
+    image?: string;
+    layout: string;
+    mermaid?: { source: string };
+  };
+};
 
 const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   // Subscribe to form state so the preview re-renders while the author types.
@@ -64,90 +74,51 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
       },
     [chromeInputJson],
   );
-  const organisationId = relationshipId(chromeInput.fields.organisation);
-  const intervenantIdsJson = useMemo(() => JSON.stringify(intervenantUserIds(data)), [data]);
-  const [resolvedOrganisation, setResolvedOrganisation] = useState<unknown>(null);
-  const [resolvedUsers, setResolvedUsers] = useState<Record<string, unknown>>({});
+  const [result, setResult] = useState<PreviewResult | null>(null);
 
   useEffect(() => {
-    if (!organisationId) {
-      setResolvedOrganisation(null);
+    if (!data?.blockType) {
+      setResult(null);
       return;
     }
+
     const controller = new AbortController();
-    async function loadOrganisation() {
+    async function renderPreview() {
       try {
-        const res = await fetch(`/api/organisations/${organisationId}?depth=1`, {
+        const res = await fetch('/api/slide-preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
+          body: JSON.stringify({
+            block: data,
+            fields: chromeInput.fields,
+            previewFieldPath: path,
+            sections,
+          }),
         });
-        setResolvedOrganisation(res.ok ? await res.json() : null);
+        if (!res.ok) {
+          setResult(null);
+          return;
+        }
+        setResult((await res.json()) as PreviewResult);
       } catch {
-        if (!controller.signal.aborted) setResolvedOrganisation(null);
+        if (!controller.signal.aborted) setResult(null);
       }
     }
-    void loadOrganisation();
+
+    void renderPreview();
     return () => controller.abort();
-  }, [organisationId]);
+  }, [chromeInput.fields, data, path, sections]);
 
-  // Relationship fields inside blocks (cover intervenants → users) arrive as
-  // bare IDs in form state. Resolve them client-side (depth:1 hydrates the
-  // avatar) so the preview shows the same avatar cards a build would, mirroring
-  // the organisation resolver above. Cards degrade to initials while loading.
-  useEffect(() => {
-    const ids = JSON.parse(intervenantIdsJson) as string[];
-    if (ids.length === 0) {
-      setResolvedUsers({});
-      return;
-    }
-    const controller = new AbortController();
-    async function loadUsers() {
-      const entries = await Promise.all(
-        ids.map(async (id) => {
-          try {
-            const res = await fetch(`/api/users/${id}?depth=1`, { signal: controller.signal });
-            return res.ok ? ([id, await res.json()] as const) : null;
-          } catch {
-            return null;
-          }
-        }),
-      );
-      if (controller.signal.aborted) return;
-      setResolvedUsers(
-        Object.fromEntries(entries.filter((e): e is readonly [string, unknown] => Boolean(e))),
-      );
-    }
-    void loadUsers();
-    return () => controller.abort();
-  }, [intervenantIdsJson]);
-
-  const previewData = useMemo(
-    () => hydrateIntervenants(data, resolvedUsers),
-    [data, resolvedUsers],
-  );
-
-  const chrome = useMemo(() => {
-    const fieldMap = Object.fromEntries(
-      Object.entries(chromeInput.fields).map(([key, value]) => [key, { value }]),
-    );
-    if (resolvedOrganisation) fieldMap.organisation = { value: resolvedOrganisation };
-    const preview = chromeInput.block?.blockType
-      ? renderBlockPreview(chromeInput.block as never)
-      : null;
-    return buildSlidePreviewChrome(fieldMap, path, Boolean(preview?.hideChrome));
-  }, [chromeInput, path, resolvedOrganisation]);
-
-  if (!previewData?.blockType) return null;
-
-  const res = renderBlockPreview(previewData as never, sections);
-  if (!res) return null;
-  const { className, html, image, layout, mermaid } = res;
+  if (!result) return null;
+  const { className, html, image, layout, mermaid } = result.preview;
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.scaler}>
         <SlideFrame
           className={className}
-          chrome={chrome}
+          chrome={result.chrome}
           html={html}
           image={image}
           layout={layout}
@@ -158,49 +129,6 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     </div>
   );
 };
-
-function relationshipId(value: unknown): string | null {
-  if (typeof value === 'string' || typeof value === 'number') return String(value);
-  if (!value || typeof value !== 'object') return null;
-  const record = value as Record<string, unknown>;
-  if (typeof record.id === 'string' || typeof record.id === 'number') return String(record.id);
-  if (typeof record.value === 'string' || typeof record.value === 'number') {
-    return String(record.value);
-  }
-  return null;
-}
-
-function intervenantUserIds(block: Record<string, unknown>): string[] {
-  if (block.blockType !== 'cover' || !Array.isArray(block.intervenants)) return [];
-  return Array.from(
-    new Set(
-      block.intervenants
-        .map((row) =>
-          row && typeof row === 'object'
-            ? relationshipId((row as Record<string, unknown>).user)
-            : null,
-        )
-        .filter((id): id is string => Boolean(id)),
-    ),
-  );
-}
-
-function hydrateIntervenants(
-  block: Record<string, unknown>,
-  usersById: Record<string, unknown>,
-): Record<string, unknown> {
-  if (block.blockType !== 'cover' || !Array.isArray(block.intervenants)) return block;
-
-  return {
-    ...block,
-    intervenants: block.intervenants.map((row) => {
-      if (!row || typeof row !== 'object') return row;
-      const record = row as Record<string, unknown>;
-      const id = relationshipId(record.user);
-      return id && usersById[id] ? { ...record, user: usersById[id] } : row;
-    }),
-  };
-}
 
 const styles = {
   wrapper: {

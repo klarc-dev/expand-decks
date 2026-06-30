@@ -31,6 +31,11 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
+    components: {
+      edit: {
+        editMenuItems: ['/components/RebuildMenuItem#default'],
+      },
+    },
   },
   access: {
     create: isAdminOrAuthor,

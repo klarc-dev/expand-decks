@@ -3,6 +3,7 @@ import * as migration_20260608_203955_org_and_footer from './20260608_203955_org
 import * as migration_20260608_205627_build_requested_at from './20260608_205627_build_requested_at';
 import * as migration_20260609_064938_mermaid_block from './20260609_064938_mermaid_block';
 import * as migration_20260609_083115_agent_fields from './20260609_083115_agent_fields';
+import * as migration_20260630_081854_add_cover_intervenants_user_profile from './20260630_081854_add_cover_intervenants_user_profile';
 
 export const migrations = [
   {
@@ -29,5 +30,10 @@ export const migrations = [
     up: migration_20260609_083115_agent_fields.up,
     down: migration_20260609_083115_agent_fields.down,
     name: '20260609_083115_agent_fields',
+  },
+  {
+    up: migration_20260630_081854_add_cover_intervenants_user_profile.up,
+    down: migration_20260630_081854_add_cover_intervenants_user_profile.down,
+    name: '20260630_081854_add_cover_intervenants_user_profile',
   },
 ];

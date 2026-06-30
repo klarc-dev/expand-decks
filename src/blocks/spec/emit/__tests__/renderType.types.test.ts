@@ -46,14 +46,55 @@ type DerivedStatement = InferRender<typeof statementRenderSchema>;
 type _StatementMatches = Expect<Equal<DerivedStatement, StatementBlockData>>;
 
 // ---------------------------------------------------------------------------
-// cover — image `{ url: string } | null` + enum surface
+// cover — image `{ url: string } | null`, intervenants, enum surface
 // ---------------------------------------------------------------------------
+
+const coverMediaRelationship = z.union([
+  z.string(),
+  z.number(),
+  z
+    .object({
+      id: z.union([z.string(), z.number()]),
+      url: optionalRender(z.string()),
+      thumbnailURL: optionalRender(z.string()),
+      sizes: optionalRender(
+        z.object({
+          thumbnail: optionalRender(z.object({ url: optionalRender(z.string()) }).passthrough()),
+          card: optionalRender(z.object({ url: optionalRender(z.string()) }).passthrough()),
+        }),
+      ),
+    })
+    .passthrough(),
+]);
+const coverUserRelationship = z.union([
+  z.string(),
+  z.number(),
+  z
+    .object({
+      id: z.union([z.string(), z.number()]),
+      name: optionalRender(z.string()),
+      email: optionalRender(z.string()),
+      title: optionalRender(z.string()),
+      avatar: optionalRender(coverMediaRelationship),
+    })
+    .passthrough(),
+]);
+const coverIntervenants = optionalRender(
+  z.array(
+    z
+      .object({
+        user: coverUserRelationship.nullable().optional(),
+      })
+      .passthrough(),
+  ),
+);
 
 const coverRenderSchema = z.object({
   blockType: z.literal('cover'),
   eyebrow: optionalRender(z.string()),
   title: z.string(),
   subtitle: optionalRichTextRender(),
+  intervenants: coverIntervenants,
   footerLeft: optionalRichTextRender(),
   footerRight: optionalRichTextRender(),
   surface: optionalRender(z.enum(['dark', 'light', 'gradient'])),
