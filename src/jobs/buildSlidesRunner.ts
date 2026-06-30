@@ -61,6 +61,19 @@ type StageOptions = {
   logoPresent: boolean;
 };
 
+type SlideWithMedia = {
+  image?: unknown;
+  intervenants?: unknown;
+};
+
+function hasMediaObject(value: unknown): boolean {
+  return Boolean(value && typeof value === 'object');
+}
+
+export function slideHasImages(block: SlideWithMedia): boolean {
+  return hasMediaObject(block.image) || hasMediaObject(block.intervenants);
+}
+
 function stageBuildDir({ slidesMd, themeCss, footerEnabled, logoPresent }: StageOptions): string {
   const workdir = mkdtempSync(join(tmpdir(), 'slidev-build-'));
 
@@ -209,8 +222,10 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       logoPresent: Boolean(logoUrl),
     });
 
-    const slides = (renderPresentation.slides as { blockType?: string }[] | undefined) ?? [];
+    const slides =
+      (renderPresentation.slides as ({ blockType?: string } & SlideWithMedia)[] | undefined) ?? [];
     const hasMermaid = slides.some((block) => block?.blockType === 'mermaid');
+    const hasImages = Boolean(logoUrl) || slides.some(slideHasImages);
 
     // Native Slidev export flags, centralized and tested in slidevExportArgs.ts.
     // Single-pass is default. `--per-slide` is an escape hatch only: it renders /
@@ -221,6 +236,7 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     const exportArgs = buildSlidevExportArgs({
       output: ARTIFACTS.pdf,
       hasMermaid,
+      hasImages,
       perSlide: process.env.SLIDEV_EXPORT_PER_SLIDE === '1',
       timeoutMs: parsePositiveInt(process.env.SLIDEV_EXPORT_TIMEOUT_MS, 120_000),
       withToc: process.env.SLIDEV_EXPORT_WITH_TOC === '1',

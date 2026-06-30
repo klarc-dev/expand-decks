@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { slideHasImages } from '../buildSlidesRunner';
 import { buildSlidevExportArgs, parsePositiveInt } from '../slidevExportArgs';
 
 describe('buildSlidevExportArgs', () => {
@@ -17,8 +18,26 @@ describe('buildSlidevExportArgs', () => {
     ]);
   });
 
-  it('uses networkidle plus a settle wait only for Mermaid decks', () => {
+  it('uses networkidle plus a settle wait for Mermaid decks', () => {
     expect(buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: true })).toEqual([
+      'export',
+      '--format',
+      'pdf',
+      '--output',
+      'slides.pdf',
+      '--timeout',
+      '120000',
+      '--wait-until',
+      'networkidle',
+      '--wait',
+      '4000',
+    ]);
+  });
+
+  it('uses networkidle plus a settle wait for image decks', () => {
+    expect(
+      buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false, hasImages: true }),
+    ).toEqual([
       'export',
       '--format',
       'pdf',
@@ -60,5 +79,19 @@ describe('buildSlidevExportArgs', () => {
     expect(parsePositiveInt('-1', 120000)).toBe(120000);
     expect(parsePositiveInt('nope', 120000)).toBe(120000);
     expect(parsePositiveInt(undefined, 120000)).toBe(120000);
+  });
+});
+
+describe('slideHasImages', () => {
+  it('detects slide image upload relationships', () => {
+    expect(slideHasImages({ image: { url: '/media/photo.jpg' } })).toBe(true);
+    expect(slideHasImages({ image: 12 })).toBe(false);
+  });
+
+  it('detects cover speaker relationship rows that may contain avatars', () => {
+    expect(
+      slideHasImages({ intervenants: [{ user: { avatar: { url: '/media/avatar.jpg' } } }] }),
+    ).toBe(true);
+    expect(slideHasImages({})).toBe(false);
   });
 });

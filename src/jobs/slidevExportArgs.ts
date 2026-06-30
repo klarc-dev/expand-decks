@@ -1,11 +1,12 @@
 const DEFAULT_TIMEOUT_MS = 120_000;
-const MERMAID_WAIT_MS = 4_000;
+const VISUAL_ASSET_WAIT_MS = 4_000;
 
 type WaitUntil = 'networkidle' | 'load' | 'domcontentloaded' | 'none';
 
 export type SlidevExportArgsOptions = {
   output: string;
   hasMermaid: boolean;
+  hasImages?: boolean;
   perSlide?: boolean;
   range?: string;
   timeoutMs?: number;
@@ -21,12 +22,14 @@ export function parsePositiveInt(value: string | undefined, fallback: number): n
 export function buildSlidevExportArgs({
   output,
   hasMermaid,
+  hasImages = false,
   perSlide = false,
   range,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   withToc = false,
 }: SlidevExportArgsOptions): string[] {
-  const waitUntil: WaitUntil = hasMermaid ? 'networkidle' : 'load';
+  const hasAsyncVisualAssets = hasMermaid || hasImages;
+  const waitUntil: WaitUntil = hasAsyncVisualAssets ? 'networkidle' : 'load';
   const args = [
     'export',
     '--format',
@@ -39,8 +42,8 @@ export function buildSlidevExportArgs({
     waitUntil,
   ];
 
-  if (hasMermaid) {
-    args.push('--wait', String(MERMAID_WAIT_MS));
+  if (hasAsyncVisualAssets) {
+    args.push('--wait', String(VISUAL_ASSET_WAIT_MS));
   }
   if (range) {
     args.push('--range', range);
