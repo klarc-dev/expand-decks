@@ -17,7 +17,7 @@ import { ShareLinks } from './collections/ShareLinks';
 import { Accounts } from './collections/Accounts';
 import { buildSlidesTask } from './jobs/buildSlides';
 import { COLLECTIONS } from './lib/collections';
-import { SERVER_URL, PAYLOAD_SECRET, DATABASE_URL } from './lib/env';
+import { SERVER_URL, PAYLOAD_SECRET, DATABASE_URL, PAYLOAD_DB_PUSH } from './lib/env';
 import { ROLES } from './access/roles';
 
 const filename = fileURLToPath(import.meta.url);
@@ -85,8 +85,16 @@ export default buildConfig({
     }
   },
   db: postgresAdapter({
+    // Schema push is opt-in (PAYLOAD_DB_PUSH=1). Off by default so maintenance
+    // scripts never trip the interactive data-loss prompt or hang holding a
+    // DB session. Use `pnpm payload migrate` to apply schema changes.
+    push: PAYLOAD_DB_PUSH,
     pool: {
       connectionString: DATABASE_URL,
+      // Server-side guard: any transaction left idle for 2 min is killed by
+      // Postgres. Real Payload transactions finish in ms, so this only catches
+      // interrupted/zombie sessions and prevents them from blocking schema work.
+      options: '-c idle_in_transaction_session_timeout=120000',
     },
   }),
   editor: lexicalEditor(),

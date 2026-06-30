@@ -1,12 +1,9 @@
 import { writeFileSync } from 'node:fs';
 
-import config from '@payload-config';
-import { getPayload } from 'payload';
-
 import { buildSlidesMd } from '../src/export/buildSlidesMd';
+import { runPayloadScript } from './lib/payloadScript';
 
-async function main() {
-  const payload = await getPayload({ config });
+await runPayloadScript(async (payload) => {
   const doc = await payload.findByID({
     collection: 'presentations',
     id: 15,
@@ -16,10 +13,4 @@ async function main() {
   const md = buildSlidesMd(doc as never);
   writeFileSync('/tmp/p15-slides.md', md, 'utf-8');
   console.log(`Wrote ${md.length} chars to /tmp/p15-slides.md`);
-  process.exit(0);
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
 });

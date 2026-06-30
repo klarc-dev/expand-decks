@@ -5,8 +5,8 @@
  * Run: pnpm dlx tsx --env-file=.env scripts/tmp-apply-p15.ts
  */
 import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical';
-import config from '@payload-config';
-import { getPayload } from 'payload';
+
+import { runPayloadScript } from './lib/payloadScript';
 
 type Rich = { rich: string };
 type FieldVal = string | Rich;
@@ -356,8 +356,7 @@ const EDITS: Record<string, BlockEdit> = {
   },
 };
 
-async function main() {
-  const payload = await getPayload({ config });
+await runPayloadScript(async (payload) => {
   const editorConfig = await editorConfigFactory.default({ config: payload.config });
   const rt = (markdown: string) => convertMarkdownToLexical({ editorConfig, markdown }) as unknown;
 
@@ -422,10 +421,4 @@ async function main() {
   console.log(
     `Applied ${applied} field edits across ${Object.keys(EDITS).length} blocks to presentation 15.`,
   );
-  process.exit(0);
-}
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
 });

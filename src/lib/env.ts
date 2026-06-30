@@ -28,3 +28,10 @@ export const DATABASE_URL = requiredInProd(
   'DATABASE_URL',
   'postgresql://localhost:5432/slides_dev',
 );
+
+/**
+ * Payload's Postgres adapter auto-pushes schema in non-production by default.
+ * Keep it opt-in: one-off scripts should never block on destructive schema
+ * prompts or hold DB sessions while waiting for terminal input.
+ */
+export const PAYLOAD_DB_PUSH = process.env.PAYLOAD_DB_PUSH === '1';

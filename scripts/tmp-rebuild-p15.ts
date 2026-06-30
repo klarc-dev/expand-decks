@@ -1,10 +1,7 @@
-import config from '@payload-config';
-import { getPayload } from 'payload';
-
 import { runBuildSlidesTask } from '../src/jobs/buildSlidesRunner';
+import { runPayloadScript } from './lib/payloadScript';
 
-async function main() {
-  const payload = await getPayload({ config });
+await runPayloadScript(async (payload) => {
   process.env.NODE_ENV = 'development';
   const result = await runBuildSlidesTask({
     input: { presentationId: '15' },
@@ -31,9 +28,4 @@ async function main() {
       2,
     ),
   );
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
 });

@@ -1,6 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import config from '@payload-config';
-import { getPayload } from 'payload';
+import { runPayloadScript } from './lib/payloadScript';
 
 function lexToText(node: unknown): string {
   if (!node || typeof node !== 'object') return '';
@@ -19,8 +18,7 @@ const txt = (v: unknown) =>
         ? lexToText(v)
         : JSON.stringify(v);
 
-async function main() {
-  const payload = await getPayload({ config });
+await runPayloadScript(async (payload) => {
   const doc = await payload.findByID({
     collection: 'presentations',
     id: 15,
@@ -58,9 +56,4 @@ async function main() {
   const s = out.join('\n');
   writeFileSync('/tmp/p15-verify.txt', s, 'utf-8');
   console.log(`Wrote /tmp/p15-verify.txt (${slides.length} blocks, ${s.length} chars)`);
-  process.exit(0);
-}
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
 });
