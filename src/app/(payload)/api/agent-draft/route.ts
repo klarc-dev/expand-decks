@@ -11,6 +11,7 @@ import { DRAFT_STATUS, type DraftStatus } from '@/lib/status';
 import { deckContext } from '@/lib/deckContext';
 import { ROLES } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
+import { chooseFontPairForBrief } from '@/agents/fonts';
 import { persistSlides } from '@/agents/tools/persist';
 import { resolveSources } from '@/lib/sources/resolve';
 import { TooManySourcesError, UnknownSourceError } from '@/lib/sources/types';
@@ -103,6 +104,10 @@ export async function POST(req: NextRequest) {
     typeof presentation.createdBy === 'object'
       ? presentation.createdBy?.id
       : presentation.createdBy;
+  const organisationId =
+    typeof presentation.organisation === 'object'
+      ? presentation.organisation?.id
+      : presentation.organisation;
   if (user.role !== ROLES.admin && createdById !== user.id) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
@@ -216,6 +221,20 @@ export async function POST(req: NextRequest) {
         existing: mode === 'augment' ? (latest?.slides as Presentation['slides']) : undefined,
         user,
       });
+      if (organisationId && (await isCurrentRun())) {
+        try {
+          const fontPair = await chooseFontPairForBrief(brief);
+          await payload.update({
+            collection: COLLECTIONS.organisations,
+            id: organisationId,
+            data: fontPair,
+            user,
+          });
+          await mirror('fonts', fontPair);
+        } catch (fontError) {
+          console.warn('[agent-draft] font pair selection skipped', fontError);
+        }
+      }
       if (!(await isCurrentRun())) return;
       await payload.update({
         collection: COLLECTIONS.presentations,
