@@ -89,25 +89,25 @@ export const Organisations: CollectionConfig = {
       fields: [
         {
           name: 'headingFont',
-          type: 'select',
+          type: 'text',
           required: true,
           defaultValue: 'Gilroy',
           label: 'Police des titres',
-          options: [
-            { label: 'Gilroy', value: 'Gilroy' },
-            { label: 'Roboto', value: 'Roboto' },
-          ],
+          admin: {
+            description: 'Famille Google Fonts pour les titres',
+            components: { Field: '/components/GoogleFontField#default' },
+          },
         },
         {
           name: 'bodyFont',
-          type: 'select',
+          type: 'text',
           required: true,
           defaultValue: 'Roboto',
           label: 'Police du corps',
-          options: [
-            { label: 'Roboto', value: 'Roboto' },
-            { label: 'Gilroy', value: 'Gilroy' },
-          ],
+          admin: {
+            description: 'Famille Google Fonts pour le corps de texte',
+            components: { Field: '/components/GoogleFontField#default' },
+          },
         },
       ],
     },
