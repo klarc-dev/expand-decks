@@ -24,6 +24,15 @@ function logoUrl(value: unknown): string | undefined {
   return typeof filename === 'string' && filename ? `/media/${filename}` : undefined;
 }
 
+function orgFonts(value: unknown): { heading: string; body: string } | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  const heading = typeof record.headingFont === 'string' ? record.headingFont : '';
+  const body = typeof record.bodyFont === 'string' ? record.bodyFont : '';
+  if (!heading && !body) return undefined;
+  return { heading: heading || 'Gilroy', body: body || 'Roboto' };
+}
+
 function resolveTemplate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{([^}]+)\}/g, (_match, key) => vars[key] ?? '');
 }
@@ -60,6 +69,7 @@ export function buildSlidePreviewChrome(
 
   return {
     footer,
+    fonts: orgFonts(organisation),
     hidden: hideChrome,
     logoUrl: logoUrl(organisation),
   };

@@ -24,6 +24,21 @@ export interface OrgBrand {
 
 const isHex = (c: unknown): c is string => typeof c === 'string' && HEX_RE.test(c);
 
+function fontFamily(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback;
+  const clean = value.replace(/[\r\n"'\\]/g, '').trim();
+  return clean || fallback;
+}
+
+function cssFontStack(value: unknown, fallback: string): string {
+  return `"${fontFamily(value, fallback)}", ui-sans-serif, system-ui, sans-serif`;
+}
+
+/** YAML-safe plain-ish font list for Slidev's Google font auto-import. */
+function slidevFontList(bodyFont: string, headingFont: string): string {
+  return Array.from(new Set([bodyFont, headingFont])).join(',');
+}
+
 /** `color-mix(in srgb, <base> <pct>%, <towards>)` — clamps pct to [0,100]. */
 function mix(base: string, pct: number, towards: 'black' | 'white' | 'transparent'): string {
   const p = Math.max(0, Math.min(100, Math.round(pct)));
@@ -52,6 +67,8 @@ export function buildThemeCss(brand: Partial<OrgBrand> | null | undefined): stri
   --k-ink-soft: ${mix(ink, 70, 'white')};
   --k-paper: ${paper};
   --k-line: ${mix(primary, 12, 'transparent')};
+  --k-font-heading: ${cssFontStack(brand.headingFont, 'Gilroy')};
+  --k-font-body: ${cssFontStack(brand.bodyFont, 'Roboto')};
 }
 `;
 }
@@ -69,14 +86,16 @@ export function buildHeadmatter(
 ): string {
   // Anchored to the exact 2-space-indented keys under `fonts:` / `htmlAttrs:`
   // in headmatter.yaml so a future top-level key containing "sans"/"local"/
-  // "lang" can't be rewritten by accident. Values are enum-constrained
-  // (Gilroy/Roboto, fr/en) so they can never break the YAML scalar.
+  // "lang" can't be rewritten by accident. `fonts.sans` lists both selected
+  // families so Slidev's default Google Fonts provider imports them via the CSS2
+  // API; `fonts.local: Gilroy` prevents a futile CDN lookup for our bundled
+  // brand font while leaving other families fetched from Google.
   let out = base;
-  if (brand?.bodyFont) {
-    out = out.replace(/^(  sans:[ \t]*).*$/m, `$1${brand.bodyFont}`);
-  }
-  if (brand?.headingFont) {
-    out = out.replace(/^(  local:[ \t]*).*$/m, `$1${brand.headingFont}`);
+  if (brand?.bodyFont || brand?.headingFont) {
+    const bodyFont = fontFamily(brand?.bodyFont, 'Roboto');
+    const headingFont = fontFamily(brand?.headingFont, 'Gilroy');
+    out = out.replace(/^(  sans:[ \t]*).*$/m, `$1${slidevFontList(bodyFont, headingFont)}`);
+    out = out.replace(/^(  local:[ \t]*).*$/m, '$1Gilroy');
   }
   if (language) {
     out = out.replace(/^(  lang:[ \t]*).*$/m, `$1${language}`);

@@ -22,13 +22,15 @@ describe('buildThemeCss', () => {
     expect(buildThemeCss({ ...brand, paper: '#fff' })).toBe('');
   });
 
-  it('emits a :root block mapping the 4 source colors onto token roots', () => {
+  it('emits a :root block mapping colors and font-family vars onto token roots', () => {
     const css = buildThemeCss(brand);
     expect(css).toContain(':root {');
     expect(css).toContain('--k-teal: #123456;');
     expect(css).toContain('--k-rose: #abcdef;');
     expect(css).toContain('--k-ink: #111111;');
     expect(css).toContain('--k-paper: #ffffff;');
+    expect(css).toContain('--k-font-heading: "Gilroy", ui-sans-serif, system-ui, sans-serif;');
+    expect(css).toContain('--k-font-body: "Roboto", ui-sans-serif, system-ui, sans-serif;');
   });
 
   it('derives every shade from the source colors via color-mix (no stored shades)', () => {
@@ -56,8 +58,8 @@ htmlAttrs:
       { ...brand, headingFont: 'Roboto', bodyFont: 'Gilroy' },
       'en',
     );
-    expect(out).toContain('sans: Gilroy');
-    expect(out).toContain('local: Roboto');
+    expect(out).toContain('sans: Gilroy,Roboto');
+    expect(out).toContain('local: Gilroy');
     expect(out).toContain('lang: en');
   });
 

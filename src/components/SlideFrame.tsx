@@ -9,7 +9,21 @@ export type SlideChrome = {
   footer?: { left: string; center: string; right: string };
   hidden?: boolean;
   logoUrl?: string;
+  fonts?: { heading: string; body: string };
 };
+
+/** CSS2 stylesheet href for the non-local families a preview needs (or null). */
+export function googleFontsHref(fonts?: { heading: string; body: string }): string | null {
+  if (!fonts) return null;
+  const families = Array.from(new Set([fonts.body, fonts.heading]))
+    .map((f) => f.trim())
+    .filter((f) => f && f.toLowerCase() !== 'gilroy');
+  if (families.length === 0) return null;
+  const params = families
+    .map((f) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;600;700`)
+    .join('&');
+  return `https://fonts.googleapis.com/css2?${params}&display=swap`;
+}
 
 /**
  * Presentational inner slide frame used by the admin per-slide SlidePreview.
@@ -39,6 +53,14 @@ export function SlideFrame({
     .filter(Boolean)
     .join(' ');
   const imageSide = layout === 'image-left' ? 'left' : layout === 'image-right' ? 'right' : null;
+  const fontHref = googleFontsHref(chrome?.fonts);
+  const fontStyle = chrome?.fonts
+    ? ({
+        '--k-font-heading': `"${chrome.fonts.heading}", ui-sans-serif, system-ui, sans-serif`,
+        '--k-font-body': `"${chrome.fonts.body}", ui-sans-serif, system-ui, sans-serif`,
+      } as React.CSSProperties)
+    : undefined;
+  const frameStyle = { ...fontStyle, ...style };
 
   if (imageSide && image) {
     const imagePane = (
@@ -49,31 +71,40 @@ export function SlideFrame({
     );
 
     return (
-      <div className={classes} style={{ ...styles.imageLayout, ...style }}>
-        <SlideChromeLayer chrome={chrome} />
-        {imageSide === 'left' ? imagePane : contentPane}
-        {imageSide === 'left' ? contentPane : imagePane}
-      </div>
+      <>
+        {fontHref ? <link href={fontHref} rel="stylesheet" /> : null}
+        <div className={classes} style={{ ...styles.imageLayout, ...frameStyle }}>
+          <SlideChromeLayer chrome={chrome} />
+          {imageSide === 'left' ? imagePane : contentPane}
+          {imageSide === 'left' ? contentPane : imagePane}
+        </div>
+      </>
     );
   }
 
   if (mermaid) {
     const [before, after] = splitMermaidFence(html);
     return (
-      <div className={classes} style={style}>
-        <SlideChromeLayer chrome={chrome} />
-        <div style={styles.contents} dangerouslySetInnerHTML={{ __html: before }} />
-        <MermaidPreview source={mermaid.source} />
-        <div style={styles.contents} dangerouslySetInnerHTML={{ __html: after }} />
-      </div>
+      <>
+        {fontHref ? <link href={fontHref} rel="stylesheet" /> : null}
+        <div className={classes} style={frameStyle}>
+          <SlideChromeLayer chrome={chrome} />
+          <div style={styles.contents} dangerouslySetInnerHTML={{ __html: before }} />
+          <MermaidPreview source={mermaid.source} />
+          <div style={styles.contents} dangerouslySetInnerHTML={{ __html: after }} />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className={classes} style={style}>
-      <SlideChromeLayer chrome={chrome} />
-      <div style={styles.contents} dangerouslySetInnerHTML={{ __html: html }} />
-    </div>
+    <>
+      {fontHref ? <link href={fontHref} rel="stylesheet" /> : null}
+      <div className={classes} style={frameStyle}>
+        <SlideChromeLayer chrome={chrome} />
+        <div style={styles.contents} dangerouslySetInnerHTML={{ __html: html }} />
+      </div>
+    </>
   );
 }
 

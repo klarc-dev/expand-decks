@@ -8,7 +8,14 @@ describe('buildSlidePreviewChrome()', () => {
       {
         title: { value: 'Deck title' },
         language: { value: 'fr' },
-        organisation: { value: { name: 'Klarc', logo: { filename: 'logo.svg' } } },
+        organisation: {
+          value: {
+            name: 'Klarc',
+            logo: { filename: 'logo.svg' },
+            headingFont: 'Noto Sans Display',
+            bodyFont: 'Inter',
+          },
+        },
         'footer.enabled': { value: true },
         'footer.left': { value: '{org.name}' },
         'footer.center': { value: '{title}' },
@@ -22,6 +29,7 @@ describe('buildSlidePreviewChrome()', () => {
 
     expect(chrome.footer).toEqual({ left: 'Klarc', center: 'Deck title', right: '2 / 2' });
     expect(chrome.logoUrl).toBe('/media/logo.svg');
+    expect(chrome.fonts).toEqual({ heading: 'Noto Sans Display', body: 'Inter' });
     expect(chrome.hidden).toBe(false);
   });
 
