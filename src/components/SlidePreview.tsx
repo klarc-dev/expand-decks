@@ -4,10 +4,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useFormFields } from '@payloadcms/ui';
 
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
-import { formStateToBlockData } from '@/lib/formStateToBlockData';
+import {
+  previewRequestKey,
+  selectPreviewRequest,
+  type PreviewRequest,
+} from '@/components/slidePreviewState';
 import { SlideFrame, SLIDE_STAGE_BG, type SlideChrome } from '@/components/SlideFrame';
 
 import '@/export/style.css';
+
+const PREVIEW_DEBOUNCE_MS = 200;
 
 type PreviewResult = {
   chrome?: SlideChrome;
@@ -26,89 +32,50 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   // (getSiblingData is a one-shot getter — using it froze the preview until
   // the next save/reload.) The selector returns a JSON string so the context
   // comparison only triggers a re-render when the block's data changes.
-  const blockJson = useFormFields(([fields]) =>
-    JSON.stringify(formStateToBlockData(fields as never, path)),
+  // One JSON key over the whole preview request — the effect only refetches
+  // when something that affects the rendered preview actually changes (U2).
+  const requestKey = useFormFields(([fields]) =>
+    previewRequestKey(selectPreviewRequest(fields as never, path)),
   );
 
-  // Deck section titles (in order) so an empty `agenda` block previews its
-  // auto-derived plan — mirrors the ctx.sections buildSlidesMd threads at build.
-  const sectionsJson = useFormFields(([fields]) => {
-    const out: { i: number; title: string }[] = [];
-    for (const key of Object.keys(fields)) {
-      const m = /^slides\.(\d+)\.blockType$/.exec(key);
-      if (!m || fields[key]?.value !== 'section') continue;
-      const i = Number(m[1]);
-      const title = fields[`slides.${i}.title`]?.value;
-      if (typeof title === 'string' && title.trim()) out.push({ i, title: title.trim() });
-    }
-    return JSON.stringify(out.sort((a, b) => a.i - b.i).map((s) => s.title));
-  });
-  const chromeInputJson = useFormFields(([fields]) => {
-    const block = formStateToBlockData(fields as never, path);
-    const slideBlockTypes: Record<string, unknown> = {};
-    for (const key of Object.keys(fields)) {
-      if (/^slides\.\d+\.blockType$/.test(key)) slideBlockTypes[key] = fields[key]?.value;
-    }
-    return JSON.stringify({
-      block,
-      fields: {
-        ...slideBlockTypes,
-        'footer.center': fields['footer.center']?.value,
-        'footer.enabled': fields['footer.enabled']?.value,
-        'footer.left': fields['footer.left']?.value,
-        'footer.right': fields['footer.right']?.value,
-        language: fields.language?.value,
-        organisation: fields.organisation?.value,
-        title: fields.title?.value,
-      },
-    });
-  });
-
-  const data = useMemo(() => JSON.parse(blockJson) as Record<string, unknown>, [blockJson]);
-  const sections = useMemo(() => JSON.parse(sectionsJson) as string[], [sectionsJson]);
-  const chromeInput = useMemo(
-    () =>
-      JSON.parse(chromeInputJson) as {
-        block?: Record<string, unknown>;
-        fields: Record<string, unknown>;
-      },
-    [chromeInputJson],
-  );
+  const request = useMemo(() => JSON.parse(requestKey) as PreviewRequest, [requestKey]);
   const [result, setResult] = useState<PreviewResult | null>(null);
 
   useEffect(() => {
-    if (!data?.blockType) {
+    if (!(request.block as { blockType?: string })?.blockType) {
       setResult(null);
       return;
     }
 
     const controller = new AbortController();
-    async function renderPreview() {
-      try {
-        const res = await fetch('/api/slide-preview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            block: data,
-            fields: chromeInput.fields,
-            previewFieldPath: path,
-            sections,
-          }),
-        });
-        if (!res.ok) {
-          setResult(null);
-          return;
+    // Debounce: coalesce rapid keystrokes into a single request after a short
+    // idle window. The effect-cleanup AbortController still cancels an in-flight
+    // request when a newer debounced request supersedes it (U2/R1).
+    const timeout = setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await fetch('/api/slide-preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: requestKey,
+          });
+          if (!res.ok) {
+            setResult(null);
+            return;
+          }
+          setResult((await res.json()) as PreviewResult);
+        } catch {
+          if (!controller.signal.aborted) setResult(null);
         }
-        setResult((await res.json()) as PreviewResult);
-      } catch {
-        if (!controller.signal.aborted) setResult(null);
-      }
-    }
+      })();
+    }, PREVIEW_DEBOUNCE_MS);
 
-    void renderPreview();
-    return () => controller.abort();
-  }, [chromeInput.fields, data, path, sections]);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [request, requestKey]);
 
   if (!result) return null;
   const { className, html, image, layout, mermaid } = result.preview;
