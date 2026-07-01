@@ -51,7 +51,7 @@ This is a **Payload CMS 3 + Next.js 15 (App Router)** portal that lets authors c
 
 ### Slidev workspace isolation
 
-`slidev-workspace/` is a **separate pnpm project** with its own `node_modules` for `@slidev/cli`, `@slidev/theme-default`, `vue`, and `playwright-chromium`. This keeps Slidev's deep Vue/Vite tree out of the Next.js bundle. The Dockerfile has a dedicated `slidev-deps` stage for it and installs the Chromium binary via `npx playwright-chromium install chromium` in the final image. The build job finds the binary via `join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev')` — do not replace this with `npx` or a global install.
+`slidev-workspace/` is a **separate pnpm project** with its own `node_modules` for `@slidev/cli`, `@slidev/theme-default`, `vue`, and `playwright-chromium`. This keeps Slidev's deep Vue/Vite tree out of the Next.js bundle. The Dockerfile has a dedicated `slidev-deps` stage for it and installs the Chromium binary via `npx playwright-chromium install chromium` in the final image. The build job finds the binary via `join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev')` — do not replace this with `npx` or a global install. Staged temp workdirs symlink `slidev-workspace/node_modules`; this intentionally preserves Slidev/Vite's default `node_modules/.vite` cache across builds, so do not add a custom cache directory unless timing logs prove dependency pre-bundling is still expensive.
 
 ### Sharing
 

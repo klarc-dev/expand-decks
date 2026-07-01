@@ -75,7 +75,16 @@ export function slideHasImages(block: SlideWithMedia): boolean {
   return hasMediaObject(block.image) || hasMediaObject(block.intervenants);
 }
 
-function stageBuildDir({ slidesMd, themeCss, footerEnabled, logoPresent }: StageOptions): string {
+// Exported for a staging contract test (U8): the symlinked `node_modules`
+// preserves Vite's default `node_modules/.vite` pre-bundle cache across the
+// per-build temp workdirs, so a custom cache directory is deliberately NOT
+// introduced unless timing logs show dependency pre-bundling stays expensive.
+export function stageBuildDir({
+  slidesMd,
+  themeCss,
+  footerEnabled,
+  logoPresent,
+}: StageOptions): string {
   const workdir = mkdtempSync(join(tmpdir(), 'slidev-build-'));
 
   symlinkSync(join(SLIDEV_WORKSPACE, 'node_modules'), join(workdir, 'node_modules'), 'dir');
