@@ -18,15 +18,13 @@ export function renderSection(block: SectionBlockData, ctx?: RenderCtx): string 
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
 
-  const number = block.number
-    ? `\n<div class="${K.sectionNum} mb-4">${escape(block.number)}</div>`
-    : '';
+  const number = block.number ? `\n<div class="${K.sectionNum}">${escape(block.number)}</div>` : '';
 
   // With image: left-align in the content half rather than centering.
-  const subtitleAlign = image ? 'max-w-2xl' : 'max-w-3xl mx-auto';
+  const subtitleAlign = image ? K.sectionSubNarrow : K.sectionSubWide;
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml
-    ? `\n\n<div class="k-center-hero-sub ${subtitleAlign}">\n${subtitleHtml}\n</div>`
+    ? `\n\n<div class="${K.sectionSub} ${subtitleAlign}">\n${subtitleHtml}\n</div>`
     : '';
 
   // Image variant left-aligns; otherwise the centered-hero treatment.

@@ -24,6 +24,7 @@ import { MermaidBlock } from '../blocks/MermaidBlock';
 import { AgendaBlock } from '../blocks/AgendaBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
+import { normalizeOutputPolicy } from '../lib/outputPolicy';
 
 export const Presentations: CollectionConfig = {
   slug: COLLECTIONS.presentations,
@@ -33,6 +34,7 @@ export const Presentations: CollectionConfig = {
     defaultColumns: ['title', 'status', 'updatedAt'],
     components: {
       edit: {
+        beforeDocumentControls: ['/components/ExportButton#default'],
         editMenuItems: ['/components/RebuildMenuItem#default'],
       },
     },
@@ -57,6 +59,13 @@ export const Presentations: CollectionConfig = {
 
         const id = req.routeParams?.id as string | undefined;
         if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
+
+        const body = await req.json?.().catch(() => null);
+        const outputPolicy = normalizeOutputPolicy(
+          body && typeof body === 'object'
+            ? (body as { outputPolicy?: unknown }).outputPolicy
+            : undefined,
+        );
 
         // findByID with the user enforces read access; 404 lumps missing +
         // forbidden, matching the draft route's convention.
@@ -122,7 +131,7 @@ export const Presentations: CollectionConfig = {
         // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
         await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
           task: BUILD_SLIDES_TASK,
-          input: { presentationId: id, buildToken },
+          input: { presentationId: id, buildToken, outputPolicy },
           req,
         });
 

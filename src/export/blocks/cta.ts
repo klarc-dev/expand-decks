@@ -14,15 +14,13 @@ import {
 export type { CtaBlockData };
 
 export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
-  const eyebrow = renderEyebrow(block.eyebrow, 'mb-10', {
+  const eyebrow = renderEyebrow(block.eyebrow, 'k-eyebrow--cta', {
     extraClass: K.eyebrowDark,
     multiline: true,
   });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
-  const subtitle = subtitleHtml
-    ? `\n\n<div class="${K.ctaSub} mb-12">\n  ${subtitleHtml}\n</div>`
-    : '';
+  const subtitle = subtitleHtml ? `\n\n<div class="${K.ctaSub}">\n  ${subtitleHtml}\n</div>` : '';
 
   const buttons: string[] = [];
   if (block.primaryAction) {
@@ -33,20 +31,20 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   }
   const buttonsHtml =
     buttons.length > 0
-      ? `\n\n<div class="flex gap-4 justify-center mb-16">\n  ${buttons.join('\n  ')}\n</div>`
+      ? `\n\n<div class="${K.ctaActions}">\n  ${buttons.join('\n  ')}\n</div>`
       : '';
 
-  // mt-16 caption; uses the AA-safe k-caption token (+ uppercase modifier), not
-  // opacity-40 or an inline style.
+  // Closing-slide footnote; uses the AA-safe k-caption token plus a CTA-context
+  // modifier that owns alignment and spacing in CSS (no inline utilities).
   const footerNoteHtml = richTextToHTML(block.footerNote);
   const footerNote = footerNoteHtml
-    ? `\n\n<div class="${K.caption} k-caption--upper text-center mx-auto mt-16">\n  ${footerNoteHtml}\n</div>`
+    ? `\n\n<div class="${K.caption} ${K.ctaCaption}">\n  ${footerNoteHtml}\n</div>`
     : '';
 
-  const body = `<div class="k-center-hero w-full">
+  const body = `<div class="k-center-hero ${K.ctaFrame}">
   <div class="k-center-hero-main">
 ${eyebrow}
-<h1 class="${K.ctaTitle} mb-4">
+<h1 class="${K.ctaTitle}">
 ${md(block.title)}
 </h1>${subtitle}${buttonsHtml}${footerNote}
   </div>

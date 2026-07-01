@@ -71,6 +71,7 @@ export type BuildLogMeta = {
   presentationId?: string;
   buildToken?: string;
   outputs?: string;
+  outputPolicy?: string;
   slideCount?: number;
   hasMermaid?: boolean;
   cacheMode?: string;

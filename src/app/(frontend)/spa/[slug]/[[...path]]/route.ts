@@ -30,14 +30,26 @@ export async function GET(
     return new NextResponse('Forbidden', { status: 403 });
   }
 
-  // Only serve SPAs that belong to an actual presentation
-  const { totalDocs } = await payload.count({
+  // Serve only SPAs whose presentation this user may read. overrideAccess:false
+  // makes Payload apply the Presentations read policy (admin OR owner), so a
+  // logged-in user cannot fetch another owner's deck by guessing its slug.
+  // Distinguish "no such deck" (404) from "exists but forbidden" (403) with a
+  // second privileged existence probe.
+  const readable = await payload.count({
     collection: COLLECTIONS.presentations,
     where: { slug: { equals: slug } },
-    overrideAccess: true,
+    overrideAccess: false,
+    user,
   });
-  if (totalDocs === 0) {
-    return new NextResponse('Not found', { status: 404 });
+  if (readable.totalDocs === 0) {
+    const exists = await payload.count({
+      collection: COLLECTIONS.presentations,
+      where: { slug: { equals: slug } },
+      overrideAccess: true,
+    });
+    return new NextResponse(exists.totalDocs === 0 ? 'Not found' : 'Forbidden', {
+      status: exists.totalDocs === 0 ? 404 : 403,
+    });
   }
 
   return serveSpaFile(slug, pathSegments);

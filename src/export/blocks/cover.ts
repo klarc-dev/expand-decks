@@ -2,6 +2,7 @@ import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
 import { richTextToHTML } from '../richtext';
 import {
+  defFooterSlot,
   escape,
   eyebrow as renderEyebrow,
   md,
@@ -114,25 +115,27 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
 
-  const eyebrow = renderEyebrow(block.eyebrow, 'mb-8', { indent: '      ' });
+  const eyebrow = renderEyebrow(block.eyebrow, 'k-eyebrow--cover', { indent: '      ' });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
   const people = renderPeople(block);
 
   // With image: half-slide layout (Slidev image-right/-left supplies the other
-  // half). Drop `absolute inset-0` so the content flows in Slidev's content
-  // slot rather than going full-bleed over the image.
-  const wrapperClass = image
-    ? `${darkClass.trim()} h-full k-cover`.trim()
-    : `${darkClass.trim()} absolute inset-0 k-cover`.trim();
+  // half), so the cover fills the content slot. Without an image the cover goes
+  // full-bleed over the whole slide. Both behaviours are CSS-owned (k-cover sets
+  // height:100%; k-cover--full-bleed adds the absolute inset overlay).
+  const wrapperClass = [darkClass.trim(), K.cover, image ? '' : K.coverFullBleed]
+    .filter(Boolean)
+    .join(' ');
 
   const body = `<div class="${wrapperClass}">
-  <div class="k-cover-main">
-    <div class="k-cover-copy max-w-4xl">${eyebrow}
-      <h1 class="${K.heroBig} mb-10">${md(block.title)}</h1>${subtitle}${people}
+  <div class="${K.coverMain}">
+    <div class="${K.coverCopy}">${eyebrow}
+      <h1 class="${K.coverTitle} ${K.heroBig}">${md(block.title)}</h1>${subtitle}${people}
     </div>
   </div>
+  ${defFooterSlot()}
 </div>`;
 
   return wrapSlide({ layout: 'cover', classAttr: '', hideChrome: true, image, body });

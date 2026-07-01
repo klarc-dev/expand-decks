@@ -6,6 +6,7 @@ import { CTX } from '../lib/context';
 import { COLLECTIONS } from '../lib/collections';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { BUILD_STATUS } from '../lib/status';
+import { DEFAULT_OUTPUT_POLICY } from '../lib/outputPolicy';
 
 export { buildFingerprint, buildInputsChanged } from '../lib/buildFingerprint';
 
@@ -37,7 +38,7 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
   // Cast needed until `payload generate:types` adds buildSlides to TypedJobs
   await (req.payload.jobs.queue as Function)({
     task: BUILD_SLIDES_TASK,
-    input: { presentationId: doc.id as string, buildToken },
+    input: { presentationId: doc.id as string, buildToken, outputPolicy: DEFAULT_OUTPUT_POLICY },
     req,
   });
 

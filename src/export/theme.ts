@@ -67,6 +67,12 @@ export function buildThemeCss(brand: Partial<OrgBrand> | null | undefined): stri
   --k-ink-soft: ${mix(ink, 70, 'white')};
   --k-paper: ${paper};
   --k-line: ${mix(primary, 12, 'transparent')};
+  --k-surface: ${mix(paper, 70, 'white')};
+  --k-surface-raised: ${mix(paper, 42, 'white')};
+  --k-surface-soft: color-mix(in srgb, ${paper} 88%, ${primary});
+  --k-hairline: ${mix(primary, 16, 'transparent')};
+  --k-shadow-soft: 0 18px 44px -34px ${mix(primary, 34, 'transparent')};
+  --k-shadow-lift: 0 24px 58px -42px ${mix(primary, 42, 'transparent')};
   --k-font-heading: ${cssFontStack(brand.headingFont, 'Gilroy')};
   --k-font-body: ${cssFontStack(brand.bodyFont, 'Roboto')};
 }

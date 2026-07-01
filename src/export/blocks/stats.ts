@@ -18,12 +18,12 @@ export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
 
   const items = stats
     .map((stat) => {
-      return `<div class="k-stat-card">\n  <div class="${K.stat}">\n    <span class="val">${escape(stat.value)}</span>\n    <span class="lbl">${escape(stat.label)}</span>\n  </div>\n</div>`;
+      return `<div class="${K.statCard}">\n  <div class="${K.stat}">\n    <span class="${K.statVal}">${escape(stat.value)}</span>\n    <span class="${K.statLabel}">${escape(stat.label)}</span>\n  </div>\n</div>`;
     })
     .join('\n\n');
 
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, align: 'center' });
-  const body = contentFrame(`<div class="k-stat-grid ${statGrid}">\n\n${items}\n\n</div>`, {
+  const body = contentFrame(`<div class="${K.statGrid} ${statGrid}">\n\n${items}\n\n</div>`, {
     header,
   });
 

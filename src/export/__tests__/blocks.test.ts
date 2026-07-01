@@ -171,7 +171,7 @@ describe('renderCover()', () => {
     });
     expect(result).toContain('layout: image-right');
     expect(result).toContain('image: /media/photo.jpg');
-    expect(result).not.toContain('absolute inset-0');
+    expect(result).not.toContain('k-cover--full-bleed');
     expect(result).not.toContain('p-14');
   });
 
@@ -185,13 +185,13 @@ describe('renderCover()', () => {
     expect(result).toContain('layout: image-left');
   });
 
-  it('keeps layout: cover with absolute positioning when no image', () => {
+  it('keeps layout: cover with a semantic full-bleed frame when no image', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'No image',
     });
     expect(result).toContain('layout: cover');
-    expect(result).toContain('absolute inset-0');
+    expect(result).toContain('k-cover--full-bleed');
     expect(result).not.toContain('image:');
   });
 });
@@ -234,7 +234,7 @@ describe('renderSection()', () => {
     });
     expect(result).toContain('layout: image-right');
     expect(result).toContain('image: /media/photo.jpg');
-    expect(result).not.toContain('text-center max-w-5xl');
+    expect(result).toContain('k-center-hero--left');
   });
 });
 

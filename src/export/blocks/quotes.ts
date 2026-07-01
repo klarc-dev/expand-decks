@@ -19,7 +19,7 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
   // the generic card() primitive — but they flow through the shared cardStack.
   const quoteCards = renderedQuotes.map((q) => {
     const role = q.authorRole ? `<br/>\n    <span>${escape(q.authorRole)}</span>` : '';
-    return `<div class="${K.card} k-quote-card">\n  <div class="${K.quote} text-base leading-snug">\n    ${q.quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
+    return `<div class="${K.card} ${K.quoteCard}">\n  <div class="${K.quote}">\n    ${q.quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
   });
 
   const cols = dense ? Math.min(quotes.length, 2) || 1 : quotes.length || 1;

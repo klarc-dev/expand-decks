@@ -100,10 +100,10 @@ describe('cardStack()', () => {
 });
 
 describe('contentFrame()', () => {
-  it('wraps in the k-content rail and adds tight/w-full modifiers', () => {
+  it('wraps in the k-content rail and adds tight/full modifiers', () => {
     expect(contentFrame('X')).toContain('k-content');
     expect(contentFrame('X', { crowded: true })).toContain('k-content-tight');
-    expect(contentFrame('X', { wFull: true })).toContain('w-full');
+    expect(contentFrame('X', { wFull: true })).toContain('k-content--full');
   });
 
   it('separates the stable header row from the measured main row', () => {

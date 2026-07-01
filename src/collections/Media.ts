@@ -1,14 +1,37 @@
-import type { CollectionConfig } from 'payload';
+import type { Access, CollectionConfig } from 'payload';
 
-import { isAdmin, isLoggedIn } from '../access/roles';
+import { isAdmin, isLoggedIn, userIsAdmin } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+
+export const canReadMedia: Access = async ({ req }) => {
+  const { user, payload } = req;
+  if (!user) return false;
+  if (userIsAdmin(user)) return true;
+
+  const readable = await payload.find({
+    collection: COLLECTIONS.presentations,
+    depth: 0,
+    limit: 1000,
+    user,
+    overrideAccess: false,
+  });
+  const readableIds = readable.docs.map((doc) => doc.id);
+
+  return {
+    or: [
+      { presentation: { exists: false } },
+      { presentation: { equals: null } },
+      { presentation: { in: readableIds } },
+    ],
+  };
+};
 
 export const Media: CollectionConfig = {
   slug: COLLECTIONS.media,
   labels: { singular: 'M\u00e9dia', plural: 'M\u00e9dias' },
   access: {
     create: isLoggedIn,
-    read: isLoggedIn,
+    read: canReadMedia,
     update: isAdmin,
     delete: isAdmin,
   },
@@ -26,6 +49,21 @@ export const Media: CollectionConfig = {
       type: 'text',
       label: 'Texte alternatif',
       admin: { description: 'Description de l\u2019image pour l\u2019accessibilit\u00e9' },
+    },
+    {
+      // Links a generated artifact (e.g. exported PDF) to its source
+      // presentation so read access can be scoped to that deck's owner.
+      // Left empty for ordinary uploads, which stay readable to any logged-in
+      // user via canReadMedia.
+      name: 'presentation',
+      type: 'relationship',
+      relationTo: COLLECTIONS.presentations,
+      label: 'Pr\u00e9sentation source',
+      admin: {
+        readOnly: true,
+        description:
+          'Artefact g\u00e9n\u00e9r\u00e9 pour cette pr\u00e9sentation (rempli automatiquement).',
+      },
     },
   ],
 };

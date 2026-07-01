@@ -22,14 +22,14 @@ export function escape(text: string | null | undefined): string {
 // before <div>), extraClass (e.g. CTA dark), multiline (text on its own line).
 export function eyebrow(
   text: string | null | undefined,
-  marginClass = 'mb-8',
+  spacingClass = '',
   opts?: { indent?: string; extraClass?: string; multiline?: boolean },
 ): string {
   if (!text) return '';
   const indent = opts?.indent ?? '';
-  const cls = `${K.eyebrow}${opts?.extraClass ? ` ${opts.extraClass}` : ''} ${marginClass}`;
+  const classes = [K.eyebrow, opts?.extraClass, spacingClass].filter(Boolean).join(' ');
   const inner = opts?.multiline ? `\n  ${escape(text)}\n` : escape(text);
-  return `\n${indent}<div class="${cls}">${inner}</div>`;
+  return `\n${indent}<div class="${classes}">${inner}</div>`;
 }
 
 // Serialize a string as a YAML scalar, double-quoting only when the value
@@ -252,19 +252,19 @@ export function slideHeader(opts: {
   sidebar?: string;
   align?: 'left' | 'center';
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'mb-4', { indent: '    ' });
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--header', { indent: '    ' });
   const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
   const heading = `<h2 class="${sizeClass}">${md(opts.title)}</h2>`;
   if (opts.sidebar) {
-    return `<header class="k-content-header k-content-header--split">
+    return `<header class="${K.contentHeader} ${K.contentHeaderSplit}">
   <div>${eb}
     ${heading}
   </div>
   ${opts.sidebar}
 </header>`;
   }
-  const alignClass = opts.align === 'center' ? ' k-content-header--center' : '';
-  return `<header class="k-content-header${alignClass}">${eb}
+  const alignClass = opts.align === 'center' ? ` ${K.contentHeaderCenter}` : '';
+  return `<header class="${K.contentHeader}${alignClass}">${eb}
   ${heading}
 </header>`;
 }
@@ -304,14 +304,14 @@ export function cardStack(
     // body region, not the slide title baseline.
     const tight = crowded ? ' k-tight' : '';
     return {
-      html: `<div class="k-card-stack k-card-stack--grid ${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`,
+      html: `<div class="${K.cardStack} ${K.cardStackGrid} ${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`,
       crowded,
     };
   }
   const crowded = cards.length >= 4;
-  const gap = crowded ? 'space-y-2 k-tight' : 'space-y-3';
+  const tight = crowded ? ' k-tight' : '';
   return {
-    html: `<div class="k-card-stack k-card-stack--column ${gap}">\n\n${inner}\n\n</div>`,
+    html: `<div class="${K.cardStack} ${K.cardStackColumn}${tight}">\n\n${inner}\n\n</div>`,
     crowded,
   };
 }
@@ -330,9 +330,17 @@ export function contentFrame(
     mainAlign?: 'center' | 'start' | 'stretch';
   },
 ): string {
-  const cls = `k-content${opts?.crowded ? ' k-content-tight' : ''}${opts?.wFull ? ' w-full' : ''}`;
+  const cls = [K.content, opts?.crowded ? K.contentTight : '', opts?.wFull ? K.contentFull : '']
+    .filter(Boolean)
+    .join(' ');
   const align = opts?.mainAlign ?? 'center';
-  const mainCls = `k-content-main k-content-main--${align}`;
+  const alignCls =
+    align === 'start'
+      ? K.contentMainStart
+      : align === 'stretch'
+        ? K.contentMainStretch
+        : K.contentMainCenter;
+  const mainCls = `${K.contentMain} ${alignCls}`;
   const header = opts?.header ? `\n${opts.header}` : '';
   return `<div class="${cls}">${header}
   <div class="${mainCls}">\n\n${main}\n\n  </div>
@@ -357,33 +365,33 @@ export function heroFrame(opts: {
   surface?: Surface | null;
   accentRule?: boolean;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'mb-6');
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption
-    ? `\n\n<div class="${K.caption} mt-10">\n  ${opts.caption}\n</div>`
+    ? `\n\n<div class="${K.caption} ${K.heroCaption}">\n  ${opts.caption}\n</div>`
     : '';
-  const heading = `<h1 class="k-hero-title">\n${md(opts.title)}\n</h1>`;
+  const heading = `<h1 class="${K.heroTitle}">\n${md(opts.title)}\n</h1>`;
 
   // Split is a two-column layout only when there's a body for the right column;
   // with no body it would emit an empty grid cell, so fall through to the
   // single-column left treatment instead.
   if (opts.align === 'split' && opts.body) {
     const left = `<div>${eb}${rule}\n${heading}\n</div>`;
-    const right = `<div class="k-hero-body">\n${opts.body}\n</div>`;
+    const right = `<div class="${K.heroBody}">\n${opts.body}\n</div>`;
     const inner = `<div class="${K.split}">\n${left}\n${right}\n</div>${caption}`;
     return wrapSlide({
       layout: 'default',
       surface: opts.surface,
-      body: `<div class="k-hero k-hero--${opts.scale} k-hero--left">\n  <div class="k-hero-main">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
+      body: `<div class="${K.hero} k-hero--${opts.scale} k-hero--left">\n  <div class="${K.heroMain}">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
     });
   }
 
-  const bodyBlock = opts.body ? `\n\n<div class="k-hero-body">\n${opts.body}\n</div>` : '';
-  const alignClass = opts.align === 'center' ? 'k-hero--center' : 'k-hero--left';
+  const bodyBlock = opts.body ? `\n\n<div class="${K.heroBody}">\n${opts.body}\n</div>` : '';
+  const alignClass = opts.align === 'center' ? `${K.hero}--center` : `${K.hero}--left`;
   const inner = `${eb}${rule}\n${heading}${bodyBlock}${caption}`;
   return wrapSlide({
     layout: opts.align === 'center' ? 'center' : 'default',
     surface: opts.surface,
-    body: `<div class="k-hero k-hero--${opts.scale} ${alignClass}">\n  <div class="k-hero-main">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
+    body: `<div class="${K.hero} k-hero--${opts.scale} ${alignClass}">\n  <div class="${K.heroMain}">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
   });
 }

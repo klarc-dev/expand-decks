@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { execFile as execFileCb } from 'node:child_process';
 import {
   cpSync,
@@ -10,7 +11,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
 
 import type { TaskHandlerArgs } from 'payload';
@@ -30,9 +31,22 @@ import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/p
 import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
+import { normalizeOutputPolicy, wantsPdf, wantsSpa } from '../lib/outputPolicy';
 
 import { buildLogPayload, createBuildTimer } from './buildTiming';
 import { buildSlidevExportArgs, parsePositiveInt } from './slidevExportArgs';
+import { assemblePdf, splitRangePdf } from './pdfAssemble';
+import { computePageHashes, planDirtyPages } from './pdfPageHash';
+import {
+  copyCurrentPageToTemp,
+  currentPagePath,
+  promoteTempCache,
+  readManifest,
+  tempCacheHasAllPages,
+  tempPagePath,
+  writeTempManifest,
+} from './pdfPageCache';
+import type { PdfPageCacheManifest } from './pdfPageCache';
 
 const execFile = promisify(execFileCb);
 
@@ -128,8 +142,147 @@ export function stageBuildDir({
   return workdir;
 }
 
+type PdfExportOptions = Parameters<typeof buildSlidevExportArgs>[0];
+
+type PdfCacheMode = 'disabled' | 'full' | 'incremental' | 'fallback';
+
+type PdfExportResult = { cacheMode: PdfCacheMode; promote?: () => void };
+
+function incrementalPdfEnabled(): boolean {
+  return process.env.SLIDEV_EXPORT_INCREMENTAL_PDF === '1';
+}
+
+function maxDirtyRatio(): number {
+  const parsed = Number.parseFloat(process.env.SLIDEV_EXPORT_INCREMENTAL_MAX_DIRTY_RATIO ?? '0.35');
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= 1 ? parsed : 0.35;
+}
+
+function minSlidesForIncremental(): number {
+  return parsePositiveInt(process.env.SLIDEV_EXPORT_INCREMENTAL_MIN_SLIDES, 12);
+}
+
+function buildPdfGlobalSalt(args: string[], themedHeadmatter: string, themeCss: string): string {
+  return JSON.stringify({
+    args: args.filter(
+      (arg, i) =>
+        !['--output', '--range'].includes(args[i - 1] ?? '') &&
+        arg !== '--output' &&
+        arg !== '--range',
+    ),
+    themedHeadmatter,
+    themeCss,
+    slidev: '@slidev/cli@52.16.0',
+    pdfLib: 'pdf-lib@1.17.1',
+  });
+}
+
+async function exportPdfWithOptionalCache({
+  workdir,
+  slug,
+  buildToken,
+  slides,
+  exportOptions,
+  themedHeadmatter,
+  themeCss,
+}: {
+  workdir: string;
+  slug: string;
+  buildToken?: string;
+  slides: readonly unknown[];
+  exportOptions: PdfExportOptions;
+  themedHeadmatter: string;
+  themeCss: string;
+}): Promise<PdfExportResult> {
+  const fullExport = async (cacheMode: PdfCacheMode): Promise<PdfExportResult> => {
+    await runSlidev(buildSlidevExportArgs(exportOptions), workdir);
+    if (incrementalPdfEnabled() && buildToken && slides.length > 0) {
+      try {
+        const hashes = computePageHashes(slides, {
+          globalSalt: buildPdfGlobalSalt(
+            buildSlidevExportArgs(exportOptions),
+            themedHeadmatter,
+            themeCss,
+          ),
+        });
+        await splitRangePdf(
+          join(workdir, ARTIFACTS.pdf),
+          hashes.map((_, i) => i),
+          async (pageIndex, data) => {
+            const path = tempPagePath(slug, buildToken, pageIndex);
+            mkdirSync(dirname(path), { recursive: true });
+            writeFileSync(path, data);
+          },
+        );
+        writeTempManifest(slug, buildToken, { version: 1, hashes });
+        return { cacheMode, promote: () => promoteTempCache(slug, buildToken) };
+      } catch {
+        // Cache refresh is best-effort. The full PDF artifact is already present;
+        // never fail a build because page-cache population could not validate it.
+      }
+    }
+    return { cacheMode };
+  };
+
+  if (!incrementalPdfEnabled()) return fullExport('disabled');
+  if (!buildToken || slides.length < minSlidesForIncremental()) return fullExport('fallback');
+
+  const baseArgs = buildSlidevExportArgs(exportOptions);
+  const hashes = computePageHashes(slides, {
+    globalSalt: buildPdfGlobalSalt(baseArgs, themedHeadmatter, themeCss),
+  });
+  const manifest = readManifest(slug);
+  const plan = planDirtyPages(manifest?.hashes, hashes);
+  try {
+    if (plan.dirtyIndexes.length === 0 && manifest && manifest.hashes.length === hashes.length) {
+      for (let i = 0; i < hashes.length; i += 1) copyCurrentPageToTemp(slug, buildToken, i);
+    } else if (plan.allDirty || plan.dirtyRatio > maxDirtyRatio()) {
+      return fullExport('fallback');
+    } else {
+      for (let i = 0; i < hashes.length; i += 1) {
+        if (!plan.dirtyIndexes.includes(i)) copyCurrentPageToTemp(slug, buildToken, i);
+      }
+    }
+  } catch {
+    // Warm-cache metadata existed but one or more page PDFs were missing/corrupt.
+    // Fall back to the safe full export instead of failing the build.
+    return fullExport('fallback');
+  }
+
+  if (plan.dirtyIndexes.length > 0) {
+    const rangePdf = 'range.pdf';
+    await runSlidev(
+      buildSlidevExportArgs({ ...exportOptions, output: rangePdf, range: plan.range }),
+      workdir,
+    );
+    await splitRangePdf(join(workdir, rangePdf), plan.dirtyIndexes, async (pageIndex, data) => {
+      const path = tempPagePath(slug, buildToken, pageIndex);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, data);
+    });
+  }
+
+  writeTempManifest(slug, buildToken, { version: 1, hashes } satisfies PdfPageCacheManifest);
+  if (!tempCacheHasAllPages(slug, buildToken, hashes.length)) return fullExport('fallback');
+  await assemblePdf(
+    hashes.map((_, i) => tempPagePath(slug, buildToken, i)),
+    join(workdir, ARTIFACTS.pdf),
+  );
+  return { cacheMode: 'incremental', promote: () => promoteTempCache(slug, buildToken) };
+}
+
 export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildSlides'>) {
-  const { presentationId, buildToken } = input as { presentationId: string; buildToken?: string };
+  const {
+    presentationId,
+    buildToken,
+    outputPolicy: rawOutputPolicy,
+  } = input as {
+    presentationId: string;
+    buildToken?: string;
+    outputPolicy?: unknown;
+  };
+  const outputPolicy = normalizeOutputPolicy(rawOutputPolicy);
+  const producePdf = wantsPdf(outputPolicy);
+  const produceSpa = wantsSpa(outputPolicy);
   let workdir: string | null = null;
   const timer = createBuildTimer();
 
@@ -236,10 +389,11 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     });
     timer.recordSince('renderMarkdown', renderStart);
 
+    const themeCss = buildThemeCss(brand);
     const stageStart = timer.elapsed();
     workdir = stageBuildDir({
       slidesMd,
-      themeCss: buildThemeCss(brand),
+      themeCss,
       footerEnabled: Boolean(footer?.enabled),
       logoPresent: Boolean(logoUrl),
     });
@@ -251,29 +405,46 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     const hasImages = Boolean(logoUrl) || slides.some(slideHasImages);
 
     // Native Slidev export flags, centralized and tested in slidevExportArgs.ts.
-    // Single-pass is default. `--per-slide` is an escape hatch only: it renders /
-    // navigates each slide independently and is slower; buildSlidesMd bakes
-    // kPage/kTotal into slide frontmatter so the footer counter no longer needs
-    // live nav state. `--range` support lives in the helper for future partial-PDF
-    // cache work, but this build job always exports the full deck artifact.
-    const exportArgs = buildSlidevExportArgs({
+    // Single-pass is default. `--per-slide` is an escape hatch only. Phase-2
+    // incremental PDF (default-off) reuses these same options, adding `--range`
+    // only for dirty-page exports when the cache is warm and eligible.
+    const exportOptions: PdfExportOptions = {
       output: ARTIFACTS.pdf,
       hasMermaid,
       hasImages,
       perSlide: process.env.SLIDEV_EXPORT_PER_SLIDE === '1',
       timeoutMs: parsePositiveInt(process.env.SLIDEV_EXPORT_TIMEOUT_MS, 120_000),
       withToc: process.env.SLIDEV_EXPORT_WITH_TOC === '1',
-    });
+    };
 
     // build (SPA dist/) and export (PDF) are independent — disjoint outputs, no
-    // shared mutable state — so run them concurrently. They share the Vite dep
-    // cache under the symlinked node_modules/.vite, which already tolerates the
-    // up-to-5 concurrent jobs autoRun permits; two processes here is no new class
-    // of contention.
-    await Promise.all([
-      timer.stage('slidevBuildSpa', () => runSlidev(['build', '--base', './'], workdir!)),
-      timer.stage('slidevExportPdf', () => runSlidev(exportArgs, workdir!)),
-    ]);
+    // shared mutable state — so run them concurrently. outputPolicy gates which
+    // are produced. They share the Vite dep cache under the symlinked
+    // node_modules/.vite, which already tolerates up-to-5 concurrent jobs;
+    // two processes here is no new class of contention.
+    const slidevTasks: Promise<unknown>[] = [];
+    let pdfExportResult: PdfExportResult = { cacheMode: producePdf ? 'full' : 'disabled' };
+    if (produceSpa) {
+      slidevTasks.push(
+        timer.stage('slidevBuildSpa', () => runSlidev(['build', '--base', './'], workdir!)),
+      );
+    }
+    if (producePdf) {
+      slidevTasks.push(
+        timer.stage('slidevExportPdf', async () => {
+          pdfExportResult = await exportPdfWithOptionalCache({
+            workdir: workdir!,
+            slug,
+            buildToken,
+            slides,
+            exportOptions,
+            themedHeadmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
+            themeCss,
+          });
+        }),
+      );
+    }
+    await Promise.all(slidevTasks);
 
     const latest = await timer.stage('staleCheckLoad', () =>
       req.payload.findByID({
@@ -292,41 +463,51 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       return { output: { success: false, skipped: 'stale' } };
     }
 
-    const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
-    const pdfMedia = await timer.stage('uploadPdf', () =>
-      req.payload.create({
-        collection: COLLECTIONS.media,
-        data: { alt: `${presentation.title} — PDF` },
-        file: {
-          data: pdfBuffer,
-          mimetype: 'application/pdf',
-          name: `${slug}.pdf`,
-          size: pdfBuffer.byteLength,
-        },
-      }),
-    );
+    pdfExportResult.promote?.();
 
-    const spaCopyStart = timer.elapsed();
-    const spaTargetDir = spaDir(slug);
-    rmSync(spaTargetDir, { recursive: true, force: true });
-    cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
-    timer.recordSince('copySpa', spaCopyStart);
+    const patchData: Record<string, unknown> = {
+      lastBuildStatus: BUILD_STATUS.success,
+      lastBuildError: '',
+    };
+    let pdfMediaId: unknown = null;
+
+    if (producePdf) {
+      const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
+      const pdfMedia = await timer.stage('uploadPdf', () =>
+        req.payload.create({
+          collection: COLLECTIONS.media,
+          data: { alt: `${presentation.title} — PDF`, presentation: Number(presentationId) },
+          file: {
+            data: pdfBuffer,
+            mimetype: 'application/pdf',
+            name: `${randomUUID()}.pdf`,
+            size: pdfBuffer.byteLength,
+          },
+        }),
+      );
+      pdfMediaId = pdfMedia.id;
+      patchData.pdfFile = pdfMedia.id;
+    }
+
+    if (produceSpa) {
+      const spaCopyStart = timer.elapsed();
+      const spaTargetDir = spaDir(slug);
+      rmSync(spaTargetDir, { recursive: true, force: true });
+      cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
+      timer.recordSince('copySpa', spaCopyStart);
+      patchData.spaUrl = spaUrl(slug);
+    }
 
     await timer.stage('patchPresentation', () =>
       req.payload.update({
         collection: COLLECTIONS.presentations,
         id: presentationId,
-        data: {
-          pdfFile: pdfMedia.id,
-          spaUrl: spaUrl(slug),
-          lastBuildStatus: BUILD_STATUS.success,
-          lastBuildError: '',
-        },
+        data: patchData,
         context: { [CTX.skipBuildQueue]: true },
       }),
     );
 
-    if (previousPdfId && previousPdfId !== pdfMedia.id) {
+    if (producePdf && previousPdfId && previousPdfId !== pdfMediaId) {
       await timer
         .stage('deleteOldPdf', () =>
           req.payload.delete({
@@ -345,10 +526,10 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
         {
           presentationId,
           buildToken,
-          outputs: 'both',
+          outputPolicy,
           slideCount: slides.length,
           hasMermaid,
-          cacheMode: 'full',
+          cacheMode: pdfExportResult.cacheMode,
         },
         timer.durations(),
         timer.elapsed(),

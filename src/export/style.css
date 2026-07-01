@@ -70,12 +70,21 @@
   --k-teal-900: #021a1b;
   --k-teal-50: #ecf7f7;
   --k-teal-100: #d4ecec;
-  --k-rose: #f5a3b0;
-  --k-rose-soft: #fbe2e6;
-  --k-ink: #0f2a2b;
-  --k-ink-soft: #4a6365;
-  --k-paper: #fafbfb;
-  --k-line: rgba(2, 88, 92, 0.12);
+  --k-rose: #d99aa6;
+  --k-rose-soft: #f4d6dc;
+  --k-ink: #0f2425;
+  --k-ink-soft: #536465;
+  --k-paper: #f7f6f2;
+  --k-line: rgba(2, 88, 92, 0.13);
+  --k-surface: #fcfbf7;
+  --k-surface-raised: #ffffff;
+  --k-surface-soft: color-mix(in srgb, var(--k-paper) 88%, var(--k-teal) 12%);
+  --k-hairline: color-mix(in srgb, var(--k-teal) 16%, transparent);
+  --k-shadow-soft: 0 18px 44px -34px rgba(2, 40, 43, 0.34);
+  --k-shadow-lift: 0 24px 58px -42px rgba(2, 40, 43, 0.42);
+  --k-radius-card: 1.05rem;
+  --k-radius-chip: 0.32rem;
+  --k-motion-fast: 180ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* --- Reusable-components refactor tokens (U1) --------------------------
      Foundation layer: consumed by render primitives (U4) and the AA pass (U3).
@@ -146,6 +155,12 @@
   --pill-bg: rgba(255, 255, 255, 0.1);
   --pill-fg: #fff;
   --pill-border: rgba(255, 255, 255, 0.3);
+  --k-surface: rgba(255, 255, 255, 0.07);
+  --k-surface-raised: rgba(255, 255, 255, 0.1);
+  --k-surface-soft: rgba(255, 255, 255, 0.055);
+  --k-hairline: rgba(255, 255, 255, 0.15);
+  --k-shadow-soft: 0 18px 44px -34px rgba(0, 0, 0, 0.58);
+  --k-shadow-lift: 0 24px 58px -42px rgba(0, 0, 0, 0.68);
 }
 
 /* Typography ----------------------------------- */
@@ -176,19 +191,25 @@
 .slidev-layout h2,
 .slidev-layout h3 {
   font-family: var(--k-font-heading);
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--k-teal);
+  text-wrap: balance;
 }
 
 .slidev-layout h1 {
   font-size: var(--t-title);
-  line-height: 1.05;
+  line-height: 1.04;
+  font-weight: 700;
 }
 
 .slidev-layout h2 {
   font-size: var(--t-sub);
   line-height: 1.1;
+  font-weight: 600;
+}
+
+.slidev-layout h3 {
+  font-weight: 600;
 }
 
 .slidev-layout p,
@@ -234,31 +255,37 @@
 .k-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  width: max-content;
+  max-width: 100%;
   font-size: var(--t-small);
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-weight: 650;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--k-teal);
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--k-line);
-  border-radius: 999px;
-  background: var(--k-teal-50);
+  color: color-mix(in srgb, var(--k-teal) 84%, var(--k-ink));
+  padding: 0 0 0.36rem;
+  border: 0;
+  border-bottom: 1px solid var(--accent-rule);
+  border-radius: 0;
+  background: transparent;
+}
+
+.k-eyebrow--header {
+  margin-bottom: 1rem;
+}
+.k-eyebrow--hero {
+  margin-bottom: 1.35rem;
+}
+.k-eyebrow--cover {
+  margin-bottom: 1.65rem;
+}
+.k-eyebrow--cta {
+  margin-bottom: 2.1rem;
 }
 
 .k-dark .k-eyebrow {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.k-eyebrow::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--k-rose);
+  color: rgba(255, 255, 255, 0.92);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--accent-rule) 82%, #fff 10%);
 }
 
 .k-logo {
@@ -277,43 +304,31 @@
 }
 
 .k-logo::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--k-rose);
-  display: inline-block;
+  content: none;
 }
 
 .k-card {
-  background: #fff;
-  border: 1px solid var(--k-line);
-  border-radius: 18px;
-  padding: 1.4rem 1.4rem 1.3rem;
-  transition: all 0.3s ease;
+  background: var(--k-surface-raised);
+  border: 1px solid var(--k-hairline);
+  border-radius: var(--k-radius-card);
+  padding: 1.35rem 1.35rem 1.25rem;
+  transition:
+    transform var(--k-motion-fast),
+    border-color var(--k-motion-fast),
+    box-shadow var(--k-motion-fast),
+    background-color var(--k-motion-fast);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  box-shadow: var(--k-shadow-soft);
 }
 
-.k-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--k-teal), var(--k-rose));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.k-card:hover::before {
-  opacity: 1;
-}
 .k-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px -15px rgba(2, 88, 92, 0.25);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--k-teal) 24%, transparent);
+  box-shadow: var(--k-shadow-lift);
 }
 
 .k-card h3 {
@@ -356,30 +371,32 @@
 .k-stat-grid {
   max-width: 58rem;
   margin: 0 auto;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .k-stat-card {
-  background: color-mix(in srgb, var(--bg) 86%, #fff);
-  border: 1px solid var(--pill-border);
-  border-radius: 18px;
-  padding: 1.5rem 1.3rem;
+  background: var(--k-surface);
+  border: 1px solid var(--k-hairline);
+  border-radius: var(--k-radius-card);
+  padding: 1.55rem 1.25rem 1.45rem;
   text-align: center;
+  box-shadow: var(--k-shadow-soft);
 }
 
 .k-stat {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.45rem;
   align-items: center;
 }
 
 .k-stat .val {
   font-family: var(--k-font-heading);
   font-size: var(--t-numeral);
-  line-height: 1;
+  line-height: 0.95;
   color: var(--k-teal);
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .k-dark .k-stat .val {
@@ -387,9 +404,11 @@
 }
 
 .k-stat .lbl {
+  max-width: 14rem;
   font-size: var(--t-small);
-  color: var(--k-ink-soft);
-  letter-spacing: 0.02em;
+  color: var(--fg-muted);
+  letter-spacing: 0.03em;
+  line-height: 1.35;
 }
 
 .k-dark .k-stat .lbl {
@@ -871,7 +890,7 @@
   font-family: var(--k-font-heading);
   font-size: var(--t-quote);
   line-height: 1.4;
-  color: var(--k-ink);
+  color: var(--fg);
   font-style: italic;
 }
 
@@ -992,6 +1011,9 @@
   line-height: 1.4;
   max-width: 48rem;
 }
+.k-hero-caption {
+  margin-top: 2.4rem;
+}
 
 /* Status pill (U10) — matrix-table status cells; replaces inline emoji. */
 .k-pill {
@@ -1053,10 +1075,16 @@
 .k-content-header h2 {
   margin: 0;
 }
+.k-content--full {
+  width: 100%;
+}
 .k-content-main {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+}
+.k-content-main--center {
   justify-content: center;
 }
 .k-content-main--start {
@@ -1076,6 +1104,14 @@
 }
 .k-card-stack--grid {
   align-items: stretch;
+}
+.k-card-stack--column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+.k-card-stack--column.k-tight {
+  gap: 0.58rem;
 }
 .k-cardgrid-body {
   width: 100%;
@@ -1234,6 +1270,23 @@
   margin-top: 1.5rem;
 }
 
+/* Section subtitle — composition owns alignment/width through modifiers so the
+   renderer stops emitting max-w / mx-auto utilities. */
+.k-section-sub {
+  font-size: var(--t-lead);
+  color: var(--fg-muted);
+  line-height: 1.55;
+  margin-top: 1.4rem;
+}
+.k-section-sub--wide {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.k-section-sub--narrow {
+  max-width: 32rem;
+}
+
 /* Cover flourish -------------------------------- */
 .k-hero-big {
   font-family: var(--k-font-heading);
@@ -1260,10 +1313,12 @@
 /* Section divider ------------------------------- */
 .k-section-num {
   font-family: var(--k-font-heading);
-  font-size: 5rem;
-  color: var(--k-rose);
+  font-size: 3.8rem;
+  color: color-mix(in srgb, var(--accent-rule) 82%, var(--fg));
   line-height: 1;
-  font-style: italic;
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  margin-bottom: 0.7rem;
 }
 
 /* Cover surface fix — prevent default slide padding from clipping. Renderer emits
@@ -1276,6 +1331,11 @@
   gap: 1.5rem;
   padding: 3.5rem var(--content-inset) var(--content-bottom);
   min-height: 100%;
+  height: 100%;
+}
+.k-cover--full-bleed {
+  position: absolute;
+  inset: 0;
 }
 .k-cover-main {
   flex: 1;
@@ -1285,6 +1345,10 @@
 }
 .k-cover-copy {
   min-width: 0;
+  max-width: 52rem;
+}
+.k-cover-title {
+  margin-bottom: 1.6rem;
 }
 .k-cover-people {
   display: flex;
@@ -1424,20 +1488,36 @@
 }
 
 /* CTA-specific text classes — replace inline styles -------------- */
+.k-cta-frame {
+  width: 100%;
+}
 .k-cta-title {
   color: #fff;
   font-size: var(--t-display);
   line-height: 0.95;
+  margin: 0;
 }
 .k-cta-sub {
+  margin-top: 1rem;
   font-family: var(--k-font-heading);
   font-size: var(--t-lead);
   font-style: italic;
   color: var(--fg-muted); /* solid on the always-dark cta — was opacity:0.75 */
 }
+.k-cta-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2.4rem;
+}
+.k-cta-caption {
+  margin: 2.6rem auto 0;
+  text-align: center;
+}
 .k-eyebrow-dark {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--accent-rule) 82%, #fff 10%) !important;
   color: #fff !important;
 }
 
@@ -1619,9 +1699,4 @@
 .k-btn-ghost p,
 .k-caption p {
   color: inherit;
-}
-/* Uppercase tracked caption (cta footer note). */
-.k-caption--upper {
-  text-transform: uppercase;
-  letter-spacing: 0.3em;
 }
