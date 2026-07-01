@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useFormFields } from '@payloadcms/ui';
+import { useDocumentInfo, useFormFields } from '@payloadcms/ui';
 
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import {
@@ -28,6 +28,7 @@ type PreviewResult = {
 };
 
 const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
+  const { id } = useDocumentInfo();
   // Subscribe to form state so the preview re-renders while the author types.
   // (getSiblingData is a one-shot getter — using it froze the preview until
   // the next save/reload.) The selector returns a JSON string so the context
@@ -35,7 +36,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   // One JSON key over the whole preview request — the effect only refetches
   // when something that affects the rendered preview actually changes (U2).
   const requestKey = useFormFields(([fields]) =>
-    previewRequestKey(selectPreviewRequest(fields as never, path)),
+    previewRequestKey(selectPreviewRequest(fields as never, path, id ?? undefined)),
   );
 
   const request = useMemo(() => JSON.parse(requestKey) as PreviewRequest, [requestKey]);

@@ -79,17 +79,23 @@ export type PreviewRequest = {
   block: Record<string, unknown>;
   blockTypes: string[];
   fields: Record<string, unknown>;
+  presentationId?: string | number;
   previewFieldPath: string;
   sections: string[];
   slideIndex: number;
 };
 
 /** Assemble the full preview request payload from form state. */
-export function selectPreviewRequest(fields: FormFields, path: string): PreviewRequest {
+export function selectPreviewRequest(
+  fields: FormFields,
+  path: string,
+  presentationId?: string | number,
+): PreviewRequest {
   return {
     block: selectBlockData(fields, path),
     blockTypes: selectBlockTypes(fields),
     fields: selectChromeFields(fields),
+    presentationId,
     previewFieldPath: path,
     sections: selectSectionTitles(fields),
     slideIndex: selectSlideIndex(path),
