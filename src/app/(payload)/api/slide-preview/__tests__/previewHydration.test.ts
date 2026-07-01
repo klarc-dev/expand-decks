@@ -15,6 +15,7 @@ vi.mock('@payload-config', () => ({ default: {} }));
 
 import { POST } from '../route';
 import { __resetPreviewHydrationCacheForTests } from '@/lib/previewHydrationCache';
+import { __resetPreviewResponseCacheForTests } from '@/lib/previewResponseCache';
 
 function request(body: unknown) {
   return new Request('http://localhost/api/slide-preview', {
@@ -39,10 +40,12 @@ describe('POST /api/slide-preview hydration + access', () => {
     findByID.mockReset();
     getPayload.mockClear();
     __resetPreviewHydrationCacheForTests();
+    __resetPreviewResponseCacheForTests();
   });
 
   afterEach(() => {
     __resetPreviewHydrationCacheForTests();
+    __resetPreviewResponseCacheForTests();
   });
 
   it('returns 401 without an authenticated user and reads no cache data', async () => {
@@ -108,5 +111,22 @@ describe('POST /api/slide-preview hydration + access', () => {
 
     const userReads = findByID.mock.calls.filter(([a]) => a.collection === 'users');
     expect(userReads).toHaveLength(2);
+  });
+
+  it('renders simple non-cover blocks without relationship hydration reads', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'section', title: 'No relationships' },
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(findByID.mock.calls.map(([a]) => a.collection)).toEqual(['presentations']);
   });
 });

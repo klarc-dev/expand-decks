@@ -9,6 +9,11 @@ import type { SlideBlock } from '@/export/renderers';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
+import {
+  buildPreviewResponseCacheKey,
+  getPreviewResponse,
+  setPreviewResponse,
+} from '@/lib/previewResponseCache';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,6 +32,12 @@ type AuthedUser = { id: string | number };
 
 // Payload's Local API accepts the authenticated user object directly.
 type PayloadUser = Parameters<Awaited<ReturnType<typeof getPayload>>['findByID']>[0]['user'];
+
+function noStoreJson(body: unknown, init?: ResponseInit) {
+  const headers = new Headers(init?.headers);
+  headers.set('Cache-Control', 'private, no-store');
+  return NextResponse.json(body, { ...init, headers });
+}
 
 function relationshipId(value: unknown): string | number | null {
   if (typeof value === 'string' || typeof value === 'number') return value;
@@ -150,6 +161,19 @@ export async function POST(req: NextRequest) {
   const renderContext = Array.isArray(body.blockTypes)
     ? buildPreviewRenderContext(body.blockTypes, slideIndex, body.sections ?? [])
     : undefined;
+
+  const cacheKey = buildPreviewResponseCacheKey({
+    block: body.block,
+    blockTypes: body.blockTypes,
+    fields,
+    previewFieldPath,
+    sections: body.sections,
+    slideIndex,
+    userId: authedUser.id,
+  });
+  const cached = getPreviewResponse(cacheKey);
+  if (cached) return noStoreJson(cached);
+
   const hydratedBlock = await hydratePreviewBlock(body.block, payload, user, authedUser.id);
   const hydratedFields = await hydrateChromeFields(fields, payload, user, authedUser.id);
   const preview = renderBlockPreview(hydratedBlock as SlideBlock, renderContext);
@@ -160,9 +184,7 @@ export async function POST(req: NextRequest) {
     Object.entries(hydratedFields).map(([key, value]) => [key, { value }]),
   );
   const chrome = buildSlidePreviewChrome(formFields, previewFieldPath, preview.hideChrome);
+  const response = setPreviewResponse(cacheKey, { chrome, preview });
 
-  return NextResponse.json(
-    { chrome, preview },
-    { headers: { 'Cache-Control': 'private, no-store' } },
-  );
+  return noStoreJson(response);
 }
