@@ -1,6 +1,7 @@
 import { bareMermaidSource } from './blocks/mermaid';
 import { getRenderer, type SlideBlock } from './renderers';
 import { slideTone } from './slideTone';
+import type { RenderCtx } from './utils';
 
 type PreviewFrontmatter = {
   body: string;
@@ -46,12 +47,13 @@ function parsePreviewFrontmatter(markdown: string): PreviewFrontmatter {
  * slide frame. Returns null for unknown block types.
  * Used by both client preview surfaces (preview/page.tsx, SlidePreview.tsx).
  *
- * Tone is resolved with no previous slide (single-slide preview), so it matches
- * what buildSlidesMd would produce for that block at the start of a deck.
+ * When `ctx` is supplied, it must come from the shared deck-context fold used by
+ * buildSlidesMd so admin preview matches the slide's final position. Without it,
+ * the function keeps a safe single-slide fallback for standalone callers.
  */
 export function renderBlockPreview(
   block: SlideBlock,
-  sections?: string[],
+  ctx?: RenderCtx,
 ): {
   className: string;
   html: string;
@@ -66,7 +68,7 @@ export function renderBlockPreview(
   let md: string;
   let mermaid: { source: string } | undefined;
   try {
-    md = renderer(block as never, { surface: slideTone(blockType, null), sections });
+    md = renderer(block as never, ctx ?? { surface: slideTone(blockType, null), sections: [] });
     if (blockType === 'mermaid') {
       const source = bareMermaidSource((block as { source?: string | null }).source ?? '');
       if (source) mermaid = { source };

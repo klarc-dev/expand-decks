@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '../canvas';
 import { renderBlockPreview } from '../preview';
+import { buildPreviewRenderContext } from '../renderContext';
 
 describe('renderBlockPreview()', () => {
   it('preserves final Slidev frame classes from slide frontmatter', () => {
@@ -59,6 +60,51 @@ describe('renderBlockPreview()', () => {
     expect(preview?.className).toContain('k-diagram-slide');
     expect(preview?.html).toContain('```mermaid\n');
     expect(preview?.mermaid).toEqual({ source: 'flowchart TD\n  A --> B' });
+  });
+
+  it('uses deck context so a statement after a dark cover previews on the light surface', () => {
+    const ctx = buildPreviewRenderContext(['cover', 'statement'], 1, []);
+    const preview = renderBlockPreview({ blockType: 'statement', title: 'Message' } as never, ctx);
+
+    expect(preview).not.toBeNull();
+    expect(preview?.className).toBe('relative');
+  });
+
+  it('uses deck context so statement variant indexes match final export order', () => {
+    const first = renderBlockPreview(
+      { blockType: 'statement', title: 'One' } as never,
+      buildPreviewRenderContext(['statement', 'section', 'statement', 'statement'], 0, []),
+    );
+    const second = renderBlockPreview(
+      { blockType: 'statement', title: 'Two' } as never,
+      buildPreviewRenderContext(['statement', 'section', 'statement', 'statement'], 2, []),
+    );
+    const third = renderBlockPreview(
+      { blockType: 'statement', title: 'Three' } as never,
+      buildPreviewRenderContext(['statement', 'section', 'statement', 'statement'], 3, []),
+    );
+
+    expect(first?.html).toContain('k-hero--hero');
+    expect(second?.html).toContain('k-hero--title');
+    expect(third?.html).toContain('k-hero--display');
+  });
+
+  it('uses deck context section titles for agenda fallback items', () => {
+    const ctx = buildPreviewRenderContext(['cover', 'section', 'agenda'], 2, ['Intro', 'Roadmap']);
+    const preview = renderBlockPreview(
+      { blockType: 'agenda', title: 'Plan', items: [] } as never,
+      ctx,
+    );
+
+    expect(preview?.html).toContain('Intro');
+    expect(preview?.html).toContain('Roadmap');
+  });
+
+  it('computes page and total with the same context fold used by export', () => {
+    expect(buildPreviewRenderContext(['cover', 'statement', 'cta'], 1, [])).toMatchObject({
+      page: 2,
+      total: 3,
+    });
   });
 });
 

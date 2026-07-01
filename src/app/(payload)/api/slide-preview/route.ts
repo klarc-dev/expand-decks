@@ -4,6 +4,7 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 
 import { renderBlockPreview } from '@/export/preview';
+import { buildPreviewRenderContext } from '@/export/renderContext';
 import type { SlideBlock } from '@/export/renderers';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
@@ -12,7 +13,9 @@ type PreviewRequestBody = {
   block?: Record<string, unknown>;
   fields?: Record<string, unknown>;
   previewFieldPath?: string;
+  blockTypes?: string[];
   sections?: string[];
+  slideIndex?: number;
 };
 
 function relationshipId(value: unknown): string | number | null {
@@ -89,9 +92,13 @@ export async function POST(req: NextRequest) {
 
   const fields = body.fields ?? {};
   const previewFieldPath = body.previewFieldPath ?? 'slides.0.preview';
+  const slideIndex = typeof body.slideIndex === 'number' ? body.slideIndex : 0;
+  const renderContext = Array.isArray(body.blockTypes)
+    ? buildPreviewRenderContext(body.blockTypes, slideIndex, body.sections ?? [])
+    : undefined;
   const hydratedBlock = await hydratePreviewBlock(body.block, req);
   const hydratedFields = await hydrateChromeFields(fields, req);
-  const preview = renderBlockPreview(hydratedBlock as SlideBlock, body.sections ?? []);
+  const preview = renderBlockPreview(hydratedBlock as SlideBlock, renderContext);
   if (!preview)
     return NextResponse.json({ error: 'Prévisualisation indisponible' }, { status: 422 });
 
