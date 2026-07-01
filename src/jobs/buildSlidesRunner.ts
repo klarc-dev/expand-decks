@@ -31,6 +31,7 @@ import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
 
+import { buildLogPayload, createBuildTimer } from './buildTiming';
 import { buildSlidevExportArgs, parsePositiveInt } from './slidevExportArgs';
 
 const execFile = promisify(execFileCb);
@@ -121,13 +122,16 @@ function stageBuildDir({ slidesMd, themeCss, footerEnabled, logoPresent }: Stage
 export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildSlides'>) {
   const { presentationId, buildToken } = input as { presentationId: string; buildToken?: string };
   let workdir: string | null = null;
+  const timer = createBuildTimer();
 
   try {
-    const presentation = await req.payload.findByID({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      depth: 0,
-    });
+    const presentation = await timer.stage('loadPresentation', () =>
+      req.payload.findByID({
+        collection: COLLECTIONS.presentations,
+        id: presentationId,
+        depth: 0,
+      }),
+    );
     if (buildToken && (presentation as { lastBuildToken?: string }).lastBuildToken !== buildToken) {
       req.payload.logger.info(
         `Presentation ${presentationId} has a newer build token; skipped stale job.`,
@@ -135,12 +139,14 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       return { output: { success: false, skipped: 'stale' } };
     }
 
-    await req.payload.update({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      data: { lastBuildStatus: BUILD_STATUS.building, lastBuildError: '' },
-      context: { [CTX.skipBuildQueue]: true },
-    });
+    await timer.stage('markBuilding', () =>
+      req.payload.update({
+        collection: COLLECTIONS.presentations,
+        id: presentationId,
+        data: { lastBuildStatus: BUILD_STATUS.building, lastBuildError: '' },
+        context: { [CTX.skipBuildQueue]: true },
+      }),
+    );
     const initialFingerprint = buildFingerprint(presentation as unknown as Record<string, unknown>);
     const previousPdfId =
       typeof presentation.pdfFile === 'object' ? presentation.pdfFile?.id : presentation.pdfFile;
@@ -153,11 +159,13 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     const orgRel = (presentation as { organisation?: number | { id: number } }).organisation;
     const orgId = typeof orgRel === 'object' && orgRel ? orgRel.id : orgRel;
     const org = orgId
-      ? await req.payload.findByID({
-          collection: COLLECTIONS.organisations,
-          id: orgId,
-          depth: 1,
-        })
+      ? await timer.stage('loadOrganisation', () =>
+          req.payload.findByID({
+            collection: COLLECTIONS.organisations,
+            id: orgId,
+            depth: 1,
+          }),
+        )
       : null;
     const brand = org as (OrgBrand & Record<string, unknown>) | null;
 
@@ -166,11 +174,13 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     // the pure renderers. The depth-0 `presentation` above stays the
     // fingerprint/stale source so relationship population never changes build
     // identity.
-    const renderPresentation = await req.payload.findByID({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      depth: 2,
-    });
+    const renderPresentation = await timer.stage('hydratePresentation', () =>
+      req.payload.findByID({
+        collection: COLLECTIONS.presentations,
+        id: presentationId,
+        depth: 2,
+      }),
+    );
 
     const footer = (presentation as { footer?: Partial<FooterConfig> }).footer;
     const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
@@ -210,17 +220,21 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       presentation.language as string | undefined,
     );
     const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
+    const renderStart = timer.elapsed();
     const slidesMd = buildSlidesMd(renderPresentation as never, {
       headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
       vars,
     });
+    timer.recordSince('renderMarkdown', renderStart);
 
+    const stageStart = timer.elapsed();
     workdir = stageBuildDir({
       slidesMd,
       themeCss: buildThemeCss(brand),
       footerEnabled: Boolean(footer?.enabled),
       logoPresent: Boolean(logoUrl),
     });
+    timer.recordSince('stageBuildDir', stageStart);
 
     const slides =
       (renderPresentation.slides as ({ blockType?: string } & SlideWithMedia)[] | undefined) ?? [];
@@ -248,15 +262,17 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     // up-to-5 concurrent jobs autoRun permits; two processes here is no new class
     // of contention.
     await Promise.all([
-      runSlidev(['build', '--base', './'], workdir),
-      runSlidev(exportArgs, workdir),
+      timer.stage('slidevBuildSpa', () => runSlidev(['build', '--base', './'], workdir!)),
+      timer.stage('slidevExportPdf', () => runSlidev(exportArgs, workdir!)),
     ]);
 
-    const latest = await req.payload.findByID({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      depth: 0,
-    });
+    const latest = await timer.stage('staleCheckLoad', () =>
+      req.payload.findByID({
+        collection: COLLECTIONS.presentations,
+        id: presentationId,
+        depth: 0,
+      }),
+    );
     if (
       (buildToken && (latest as { lastBuildToken?: string }).lastBuildToken !== buildToken) ||
       buildFingerprint(latest as unknown as Record<string, unknown>) !== initialFingerprint
@@ -268,40 +284,68 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     }
 
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
-    const pdfMedia = await req.payload.create({
-      collection: COLLECTIONS.media,
-      data: { alt: `${presentation.title} — PDF` },
-      file: {
-        data: pdfBuffer,
-        mimetype: 'application/pdf',
-        name: `${slug}.pdf`,
-        size: pdfBuffer.byteLength,
-      },
-    });
+    const pdfMedia = await timer.stage('uploadPdf', () =>
+      req.payload.create({
+        collection: COLLECTIONS.media,
+        data: { alt: `${presentation.title} — PDF` },
+        file: {
+          data: pdfBuffer,
+          mimetype: 'application/pdf',
+          name: `${slug}.pdf`,
+          size: pdfBuffer.byteLength,
+        },
+      }),
+    );
 
+    const spaCopyStart = timer.elapsed();
     const spaTargetDir = spaDir(slug);
     rmSync(spaTargetDir, { recursive: true, force: true });
     cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
+    timer.recordSince('copySpa', spaCopyStart);
 
-    await req.payload.update({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      data: {
-        pdfFile: pdfMedia.id,
-        spaUrl: spaUrl(slug),
-        lastBuildStatus: BUILD_STATUS.success,
-        lastBuildError: '',
-      },
-      context: { [CTX.skipBuildQueue]: true },
-    });
+    await timer.stage('patchPresentation', () =>
+      req.payload.update({
+        collection: COLLECTIONS.presentations,
+        id: presentationId,
+        data: {
+          pdfFile: pdfMedia.id,
+          spaUrl: spaUrl(slug),
+          lastBuildStatus: BUILD_STATUS.success,
+          lastBuildError: '',
+        },
+        context: { [CTX.skipBuildQueue]: true },
+      }),
+    );
 
     if (previousPdfId && previousPdfId !== pdfMedia.id) {
-      await req.payload
-        .delete({ collection: COLLECTIONS.media, id: previousPdfId, overrideAccess: true })
+      await timer
+        .stage('deleteOldPdf', () =>
+          req.payload.delete({
+            collection: COLLECTIONS.media,
+            id: previousPdfId,
+            overrideAccess: true,
+          }),
+        )
         .catch((err) =>
           req.payload.logger.warn(`Failed to delete old PDF ${previousPdfId}: ${err}`),
         );
     }
+
+    req.payload.logger.info(
+      buildLogPayload(
+        {
+          presentationId,
+          buildToken,
+          outputs: 'both',
+          slideCount: slides.length,
+          hasMermaid,
+          cacheMode: 'full',
+        },
+        timer.durations(),
+        timer.elapsed(),
+      ),
+      'slide build completed',
+    );
 
     return { output: { success: true } };
   } catch (err) {
