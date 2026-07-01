@@ -26,6 +26,7 @@ import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR } from '../../lib/paths';
+import { buildSlidevExportArgs } from '../../jobs/slidevExportArgs';
 
 const execFile = promisify(execFileCb);
 const PROJECT_ROOT = process.cwd();
@@ -34,6 +35,10 @@ const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
 
 export type ExportedPng = { page: number; path: string; base64: string };
+
+export function deckHasMermaid(slidesMd: string): boolean {
+  return /^```mermaid\s*$/m.test(slidesMd);
+}
 
 /**
  * Stage a minimal Slidev workdir from a deck markdown string and export one PNG
@@ -75,16 +80,21 @@ export async function exportSlidePngs(
 
     const outDir = join(workdir, 'png');
     const slidevPath = join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev');
-    await execFile(
-      slidevPath,
-      ['export', '--format', 'png', '--per-slide', '--output', outDir, '--wait', '2000'],
-      {
-        cwd: workdir,
-        timeout: EXEC_TIMEOUT_MS,
-        maxBuffer: 32 * 1024 * 1024,
-        env: { ...process.env, ANTHROPIC_API_KEY: undefined },
-      },
-    );
+    // Share the PDF export path's native flag policy (U6): `--wait-until load`
+    // for ordinary decks, Mermaid-aware `networkidle` + settle wait for diagram
+    // decks. `--per-slide` stays PNG-only so global/background layers render.
+    const exportArgs = buildSlidevExportArgs({
+      output: outDir,
+      format: 'png',
+      hasMermaid: deckHasMermaid(slidesMd),
+      perSlide: true,
+    });
+    await execFile(slidevPath, exportArgs, {
+      cwd: workdir,
+      timeout: EXEC_TIMEOUT_MS,
+      maxBuffer: 32 * 1024 * 1024,
+      env: { ...process.env, ANTHROPIC_API_KEY: undefined },
+    });
 
     // Slidev writes png/<n>.png (or slides-<n>.png depending on version). Sort numerically.
     const files = readdirSync(outDir)

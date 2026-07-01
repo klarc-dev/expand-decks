@@ -5,6 +5,7 @@ type WaitUntil = 'networkidle' | 'load' | 'domcontentloaded' | 'none';
 
 export type SlidevExportArgsOptions = {
   output: string;
+  format?: 'pdf' | 'png';
   hasMermaid: boolean;
   hasImages?: boolean;
   perSlide?: boolean;
@@ -21,6 +22,7 @@ export function parsePositiveInt(value: string | undefined, fallback: number): n
 
 export function buildSlidevExportArgs({
   output,
+  format = 'pdf',
   hasMermaid,
   hasImages = false,
   perSlide = false,
@@ -33,7 +35,7 @@ export function buildSlidevExportArgs({
   const args = [
     'export',
     '--format',
-    'pdf',
+    format,
     '--output',
     output,
     '--timeout',

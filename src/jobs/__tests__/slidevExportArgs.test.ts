@@ -52,6 +52,42 @@ describe('buildSlidevExportArgs', () => {
     ]);
   });
 
+  it('builds PNG export args with load wait policy for ordinary decks', () => {
+    expect(
+      buildSlidevExportArgs({ output: 'png', format: 'png', hasMermaid: false, perSlide: true }),
+    ).toEqual([
+      'export',
+      '--format',
+      'png',
+      '--output',
+      'png',
+      '--timeout',
+      '120000',
+      '--wait-until',
+      'load',
+      '--per-slide',
+    ]);
+  });
+
+  it('builds PNG export args with Mermaid settle policy for diagram decks', () => {
+    expect(
+      buildSlidevExportArgs({ output: 'png', format: 'png', hasMermaid: true, perSlide: true }),
+    ).toEqual([
+      'export',
+      '--format',
+      'png',
+      '--output',
+      'png',
+      '--timeout',
+      '120000',
+      '--wait-until',
+      'networkidle',
+      '--wait',
+      '4000',
+      '--per-slide',
+    ]);
+  });
+
   it('supports Slidev range exports for future partial-PDF cache work', () => {
     expect(
       buildSlidevExportArgs({ output: 'partial.pdf', hasMermaid: false, range: '2,4-6' }),
