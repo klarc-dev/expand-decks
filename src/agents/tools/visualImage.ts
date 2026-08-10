@@ -105,7 +105,7 @@ async function encodeWithinBudget(buffer: Buffer, budget: VisualImageBudget): Pr
   throw new VisualImageBudgetError(budget.maxBytes, encoded.byteLength);
 }
 
-export class VisualImageBudgetError extends Error {
+class VisualImageBudgetError extends Error {
   constructor(
     readonly maxBytes: number,
     readonly actualBytes: number,

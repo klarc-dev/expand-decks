@@ -15,7 +15,7 @@ import { z } from 'zod';
 import { boundVisualImage } from '../tools/visualImage';
 import { generateStructured, type ImagePart } from '../model';
 
-export const VisualVerdict = z.object({
+const VisualVerdict = z.object({
   score: z
     .number()
     .min(0)
@@ -37,7 +37,7 @@ Tu IGNORES la qualité rédactionnelle (jugée ailleurs). Renvoie score 0..1, le
 - 1.0 : propre, aéré, lisible, équilibré.
 - < 0.5 : déborde, coupé, ou illisible.`;
 
-export type VisualInput = { slide: Record<string, unknown>; image: ImagePart };
+type VisualInput = { slide: Record<string, unknown>; image: ImagePart };
 
 async function judgeVisual(input: VisualInput): Promise<z.infer<typeof VisualVerdict>> {
   return generateStructured({

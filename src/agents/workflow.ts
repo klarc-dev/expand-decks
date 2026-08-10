@@ -51,7 +51,7 @@ const StateSchema = z.object({
 export type DeckState = z.infer<typeof StateSchema>;
 
 /** The data bundle threaded step→step (and round-tripped through `.dountil`). */
-export type DeckBundle = {
+type DeckBundle = {
   dossier: DeckDossier;
   evidence: DeckEvidence[];
   sourceIds: string[];
@@ -246,7 +246,7 @@ const InputSchema = z.object({
   title: z.string().optional(),
   sourceIds: z.array(z.string()).default([]),
 });
-export type DeckWorkflowInput = z.infer<typeof InputSchema>;
+type DeckWorkflowInput = z.infer<typeof InputSchema>;
 
 const OutputSchema = z.object({
   dossier: dossierT,

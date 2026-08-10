@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 
-export const RubricVerdict = z.object({
+const RubricVerdict = z.object({
   score: z
     .number()
     .min(0)

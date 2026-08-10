@@ -41,7 +41,7 @@ const DEFAULT_TIMEOUT_MS = 300_000;
  * isolated here so every call site stays fully typed.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const draftModel = nineRouter(DRAFT_MODEL) as any;
+const draftModel = nineRouter(DRAFT_MODEL) as any;
 
 /**
  * Run a one-shot structured generation: build a throwaway Agent with a single

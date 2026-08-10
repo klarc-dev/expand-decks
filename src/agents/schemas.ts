@@ -9,7 +9,7 @@
  */
 import { z } from 'zod';
 
-export const EvidenceSchema = z.object({
+const EvidenceSchema = z.object({
   sourceId: z.string(),
   sourceLabel: z.string(),
   summary: z.string(),
