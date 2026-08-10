@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies
         run: |
           pnpm install --frozen-lockfile
-          pnpm --dir slidev-workspace install --frozen-lockfile
+          pnpm --dir slidev-workspace install --frozen-lockfile --ignore-workspace
           pnpm --dir slidev-workspace exec playwright install chromium
           mkdir -p media
 
