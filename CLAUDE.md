@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Package manager is **pnpm** (see `.pnpmrc.json`). Node 20.
+Package manager is **pnpm** (pinned by `packageManager`; workspace settings live in `pnpm-workspace.yaml`). Node 20.
 
 - `pnpm dev` — Next.js dev server (Payload admin at `/admin`, frontend at `/`).
 - `pnpm build` — Production build. A `prebuild` step copies `@payloadcms/next/dist/prod/styles.css` into `src/app/(payload)/payload-admin.css`; don't edit that file by hand.
-- `pnpm start` — Run production build.
+- `pnpm start` — Serve the previously generated production build.
 - `pnpm test` — Vitest. Include pattern is `src/**/__tests__/**/*.test.ts`. Run a single file with `pnpm test src/export/__tests__/blocks.test.ts` and a single case with `-t "<name>"`.
 - `pnpm payload` — Payload CLI (e.g. `pnpm payload migrate`, `pnpm payload migrate:create`).
 - `pnpm generate:types` — Regenerate `src/payload-types.ts` after collection/block changes.
@@ -19,7 +19,7 @@ Migrations live in `src/migrations/` with an `index.ts` barrel. After changing s
 
 ## Architecture
 
-This is a **Payload CMS 3 + Next.js 15 (App Router)** portal that lets authors compose deck content as typed blocks, then builds a [Slidev](https://sli.dev) SPA + PDF out-of-process.
+This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors compose deck content as typed blocks, then builds a [Slidev](https://sli.dev) SPA + PDF out-of-process.
 
 ### Content pipeline (the main flow)
 

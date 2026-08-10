@@ -22,6 +22,7 @@ Node 20 is the deployment runtime (see `.nvmrc` / Dockerfile); newer Node works 
 | `pnpm lint` | ESLint — Next.js Core Web Vitals rules only |
 | `pnpm test` | Vitest |
 | `pnpm lint:dead` | Fallow — dead code, duplication, complexity |
+| `pnpm build` | Run the production Next.js build (including the `prebuild` Payload admin CSS copy) |
 
 Biome owns formatting, general linting, and React/Hooks rules. ESLint is scoped to the Next.js rules Biome doesn't implement — the two do not overlap. Suppress a lint rule only inline, with a one-line reason.
 
