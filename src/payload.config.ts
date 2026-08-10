@@ -53,7 +53,7 @@ export default buildConfig({
       allowOAuthAutoSignUp: true,
       useAdmin: true,
       successRedirectPath: '/admin',
-      errorRedirectPath: '/admin/login',
+      errorRedirectPath: '/membership-pending',
     }),
   ],
   onInit: async (payload) => {
@@ -70,13 +70,13 @@ export default buildConfig({
         await payload.update({
           collection: COLLECTIONS.users,
           id: existing.docs[0].id,
-          data: { password, role: ROLES.admin },
+          data: { password, role: ROLES.admin, membershipStatus: 'active' },
         });
         payload.logger.info(`[seed] Updated admin user ${email}`);
       } else {
         await payload.create({
           collection: COLLECTIONS.users,
-          data: { email, password, role: ROLES.admin },
+          data: { email, password, role: ROLES.admin, membershipStatus: 'active' },
         });
         payload.logger.info(`[seed] Created admin user ${email}`);
       }

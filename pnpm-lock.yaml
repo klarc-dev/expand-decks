@@ -18,6 +18,11 @@ overrides:
   js-yaml@>=4.0.0 <4.2.0: '>=4.2.0 <5'
   esbuild@<0.28.1: '>=0.28.1'
 
+patchedDependencies:
+  payload-auth-plugin@0.7.13:
+    hash: 126097edd8fac7610a2bd4856dfd3b3bd0f967c2ea3588708e0c4d5af3d531cc
+    path: patches/payload-auth-plugin@0.7.13.patch
+
 importers:
 
   .:
@@ -63,7 +68,7 @@ importers:
         version: 3.85.1(graphql@16.13.2)(typescript@6.0.3)
       payload-auth-plugin:
         specifier: ^0.7.13
-        version: 0.7.13(payload@3.85.1(graphql@16.13.2)(typescript@6.0.3))
+        version: 0.7.13(patch_hash=126097edd8fac7610a2bd4856dfd3b3bd0f967c2ea3588708e0c4d5af3d531cc)(payload@3.85.1(graphql@16.13.2)(typescript@6.0.3))
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
@@ -8077,7 +8082,7 @@ snapshots:
 
   pathe@2.0.3: {}
 
-  payload-auth-plugin@0.7.13(payload@3.85.1(graphql@16.13.2)(typescript@6.0.3)):
+  payload-auth-plugin@0.7.13(patch_hash=126097edd8fac7610a2bd4856dfd3b3bd0f967c2ea3588708e0c4d5af3d531cc)(payload@3.85.1(graphql@16.13.2)(typescript@6.0.3)):
     dependencies:
       '@simplewebauthn/browser': 13.3.0
       '@simplewebauthn/server': 13.3.2

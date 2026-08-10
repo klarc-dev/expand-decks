@@ -1,0 +1,73 @@
+diff --git a/dist/esm/index.js b/dist/esm/index.js
+index 784d84dbfda86c973a128d1b14555ba5e00a7758..b4e2bcb6aede15fd9050061de91d0cc71d1c4b29 100644
+--- a/dist/esm/index.js
++++ b/dist/esm/index.js
+@@ -301,7 +301,8 @@ async function _createUser({ email, name, collections, request, allowOAuthAutoSi
+   if (!userRecord && allowOAuthAutoSignUp) {
+     const data = {
+       email,
+-      name
++      name,
++      membershipStatus: "pending"
+     };
+     const hasAuthEnabled = Boolean(
+       payload.collections[collections.usersCollection].config.auth
+@@ -409,6 +410,21 @@ async function OAuthAuthentication(pluginType, collections, allowOAuthAutoSignUp
+     }
+     return new MissingCollection();
+   }
++  const membershipStatus = userRecord.membershipStatus;
++  if (membershipStatus && membershipStatus !== "active") {
++    if (trxID) {
++      await payload.db.commitTransaction(trxID);
++    }
++    const pendingURL = new URL(`${payload.config.serverURL}${errorRedirectPath}`);
++    pendingURL.searchParams.set(
++      "status",
++      membershipStatus === "rejected" ? "rejected" : "pending"
++    );
++    return new Response(null, {
++      status: 302,
++      headers: { Location: pendingURL.href }
++    });
++  }
+   const sessionID = collectionConfig?.auth.useSessions ? uuid() : null;
+   if (collectionConfig?.auth.useSessions) {
+     const now = /* @__PURE__ */ new Date();
+diff --git a/src/core/protocols/oauth/oauth_authentication.ts b/src/core/protocols/oauth/oauth_authentication.ts
+index 8ae77f37a46dc1c5c715a63e19a1dfdd812cb0d5..bb558a2d6603b358d4c9dbac2d370d679e37a952 100644
+--- a/src/core/protocols/oauth/oauth_authentication.ts
++++ b/src/core/protocols/oauth/oauth_authentication.ts
+@@ -37,6 +37,7 @@ async function _createUser({ email, name, collections, request, allowOAuthAutoSi
+     const data: Record<string, unknown> = {
+       email,
+       name,
++      membershipStatus: "pending",
+     }
+     const hasAuthEnabled = Boolean(
+       payload.collections[collections.usersCollection].config.auth,
+@@ -172,6 +173,24 @@ export async function OAuthAuthentication(
+     return new MissingCollection()
+   }
+
++  const membershipStatus = userRecord.membershipStatus
++  if (membershipStatus && membershipStatus !== "active") {
++    if (trxID) {
++      await payload.db.commitTransaction(trxID)
++    }
++    const pendingURL = new URL(
++      `${payload.config.serverURL}${errorRedirectPath}`,
++    )
++    pendingURL.searchParams.set(
++      "status",
++      membershipStatus === "rejected" ? "rejected" : "pending",
++    )
++    return new Response(null, {
++      status: 302,
++      headers: { Location: pendingURL.href },
++    })
++  }
++
+   const sessionID = collectionConfig?.auth.useSessions ? uuid() : null
+
+   if (collectionConfig?.auth.useSessions) {

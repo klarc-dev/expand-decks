@@ -5,6 +5,7 @@ import * as migration_20260609_064938_mermaid_block from './20260609_064938_merm
 import * as migration_20260609_083115_agent_fields from './20260609_083115_agent_fields';
 import * as migration_20260630_081854_add_cover_intervenants_user_profile from './20260630_081854_add_cover_intervenants_user_profile';
 import * as migration_20260630_094458_remove_cover_footers from './20260630_094458_remove_cover_footers';
+import * as migration_20260810_154621_add_user_membership_status from './20260810_154621_add_user_membership_status';
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20260630_094458_remove_cover_footers.up,
     down: migration_20260630_094458_remove_cover_footers.down,
     name: '20260630_094458_remove_cover_footers',
+  },
+  {
+    up: migration_20260810_154621_add_user_membership_status.up,
+    down: migration_20260810_154621_add_user_membership_status.down,
+    name: '20260810_154621_add_user_membership_status',
   },
 ];

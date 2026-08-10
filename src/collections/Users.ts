@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload';
+import { AuthenticationError, type CollectionConfig } from 'payload';
 
 import {
   ROLES,
@@ -24,6 +24,17 @@ export const Users: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
+    beforeLogin: [
+      ({ user }) => {
+        // OAuth-created users always carry an explicit status. Tolerate a
+        // missing value only for backwards compatibility during deployment,
+        // before the migration has backfilled existing users to `active`.
+        if (user.membershipStatus && user.membershipStatus !== 'active') {
+          throw new AuthenticationError();
+        }
+        return user;
+      },
+    ],
     beforeChange: [
       ({ data, operation }) => {
         // OAuth auto-signup writes via the DB adapter, which bypasses field
@@ -55,6 +66,27 @@ export const Users: CollectionConfig = {
       relationTo: COLLECTIONS.media,
       label: 'Avatar',
       admin: { description: 'Image affichée sur les cartes intervenants' },
+    },
+    {
+      name: 'membershipStatus',
+      type: 'select',
+      label: 'Statut du membre',
+      required: true,
+      defaultValue: 'active',
+      access: {
+        create: isAdminField,
+        update: isAdminField,
+      },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Les inscriptions Google arrivent en attente. Activez le membre pour autoriser sa connexion.',
+      },
+      options: [
+        { label: 'En attente', value: 'pending' },
+        { label: 'Actif', value: 'active' },
+        { label: 'Refusé', value: 'rejected' },
+      ],
     },
     {
       name: 'role',
