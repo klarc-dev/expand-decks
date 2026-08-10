@@ -52,6 +52,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Payload artifacts
+        run: |
+          pnpm generate:types
+          pnpm generate:importmap
+
       - name: Typecheck
         run: pnpm typecheck
 
