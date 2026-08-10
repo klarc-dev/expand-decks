@@ -1,9 +1,0 @@
-{
-  "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "inherit"
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "ELECTRON_RUN_AS_NODE=1 '/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/Code Helper (Plugin)' '/Users/joachimbrindeau/.local/share/claude-account-switcher/bin/statusline-capture.cjs' '~/.claude/statusline.sh'"
-  }
-}

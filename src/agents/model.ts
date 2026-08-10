@@ -1,9 +1,9 @@
 /**
- * Mastra-native structured generation against the 9router gateway.
+ * Mastra-native structured generation through CloudCLIProxy.
  *
  * Phase 0 spike (scripts/mastra-spike.mjs) established three facts for
- * `@mastra/core@1.41.0` + 9router:
- *   1. Feeding the app's existing `nineRouter(DRAFT_MODEL)` (which bakes in
+ * `@mastra/core` + an OpenAI-compatible proxy:
+ *   1. Feeding the app's `cloudCLIProxy(DRAFT_MODEL)` (which bakes in
  *      `forceNonStreamFetch`) to a Mastra Agent round-trips NON-STREAMED — no
  *      SSE/parse error. No custom MastraModelGateway class is required.
  *   2. Mastra's `structuredOutput`/`experimental_output` is prompt-coercion the
@@ -19,13 +19,12 @@ import { Agent } from '@mastra/core/agent';
 import { createTool } from '@mastra/core/tools';
 import type { z } from 'zod';
 
-import { DRAFT_MODEL, nineRouter } from '../lib/ai';
+import { cloudCLIProxy, DRAFT_MODEL } from '../lib/ai';
 import { StylePolicyError } from './prompts/style';
 
 /**
- * Per-call wall-clock budget; the gateway buffers the whole non-streamed body.
- * omniroute (vs the old 9router) regularly takes >110s on the long structured
- * calls (structure/draft emit big tool-argument blobs), and an abort surfaces
+ * Per-call wall-clock budget. Long structured calls can take >110s when
+ * structure/draft emit large tool-argument blobs, and an abort surfaces
  * as the opaque `finishReason=tripwire` — so the budget is generous. The
  * fire-and-forget agent route tolerates it (maxDuration 800s).
  */
@@ -34,14 +33,14 @@ const DEFAULT_TIMEOUT_MS = 300_000;
 /**
  * The model instance every agent shares (forceNonStreamFetch is baked in).
  *
- * Typed as `any` at this one boundary: `nineRouter` is built from the app's
+ * Typed as `any` at this one boundary: `cloudCLIProxy` is built from the app's
  * `@ai-sdk/openai-compatible@2` provider, while `@mastra/core` bundles its own
  * AI-SDK provider types (LanguageModelV3). The two are runtime-compatible (proven
  * by the live smokes) but their structural types don't unify. The cast is
  * isolated here so every call site stays fully typed.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const draftModel = nineRouter(DRAFT_MODEL) as any;
+const draftModel = cloudCLIProxy(DRAFT_MODEL) as any;
 
 /**
  * Run a one-shot structured generation: build a throwaway Agent with a single
@@ -54,7 +53,7 @@ export type ImagePart = { base64: string; mimeType?: string };
 
 const DEFAULT_RESEARCH_MAX_STEPS = 6;
 
-/** Gateway hiccups worth one retry (omniroute occasionally 502s under load). */
+/** Transient proxy failures worth one retry. */
 const TRANSIENT_RE =
   /bad gateway|gateway timeout|502|503|504|ECONNRESET|fetch failed|socket hang up/i;
 const TRANSIENT_RETRIES = 2;
@@ -180,9 +179,8 @@ export async function generateStructured<T>({
               { type: 'text' as const, text },
               ...images.map((img) => ({
                 type: 'image' as const,
-                // Correctly-typed data URL. The first multimodal attempt reached
-                // Claude and only failed because the SDK defaulted the label to
-                // image/jpeg; an explicit image/png data URL + mediaType fixes it.
+                // Explicit data URL and media type prevent an incorrect SDK
+                // default from changing the image format sent to the proxy.
                 image: `data:${img.mimeType ?? 'image/png'};base64,${img.base64}`,
                 mediaType: img.mimeType ?? 'image/png',
               })),
@@ -200,10 +198,7 @@ export async function generateStructured<T>({
   let validationRepairs = 0;
   for (;;) {
     // maxSteps:1 — we only need the validated args of the forced `emit` call
-    // from the FIRST response. A second step would send the tool result back
-    // with toolChoice still forced; omniroute's Claude identity rejects that
-    // multi-turn shape ("Thinking may not be enabled when tool_choice forces
-    // tool use", HTTP 400) even when the request sets thinking:disabled.
+    // from the first response. Avoid an unnecessary second model round-trip.
     const res = await withTransientRetry(name, () =>
       agent.generate(buildInput(userPrompt) as never, {
         toolChoice: 'required',

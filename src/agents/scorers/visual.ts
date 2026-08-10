@@ -6,7 +6,7 @@
  * after the cheap rubric loop has converged, and only flags slides whose
  * rendered form fails even though their data passed the content rubric.
  *
- * Mastra-native + multimodal: the image part goes through the same 9router
+ * Mastra-native + multimodal: the image part goes through the same CloudCLIProxy
  * gateway (vision-capable) via generateStructured.
  */
 import { createScorer } from '@mastra/core/evals';

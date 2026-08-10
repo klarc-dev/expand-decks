@@ -68,7 +68,7 @@ Three tiers: **render primitives** (`src/export/`), **block-spec field factories
 
 ### 2E. Collection-model change — variant as DATA, not new blockTypes
 
-11. **`StatementVariant`** = a `select` field on `statementSpec.fields` with values `centered-hero | pull-quote | big-statement | split`, projected automatically through the existing `renderSchemaOf`/`aiSchemaOf`/`buildSystemPrompt` pipeline. `renderStatement` switches on `block.variant` → one `heroFrame(...)` call per branch. **No new block types**, no new `ALL_SPECS` entries, no draft-route changes (schema + prompt auto-derived per CLAUDE.md). The `Presentations.slides` blocks array is unchanged — only `statement`'s fields grow. Layout = `block.type × block.variant × block.surface` (small Cartesian product as data). Later generalize the same `emphasisFields` bundle to `quotes`/`cta`.
+11. **`StatementVariant`** = a `select` field on `statementSpec.fields` with values `centered-hero | pull-quote | big-statement | split`, projected automatically through the existing `renderSchemaOf`/`aiSchemaOf`/`buildSystemPrompt` pipeline. `renderStatement` switches on `block.variant` → one `heroFrame(...)` call per branch. **No new block types**, no new `ALL_SPECS` entries, no draft-route changes (schema + prompt auto-derived per AGENTS.md). The `Presentations.slides` blocks array is unchanged — only `statement`'s fields grow. Layout = `block.type × block.variant × block.surface` (small Cartesian product as data). Later generalize the same `emphasisFields` bundle to `quotes`/`cta`.
 
 ---
 
@@ -114,7 +114,7 @@ Three tiers: **render primitives** (`src/export/`), **block-spec field factories
 8. **Draft-prompt pacing rules** in `src/lib/draftPresentation.ts`: mandatory `Section` divider between topic groups, "no >2 consecutive identical blockTypes", body-length guard diverting long statements to twoCols/markdown, route quote-shaped statements to `quotes`.
 9. **Tables + StatusPill (#P2 table work).** `tableVariant` field + `StatusPill` primitive — last because it reuses the variant-as-field pattern proven in step 7 and the token layer from step 1.
 
-**Verification gates between steps:** `pnpm test` (snapshot renderers) after steps 3-5; `pnpm generate:types` clean diff after 6-7; `/preview` live-preview spot check (it shares `RENDERERS`) after 4 and 7; one `pnpm jobs:run`/`scripts/draft-smoke.mjs` build after 7-8. Per CLAUDE.md, set `req.context.skipBuildQueue` when patching from the build job/AI route.
+**Verification gates between steps:** `pnpm test` (snapshot renderers) after steps 3-5; `pnpm generate:types` clean diff after 6-7; `/preview` live-preview spot check (it shares `RENDERERS`) after 4 and 7; one `pnpm jobs:run`/`scripts/draft-smoke.mjs` build after 7-8. Per AGENTS.md, set `req.context.skipBuildQueue` when patching from the build job/AI route.
 
 **Why this order:** tokens (1) are read by primitives (3), which are consumed by renderers (4); tone (5) needs migrated renderers; the DSL factories (6) and variant model (7) sit on top because the renderer must already accept `heroFrame(scale/align/surface)` before the spec can offer a `variant` enum that selects them. Steps 1-5 are render/CSS-only (no schema change, no migration); steps 6-9 touch specs and require `generate:types`/`generate:importmap` but **no Payload migration** (the blocks array is unchanged; only `statement`/`table` field sets grow).
 ```

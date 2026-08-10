@@ -323,9 +323,9 @@ flowchart LR
   - `src/jobs/buildSlidesRunner.ts`
   - `src/jobs/__tests__/stageBuildDir.test.ts`
   - `.env.example`
-  - `CLAUDE.md`
+  - `AGENTS.md`
 - **Approach:** Keep the existing `node_modules` symlink staging because it preserves Vite's default `node_modules/.vite` cache across temp workdirs. Add a small staging contract test that verifies the symlinked `node_modules` path is used. Document why a custom cache directory is not introduced unless timing data shows dependency pre-bundling remains expensive.
-- **Patterns to follow:** Current staging helper in `buildSlidesRunner`; project instruction style in `CLAUDE.md`.
+- **Patterns to follow:** Current staging helper in `buildSlidesRunner`; project instruction style in `AGENTS.md`.
 - **Test scenarios:**
   - Given a staged workdir, `node_modules` is a symlink to `slidev-workspace/node_modules`.
   - Given media exists, staged workdir links media without copying it.
@@ -399,12 +399,12 @@ flowchart LR
 - **Dependencies:** U1-U9, U11.
 - **Files:**
   - `.env.example`
-  - `CLAUDE.md`
+  - `AGENTS.md`
   - `slidev-workspace/package.json`
   - `slidev-workspace/pnpm-lock.yaml`
   - `src/jobs/__tests__/slidevExportArgs.test.ts`
 - **Approach:** Document export controls: timeout, TOC, per-slide fallback, output policy, incremental PDF cache enable/threshold, and worker replica guidance. Keep Slidev and Playwright versions pinned to known-good latest versions. Add smoke-test notes for full PDF, range PDF, PNG export, and compose validation.
-- **Patterns to follow:** Existing command documentation in `CLAUDE.md`; existing env commentary in `.env.example`.
+- **Patterns to follow:** Existing command documentation in `AGENTS.md`; existing env commentary in `.env.example`.
 - **Test scenarios:**
   - Test expectation: documentation-only changes do not need unit tests beyond the smoke/verification commands listed in the Verification Contract.
 - **Verification:** New env controls are discoverable without reading source code, and smoke commands prove the native Slidev flags work on the installed version.

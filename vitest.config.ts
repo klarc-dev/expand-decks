@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 // Load .env for live/integration tests (e.g. the agent smokes that hit the
-// 9router gateway). Unit tests ignore it. Best-effort: missing file is fine.
+// configured AI gateway). Unit tests ignore it. Best-effort: missing file is fine.
 function loadDotenv(): Record<string, string> {
   try {
     const out: Record<string, string> = {};

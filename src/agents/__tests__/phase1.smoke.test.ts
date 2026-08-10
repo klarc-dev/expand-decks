@@ -1,5 +1,5 @@
 /**
- * Phase 1 LIVE smoke — gather → structure against the real 9router gateway.
+ * Phase 1 LIVE smoke — gather → structure against the configured CloudCLIProxy route.
  * Opt-in only: set RUN_LIVE_AGENT_TESTS=1 plus OPENAI_API_KEY.
  * Run with: RUN_LIVE_AGENT_TESTS=1 pnpm vitest run src/agents/__tests__/phase1.smoke.test.ts
  */

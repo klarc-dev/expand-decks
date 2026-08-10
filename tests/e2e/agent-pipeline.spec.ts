@@ -4,7 +4,7 @@
  * sources), visual critique on the real Slidev render, and slide persistence.
  *
  * This is a LIVE test: gather → structure → draft → validate → visual → persist
- * hits the 9router gateway and shells out to Slidev/Chromium, so it is opt-in
+ * hits CloudCLIProxy and shells out to Slidev/Chromium, so it is opt-in
  * and slow (several minutes). Enable with:
  *
  *   RUN_LIVE_AGENT_E2E=1 pnpm test:e2e tests/e2e/agent-pipeline.spec.ts

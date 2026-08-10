@@ -14,7 +14,7 @@ vi.mock('@mastra/core/tools', () => ({
 
 vi.mock('../../lib/ai', () => ({
   DRAFT_MODEL: 'test/model',
-  nineRouter: vi.fn(() => ({})),
+  cloudCLIProxy: vi.fn(() => ({})),
 }));
 
 import { z } from 'zod';

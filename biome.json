@@ -19,8 +19,7 @@
       "!**/_reusable",
       "!**/dogfood-output",
       "!**/.agents/skills",
-      "!**/.claude/skills",
-      "!**/.claude/worktrees",
+      "!**/.claude",
       "!**/scripts/seed-pi/*-workflow.js"
     ]
   },

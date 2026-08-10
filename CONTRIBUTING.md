@@ -43,7 +43,7 @@ pnpm generate:importmap    # after admin component or richText field changes
 pnpm payload migrate:create # then commit the generated .ts and .json
 ```
 
-Adding a layout block follows the block-spec DSL in `src/blocks/spec/` — see `CLAUDE.md` for the full invariant. Keep blocks use-case-agnostic (visual structure, never domain concepts).
+Adding a layout block follows the block-spec DSL in `src/blocks/spec/` — see `AGENTS.md` for the full invariant. Keep blocks use-case-agnostic (visual structure, never domain concepts).
 
 ## CI
 

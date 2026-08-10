@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Repository guidance for Jcode and Codex.
 
 ## Commands
 
@@ -23,11 +23,11 @@ This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors c
 
 ### Content pipeline (the main flow)
 
-1. **Authoring** — `Presentations` collection (`src/collections/Presentations.ts`) uses Payload's `blocks` field. Blocks are **layout primitives, not use-case templates** — purely visual arrangements with no domain semantics. The nine types in `src/blocks/*Block.ts` are: Cover, Section, Statement, TwoCols, CardGrid, Stats, Quotes, Cta (also serves as the closing/thank-you slide), Markdown. The form is organized into three admin tabs: **Contenu**, **Métadonnées**, **Sortie** (readonly build artifacts).
+1. **Authoring** — `Presentations` collection (`src/collections/Presentations.ts`) uses Payload's `blocks` field. Blocks are **layout primitives, not use-case templates** — purely visual arrangements with no domain semantics. The 13 types in `src/blocks/*Block.ts` are: Cover, Section, Statement, TwoCols, CardGrid, Stats, Quotes, Cta (also serves as the closing/thank-you slide), Table, Timeline, Mermaid, Agenda, Markdown. The form is organized into three admin tabs: **Contenu**, **Métadonnées**, **Sortie** (readonly build artifacts).
 
-2. **AI draft** — `POST /api/draft-presentation` (`src/app/(payload)/api/draft-presentation/route.ts`) takes `{ presentationId, brief }`, calls Claude via an OpenAI-compatible LiteLLM proxy (`OPENAI_BASE_URL` / `OPENAI_API_KEY`) using `generateObject` with a Zod discriminated union mirroring the block schemas, and patches `presentation.slides`. The `DraftFromBriefButton` UI field in the Contenu tab triggers this.
+2. **AI draft** — `POST /api/draft-presentation` (`src/app/(payload)/api/draft-presentation/route.ts`) takes `{ presentationId, brief }`, calls the CloudCLIProxy `high` model through the OpenAI-compatible API (`OPENAI_BASE_URL` / `OPENAI_API_KEY`) with a Zod discriminated union mirroring the block schemas, and patches `presentation.slides`. The `DraftFromBriefButton` UI field in the Contenu tab triggers this.
 
-3. **Queue trigger** — `afterPresentationChange` hook (`src/hooks/afterPresentationChange.ts`) queues a `buildSlides` job on create/update **only when** `status === 'published'` AND (freshly published OR slides content hash changed). The hook short-circuits when `req.context.skipBuildQueue === true` — **always set that flag when patching a presentation from inside the build job or the AI route** to avoid requeue loops.
+3. **Queue trigger** — `afterPresentationChange` hook (`src/hooks/afterPresentationChange.ts`) stamps a build token/status and queues a `buildSlides` job on every external presentation create/update. Internal patches short-circuit when `req.context.skipBuildQueue === true` — **always set that flag when patching a presentation from inside the build job or an AI route** to avoid requeue loops.
 
 4. **Build job** — `buildSlidesTask` (`src/jobs/buildSlides.ts`) runs in the Payload job queue (cron `*/1 * * * *`, `deleteJobOnComplete: true`). It:
    - calls `buildSlidesMd(presentation)` to produce a single `slides.md` string,
@@ -38,7 +38,7 @@ This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors c
 
 5. **Rendering** — Block renderers in `src/export/blocks/*.ts` are **pure functions** that return Slidev-flavored markdown strings (per-slide frontmatter + HTML). `buildSlidesMd.ts` wires them through a `RENDERERS` record keyed by `blockType` and joins slides with `---`. The same renderers are reused by:
    - the build job (markdown → Slidev),
-   - the **live preview** page at `/preview` (`src/app/(frontend)/preview/page.tsx`), which uses `useLivePreview` (depth:2 to hydrate nested blocks) and strips per-slide frontmatter before injecting HTML.
+   - the admin per-slide preview, which calls `/api/slide-preview` and renders the same HTML/CSS through `SlideFrame`.
 
    **Invariant — adding a new layout block.** Blocks are now driven by the single-source **block-spec DSL** in `src/blocks/spec/` (one `BlockSpec` projects to four artifacts: L1 Payload field config, L2 renderer type, L3 AI draft Zod schema, L4 AI prompt prose). To add a block you:
    1. author `src/blocks/spec/<name>.ts` — the render Zod consts + `BlockSpec` (with `aiDraftable` and, if draftable, a `promptMeta`) + a precise `<name>RenderSchema` literal + `export type <Name>BlockData`;
@@ -106,7 +106,7 @@ The `@/*` and `@payload-config` path aliases are defined in `tsconfig.json`.
 
 ### AI drafting
 
-`@ai-stack/payloadcms` is **not** wired up — it crashed the admin client-side render. AI drafting goes through the custom `draft-presentation` route. The block Zod schema and system prompt are **not** hand-written there: they are derived from the block-spec SSOT (`src/blocks/spec`) by `src/lib/draftPresentation.ts`, which exports `SLIDES_SCHEMA` (`emitSlidesArraySchema(ALL_SPECS)`), `DRAFT_SYSTEM_PROMPT` (`buildSystemPrompt(...)` over each spec's `promptMeta`), and `draftPresentationSlides(brief)`. The route and the `scripts/draft-smoke.mjs` live check both call that one surface. The provider (`src/lib/ai.ts`) targets any OpenAI-compatible endpoint (9router by default) and uses **tool calling** rather than `response_format: json_schema` (most proxies don't implement structured outputs) — see that file's header. The prompt is deliberately use-case-agnostic — keep `promptMeta` free of domain vocabulary, company names, or industry terms; the LLM picks up tone from the user's brief.
+`@ai-stack/payloadcms` is **not** wired up — it crashed the admin client-side render. AI drafting goes through the custom `draft-presentation` route. The block Zod schema and system prompt are **not** hand-written there: they are derived from the block-spec SSOT (`src/blocks/spec`) by `src/lib/draftPresentation.ts`, which exports `SLIDES_SCHEMA` (`emitSlidesArraySchema(ALL_SPECS)`), `DRAFT_SYSTEM_PROMPT` (`buildSystemPrompt(...)` over each spec's `promptMeta`), and `draftPresentationSlides(brief)`. The route and the `scripts/draft-smoke.mjs` live check both call that one surface. The provider (`src/lib/ai.ts`) targets CloudCLIProxy's OpenAI-compatible endpoint and defaults to its stable `high` alias. It uses **tool calling** rather than `response_format: json_schema` for portable structured output. The prompt is deliberately use-case-agnostic — keep `promptMeta` free of domain vocabulary, company names, or industry terms; the LLM picks up tone from the user's brief.
 
 ### Source-aware agentic builds
 

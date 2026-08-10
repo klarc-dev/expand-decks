@@ -16,7 +16,7 @@ execution: code
 - **Objective:** Let authors choose external knowledge sources for an agentic deck draft so the generated dossier, outline, and slides are more factual and better cited, with source evidence persisted for traceability.
 - **Authority hierarchy:** The Product Contract below is the source of truth for behavior. Where this plan's technical choices conflict with existing repo conventions, repo conventions win; surface the conflict rather than diverging silently.
 - **Stop conditions:** Stop and surface a blocker if a change would require per-slide writers to call sources directly, would replace the forced `emit` structured-output contract, or would push MCP connector secrets into Payload — all are out of scope for v1.
-- **Tail ownership:** Whoever lands the final unit updates `.env.example`, `CLAUDE.md` AI-drafting notes, and runs `pnpm generate:types` for the new draft fields.
+- **Tail ownership:** Whoever lands the final unit updates `.env.example`, `AGENTS.md` AI-drafting notes, and runs `pnpm generate:types` for the new draft fields.
 - **Product Contract preservation:** Product Contract unchanged. Two requirements-only open questions are now resolved as decisions: source library is runtime-configured (KTD1), evidence is build-metadata only (KTD5).
 
 ---
@@ -385,11 +385,11 @@ src/lib/sources/
 - **Goal:** Document the source env contract and the gather/structure source path.
 - **Requirements:** R9, R10.
 - **Dependencies:** U1, U3.
-- **Files:** `.env.example`, `CLAUDE.md` (AI drafting section).
-- **Approach:** Document the source-declaration env vars (id/label/transport) and the requirement that the same MCP config is present in both the web and `payload-worker` processes. Add a short note in `CLAUDE.md` that source-aware gather/structure use a separate tool-capable path while final emission stays on forced `emit`.
-- **Patterns to follow:** existing AI section in `.env.example:9` and the AI-drafting notes in `CLAUDE.md`.
+- **Files:** `.env.example`, `AGENTS.md` (AI drafting section).
+- **Approach:** Document the source-declaration env vars (id/label/transport) and the requirement that the same MCP config is present in both the web and `payload-worker` processes. Add a short note in `AGENTS.md` that source-aware gather/structure use a separate tool-capable path while final emission stays on forced `emit`.
+- **Patterns to follow:** existing AI section in `.env.example:9` and the AI-drafting notes in `AGENTS.md`.
 - **Test scenarios:** Test expectation: none — docs only.
-- **Verification:** `.env.example` documents every new var; `CLAUDE.md` reflects the two-path generation model.
+- **Verification:** `.env.example` documents every new var; `AGENTS.md` reflects the two-path generation model.
 
 ---
 
@@ -415,7 +415,7 @@ Behavioral gates worth asserting explicitly: AE2/AE3 (no-source and writer-isola
 - No-source drafts produce byte-identical behavior to the current pipeline (AE2), and writers receive only the `emit` tool (AE3).
 - Selected sources and evidence persist as build metadata and are visible on the presentation doc (R3); `buildFingerprint` is unaffected by metadata-only edits.
 - `generateStructured`'s forced-`emit` contract is unchanged (R11).
-- `.env.example` and `CLAUDE.md` document the runtime source registry and the two-path generation model.
+- `.env.example` and `AGENTS.md` document the runtime source registry and the two-path generation model.
 - Abandoned/experimental code paths removed; no dead tool-capable scaffolding left in the diff.
 
 ---

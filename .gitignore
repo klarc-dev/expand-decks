@@ -22,8 +22,8 @@ tsconfig.tsbuildinfo
 test-results/
 playwright-report/
 
-# Claude Code harness worktrees
-.claude/worktrees/
+# Local agent worktrees
+.claude/
 
 # MCP config with secrets (OpenWebUI API key)
 .mcp.json

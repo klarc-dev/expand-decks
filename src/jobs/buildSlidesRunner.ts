@@ -65,6 +65,7 @@ async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string;
     env: {
       ...process.env,
       ANTHROPIC_API_KEY: undefined,
+      OPENAI_API_KEY: undefined,
     },
   });
 }

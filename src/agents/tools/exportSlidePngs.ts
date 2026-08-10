@@ -93,7 +93,11 @@ export async function exportSlidePngs(
       cwd: workdir,
       timeout: EXEC_TIMEOUT_MS,
       maxBuffer: 32 * 1024 * 1024,
-      env: { ...process.env, ANTHROPIC_API_KEY: undefined },
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: undefined,
+        OPENAI_API_KEY: undefined,
+      },
     });
 
     // Slidev writes png/<n>.png (or slides-<n>.png depending on version). Sort numerically.

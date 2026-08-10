@@ -84,7 +84,7 @@ presentation-status `'draft'|'published'|'archived'` —
 
 **Proposed SSOT**: `src/lib/context.ts` exporting `CTX = { skipBuildQueue, shareToken } as const`; all setters/readers reference `CTX.*`. (`req.context` is untyped so a typo compiles.)
 
-**Effort**: 1-2 · **Drift hazard**: 3 (a typo in any of the 4 `skipBuildQueue` setters reintroduces the infinite requeue loop the flag exists to prevent — the exact failure CLAUDE.md warns about).
+**Effort**: 1-2 · **Drift hazard**: 3 (a typo in any of the 4 `skipBuildQueue` setters reintroduces the infinite requeue loop the flag exists to prevent — the exact failure AGENTS.md warns about).
 
 **Status**: pending
 
@@ -270,7 +270,7 @@ presentation-status `'draft'|'published'|'archived'` —
 
 ## Tier 4 — defer to /ce-plan
 
-- **4.A — Block field shape defined in 3 layers** (Payload block field × renderer `*BlockData` type × Zod schema, ×9 blocks = 27 definitions; +`payload-types.ts` generated 4th copy). Drift hazard 3 (a field added in one layer, forgotten in another, silently drops data or breaks AI drafting — exactly the manual invariant CLAUDE.md documents). **Deferred**: effort tier 4, architecturally invasive (needs a schema-as-source generator, e.g. Zod-as-source → Payload field generator). Within-layer sharing (`_shared.ts`, `eyebrowZod`/`surfaceZod`) already exists; the cross-layer sync is the remaining structural debt. Hand to `/ce-plan`.
+- **4.A — Block field shape defined in 3 layers** (Payload block field × renderer `*BlockData` type × Zod schema, ×9 blocks = 27 definitions; +`payload-types.ts` generated 4th copy). Drift hazard 3 (a field added in one layer, forgotten in another, silently drops data or breaks AI drafting — exactly the manual invariant AGENTS.md documents). **Deferred**: effort tier 4, architecturally invasive (needs a schema-as-source generator, e.g. Zod-as-source → Payload field generator). Within-layer sharing (`_shared.ts`, `eyebrowZod`/`surfaceZod`) already exists; the cross-layer sync is the remaining structural debt. Hand to `/ce-plan`.
 
 - **4.B — surface default asymmetry** (block `surfaceField` defaults `'dark'`; Zod `surfaceZod` is `.optional()` with no default). Latent today (renderers treat `undefined`===`'dark'`). Fold the `DEFAULT_SURFACE` const fix into 4.A or a small follow-up; not urgent.
 

@@ -6,7 +6,7 @@
  * feeds back to the writer.
  *
  * documents-plugin "validation split": semantic judgement lives in a prompt.
- * Mastra-native: the judgement goes through the same 9router gateway via
+ * Mastra-native: the judgement goes through the same CloudCLIProxy route via
  * generateStructured (forced `emit` tool). Structural overflow is NOT scored
  * here — it is PREVENTED at the SSOT (per-layout `.max()` array bounds), so the
  * gateway's tool-calling constrains generation and a slide cannot overflow.

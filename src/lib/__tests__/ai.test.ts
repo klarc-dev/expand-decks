@@ -19,31 +19,30 @@ describe('forceNonStreamFetch()', () => {
   it('injects stream:false into a JSON body that omits the key', async () => {
     await forceNonStreamFetch('https://x/v1/chat/completions', {
       method: 'POST',
-      body: JSON.stringify({ model: 'cc/x', messages: [] }),
+      body: JSON.stringify({ model: 'high', messages: [] }),
     });
 
-    expect(JSON.parse(capturedBody())).toEqual({ model: 'cc/x', messages: [], stream: false });
+    expect(JSON.parse(capturedBody())).toEqual({ model: 'high', messages: [], stream: false });
   });
 
   it('leaves a JSON body that already sets stream untouched', async () => {
-    const body = JSON.stringify({ model: 'cc/x', stream: true });
+    const body = JSON.stringify({ model: 'high', stream: true });
     await forceNonStreamFetch('https://x/v1/chat/completions', { method: 'POST', body });
 
     expect(capturedBody()).toBe(body);
-    expect(JSON.parse(capturedBody())).toEqual({ model: 'cc/x', stream: true });
+    expect(JSON.parse(capturedBody())).toEqual({ model: 'high', stream: true });
   });
 
-  it('injects disabled thinking when tools are present without forced tool_choice', async () => {
+  it('does not add provider-specific fields when tools are present', async () => {
     await forceNonStreamFetch('https://x/v1/chat/completions', {
       method: 'POST',
-      body: JSON.stringify({ model: 'cc/x', tools: [{ type: 'function' }] }),
+      body: JSON.stringify({ model: 'high', tools: [{ type: 'function' }] }),
     });
 
     expect(JSON.parse(capturedBody())).toEqual({
-      model: 'cc/x',
+      model: 'high',
       stream: false,
       tools: [{ type: 'function' }],
-      thinking: { type: 'disabled' },
     });
   });
 

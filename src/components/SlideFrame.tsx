@@ -112,6 +112,8 @@ function SlideChromeLayer({ chrome }: { chrome?: SlideChrome }) {
   if (!chrome || chrome.hidden) return null;
   return (
     <>
+      {/* The preview intentionally mirrors Slidev's raw logo markup and sizing. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       {chrome.logoUrl ? <img className="k-slide-logo" src={chrome.logoUrl} alt="" /> : null}
       {chrome.footer ? (
         <footer className="k-slide-footer">
