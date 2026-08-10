@@ -15,8 +15,10 @@ Node 20 is the deployment runtime (see `.nvmrc` / Dockerfile); newer Node works 
 | Command | What it does |
 | --- | --- |
 | `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm check` | Biome format + lint + import sorting (read-only) |
-| `pnpm check:fix` | Biome, auto-applying safe fixes |
+| `pnpm format:check` | Biome formatting check (read-only) |
+| `pnpm format` | Biome formatting, writing changes |
+| `pnpm check` | Biome lint (read-only) |
+| `pnpm check:fix` | Biome lint, writing safe fixes |
 | `pnpm lint` | ESLint — Next.js Core Web Vitals rules only |
 | `pnpm test` | Vitest |
 | `pnpm lint:dead` | Fallow — dead code, duplication, complexity |
@@ -44,4 +46,4 @@ Adding a layout block follows the block-spec DSL in `src/blocks/spec/` — see `
 
 ## CI
 
-`.github/workflows/ci.yml` runs typecheck → Biome → ESLint → Fallow gate → test → build on every PR. Keep it green.
+`.github/workflows/ci.yml` runs typecheck → Biome format check → Biome lint → ESLint → Fallow gate → test → build on every PR. Keep it green.
