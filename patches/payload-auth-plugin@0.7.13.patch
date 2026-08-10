@@ -1,5 +1,5 @@
 diff --git a/dist/esm/index.js b/dist/esm/index.js
-index 784d84dbfda86c973a128d1b14555ba5e00a7758..b4e2bcb6aede15fd9050061de91d0cc71d1c4b29 100644
+index 784d84dbfda86c973a128d1b14555ba5e00a7758..9bae617e4e55f44ebeb049d0be6c863c0b1c8e87 100644
 --- a/dist/esm/index.js
 +++ b/dist/esm/index.js
 @@ -301,7 +301,8 @@ async function _createUser({ email, name, collections, request, allowOAuthAutoSi
@@ -12,7 +12,16 @@ index 784d84dbfda86c973a128d1b14555ba5e00a7758..b4e2bcb6aede15fd9050061de91d0cc7
      };
      const hasAuthEnabled = Boolean(
        payload.collections[collections.usersCollection].config.auth
-@@ -409,6 +410,21 @@ async function OAuthAuthentication(pluginType, collections, allowOAuthAutoSignUp
+@@ -316,8 +317,6 @@ async function _createUser({ email, name, collections, request, allowOAuthAutoSi
+       data,
+       returning: true
+     });
+-  } else {
+-    return null;
+   }
+   return userRecord;
+ }
+@@ -409,6 +408,21 @@ async function OAuthAuthentication(pluginType, collections, allowOAuthAutoSignUp
      }
      return new MissingCollection();
    }
@@ -35,7 +44,7 @@ index 784d84dbfda86c973a128d1b14555ba5e00a7758..b4e2bcb6aede15fd9050061de91d0cc7
    if (collectionConfig?.auth.useSessions) {
      const now = /* @__PURE__ */ new Date();
 diff --git a/src/core/protocols/oauth/oauth_authentication.ts b/src/core/protocols/oauth/oauth_authentication.ts
-index 8ae77f37a46dc1c5c715a63e19a1dfdd812cb0d5..bb558a2d6603b358d4c9dbac2d370d679e37a952 100644
+index 8ae77f37a46dc1c5c715a63e19a1dfdd812cb0d5..98ff6cbc61f21a1faab12b394c2af1a55c958a51 100644
 --- a/src/core/protocols/oauth/oauth_authentication.ts
 +++ b/src/core/protocols/oauth/oauth_authentication.ts
 @@ -37,6 +37,7 @@ async function _createUser({ email, name, collections, request, allowOAuthAutoSi
@@ -46,10 +55,19 @@ index 8ae77f37a46dc1c5c715a63e19a1dfdd812cb0d5..bb558a2d6603b358d4c9dbac2d370d67
      }
      const hasAuthEnabled = Boolean(
        payload.collections[collections.usersCollection].config.auth,
-@@ -172,6 +173,24 @@ export async function OAuthAuthentication(
+@@ -51,8 +52,6 @@ async function _createUser({ email, name, collections, request, allowOAuthAutoSi
+       data,
+       returning: true
+     })
+-  } else {
+-    return null
+   }
+   return userRecord
+ }
+@@ -172,6 +171,24 @@ export async function OAuthAuthentication(
      return new MissingCollection()
    }
-
+ 
 +  const membershipStatus = userRecord.membershipStatus
 +  if (membershipStatus && membershipStatus !== "active") {
 +    if (trxID) {
@@ -69,5 +87,5 @@ index 8ae77f37a46dc1c5c715a63e19a1dfdd812cb0d5..bb558a2d6603b358d4c9dbac2d370d67
 +  }
 +
    const sessionID = collectionConfig?.auth.useSessions ? uuid() : null
-
+ 
    if (collectionConfig?.auth.useSessions) {
