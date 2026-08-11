@@ -41,14 +41,26 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
 
   const request = useMemo(() => JSON.parse(requestKey) as PreviewRequest, [requestKey]);
   const [result, setResult] = useState<PreviewResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!(request.block as { blockType?: string })?.blockType) {
       setResult(null);
+      setLoading(false);
+      setError('');
+      return;
+    }
+
+    if (!request.presentationId) {
+      setLoading(false);
+      setError('Enregistrez d’abord la présentation pour activer l’aperçu.');
       return;
     }
 
     const controller = new AbortController();
+    setLoading(true);
+    setError('');
     // Debounce: coalesce rapid keystrokes into a single request after a short
     // idle window. The effect-cleanup AbortController still cancels an in-flight
     // request when a newer debounced request supersedes it (U2/R1).
@@ -62,12 +74,16 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
             body: requestKey,
           });
           if (!res.ok) {
-            setResult(null);
+            const body = (await res.json().catch(() => null)) as { error?: string } | null;
+            setError(body?.error || `Aperçu indisponible (HTTP ${res.status}).`);
             return;
           }
           setResult((await res.json()) as PreviewResult);
+          setError('');
         } catch {
-          if (!controller.signal.aborted) setResult(null);
+          if (!controller.signal.aborted) setError('Impossible de charger l’aperçu.');
+        } finally {
+          if (!controller.signal.aborted) setLoading(false);
         }
       })();
     }, PREVIEW_DEBOUNCE_MS);
@@ -78,7 +94,21 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     };
   }, [request, requestKey]);
 
-  if (!result) return null;
+  if (!result && !loading && !error) return null;
+
+  return (
+    <section style={styles.section} aria-label="Aperçu de la diapositive">
+      <div style={styles.header}>
+        <strong>Aperçu de la diapositive</strong>
+        {loading ? <span style={styles.status}>Actualisation…</span> : null}
+      </div>
+      {error ? <div style={styles.error}>{error}</div> : null}
+      {result ? <PreviewFrame result={result} /> : null}
+    </section>
+  );
+};
+
+function PreviewFrame({ result }: { result: PreviewResult }) {
   const { className, html, image, layout, mermaid } = result.preview;
 
   return (
@@ -96,9 +126,33 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
       </div>
     </div>
   );
-};
+}
 
 const styles = {
+  section: {
+    marginTop: '12px',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    marginBottom: '8px',
+    fontSize: '13px',
+  },
+  status: {
+    color: 'var(--theme-elevation-500)',
+    fontWeight: 400,
+  },
+  error: {
+    marginBottom: '8px',
+    padding: '8px 10px',
+    border: '1px solid var(--theme-error-200)',
+    borderRadius: '4px',
+    color: 'var(--theme-error-500)',
+    backgroundColor: 'var(--theme-error-50)',
+    fontSize: '12px',
+  },
   wrapper: {
     marginTop: '12px',
     borderRadius: '6px',

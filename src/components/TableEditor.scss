@@ -1,0 +1,132 @@
+.table-editor {
+  margin-block: var(--base);
+
+  &__label-row,
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) / 2);
+  }
+
+  &__summary {
+    color: var(--theme-elevation-500);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  &__scroll {
+    margin-top: calc(var(--base) / 2);
+    overflow-x: auto;
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-m);
+    background: var(--theme-elevation-0);
+  }
+
+  &__grid {
+    display: grid;
+    min-width: max-content;
+  }
+
+  &__corner,
+  &__column-header,
+  &__row-actions,
+  &__cell {
+    border-right: 1px solid var(--theme-elevation-150);
+    border-bottom: 1px solid var(--theme-elevation-150);
+  }
+
+  &__corner,
+  &__column-header,
+  &__row-actions {
+    background: var(--theme-elevation-50);
+  }
+
+  &__column-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+
+  &__header-input {
+    min-width: 0;
+    width: 100%;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid transparent;
+    border-radius: var(--style-radius-s);
+    background: transparent;
+    color: var(--theme-text);
+    font: inherit;
+    font-weight: 600;
+
+    &:focus {
+      border-color: var(--theme-success-500);
+      outline: none;
+      background: var(--theme-input-bg);
+    }
+  }
+
+  &__controls {
+    display: flex;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    button {
+      width: 1.65rem;
+      height: 1.65rem;
+      padding: 0;
+      border: 0;
+      border-radius: var(--style-radius-s);
+      background: transparent;
+      color: var(--theme-elevation-600);
+      cursor: pointer;
+
+      &:hover:not(:disabled),
+      &:focus-visible {
+        background: var(--theme-elevation-150);
+        color: var(--theme-text);
+      }
+
+      &:disabled {
+        opacity: 0.25;
+        cursor: default;
+      }
+    }
+
+    &--vertical {
+      flex-direction: column;
+    }
+  }
+
+  &__row-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    color: var(--theme-elevation-600);
+    font-size: 0.75rem;
+  }
+
+  &__cell {
+    padding: 0.4rem;
+    min-height: 5.5rem;
+
+    .field-type.rich-text {
+      margin: 0;
+    }
+  }
+
+  &__footer {
+    justify-content: flex-start;
+    margin-top: calc(var(--base) / 2);
+
+    .btn {
+      margin: 0;
+    }
+  }
+}

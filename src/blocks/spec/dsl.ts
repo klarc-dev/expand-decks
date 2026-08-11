@@ -162,6 +162,16 @@ export interface PayloadFieldMeta {
   minRows?: number;
   /** Maximum rows for `type: 'array'` fields. */
   maxRows?: number;
+  /** Singular/plural labels for `type: 'array'` fields. */
+  labels?: { singular: string; plural: string };
+  /** Custom client field component emitted into `admin.components.Field`. */
+  adminFieldComponent?: string;
+  /** Hide the native field UI while retaining the field in form state. */
+  adminHidden?: boolean;
+  /** Initial collapsed state for native array rows. */
+  initCollapsed?: boolean;
+  /** Custom Payload validator retained by the emitted field. */
+  validate?: unknown;
   /** Args forwarded to the named `_shared` factory for factory fields. */
   factoryArgs?: FactoryArgs;
 }

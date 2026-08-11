@@ -32,6 +32,7 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
+    preview: (data) => (typeof data.spaUrl === 'string' && data.spaUrl ? data.spaUrl : null),
     components: {
       edit: {
         beforeDocumentControls: ['/components/ExportButton#default'],

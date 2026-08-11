@@ -36,7 +36,6 @@ const ExportButton: React.FC = () => {
   });
   const status = ((data?.lastBuildStatus as BuildStatus | undefined) ??
     BUILD_STATUS.idle) as BuildStatus;
-  const spaUrl = typeof data?.spaUrl === 'string' ? data.spaUrl : '';
   const building = status === BUILD_STATUS.building || starting;
 
   useEffect(() => {
@@ -86,36 +85,6 @@ const ExportButton: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'stretch', height: '100%', gap: '4px' }}>
-      <a
-        href={spaUrl || undefined}
-        target="_blank"
-        rel="noreferrer"
-        aria-disabled={!spaUrl}
-        onClick={(event) => {
-          if (!spaUrl) event.preventDefault();
-        }}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: '0 14px',
-          border: '1px solid var(--theme-elevation-200)',
-          borderRadius: '4px',
-          backgroundColor: 'var(--theme-elevation-50)',
-          color: spaUrl ? 'var(--theme-text)' : 'var(--theme-elevation-400)',
-          cursor: spaUrl ? 'pointer' : 'not-allowed',
-          fontSize: '13px',
-          fontWeight: 600,
-          textDecoration: 'none',
-          whiteSpace: 'nowrap',
-        }}
-        title={
-          spaUrl
-            ? 'Ouvrir la dernière version web construite dans un nouvel onglet'
-            : 'La prévisualisation sera disponible après le premier export SPA'
-        }
-      >
-        Prévisualiser ↗
-      </a>
       <select
         value={policy}
         onChange={(e) => setPolicy(e.target.value as OutputPolicy)}

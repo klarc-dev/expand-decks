@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { validateTableRows } from '../tableValidation';
+
 import {
   block,
   eyebrowFieldSpec,
@@ -64,7 +66,11 @@ export const tableSpec = block({
     rawField('columns', z.array(z.unknown()), optionalAi(z.array(aiColumn).min(2).max(5)), {
       type: 'array',
       label: 'Colonnes',
+      labels: { singular: 'Colonne', plural: 'Colonnes' },
       description: 'En-têtes de colonnes (2 à 5)',
+      minRows: 2,
+      maxRows: 5,
+      adminHidden: true,
       fields: [
         rawField('header', z.string(), optionalAi(z.string()), {
           type: 'text',
@@ -77,11 +83,17 @@ export const tableSpec = block({
     rawField('rows', z.array(z.unknown()), optionalAi(z.array(aiRow).min(1).max(8)), {
       type: 'array',
       label: 'Lignes',
+      labels: { singular: 'Ligne', plural: 'Lignes' },
       description: 'Lignes du tableau ; chaque cellule correspond à une colonne, dans l’ordre',
+      minRows: 1,
+      maxRows: 8,
+      adminFieldComponent: '/components/TableEditor#default',
+      validate: validateTableRows,
       fields: [
         rawField('cells', z.array(z.unknown()), optionalAi(z.array(aiCell)), {
           type: 'array',
           label: 'Cellules',
+          labels: { singular: 'Cellule', plural: 'Cellules' },
           description: 'Une cellule par colonne, dans l’ordre des colonnes',
           fields: [
             rawField('value', richTextRender(), optionalAi(z.string()), {

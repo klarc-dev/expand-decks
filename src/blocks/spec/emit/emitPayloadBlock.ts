@@ -33,10 +33,18 @@ function emitRawField(field: FieldSpec): Field {
   if (payload.adminCondition) {
     admin.condition = (_: unknown, siblingData: { image?: unknown }) => Boolean(siblingData?.image);
   }
+  if (payload.adminFieldComponent) {
+    admin.components = { Field: payload.adminFieldComponent };
+  }
+  if (payload.adminHidden !== undefined) admin.hidden = payload.adminHidden;
+  if (payload.initCollapsed !== undefined) admin.initCollapsed = payload.initCollapsed;
   // Every repeater item gets a row label derived from its own text fields
   // (instead of the default "Card 01 / Row 01") — see RepeaterRowLabel.
-  if (payload.type === 'array') {
-    admin.components = { RowLabel: '/components/RepeaterRowLabel#default' };
+  if (payload.type === 'array' && !payload.adminFieldComponent) {
+    admin.components = {
+      ...(admin.components as Record<string, unknown> | undefined),
+      RowLabel: '/components/RepeaterRowLabel#default',
+    };
   }
 
   const result: Record<string, unknown> = {
@@ -56,6 +64,8 @@ function emitRawField(field: FieldSpec): Field {
   if (payload.maxDepth !== undefined) result.maxDepth = payload.maxDepth;
   if (payload.minRows !== undefined) result.minRows = payload.minRows;
   if (payload.maxRows !== undefined) result.maxRows = payload.maxRows;
+  if (payload.labels !== undefined) result.labels = payload.labels;
+  if (payload.validate !== undefined) result.validate = payload.validate;
   if (payload.type === 'array' && payload.fields !== undefined) {
     result.fields = payload.fields.flatMap(emitField);
   }
