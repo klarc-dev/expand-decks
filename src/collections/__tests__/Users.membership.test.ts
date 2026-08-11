@@ -21,12 +21,12 @@ describe('Users membership approval', () => {
     await expect(runBeforeLogin()).resolves.toMatchObject({ email: 'member@example.com' });
   });
 
-  it.each([
-    'pending',
-    'rejected',
-  ] as const)('denies %s users before token issuance', async (status) => {
-    await expect(runBeforeLogin(status)).rejects.toBeInstanceOf(AuthenticationError);
-  });
+  it.each(['pending', 'rejected'] as const)(
+    'denies %s users before token issuance',
+    async (status) => {
+      await expect(runBeforeLogin(status)).rejects.toBeInstanceOf(AuthenticationError);
+    },
+  );
 
   it('defaults normal admin-created users to active', () => {
     const field = Users.fields.find(

@@ -25,18 +25,12 @@ describe('normalizeOutputPolicy', () => {
     expect(normalizeOutputPolicy(p)).toBe(p);
   });
 
-  it.each([
-    undefined,
-    null,
-    '',
-    'all',
-    'none',
-    42,
-    {},
-    'BOTH',
-  ])('falls back to both for invalid value %j', (val) => {
-    expect(normalizeOutputPolicy(val)).toBe('both');
-  });
+  it.each([undefined, null, '', 'all', 'none', 42, {}, 'BOTH'])(
+    'falls back to both for invalid value %j',
+    (val) => {
+      expect(normalizeOutputPolicy(val)).toBe('both');
+    },
+  );
 });
 
 describe('wantsPdf', () => {
