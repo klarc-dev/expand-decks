@@ -16,7 +16,7 @@ const base = {
 
 describe('afterPresentationChange', () => {
   it('queues a build on every update save, even when the presentation is not published', async () => {
-    const update = vi.fn().mockResolvedValue({});
+    const updateOne = vi.fn().mockResolvedValue({});
     const queue = vi.fn().mockResolvedValue({});
     const run = vi.fn().mockResolvedValue({});
     const doc = { id: 'presentation-1', status: 'draft', ...base };
@@ -24,30 +24,31 @@ describe('afterPresentationChange', () => {
     const result = await afterPresentationChange({
       doc,
       operation: 'update',
-      req: { context: {}, payload: { update, jobs: { queue, run } } },
+      req: { context: {}, payload: { db: { updateOne }, jobs: { queue, run } } },
     } as never);
 
     expect(result).toBe(doc);
-    expect(update).toHaveBeenCalledWith(
+    expect(updateOne).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'presentations',
         id: 'presentation-1',
-        context: { [CTX.skipBuildQueue]: true },
+        req: expect.any(Object),
       }),
     );
-    expect(update.mock.calls[0]?.[0].data).toEqual({
+    expect(updateOne.mock.calls[0]?.[0].data).toEqual({
       lastBuildToken: expect.any(String),
       lastBuildRequestedAt: expect.any(String),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
+      updatedAt: null,
     });
-    expect(Date.parse(update.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
+    expect(Date.parse(updateOne.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
     expect(queue).toHaveBeenCalledWith(
       expect.objectContaining({
         task: BUILD_SLIDES_TASK,
         input: {
           presentationId: 'presentation-1',
-          buildToken: update.mock.calls[0]?.[0].data.lastBuildToken,
+          buildToken: updateOne.mock.calls[0]?.[0].data.lastBuildToken,
           outputPolicy: DEFAULT_OUTPUT_POLICY,
         },
       }),
@@ -58,19 +59,41 @@ describe('afterPresentationChange', () => {
     expect(run).toHaveBeenCalled();
   });
 
+  it('reuses the active request transaction for the create-time status patch', async () => {
+    const updateOne = vi.fn().mockResolvedValue({});
+    const queue = vi.fn().mockResolvedValue({});
+    const run = vi.fn().mockResolvedValue({});
+    const req = {
+      context: {},
+      payload: { db: { updateOne }, jobs: { queue, run } },
+      transactionID: 'tx-1',
+    };
+
+    await afterPresentationChange({
+      doc: { id: 'presentation-new', status: 'draft', ...base },
+      operation: 'create',
+      req,
+    } as never);
+
+    expect(updateOne).toHaveBeenCalledWith(expect.objectContaining({ req }));
+  });
+
   it('does not queue when the internal skipBuildQueue flag is set', async () => {
-    const update = vi.fn();
+    const updateOne = vi.fn();
     const queue = vi.fn();
     const doc = { id: 'presentation-1', status: 'published', ...base };
 
     const result = await afterPresentationChange({
       doc,
       operation: 'update',
-      req: { context: { [CTX.skipBuildQueue]: true }, payload: { update, jobs: { queue } } },
+      req: {
+        context: { [CTX.skipBuildQueue]: true },
+        payload: { db: { updateOne }, jobs: { queue } },
+      },
     } as never);
 
     expect(result).toBe(doc);
-    expect(update).not.toHaveBeenCalled();
+    expect(updateOne).not.toHaveBeenCalled();
     expect(queue).not.toHaveBeenCalled();
   });
 });

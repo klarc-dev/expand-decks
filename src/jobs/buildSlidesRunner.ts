@@ -26,11 +26,11 @@ import {
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
 import { resolveVarsWith } from '../export/vars';
 import { COLLECTIONS } from '../lib/collections';
-import { CTX } from '../lib/context';
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
 import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
+import { patchPresentationBuildMetadata } from './patchPresentationBuildMetadata';
 import { normalizeOutputPolicy, wantsPdf, wantsSpa } from '../lib/outputPolicy';
 
 import { buildLogPayload, createBuildTimer } from './buildTiming';
@@ -303,11 +303,9 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     }
 
     await timer.stage('markBuilding', () =>
-      req.payload.update({
-        collection: COLLECTIONS.presentations,
-        id: presentationId,
-        data: { lastBuildStatus: BUILD_STATUS.building, lastBuildError: '' },
-        context: { [CTX.skipBuildQueue]: true },
+      patchPresentationBuildMetadata(req.payload, presentationId, {
+        lastBuildStatus: BUILD_STATUS.building,
+        lastBuildError: '',
       }),
     );
     const initialFingerprint = buildFingerprint(presentation as unknown as Record<string, unknown>);
@@ -500,12 +498,7 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     }
 
     await timer.stage('patchPresentation', () =>
-      req.payload.update({
-        collection: COLLECTIONS.presentations,
-        id: presentationId,
-        data: patchData,
-        context: { [CTX.skipBuildQueue]: true },
-      }),
+      patchPresentationBuildMetadata(req.payload, presentationId, patchData),
     );
 
     if (producePdf && previousPdfId && previousPdfId !== pdfMediaId) {
@@ -542,14 +535,9 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
 
-    await req.payload.update({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      data: {
-        lastBuildStatus: BUILD_STATUS.failed,
-        lastBuildError: errorMessage.slice(0, 5000),
-      },
-      context: { [CTX.skipBuildQueue]: true },
+    await patchPresentationBuildMetadata(req.payload, presentationId, {
+      lastBuildStatus: BUILD_STATUS.failed,
+      lastBuildError: errorMessage.slice(0, 5000),
     });
 
     throw err;

@@ -7,6 +7,7 @@ import { COLLECTIONS } from '../lib/collections';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { BUILD_STATUS } from '../lib/status';
 import { DEFAULT_OUTPUT_POLICY } from '../lib/outputPolicy';
+import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMetadata';
 
 export { buildFingerprint, buildInputsChanged } from '../lib/buildFingerprint';
 
@@ -23,17 +24,17 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
   if (operation !== 'create' && operation !== 'update') return doc;
 
   const buildToken = randomUUID();
-  await req.payload.update({
-    collection: COLLECTIONS.presentations,
-    id: doc.id as string,
-    data: {
+  await patchPresentationBuildMetadata(
+    req.payload,
+    doc.id as string,
+    {
       lastBuildToken: buildToken,
       lastBuildRequestedAt: new Date().toISOString(),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
     },
-    context: { [CTX.skipBuildQueue]: true },
-  });
+    req,
+  );
 
   // Cast needed until `payload generate:types` adds buildSlides to TypedJobs
   await (req.payload.jobs.queue as Function)({
