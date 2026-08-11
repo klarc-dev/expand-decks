@@ -11,7 +11,10 @@ live('phase2 timing', () => {
   it('runs with step timing', { timeout: 900_000 }, async () => {
     const t0 = Date.now();
     const run = await mastra.getWorkflow('deckWorkflow').createRun();
-    const stream = run.stream({ inputData: { brief: BRIEF }, initialState: { visual: false } });
+    const stream = run.stream({
+      inputData: { brief: BRIEF, sourceIds: [] },
+      initialState: { visual: false },
+    });
     for await (const chunk of stream) {
       if (chunk.type === 'workflow-step-start' || chunk.type === 'workflow-step-result') {
         console.log(

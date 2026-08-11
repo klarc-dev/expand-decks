@@ -18,7 +18,10 @@ const BRIEF =
 live('Phase 2 live (deckWorkflow)', () => {
   it('drafts renderable slides and assembles markdown', { timeout: 300_000 }, async () => {
     const run = await mastra.getWorkflow('deckWorkflow').createRun();
-    const res = await run.start({ inputData: { brief: BRIEF }, initialState: { visual: false } });
+    const res = await run.start({
+      inputData: { brief: BRIEF, sourceIds: [] },
+      initialState: { visual: false },
+    });
 
     expect(res.status).toBe('success');
     if (res.status !== 'success') return;
