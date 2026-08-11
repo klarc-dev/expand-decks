@@ -49,12 +49,15 @@ const slides = [
       },
       {
         cells: [
-          { value: '**Léo intervient sur plusieurs sites**' },
+          { value: '**Léo intervient sur plusieurs sites et pour plusieurs entités**' },
           {
             value:
-              'Une affectation unique ne décrit pas les travaux réalisés chez Perrin et Fils et dans les domaines.',
+              'Le temps consacré par Léo aux projets des domaines ou d’autres sociétés du groupe ne peut pas être valorisé dans le CIR déclaré par Perrin et Fils.',
           },
-          { value: 'Documenter séparément les sociétés utilisatrices et les moyens mobilisés.' },
+          {
+            value:
+              'Exclure ces temps du CIR de Perrin et Fils et les ventiler par projet et par entité bénéficiaire.',
+          },
         ],
       },
       {
@@ -62,11 +65,11 @@ const slides = [
           { value: '**Anna travaille à l’Université de Bordeaux**' },
           {
             value:
-              'Léo indique qu’elle y est présente toute l’année dans le cadre de la CIFRE ; Joachim relève que ce lieu de travail complique son rattachement aux moyens de la société déclarante.',
+              'Présente toute l’année dans les locaux de l’université dans le cadre de la CIFRE, Anna ne peut pas être valorisée dans le CIR de Perrin et Fils.',
           },
           {
             value:
-              'Vérifier le contrat CIFRE, l’employeur, les locaux, l’encadrement, les moyens utilisés et le traitement CIR avant toute conclusion sur son éligibilité.',
+              'Exclure intégralement son temps et sa rémunération de l’assiette CIR de Perrin et Fils.',
           },
         ],
       },
