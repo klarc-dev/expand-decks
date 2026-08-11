@@ -66,6 +66,7 @@ export const tableSpec = block({
     rawField('columns', z.array(z.unknown()), optionalAi(z.array(aiColumn).min(2).max(5)), {
       type: 'array',
       label: 'Colonnes',
+      defaultValue: [{ header: '' }, { header: '' }],
       labels: { singular: 'Colonne', plural: 'Colonnes' },
       description: 'En-têtes de colonnes (2 à 5)',
       minRows: 2,
@@ -83,6 +84,7 @@ export const tableSpec = block({
     rawField('rows', z.array(z.unknown()), optionalAi(z.array(aiRow).min(1).max(8)), {
       type: 'array',
       label: 'Lignes',
+      defaultValue: [{ cells: [{ value: null }, { value: null }] }],
       labels: { singular: 'Ligne', plural: 'Lignes' },
       description: 'Lignes du tableau ; chaque cellule correspond à une colonne, dans l’ordre',
       minRows: 1,

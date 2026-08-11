@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useCallback, useMemo } from 'react';
-import type { ArrayFieldClientProps, FormState, RichTextFieldClient, Validate } from 'payload';
+import type { ArrayFieldClientProps, FormState, Validate } from 'payload';
 import {
   Button,
   FieldDescription,
   FieldError,
-  RichTextField,
+  RenderFields,
   useField,
   useForm,
   useFormFields,
@@ -91,10 +91,7 @@ export default function TableEditor(props: ArrayFieldClientProps) {
   const { addFieldRow, moveFieldRow, removeFieldRow } = useForm();
 
   const cellsField = field.fields[0];
-  const valueField =
-    cellsField && 'fields' in cellsField
-      ? (cellsField.fields[0] as RichTextFieldClient)
-      : undefined;
+  const cellFields = cellsField && 'fields' in cellsField ? cellsField.fields : undefined;
 
   const addColumn = useCallback(() => {
     if (columns.length >= MAX_COLUMNS) return;
@@ -148,7 +145,7 @@ export default function TableEditor(props: ArrayFieldClientProps) {
 
   const columnIndexes = useMemo(() => columns.map((_, index) => index), [columns]);
 
-  if (!valueField) return <div>Configuration de cellule indisponible.</div>;
+  if (!cellFields) return <div>Configuration de cellule indisponible.</div>;
 
   return (
     <div className="table-editor">
@@ -258,10 +255,12 @@ export default function TableEditor(props: ArrayFieldClientProps) {
               </div>
               {columnIndexes.map((columnIndex) => (
                 <div className="table-editor__cell" key={`${row.id}-${columns[columnIndex]?.id}`}>
-                  <RichTextField
-                    field={valueField}
-                    path={`${rowsPath}.${rowIndex}.cells.${columnIndex}.value`}
-                    permissions={props.permissions}
+                  <RenderFields
+                    fields={cellFields}
+                    parentIndexPath={`${props.indexPath ?? ''}-${rowIndex}-${columnIndex}`}
+                    parentPath={`${rowsPath}.${rowIndex}.cells.${columnIndex}`}
+                    parentSchemaPath={`${schemaPath}.cells`}
+                    permissions={props.permissions ?? {}}
                     readOnly={readOnly}
                   />
                 </div>

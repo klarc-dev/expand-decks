@@ -141,7 +141,7 @@ export interface PayloadFieldMeta {
   type?: PayloadRawType;
   label?: string;
   required?: boolean;
-  defaultValue?: string;
+  defaultValue?: unknown;
   description?: string;
   options?: PayloadOption[];
   /** Code editor language for `type: 'code'` (e.g. 'yaml', 'markdown'). */
