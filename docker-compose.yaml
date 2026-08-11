@@ -33,10 +33,13 @@ services:
     expose:
       - "3000"
     environment:
+      TZ: Europe/Paris
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-high}
+      AGENT_SOURCE_REGISTRY_JSON: ${AGENT_SOURCE_REGISTRY_JSON:-[]}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -46,11 +49,11 @@ services:
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/admin').then(r => process.exit(r.status < 400 ? 0 : 1)).catch(() => process.exit(1))\""]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(async r => process.exit(r.ok && (await r.json()).status === 'ok' ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 120s
     labels:
       - "traefik.http.middlewares.hsts-expand-decks.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.hsts-expand-decks.headers.stsIncludeSubdomains=true"
@@ -85,11 +88,21 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      TZ: Europe/Paris
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.kill(1, 0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     networks:
       expand-decks:
         aliases:
