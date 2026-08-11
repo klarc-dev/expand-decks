@@ -6,6 +6,7 @@ import * as migration_20260609_083115_agent_fields from './20260609_083115_agent
 import * as migration_20260630_081854_add_cover_intervenants_user_profile from './20260630_081854_add_cover_intervenants_user_profile';
 import * as migration_20260630_094458_remove_cover_footers from './20260630_094458_remove_cover_footers';
 import * as migration_20260810_154621_add_user_membership_status from './20260810_154621_add_user_membership_status';
+import * as migration_20260811_202948 from './20260811_202948';
 
 export const migrations = [
   {
@@ -47,5 +48,10 @@ export const migrations = [
     up: migration_20260810_154621_add_user_membership_status.up,
     down: migration_20260810_154621_add_user_membership_status.down,
     name: '20260810_154621_add_user_membership_status',
+  },
+  {
+    up: migration_20260811_202948.up,
+    down: migration_20260811_202948.down,
+    name: '20260811_202948',
   },
 ];
