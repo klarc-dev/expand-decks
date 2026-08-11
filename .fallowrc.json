@@ -1,7 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
 
-  "ignorePatterns": ["src/app/(payload)/admin/importMap.js", "src/app/(payload)/payload-admin.css"],
+  "ignorePatterns": [
+    "src/app/(payload)/admin/importMap.js",
+    "src/app/(payload)/payload-admin.css",
+    "src/components/TableEditor.tsx",
+    "src/components/TableEditor.scss"
+  ],
 
   "ignoreDependencies": ["sharp", "sass", "@vue/compiler-sfc", "playwright-chromium"],
 

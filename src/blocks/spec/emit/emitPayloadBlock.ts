@@ -23,49 +23,60 @@ import {
 } from '../../_shared';
 import type { FieldSpec, BlockSpec, PayloadFieldMeta } from '../dsl';
 
-/** Build a single `raw` Field from its plain Payload metadata. */
-function emitRawField(field: FieldSpec): Field {
-  const payload = field.payload as PayloadFieldMeta;
+function emitAdminMeta(payload: PayloadFieldMeta): Record<string, unknown> {
+  const admin: Record<string, unknown> = { description: payload.description };
 
-  const admin: Record<string, unknown> = {};
   if (payload.language !== undefined) admin.language = payload.language;
-  admin.description = payload.description;
   if (payload.adminCondition) {
     admin.condition = (_: unknown, siblingData: { image?: unknown }) => Boolean(siblingData?.image);
   }
-  if (payload.adminFieldComponent) {
-    admin.components = { Field: payload.adminFieldComponent };
-  }
+  if (payload.adminFieldComponent) admin.components = { Field: payload.adminFieldComponent };
   if (payload.adminHidden !== undefined) admin.hidden = payload.adminHidden;
   if (payload.initCollapsed !== undefined) admin.initCollapsed = payload.initCollapsed;
   // Every repeater item gets a row label derived from its own text fields
   // (instead of the default "Card 01 / Row 01") — see RepeaterRowLabel.
   if (payload.type === 'array' && !payload.adminFieldComponent) {
-    admin.components = {
-      ...(admin.components as Record<string, unknown> | undefined),
-      RowLabel: '/components/RepeaterRowLabel#default',
-    };
+    admin.components = { RowLabel: '/components/RepeaterRowLabel#default' };
   }
+
+  return admin;
+}
+
+function assignDefined(
+  target: Record<string, unknown>,
+  source: PayloadFieldMeta,
+  keys: Array<keyof PayloadFieldMeta>,
+): void {
+  for (const key of keys) {
+    if (source[key] !== undefined) target[key] = source[key];
+  }
+}
+
+/** Build a single `raw` Field from its plain Payload metadata. */
+function emitRawField(field: FieldSpec): Field {
+  const payload = field.payload as PayloadFieldMeta;
 
   const result: Record<string, unknown> = {
     name: field.name,
     type: payload.type,
+    label: payload.label,
+    admin: emitAdminMeta(payload),
   };
   if (payload.required) result.required = true;
-  result.label = payload.label;
-  if (payload.defaultValue !== undefined) result.defaultValue = payload.defaultValue;
   if (payload.access === 'isAdminField') {
     result.access = { create: isAdminField, update: isAdminField };
   }
-  result.admin = admin;
-  if (payload.options !== undefined) result.options = payload.options;
-  if (payload.relationTo !== undefined) result.relationTo = payload.relationTo;
-  if (payload.hasMany !== undefined) result.hasMany = payload.hasMany;
-  if (payload.maxDepth !== undefined) result.maxDepth = payload.maxDepth;
-  if (payload.minRows !== undefined) result.minRows = payload.minRows;
-  if (payload.maxRows !== undefined) result.maxRows = payload.maxRows;
-  if (payload.labels !== undefined) result.labels = payload.labels;
-  if (payload.validate !== undefined) result.validate = payload.validate;
+  assignDefined(result, payload, [
+    'defaultValue',
+    'options',
+    'relationTo',
+    'hasMany',
+    'maxDepth',
+    'minRows',
+    'maxRows',
+    'labels',
+    'validate',
+  ]);
   if (payload.type === 'array' && payload.fields !== undefined) {
     result.fields = payload.fields.flatMap(emitField);
   }
