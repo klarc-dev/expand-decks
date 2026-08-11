@@ -35,7 +35,7 @@ FROM node:20-bookworm-slim AS production
 # Install Playwright Chromium system dependencies + fonts
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
-    libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 \
+    libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libxfixes3 \
     libpango-1.0-0 libcairo2 libasound2 libxshmfence1 \
     fonts-noto fonts-noto-cjk fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
@@ -61,8 +61,10 @@ COPY --from=builder /app/src ./src
 COPY --from=slidev-deps /app/slidev-workspace/node_modules ./slidev-workspace/node_modules
 COPY slidev-workspace/package.json ./slidev-workspace/
 
-# Install Playwright Chromium browser binary
-RUN npx playwright-chromium install chromium
+# Install the exact Playwright Chromium revision required by the isolated
+# Slidev workspace. Running `npx playwright-chromium` from /app can resolve the
+# root dependency tree instead, leaving Slidev looking for a different revision.
+RUN pnpm --dir slidev-workspace exec playwright install chromium
 
 # Create media directory for shared volume
 RUN mkdir -p /app/media
