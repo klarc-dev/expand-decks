@@ -26,7 +26,7 @@ import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR } from '../../lib/paths';
-import { buildSlidevExportArgs } from '../../jobs/slidevExportArgs';
+import { buildSlidevEnv, buildSlidevExportArgs } from '../../jobs/slidevExportArgs';
 
 const execFile = promisify(execFileCb);
 const PROJECT_ROOT = process.cwd();
@@ -93,11 +93,7 @@ export async function exportSlidePngs(
       cwd: workdir,
       timeout: EXEC_TIMEOUT_MS,
       maxBuffer: 32 * 1024 * 1024,
-      env: {
-        ...process.env,
-        ANTHROPIC_API_KEY: undefined,
-        OPENAI_API_KEY: undefined,
-      },
+      env: buildSlidevEnv(),
     });
 
     // Slidev writes png/<n>.png (or slides-<n>.png depending on version). Sort numerically.

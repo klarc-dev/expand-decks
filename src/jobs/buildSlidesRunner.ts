@@ -34,7 +34,7 @@ import { patchPresentationBuildMetadata } from './patchPresentationBuildMetadata
 import { normalizeOutputPolicy, wantsPdf, wantsSpa } from '../lib/outputPolicy';
 
 import { buildLogPayload, createBuildTimer } from './buildTiming';
-import { buildSlidevExportArgs, parsePositiveInt } from './slidevExportArgs';
+import { buildSlidevEnv, buildSlidevExportArgs, parsePositiveInt } from './slidevExportArgs';
 import { assemblePdf, splitRangePdf } from './pdfAssemble';
 import { computePageHashes, planDirtyPages } from './pdfPageHash';
 import {
@@ -62,11 +62,7 @@ async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string;
     cwd,
     timeout: EXEC_TIMEOUT_MS,
     maxBuffer: 32 * 1024 * 1024,
-    env: {
-      ...process.env,
-      ANTHROPIC_API_KEY: undefined,
-      OPENAI_API_KEY: undefined,
-    },
+    env: buildSlidevEnv(),
   });
 }
 

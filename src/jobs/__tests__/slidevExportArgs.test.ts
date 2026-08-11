@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { slideHasImages } from '../buildSlidesRunner';
-import { buildSlidevExportArgs, parsePositiveInt } from '../slidevExportArgs';
+import { buildSlidevEnv, buildSlidevExportArgs, parsePositiveInt } from '../slidevExportArgs';
 
 describe('buildSlidevExportArgs', () => {
   it('uses native single-pass PDF export flags by default', () => {
@@ -107,6 +107,22 @@ describe('buildSlidevExportArgs', () => {
     expect(
       buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false, withToc: true }),
     ).toContain('--with-toc');
+  });
+
+  it('forces Slidev dev mode and strips AI secrets from production subprocesses', () => {
+    expect(
+      buildSlidevEnv({
+        NODE_ENV: 'production',
+        OPENAI_API_KEY: 'secret',
+        ANTHROPIC_API_KEY: 'secret',
+        PATH: '/usr/bin',
+      }),
+    ).toEqual({
+      NODE_ENV: 'development',
+      OPENAI_API_KEY: undefined,
+      ANTHROPIC_API_KEY: undefined,
+      PATH: '/usr/bin',
+    });
   });
 
   it('parses positive integer env values with a safe fallback', () => {

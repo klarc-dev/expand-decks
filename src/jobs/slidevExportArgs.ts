@@ -1,6 +1,18 @@
 const DEFAULT_TIMEOUT_MS = 120_000;
 const VISUAL_ASSET_WAIT_MS = 4_000;
 
+export function buildSlidevEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return {
+    ...env,
+    // Slidev export boots a Vite dev server. Inheriting the parent Next.js
+    // NODE_ENV=production leaves Slidev's __DEV__ compile-time constant
+    // undefined, so the client never mounts and Playwright sees a hidden body.
+    NODE_ENV: 'development',
+    ANTHROPIC_API_KEY: undefined,
+    OPENAI_API_KEY: undefined,
+  };
+}
+
 type WaitUntil = 'networkidle' | 'load' | 'domcontentloaded' | 'none';
 
 export type SlidevExportArgsOptions = {
