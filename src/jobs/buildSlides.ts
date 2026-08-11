@@ -7,6 +7,7 @@ export const BUILD_SLIDES_TASK = 'buildSlides' as const;
 export const buildSlidesTask: TaskConfig = {
   slug: BUILD_SLIDES_TASK,
   label: 'Build Slidev Presentation',
+  concurrency: ({ input }) => `buildSlides:${(input as { presentationId: string }).presentationId}`,
   inputSchema: [
     {
       name: 'presentationId',

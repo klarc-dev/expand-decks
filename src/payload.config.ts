@@ -106,6 +106,7 @@ export default buildConfig({
     tasks: [buildSlidesTask],
     autoRun: [{ cron: '*/1 * * * *', limit: 5 }],
     deleteJobOnComplete: true,
+    enableConcurrencyControl: true,
   },
   secret: PAYLOAD_SECRET,
   typescript: {
