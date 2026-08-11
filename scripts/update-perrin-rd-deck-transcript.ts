@@ -1,7 +1,7 @@
 import config from '../src/payload.config';
 import { getPayload } from 'payload';
-import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite';
 import { buildSlidesMd } from '../src/export/buildSlidesMd';
+import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite';
 import type { Presentation } from '../src/payload-types';
 
 const payload = await getPayload({ config });
@@ -9,173 +9,107 @@ const payload = await getPayload({ config });
 const slides = [
   {
     blockType: 'cover',
-    eyebrow: 'RÉUNION DU 11 JUIN 2026 · DOCUMENT DE DÉCISION',
-    title: 'Organisation de la R&D du groupe Perrin',
-    subtitle: 'Problèmes constatés, mesures immédiates et organisation cible.',
+    eyebrow: 'REVUE DE L’ORGANISATION EXISTANTE · 11 JUIN 2026',
+    title: 'R&D Perrin : anomalies constatées et décisions à prendre',
+    subtitle:
+      'Analyse fondée sur les situations décrites pendant la réunion. Les qualifications juridiques et fiscales restent à confirmer sur pièces.',
     surface: 'gradient',
   },
   {
     blockType: 'table',
-    eyebrow: 'CONSTATS DE LA RÉUNION',
-    title: 'Les principales difficultés identifiées',
-    surface: 'light',
-    tableVariant: 'reference',
-    columns: [{ header: 'Problème' }, { header: 'Constat chez Perrin' }, { header: 'Conséquence' }],
-    rows: [
-      {
-        cells: [
-          { value: '**Portage dispersé**' },
-          {
-            value:
-              'Employeurs, contrats, dépenses, CIR et droits répartis entre plusieurs entités.',
-          },
-          { value: 'Rattachement des coûts et des résultats difficile à démontrer.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Personnel mis à disposition**' },
-          {
-            value:
-              'Environ 80 % de la masse salariale passe par des GE ; conventions nominatives précises non établies.',
-          },
-          { value: 'Fragilité de la preuve des dépenses de personnel au CIR.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Refacturations**' },
-          {
-            value:
-              'Certaines dépenses R&D sont refacturées à Perrin et Fils selon des clés qualifiées d’arbitraires en réunion.',
-          },
-          { value: 'Intérêt propre, bénéficiaire et méthode de prix insuffisamment objectivés.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Propriété intellectuelle**' },
-          {
-            value:
-              'Contrats et dépôts utilisent des noms d’entités variables ; certains actifs ont été déposés ou portés dans des sociétés différentes.',
-          },
-          { value: 'Titularité et droits d’exploitation à reconstituer actif par actif.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Pilotage**' },
-          {
-            value:
-              'La R&D est placée dans l’entité qui dispose du budget ou qui convient au projet.',
-          },
-          { value: 'Absence de budget, de gouvernance et de doctrine de portage uniques.' },
-        ],
-      },
-    ],
-  },
-  {
-    blockType: 'table',
-    eyebrow: 'CIR 2025',
-    title: 'Dossier technique non engagé au 11 juin 2026',
+    eyebrow: 'ANOMALIES DOCUMENTÉES EN RÉUNION',
+    title: 'Le CIR est porté par une société qui n’emploie pas directement l’équipe R&D',
     surface: 'dark',
     tableVariant: 'reference',
-    columns: [{ header: 'Fait relevé' }, { header: 'Problème' }, { header: 'Action' }],
+    columns: [
+      { header: 'Situation décrite' },
+      { header: 'Défaut précis' },
+      { header: 'Mesure immédiate' },
+    ],
     rows: [
       {
         cells: [
-          { value: 'Léo indiquait ne pas avoir commencé la justification technique 2025.' },
-          {
-            value: 'Délai de réponse et qualité du dossier en cas de demande de l’administration.',
-          },
-          { value: 'Lancer immédiatement la rédaction projet par projet.' },
-        ],
-      },
-      {
-        cells: [
+          { value: '**Perrin et Fils porte l’essentiel du CIR**' },
+          { value: 'Léo et Anna sont salariés d’un groupement d’employeurs.' },
           {
             value:
-              'Perrin et Fils porterait l’essentiel du CIR sans employer directement l’équipe R&D.',
+              'Identifier l’employeur, l’utilisateur, le site et le projet pour chaque période.',
           },
-          { value: 'Dépendance à la régularité et à la preuve des mises à disposition.' },
-          { value: 'Rapprocher salariés, GE, sociétés utilisatrices, sites, temps et factures.' },
         ],
       },
       {
         cells: [
+          { value: '**Mise à disposition générale**' },
           {
             value:
-              'Gaël et plusieurs contributeurs ponctuels ne sont pas valorisés ou leur quotité n’est pas chiffrée.',
+              'Manuel Ferré confirme l’absence de formalisation individuelle et nominative précise.',
           },
-          { value: 'Assiette incomplète ou insuffisamment justifiable.' },
-          { value: 'Établir une matrice nominative des temps et projets.' },
+          { value: 'Établir les conventions et annexes manquantes sans les antidater.' },
         ],
       },
       {
         cells: [
-          { value: 'Les preuves techniques sont constituées après la période de travaux.' },
-          { value: 'Reconstitution tardive des verrous, essais, échecs et résultats.' },
-          { value: 'Mettre en place un dossier et un suivi mensuels à compter de 2026.' },
+          { value: '**Léo intervient sur plusieurs sites**' },
+          {
+            value:
+              'Une affectation unique ne décrit pas les travaux réalisés chez Perrin et Fils et dans les domaines.',
+          },
+          { value: 'Documenter séparément les sociétés utilisatrices et les moyens mobilisés.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Gaël intervient sur la caisserie**' },
+          {
+            value:
+              'Son temps n’a pas été anticipé ni chiffré ; l’intervention de Léo peut relever de la supervision plutôt que de travaux directs.',
+          },
+          { value: 'Qualifier les tâches avant toute inclusion dans l’assiette.' },
         ],
       },
     ],
   },
   {
     blockType: 'table',
-    eyebrow: 'PERSONNEL ET GROUPEMENTS D’EMPLOYEURS',
-    title: 'Écarts documentaires et arbitrages sociaux',
+    eyebrow: 'JUSTIFICATION TECHNIQUE 2025',
+    title: 'Au 11 juin 2026, le dossier n’avait pas commencé',
     surface: 'light',
     tableVariant: 'reference',
-    columns: [{ header: 'Constat' }, { header: 'Solution proposée' }],
+    columns: [{ header: 'Constat' }, { header: 'Conséquence concrète' }, { header: 'Décision' }],
     rows: [
       {
         cells: [
+          { value: 'Léo indique ne pas avoir commencé la justification technique du CIR 2025.' },
           {
             value:
-              'Les contrats informent d’une mise à disposition générale, mais les conventions individuelles précises ne sont pas établies.',
+              'Les verrous, essais, échecs et résultats doivent être reconstruits plusieurs mois après les travaux.',
           },
-          {
-            value:
-              'Convention et annexe nominative par salarié, société utilisatrice, période, site et fonction.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: 'Léo travaille sur plusieurs sites et pour plusieurs structures.' },
-          { value: 'Documenter chaque affectation et la quote-part correspondante.' },
+          { value: 'Nommer un responsable et lancer la rédaction immédiatement.' },
         ],
       },
       {
         cells: [
           {
             value:
-              'Une salariée viticole ferait une partie de l’année en R&D et le reste en production.',
+              'Léo indique manquer de temps et attendre un arbitrage interne sur l’accompagnement.',
           },
           {
             value:
-              'Séparer les périodes, activités et justificatifs ; exclure le temps de production.',
-          },
-        ],
-      },
-      {
-        cells: [
-          {
-            value:
-              'Le transfert vers une filiale modifierait convention collective, intéressement et avantages.',
+              'Le dossier dépend d’une décision entre direction, finance et expert-comptable qui n’est pas prise.',
           },
           {
             value:
-              'Réaliser un audit social et examiner l’application éventuelle de l’article L. 1224-1.',
+              'Pierre tranche le budget et le prestataire ; Léo fournit la matière scientifique.',
           },
         ],
       },
       {
         cells: [
-          { value: 'Clara est affectée au contrôle qualité mais pourrait intervenir en R&D.' },
+          { value: 'Le dossier technique est traité comme un livrable fiscal annuel.' },
+          { value: 'La preuve n’est pas produite au fil des projets.' },
           {
             value:
-              'Définir une affectation distincte ou des modalités documentées entre qualité et R&D.',
+              'Instaurer un relevé mensuel des hypothèses, essais, résultats, temps et dépenses.',
           },
         ],
       },
@@ -183,55 +117,158 @@ const slides = [
   },
   {
     blockType: 'table',
-    eyebrow: 'ENTITÉS ET FLUX',
-    title: 'Confusions relevées dans l’organisation actuelle',
+    eyebrow: 'CONTRATS ET PROPRIÉTÉ INTELLECTUELLE',
+    title: 'Les documents ne permettent pas d’identifier immédiatement le porteur des droits',
     surface: 'light',
     tableVariant: 'reference',
-    columns: [{ header: 'Situation' }, { header: 'Problème constaté' }, { header: 'Correction' }],
+    columns: [
+      { header: 'Exemple cité' },
+      { header: 'Anomalie' },
+      { header: 'Vérification requise' },
+    ],
     rows: [
       {
         cells: [
-          { value: '**« Famille Perrin »**' },
+          { value: '**Contrats universitaires**' },
           {
             value:
-              'Utilisé comme nom générique et comme désignation de sociétés dans des documents externes.',
+              'Des documents désignent « Famille Perrin » sans identifier clairement la société concernée.',
           },
-          { value: 'Employer la dénomination sociale exacte dans chaque contrat et facture.' },
+          {
+            value:
+              'Déterminer le signataire, le payeur, le bénéficiaire et le régime des résultats.',
+          },
         ],
       },
+      {
+        cells: [
+          { value: '**Deux brevets évoqués**' },
+          {
+            value:
+              'La réunion ne permet pas de répondre immédiatement à la question : quelle entité a porté et payé les projets ?',
+          },
+          { value: 'Rapprocher contrats de thèse, factures, inventeurs, dépôts et titulaires.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Dépôt cosmétique**' },
+          {
+            value:
+              'Joachim cite une tentative de dépôt sur une société de domaines alors que le projet concernait la cosmétique.',
+          },
+          { value: 'Retrouver le dossier, le motif de rejet et la chaîne de droits.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Marque Beau Soleil**' },
+          { value: 'Joachim indique qu’elle aurait été déposée sur la mauvaise entité.' },
+          {
+            value: 'Vérifier le titulaire, l’usage réel et la nécessité d’une cession ou licence.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    blockType: 'table',
+    eyebrow: 'FLUX INTRAGROUPE',
+    title:
+      'Perrin et Fils finance parce qu’elle dispose de trésorerie, pas parce que chaque projet lui appartient',
+    surface: 'dark',
+    tableVariant: 'reference',
+    columns: [
+      { header: 'Fait exprimé en réunion' },
+      { header: 'Problème' },
+      { header: 'Correction' },
+    ],
+    rows: [
+      {
+        cells: [
+          { value: 'Perrin et Fils est présentée comme la société disposant des fonds.' },
+          {
+            value:
+              'La trésorerie disponible ne démontre ni son intérêt propre ni son droit sur les résultats.',
+          },
+          {
+            value:
+              'Transformer le versement en apport, compte courant ou prêt admissible à la filiale R&D.',
+          },
+        ],
+      },
+      {
+        cells: [
+          {
+            value:
+              'Manuel Ferré indique que des dépenses R&D sont souvent refacturées arbitrairement à Perrin et Fils.',
+          },
+          {
+            value:
+              'La clé de répartition n’est pas rattachée à un mandat, un livrable ou un droit obtenu.',
+          },
+          {
+            value: 'Convention-cadre, ordre de mission, budget et méthode de prix avant le projet.',
+          },
+        ],
+      },
+      {
+        cells: [
+          { value: 'Une société peut financer tandis qu’une autre exploite.' },
+          {
+            value:
+              'L’exploitante n’acquiert aucun droit par le seul financement d’une autre société.',
+          },
+          { value: 'Prévoir une licence, une cession ou une prestation attributive de droits.' },
+        ],
+      },
+    ],
+  },
+  {
+    blockType: 'table',
+    eyebrow: 'ENTITÉS EXISTANTES',
+    title: 'Ni 20 Domaines ni Cépages R&D ne répondent au besoin transverse décrit',
+    surface: 'light',
+    tableVariant: 'reference',
+    columns: [
+      { header: 'Entité' },
+      { header: 'Situation décrite' },
+      { header: 'Conclusion opérationnelle' },
+    ],
+    rows: [
       {
         cells: [
           { value: '**20 Domaines**' },
           {
             value:
-              'Société fermière, holding, tête d’intégration et activité ingrédients réunies dans une même entité selon la réunion.',
+              'Cumulerait activité fermière, tête d’intégration, holding et activité ingrédients.',
           },
-          { value: 'Écarter les nouveaux travaux R&D et dépôts de brevets de cette entité.' },
+          { value: 'Ne pas y ajouter les nouveaux travaux R&D et dépôts de brevets.' },
         ],
       },
       {
         cells: [
-          { value: '**Perrin et Fils**' },
+          { value: '**Cépages R&D**' },
           {
             value:
-              'Porte le CIR et reçoit des dépenses R&D, notamment parce qu’elle dispose de trésorerie.',
+              'Structure à actionnariat 50/25/25, créée pour la valorisation cosmétique et porteuse d’un brevet licencié à Beau Domaine.',
           },
           {
             value:
-              'Remplacer la prise en charge par un financement ou une commande juridiquement documentés.',
+              'Ce véhicule commun avec des partenaires ne constitue pas la fonction support R&D du groupe.',
           },
         ],
       },
       {
         cells: [
-          { value: '**Sociétés non détenues à 100 %**' },
+          { value: '**Groupements d’employeurs**' },
           {
             value:
-              'Une exploitation ou un transfert d’actif peut bénéficier à des associés minoritaires.',
+              'Ils répondent à une politique RH globale mais compliquent la preuve CIR et la séparation des fonctions.',
           },
           {
             value:
-              'Conserver la PI dans une entité contrôlée et concéder une licence lorsque cela est justifié.',
+              'Conserver leur usage général ; employer directement le noyau R&D dans le véhicule cible.',
           },
         ],
       },
@@ -239,160 +276,42 @@ const slides = [
   },
   {
     blockType: 'table',
-    eyebrow: 'LABORATOIRE D’EXTRACTION',
-    title: 'Décisions à prendre avant l’investissement',
-    surface: 'dark',
+    eyebrow: 'INVESTISSEMENT EN COURS',
+    title: 'Le laboratoire d’extraction ne doit pas être engagé avant cinq arbitrages',
+    surface: 'light',
     tableVariant: 'reference',
-    columns: [{ header: 'Question' }, { header: 'Décision requise' }],
+    columns: [{ header: 'Arbitrage' }, { header: 'Question non résolue pendant la réunion' }],
     rows: [
       {
         cells: [
-          { value: 'Qui achète les équipements ?' },
+          { value: '**Propriétaire**' },
+          { value: 'Quelle société achète et amortit les équipements ?' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Occupation**' },
           {
             value:
-              'Arrêter le propriétaire avant la commande et vérifier le traitement comptable et CIR.',
+              'Quel titre autorise la filiale R&D à utiliser l’espace situé dans le laboratoire qualité existant ?',
           },
         ],
       },
       {
         cells: [
-          { value: 'Où le laboratoire est-il exploité ?' },
+          { value: '**Séparation**' },
           {
             value:
-              'Formaliser le titre d’occupation et distinguer physiquement les espaces qualité et R&D.',
+              'Comment distinguer les équipements, consommables et coûts du contrôle qualité et de la R&D ?',
           },
         ],
       },
       {
         cells: [
-          { value: 'Qui utilise les équipements ?' },
-          { value: 'Définir les règles d’accès, de mise à disposition et de refacturation.' },
-        ],
-      },
-      {
-        cells: [
-          { value: 'Qui emploie Clara et les autres intervenants ?' },
+          { value: '**Personnel**' },
           {
             value:
-              'Répartir les fonctions, temps et responsabilités entre contrôle qualité et R&D.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: 'Qui devient titulaire des résultats ?' },
-          {
-            value:
-              'Fixer le régime des fractions, procédés, savoir-faire et dépôts avant le début des travaux.',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    blockType: 'section',
-    number: '02',
-    title: 'Solution proposée',
-    subtitle: 'Créer une filiale R&D pour les nouveaux projets ; traiter l’historique séparément.',
-    surface: 'dark',
-  },
-  {
-    blockType: 'mermaid',
-    eyebrow: 'ORGANISATION CIBLE',
-    title: 'Séparer le financement, les travaux et l’exploitation',
-    surface: 'light',
-    source: `flowchart LR
-      A[Société disposant des fonds] -->|capital, compte courant ou prêt admissible| R[Filiale R&D]
-      R -->|salaires, laboratoire, contrats et dépenses| T[Travaux de R&D]
-      T --> P[Résultats et PI]
-      P -->|licence, cession ou prestation| B[Société exploitante]
-      B -->|prix ou redevance documenté| R`,
-    caption:
-      'La société financeuse ne devient pas propriétaire par le seul paiement. La société exploitante reçoit ses droits par un acte distinct.',
-  },
-  {
-    blockType: 'table',
-    eyebrow: 'FONCTIONNEMENT DE LA FILIALE',
-    title: 'Éléments à mettre en place dès la constitution',
-    surface: 'light',
-    tableVariant: 'reference',
-    columns: [{ header: 'Élément' }, { header: 'Mise en œuvre' }],
-    rows: [
-      {
-        cells: [
-          { value: '**Direction**' },
-          {
-            value:
-              'Formaliser Léo Lajoie comme Directeur R&D : fonction, rattachement, délégations et validation des temps.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Équipe**' },
-          {
-            value:
-              'Transférer ou recruter les trois ou quatre personnes majoritairement affectées à la R&D ; documenter les autres interventions.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Moyens**' },
-          { value: 'Locaux, laboratoire, équipements et contrats d’usage identifiables.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Pilotage**' },
-          { value: 'Programme annuel, comité R&D, budget et comptabilité analytique par projet.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Contrats**' },
-          {
-            value:
-              'Convention-cadre avec chaque société, puis ordre de mission ou devis avant chaque projet.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Propriété intellectuelle**' },
-          {
-            value:
-              'Politique de titularité, dépôt, licence et perfectionnement arrêtée avant les travaux.',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    blockType: 'table',
-    eyebrow: 'RÈGLE PAR PROJET',
-    title: 'Informations à fixer avant tout démarrage',
-    surface: 'light',
-    tableVariant: 'reference',
-    columns: [{ header: 'Rubrique' }, { header: 'Information obligatoire' }],
-    rows: [
-      {
-        cells: [
-          { value: '**Besoin et travaux**' },
-          { value: 'Société demandeuse, verrou, hypothèses, programme, jalons et livrables.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Ressources**' },
-          { value: 'Chef de projet, salariés, sites, équipements, partenaires et budget.' },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Flux**' },
-          {
-            value: 'Financeur, payeur des dépenses, méthode de prix et calendrier de facturation.',
+              'Clara reste-t-elle en qualité, rejoint-elle la R&D ou partage-t-elle son temps selon une règle formalisée ?',
           },
         ],
       },
@@ -401,83 +320,103 @@ const slides = [
           { value: '**Résultats**' },
           {
             value:
-              'Titulaire initial, droits de l’exploitant, exclusivité, territoire et perfectionnements.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Fiscalité**' },
-          {
-            value:
-              'Déclarant CIR, aides demandées et absence de double financement ou double déclaration.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Échec**' },
-          {
-            value:
-              'Traitement de l’abandon, des résultats négatifs et des résultats utilisables par plusieurs sociétés.',
+              'Quelle société détiendra les procédés, fractions, savoir-faire et dépôts issus du laboratoire ?',
           },
         ],
       },
     ],
   },
   {
-    blockType: 'timeline',
-    eyebrow: 'MISE EN ŒUVRE',
-    title: 'Calendrier proposé',
+    blockType: 'mermaid',
+    eyebrow: 'SOLUTION CIBLE',
+    title: 'Créer le véhicule minimal pour les nouveaux projets',
     surface: 'light',
-    steps: [
-      {
-        label: 'Immédiat',
-        description:
-          'Constituer le dossier CIR 2025 et les matrices personnel, temps, factures, contrats et dépenses.',
-      },
-      {
-        label: '0 à 3 mois',
-        description:
-          'Décider du laboratoire ; auditer GE, équipe, PI, intégration fiscale et conséquences sociales.',
-      },
-      {
-        label: '3 à 6 mois',
-        description:
-          'Constituer la filiale ; fixer financement, gouvernance, équipe, locaux, contrats et politique de PI.',
-      },
-      {
-        label: 'À la bascule',
-        description:
-          'Faire porter les nouveaux projets, contrats et investissements par la filiale.',
-      },
-      {
-        label: '2027',
-        description:
-          'Examiner les actifs et contrats historiques séparément, sans transfert général.',
-      },
-    ],
-    footer:
-      'La priorité est la sécurisation de l’existant et des nouveaux projets. Le nettoyage complet de l’historique est une opération distincte.',
+    source: `flowchart LR
+      F[Financeur identifié] -->|apport, compte courant ou prêt admissible| R[Filiale R&D]
+      R -->|emploie 3 à 4 personnes cœur| E[Équipe R&D]
+      R -->|signe les nouveaux contrats| P[Nouveaux projets]
+      P --> D[Nouveaux résultats et droits]
+      D -->|licence, cession ou prestation| X[Société exploitante]
+      X -->|prix documenté| R`,
+    caption:
+      'Le véhicule cible reçoit les nouveaux projets. Les contrats, salariés et actifs historiques ne sont pas transférés en bloc.',
   },
   {
     blockType: 'table',
-    eyebrow: 'DÉCISIONS DU GROUPE',
-    title: 'Arbitrages nécessaires',
-    surface: 'dark',
+    eyebrow: 'PÉRIMÈTRE DE LA PREMIÈRE PHASE',
+    title: 'Ce qui entre dans la filiale et ce qui reste hors du chantier initial',
+    surface: 'light',
     tableVariant: 'reference',
-    columns: [{ header: 'Décision' }, { header: 'Points à arrêter' }],
+    columns: [{ header: 'À faire maintenant' }, { header: 'À différer' }],
     rows: [
       {
         cells: [
-          { value: '**Création**' },
-          { value: 'Validation de la nouvelle filiale R&D et date cible.' },
+          { value: 'Constituer une société contrôlée par le groupe avec un objet R&D adapté.' },
+          { value: 'Transférer tous les brevets et marques historiques.' },
         ],
       },
       {
         cells: [
-          { value: '**Capital et financement**' },
-          { value: 'Actionnaires, contrôle, capital initial, compte courant ou prêt.' },
+          {
+            value:
+              'Employer directement les trois ou quatre personnes majoritairement affectées à la R&D.',
+          },
+          { value: 'Réorganiser immédiatement tous les salariés à contribution ponctuelle.' },
+        ],
+      },
+      {
+        cells: [
+          {
+            value:
+              'Faire signer par la filiale les nouveaux contrats, notamment les nouveaux projets d’extraction, jus et spiritueux.',
+          },
+          {
+            value:
+              'Renégocier d’un seul bloc les contrats universitaires et industriels existants.',
+          },
+        ],
+      },
+      {
+        cells: [
+          {
+            value:
+              'Définir avant chaque projet le financeur, le titulaire, l’exploitant, le prix et le déclarant CIR.',
+          },
+          { value: 'Reconstituer immédiatement l’intégralité de l’historique du groupe.' },
+        ],
+      },
+    ],
+  },
+  {
+    blockType: 'table',
+    eyebrow: 'DÉCISIONS À PRENDRE',
+    title: 'Six décisions conditionnent le démarrage',
+    surface: 'dark',
+    tableVariant: 'reference',
+    columns: [{ header: 'Décision' }, { header: 'Réponse attendue' }],
+    rows: [
+      {
+        cells: [
+          { value: '**CIR 2025**' },
+          { value: 'Qui rédige le dossier, avec quel budget et selon quel calendrier ?' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Filiale**' },
+          {
+            value:
+              'Validation de la création, du contrôle capitalistique et de la date de constitution.',
+          },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Direction**' },
+          {
+            value:
+              'Formalisation du rôle de Léo Lajoie et de ses pouvoirs sur les projets et les temps.',
+          },
         ],
       },
       {
@@ -485,7 +424,7 @@ const slides = [
           { value: '**Équipe**' },
           {
             value:
-              'Personnes transférées ou recrutées ; statut de Léo ; traitement de Clara et des contributeurs partiels.',
+              'Liste des trois ou quatre salariés transférés ou recrutés et traitement social associé.',
           },
         ],
       },
@@ -493,7 +432,7 @@ const slides = [
         cells: [
           { value: '**Laboratoire**' },
           {
-            value: 'Propriétaire, site, équipements, séparation qualité/R&D et calendrier d’achat.',
+            value: 'Société propriétaire, site, règles d’usage, personnel et régime des résultats.',
           },
         ],
       },
@@ -502,80 +441,7 @@ const slides = [
           { value: '**Premiers projets**' },
           {
             value:
-              'Projets d’extraction, jus, gin sans alcool, co-produits et autres projets à faire entrer dans la filiale.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Contrats et prix**' },
-          {
-            value:
-              'Convention-cadre, ordres de mission, licences et méthode de rémunération intragroupe.',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    blockType: 'table',
-    eyebrow: 'PIÈCES À OBTENIR',
-    title: 'Documents nécessaires à l’exécution',
-    surface: 'light',
-    tableVariant: 'reference',
-    columns: [{ header: 'Domaine' }, { header: 'Documents' }],
-    rows: [
-      {
-        cells: [
-          { value: '**GE et personnel**' },
-          {
-            value:
-              'Statuts, adhérents, contrats, conventions, factures, suivi du temps et règles d’intéressement.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**CIR**' },
-          {
-            value:
-              'Déclarations 2024-2025, calculs, projets retenus, pièces techniques, paie et comptabilité.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Contrats**' },
-          {
-            value:
-              'Universités, CIFRE, partenaires industriels, prestations et refacturations intragroupe.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**PI**' },
-          {
-            value:
-              'Titres, demandes, inventeurs, titulaires, copropriétés, licences, annuités et revenus.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Groupe**' },
-          {
-            value:
-              'Organigramme juridique, détentions, minoritaires et périmètre d’intégration fiscale.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Filiale**' },
-          {
-            value:
-              'Statuts, budget, financement, bail, équipements, gouvernance et contrats-cadres.',
+              'Liste des projets qui naîtront directement dans la filiale et sociétés appelées à les exploiter.',
           },
         ],
       },
@@ -584,34 +450,30 @@ const slides = [
 ];
 
 const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
+
 if (process.env.OUTPUT_MARKDOWN) {
   const { writeFileSync } = await import('node:fs');
   const md = buildSlidesMd({
-    title: 'Organisation de la R&D du groupe Perrin',
+    title: 'R&D Perrin : anomalies constatées et décisions à prendre',
     slides: richSlides as never,
   });
   writeFileSync(process.env.OUTPUT_MARKDOWN, md);
   console.log(`Wrote rendered deck to ${process.env.OUTPUT_MARKDOWN}`);
   process.exit(0);
 }
-if (process.env.OUTPUT_SLIDES_JSON) {
-  const { writeFileSync } = await import('node:fs');
-  writeFileSync(process.env.OUTPUT_SLIDES_JSON, JSON.stringify(richSlides));
-  console.log(`Wrote ${richSlides.length} slides to ${process.env.OUTPUT_SLIDES_JSON}`);
-  process.exit(0);
-}
+
 const presentation = await payload.update({
   collection: 'presentations',
   id: 16,
   data: {
-    title: 'Organisation de la R&D du groupe Perrin',
+    title: 'R&D Perrin : anomalies constatées et décisions à prendre',
     language: 'fr',
     status: 'published',
     tags: ['R&D', 'CIR', 'organisation', 'propriété intellectuelle', 'décision'],
     footer: {
       enabled: true,
       left: 'Groupe Perrin · R&D',
-      center: 'Document de décision',
+      center: 'Revue de l’organisation existante',
       right: '{page} / {total}',
     },
     slides: richSlides,
