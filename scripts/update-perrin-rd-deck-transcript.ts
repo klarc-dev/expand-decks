@@ -59,6 +59,19 @@ const slides = [
       },
       {
         cells: [
+          { value: '**Anna travaille à l’Université de Bordeaux**' },
+          {
+            value:
+              'Léo indique qu’elle y est présente toute l’année dans le cadre de la CIFRE ; Joachim relève que ce lieu de travail complique son rattachement aux moyens de la société déclarante.',
+          },
+          {
+            value:
+              'Vérifier le contrat CIFRE, l’employeur, les locaux, l’encadrement, les moyens utilisés et le traitement CIR avant toute conclusion sur son éligibilité.',
+          },
+        ],
+      },
+      {
+        cells: [
           { value: '**Gaël intervient sur la caisserie**' },
           {
             value:
