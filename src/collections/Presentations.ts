@@ -4,8 +4,8 @@ import type { CollectionConfig, PayloadRequest } from 'payload';
 
 import { isAdmin, isAdminOrAuthor, isAdminOrSelf, userIsAdmin } from '../access/roles';
 import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
-import { CTX } from '../lib/context';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
+import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMetadata';
 import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
@@ -56,7 +56,7 @@ export const Presentations: CollectionConfig = {
     preview: (data) => (typeof data.spaUrl === 'string' && data.spaUrl ? data.spaUrl : null),
     components: {
       edit: {
-        beforeDocumentControls: ['/components/ExportButton#default'],
+        editMenuItems: ['/components/ExportMenuItem#default'],
       },
     },
   },
@@ -129,25 +129,47 @@ export const Presentations: CollectionConfig = {
         // flag so this patch doesn't itself trigger the hook. Set the visible
         // status immediately: the worker cron may not pick the job up for up to a
         // minute, but authors need confirmation in the Sortie tab right away.
-        await req.payload.update({
-          collection: COLLECTIONS.presentations,
-          id,
-          data: {
-            lastBuildRequestedAt: requestedAt,
-            lastBuildToken: buildToken,
-            lastBuildStatus: BUILD_STATUS.building,
-            lastBuildError: '',
-          },
-          overrideAccess: true,
-          context: { [CTX.skipBuildQueue]: true },
-        });
+        try {
+          await patchPresentationBuildMetadata(
+            req.payload,
+            id,
+            {
+              lastBuildRequestedAt: requestedAt,
+              lastBuildToken: buildToken,
+              lastBuildStatus: BUILD_STATUS.building,
+              lastBuildError: '',
+            },
+            req,
+          );
 
-        // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
-        await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
-          task: BUILD_SLIDES_TASK,
-          input: { presentationId: id, buildToken },
-          req,
-        });
+          // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
+          await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
+            task: BUILD_SLIDES_TASK,
+            input: { presentationId: id, buildToken },
+            req,
+          });
+        } catch (error) {
+          req.payload.logger.error({
+            err: error,
+            msg: `Failed to queue presentation ${id} export`,
+          });
+
+          const message = "Impossible de lancer l'export. Réessayez dans un instant.";
+          // Never leave the document stuck on "building" when no job exists, and
+          // clear the cooldown timestamp so the author can retry immediately.
+          await patchPresentationBuildMetadata(
+            req.payload,
+            id,
+            {
+              lastBuildStatus: BUILD_STATUS.failed,
+              lastBuildError: message,
+              lastBuildRequestedAt: null,
+            },
+            req,
+          );
+
+          return Response.json({ error: message }, { status: 500 });
+        }
 
         return Response.json({
           queued: true,
