@@ -8,6 +8,7 @@ import { fr } from '@payloadcms/translations/languages/fr';
 import { en } from '@payloadcms/translations/languages/en';
 import { authPlugin } from 'payload-auth-plugin';
 import { GoogleAuthProvider } from 'payload-auth-plugin/providers';
+import sharp from 'sharp';
 
 import { Users } from './collections/Users';
 import { Presentations } from './collections/Presentations';
@@ -108,6 +109,7 @@ export default buildConfig({
     deleteJobOnComplete: true,
     enableConcurrencyControl: true,
   },
+  sharp,
   secret: PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
