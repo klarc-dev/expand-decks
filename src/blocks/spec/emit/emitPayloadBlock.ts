@@ -18,7 +18,6 @@ import {
   imageFields,
   previewField,
   slideRichTextEditor,
-  surfaceField,
   titleField,
 } from '../../_shared';
 import type { FieldSpec, BlockSpec, PayloadFieldMeta } from '../dsl';
@@ -96,8 +95,6 @@ function emitField(field: FieldSpec): Field[] {
       ];
     case 'title':
       return [titleField(field.factoryArgs!.description!)];
-    case 'surface':
-      return [surfaceField(field.factoryArgs?.gradient ? { gradient: true } : undefined)];
     case 'image':
       return imageFields(field.factoryArgs?.description);
     case 'cardTitleDesc':

@@ -13,7 +13,6 @@ import {
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const surface = optionalRender(z.enum(['dark', 'light']));
 const footer = optionalRender(z.string());
 
 const step = z.object({
@@ -36,16 +35,6 @@ export const timelineSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre de la frise'),
-    rawField('surface', surface, optionalAi(z.enum(['dark', 'light'])), {
-      type: 'select',
-      label: 'Surface',
-      defaultValue: 'light',
-      description: 'Apparence de fond de la diapositive',
-      options: [
-        { label: 'Clair', value: 'light' },
-        { label: 'Sombre', value: 'dark' },
-      ],
-    }),
     rawField('steps', z.array(z.unknown()), optionalAi(z.array(aiStep).min(2).max(6)), {
       type: 'array',
       label: 'Étapes',
@@ -77,7 +66,7 @@ export const timelineSpec = block({
     summary:
       'Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)',
     lines: [
-      'eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)',
+      'eyebrow, title (obligatoire), footer (bandeau transverse)',
       'steps: [{label, description}] — 2 à 6 étapes, dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)',
     ],
   },
@@ -87,7 +76,6 @@ export const timelineRenderSchema = z.object({
   blockType: z.literal('timeline'),
   eyebrow,
   title,
-  surface,
   steps,
   footer,
 });

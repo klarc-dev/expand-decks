@@ -8,13 +8,11 @@ import {
   optionalAi,
   optionalRender,
   rawField,
-  surfaceFieldSpec,
   titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const surface = optionalRender(z.enum(['dark', 'light']));
 const source = z.string();
 const caption = optionalRender(z.string());
 
@@ -27,7 +25,6 @@ export const mermaidSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du diagramme'),
-    surfaceFieldSpec(surface),
     rawField('source', source, z.string(), {
       type: 'code',
       label: 'Source du diagramme',
@@ -48,7 +45,7 @@ export const mermaidSpec = block({
     summary:
       'Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)',
     lines: [
-      'eyebrow, title (obligatoire), surface ("light" | "dark"), caption',
+      'eyebrow, title (obligatoire), caption',
       'source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs ```',
     ],
   },
@@ -58,7 +55,6 @@ export const mermaidRenderSchema = z.object({
   blockType: z.literal('mermaid'),
   eyebrow,
   title,
-  surface,
   source,
   caption,
 });

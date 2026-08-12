@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 2 — Sécuriser',
   title: 'Classification de confidentialité',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Niveau' },

@@ -6,7 +6,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Partie I — Les outils',
   title: 'Chaque composant appelle un outil distinct (2/2)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Droit' },

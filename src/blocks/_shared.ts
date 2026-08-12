@@ -89,19 +89,6 @@ export const footnotesField = (): Field => ({
   fields: [{ name: 'text', type: 'text', required: true, label: 'Texte' }],
 });
 
-export const surfaceField = (opts?: { gradient?: boolean }): Field => ({
-  name: 'surface',
-  type: 'select',
-  label: 'Surface',
-  defaultValue: 'dark',
-  admin: { description: 'Apparence de fond de la diapositive' },
-  options: [
-    { label: 'Sombre', value: 'dark' },
-    { label: 'Clair', value: 'light' },
-    ...(opts?.gradient ? [{ label: 'Dégradé', value: 'gradient' }] : []),
-  ],
-});
-
 export const imageFields = (
   description = 'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left)',
 ): Field[] => [

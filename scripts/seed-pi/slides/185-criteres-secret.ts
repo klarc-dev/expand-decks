@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 2 — Sécuriser',
   title: 'Trois critères cumulatifs (L.151-1 C. com.)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [{ header: 'Critère' }, { header: 'Exigence' }, { header: 'Vérification' }],
   rows: [

@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 2 — Sécuriser',
   title: 'Opposabilité de la politique PI aux salariés',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Véhicule' },

@@ -28,7 +28,7 @@ export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
   });
 
   return wrapSlide({
-    classAttr: surfaceClass(block.surface ?? ctx?.surface),
+    classAttr: surfaceClass(ctx?.surface ?? 'light'),
     body,
   });
 }

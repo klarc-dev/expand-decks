@@ -58,6 +58,5 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
   const bodyHtml = contentFrame(table, { header, wFull: true, mainAlign: 'start' });
 
-  // Explicit block.surface wins over the resolved tone (KTD5).
-  return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });
+  return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });
 }

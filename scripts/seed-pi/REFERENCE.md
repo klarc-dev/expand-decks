@@ -27,7 +27,7 @@ Chaque fichier `export default` une fonction `(ctx) => Slide | Slide[]`.
 | Bloc | Usage | Champs clés |
 |---|---|---|
 | `cover` | couverture | title, subtitle, footerLeft/Right, surface |
-| `section` | intercalaire de partie | number, title, subtitle, surface:'dark' |
+| `section` | intercalaire de partie sombre | number, title, subtitle |
 | `statement` | affirmation/encart | title, body, footer, variant, surface |
 | `cardGrid` | grille de cartes numérotées | title, sidebarText, columns:'2'/'3'/'4', cards:[{number,title,description}] |
 | `twoCols` | 2 colonnes (gauche intro + droite cartes) | title, eyebrow, intro, rightCards:[{title,description}] |
@@ -50,7 +50,7 @@ Chaque fichier `export default` une fonction `(ctx) => Slide | Slide[]`.
    `["..."]` s'ils contiennent ponctuation/apostrophes ; pas plus de ~7 nœuds.
 6. **arbres de décision ASCII** du draft → bloc `mermaid` (flowchart TD).
 7. **listes à puces longues** → `cardGrid` ou `twoCols`, pas un pavé `statement`.
-8. **`section` toujours `surface:'dark'`** (intercalaires sombres).
+8. **Utiliser `section` pour les intercalaires sombres**. La surface est imposée par le template.
 9. Pas de bloc `markdown` brut sauf nécessité absolue (non éditable proprement en admin).
 
 ## Apostrophes

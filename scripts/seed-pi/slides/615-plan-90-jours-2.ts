@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Partie IV — Mise en œuvre',
   title: 'Plan de mise en œuvre — 90 jours (2/2)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Semaine' },

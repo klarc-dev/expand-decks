@@ -274,7 +274,7 @@ describe('buildSlidesMd()', () => {
     const slides: Presentation['slides'] = [
       { blockType: 'cover', title: 'Cover', eyebrow: 'Tag', subtitle: lexical('Sub') },
       { blockType: 'statement', title: 'Statement', body: lexical('Body text') },
-      { blockType: 'section', title: 'Section', number: '02', surface: 'dark' },
+      { blockType: 'section', title: 'Section', number: '02' },
       {
         blockType: 'cardGrid',
         title: 'Grid',

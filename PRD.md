@@ -259,7 +259,7 @@ Why Payload is the entire MVP frontend:
 
 // ─── Block schemas (each block = one Slidev layout) ──────────────
 
-// CoverBlock → layout: cover, dark surface
+// CoverBlock → layout: cover, fixed gradient surface
 {
   blockType: 'cover'
   eyebrow: text               // "Conseil en innovation · Lyon · Toulouse"
@@ -267,19 +267,17 @@ Why Payload is the entire MVP frontend:
   subtitle: textarea          // paragraph below the hero
   footerLeft: text            // e.g. "Découvrir Klarc →"
   footerRight: text           // e.g. "Fondé en 2023 · 5/5"
-  surface: select             // "dark" | "light" | "gradient"
 }
 
-// SectionBlock → layout: center, numbered section divider
+// SectionBlock → layout: center, numbered divider on a fixed dark surface
 {
   blockType: 'section'
   number: text                // "02"
   title: text                 // "Klarc redéfinit le conseil en innovation."
   subtitle: textarea
-  surface: select             // "dark" | "light"
 }
 
-// StatementBlock → layout: center, large quote-style
+// StatementBlock → layout: center, large quote-style on a fixed dark surface
 {
   blockType: 'statement'
   eyebrow: text
@@ -315,12 +313,11 @@ Why Payload is the entire MVP frontend:
   }
 }
 
-// StatsBlock → layout: center, row of value/label pairs on dark surface
+// StatsBlock → layout: center, row of value/label pairs on a fixed light surface
 {
   blockType: 'stats'
   eyebrow: text               // "La synergie Klarc"
   title: text                 // "Un seul interlocuteur."
-  surface: select             // "dark" | "light"
   stats: array of {
     value: text               // "1", "4", "360°"
     label: text               // "Point de contact"

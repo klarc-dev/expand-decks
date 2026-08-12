@@ -10,7 +10,6 @@ describe('renderMermaid', () => {
       blockType: 'mermaid',
       title: 'Workflow',
       eyebrow: null,
-      surface: null,
       source: src,
       caption: null,
     });
@@ -32,7 +31,6 @@ describe('renderMermaid', () => {
       blockType: 'mermaid',
       title: 'X',
       eyebrow: null,
-      surface: null,
       source: '```mermaid\nflowchart LR\n  X --> Y\n```',
       caption: null,
     });
@@ -45,7 +43,6 @@ describe('renderMermaid', () => {
       blockType: 'mermaid',
       title: 'Empty',
       eyebrow: null,
-      surface: null,
       source: '',
       caption: null,
     });

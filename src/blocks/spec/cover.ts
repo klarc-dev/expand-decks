@@ -9,7 +9,6 @@ import {
   optionalRender,
   optionalRichTextRender,
   rawField,
-  surfaceFieldSpec,
   titleFieldSpec,
 } from './dsl';
 
@@ -18,7 +17,6 @@ const title = z.string();
 // subtitle is rich text (Lexical); its render Zod is the editor state, while
 // its AI Zod stays a markdown string (converted to Lexical on write).
 const subtitle = optionalRichTextRender();
-const surface = optionalRender(z.enum(['dark', 'light', 'gradient']));
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
 const mediaRelationship = z.union([
@@ -91,7 +89,6 @@ export const coverSpec = block({
         }),
       ],
     }),
-    surfaceFieldSpec(surface, true),
     factoryField('image', 'image', z.never(), false),
     factoryField('preview', 'preview', z.never(), false),
   ],
@@ -104,7 +101,6 @@ export const coverSpec = block({
       'title: titre principal (obligatoire)',
       'subtitle: paragraphe descriptif',
       'intervenants: personnes affichées en cartes avatar (sélection manuelle)',
-      'surface: "dark" | "light" | "gradient"',
     ],
   },
 });
@@ -115,7 +111,6 @@ export const coverRenderSchema = z.object({
   title,
   subtitle,
   intervenants,
-  surface,
   image,
   imagePosition,
 });

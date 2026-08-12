@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Partie II — Les personnes',
   title: 'Les contrats qui font entrer la PI dans l’entreprise (2/2)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Relation' },

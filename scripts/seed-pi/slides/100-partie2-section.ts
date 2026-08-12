@@ -6,7 +6,6 @@ const slide: SlideFactory = ({ rt }) => ({
   number: 'II',
   title: 'Les personnes',
   subtitle: rt('Qui crée, qui détient — le statut du créateur détermine le régime de titularité.'),
-  surface: 'dark',
 });
 
 export default slide;

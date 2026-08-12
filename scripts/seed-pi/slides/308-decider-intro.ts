@@ -8,7 +8,6 @@ const slide: SlideFactory = ({ rt }) => ({
   body: rt(
     "L'analyse porte sur chaque création identifiée, **composant par composant**. Trois familles : solution technique, apparence, code source. Les arbres de décision qui suivent guident le choix.",
   ),
-  surface: 'light',
 });
 
 export default slide;

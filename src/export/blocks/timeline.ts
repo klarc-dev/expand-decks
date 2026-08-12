@@ -48,5 +48,5 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
     crowded: vertical,
   });
 
-  return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });
+  return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });
 }

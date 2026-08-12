@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Partie II — Les personnes',
   title: 'Le statut du créateur détermine le régime (1/2)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Statut' },

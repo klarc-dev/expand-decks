@@ -11,7 +11,6 @@ const slide: SlideFactory = ({ rt }) => ({
   footer: rt(
     'La plupart des pertes de PI dans les entreprises innovantes relèvent de défauts d’organisation, pas d’erreurs juridiques.',
   ),
-  surface: 'light',
 });
 
 export default slide;

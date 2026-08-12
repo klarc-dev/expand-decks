@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 6 — Piloter',
   title: 'Indicateurs de pilotage (1/2)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [{ header: 'Indicateur' }, { header: 'Objet' }, { header: 'Cible' }],
   rows: [

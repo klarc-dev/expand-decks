@@ -5,7 +5,6 @@ const slide: SlideFactory = () => ({
   blockType: 'mermaid',
   eyebrow: 'Étape 4 — Décider',
   title: 'Choisir l’outil : apparence',
-  surface: 'light',
   source: `flowchart TD
   A["Apparence nouvelle et caractère propre ?"] -->|Oui| B{"Cycle de vie ?"}
   A -->|"Non ou incertain"| C["Droit d'auteur si originalité — sans dépôt, preuve d'antériorité à constituer"]

@@ -11,7 +11,7 @@
  *
  * Covered blocks (chosen to exercise every render-optional shape):
  *   - statement : flat `?: string | null` optionals + required `title`
- *   - cover     : adds the image `?: { url: string } | null` shape + enum surface
+ *   - cover     : adds the image `?: { url: string } | null` shape
  *   - twoCols   : nested `rightCards?: Array<{…; description?: string | null}> | null`
  *   - cardGrid  : nested `cards` with an optional `number` + enum-string `columns`
  */
@@ -38,7 +38,6 @@ const statementRenderSchema = z.object({
   body: optionalRichTextRender(),
   footer: optionalRichTextRender(),
   variant: optionalRender(z.enum(['centered-hero', 'pull-quote', 'big-statement', 'split'])),
-  surface: optionalRender(z.enum(['dark', 'light'])),
 });
 
 type DerivedStatement = InferRender<typeof statementRenderSchema>;
@@ -46,7 +45,7 @@ type DerivedStatement = InferRender<typeof statementRenderSchema>;
 type _StatementMatches = Expect<Equal<DerivedStatement, StatementBlockData>>;
 
 // ---------------------------------------------------------------------------
-// cover — image `{ url: string } | null`, intervenants, enum surface
+// cover — image `{ url: string } | null`, intervenants
 // ---------------------------------------------------------------------------
 
 const coverMediaRelationship = z.union([
@@ -95,7 +94,6 @@ const coverRenderSchema = z.object({
   title: z.string(),
   subtitle: optionalRichTextRender(),
   intervenants: coverIntervenants,
-  surface: optionalRender(z.enum(['dark', 'light', 'gradient'])),
   image: z.object({ url: z.string() }).nullable().optional(),
   imagePosition: optionalRender(z.enum(['right', 'left'])),
 });

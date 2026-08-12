@@ -23,7 +23,15 @@ describe('renderBlockPreview()', () => {
     expect(preview?.html).not.toMatch(/^---/);
   });
 
-  it('preserves light-surface classes instead of inventing preview styling', () => {
+  it('applies the cover gradient on the same root frame used by final Slidev output', () => {
+    const preview = renderBlockPreview({ blockType: 'cover', title: 'Ouverture' } as never);
+
+    expect(preview).not.toBeNull();
+    expect(preview?.className).toBe('relative k-dark k-gradient');
+    expect(preview?.html).not.toContain('class="k-dark k-gradient');
+  });
+
+  it('uses the statement template dark surface even when legacy data asks for light', () => {
     const preview = renderBlockPreview({
       blockType: 'statement',
       title: 'Message',
@@ -31,9 +39,8 @@ describe('renderBlockPreview()', () => {
     } as never);
 
     expect(preview).not.toBeNull();
-    expect(preview?.className).toBe('relative');
+    expect(preview?.className).toBe('relative k-dark');
     expect(preview?.hideChrome).toBe(false);
-    expect(preview?.className).not.toContain('k-dark');
   });
 
   it('preserves image layout frontmatter for Slidev image slides', () => {
@@ -62,12 +69,12 @@ describe('renderBlockPreview()', () => {
     expect(preview?.mermaid).toEqual({ source: 'flowchart TD\n  A --> B' });
   });
 
-  it('uses deck context so a statement after a dark cover previews on the light surface', () => {
+  it('keeps the statement template dark regardless of the preceding cover', () => {
     const ctx = buildPreviewRenderContext(['cover', 'statement'], 1, []);
     const preview = renderBlockPreview({ blockType: 'statement', title: 'Message' } as never, ctx);
 
     expect(preview).not.toBeNull();
-    expect(preview?.className).toBe('relative');
+    expect(preview?.className).toBe('relative k-dark');
   });
 
   it('uses deck context so statement variant indexes match final export order', () => {

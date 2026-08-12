@@ -37,7 +37,6 @@ export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): str
     scale: layout.scale,
     align: layout.align,
     accentRule: layout.accentRule,
-    // explicit block.surface wins over the resolved tone (KTD5).
-    surface: block.surface ?? ctx?.surface,
+    surface: ctx?.surface ?? 'dark',
   });
 }

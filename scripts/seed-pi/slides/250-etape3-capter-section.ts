@@ -6,7 +6,6 @@ const slide: SlideFactory = ({ rt }) => ({
   number: '3',
   title: 'Capter',
   subtitle: rt('Identifier et documenter les créations.'),
-  surface: 'dark',
 });
 
 export default slide;

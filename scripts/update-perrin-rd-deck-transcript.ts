@@ -13,13 +13,11 @@ const slides = [
     title: 'R&D Perrin : anomalies constatées et décisions à prendre',
     subtitle:
       'Analyse fondée sur les situations décrites pendant la réunion. Les qualifications juridiques et fiscales restent à confirmer sur pièces.',
-    surface: 'gradient',
   },
   {
     blockType: 'table',
     eyebrow: 'ANOMALIES DOCUMENTÉES EN RÉUNION',
     title: 'Le CIR est porté par une société qui n’emploie pas directement l’équipe R&D',
-    surface: 'dark',
     tableVariant: 'reference',
     columns: [
       { header: 'Situation décrite' },
@@ -89,7 +87,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'JUSTIFICATION TECHNIQUE 2025',
     title: 'Au 11 juin 2026, le dossier n’avait pas commencé',
-    surface: 'light',
     tableVariant: 'reference',
     columns: [{ header: 'Constat' }, { header: 'Conséquence concrète' }, { header: 'Décision' }],
     rows: [
@@ -135,7 +132,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'CONTRATS ET PROPRIÉTÉ INTELLECTUELLE',
     title: 'Les documents ne permettent pas d’identifier immédiatement le porteur des droits',
-    surface: 'light',
     tableVariant: 'reference',
     columns: [
       { header: 'Exemple cité' },
@@ -192,7 +188,6 @@ const slides = [
     eyebrow: 'FLUX INTRAGROUPE',
     title:
       'Perrin et Fils finance parce qu’elle dispose de trésorerie, pas parce que chaque projet lui appartient',
-    surface: 'dark',
     tableVariant: 'reference',
     columns: [
       { header: 'Fait exprimé en réunion' },
@@ -244,7 +239,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'ENTITÉS EXISTANTES',
     title: 'Ni 20 Domaines ni Cépages R&D ne répondent au besoin transverse décrit',
-    surface: 'light',
     tableVariant: 'reference',
     columns: [
       { header: 'Entité' },
@@ -294,7 +288,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'INVESTISSEMENT EN COURS',
     title: 'Le laboratoire d’extraction ne doit pas être engagé avant cinq arbitrages',
-    surface: 'light',
     tableVariant: 'reference',
     columns: [{ header: 'Arbitrage' }, { header: 'Question non résolue pendant la réunion' }],
     rows: [
@@ -346,7 +339,6 @@ const slides = [
     blockType: 'mermaid',
     eyebrow: 'SOLUTION CIBLE',
     title: 'Créer le véhicule minimal pour les nouveaux projets',
-    surface: 'light',
     source: `flowchart LR
       F[Financeur identifié] -->|apport, compte courant ou prêt admissible| R[Filiale R&D]
       R -->|emploie 3 à 4 personnes cœur| E[Équipe R&D]
@@ -361,7 +353,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'PÉRIMÈTRE DE LA PREMIÈRE PHASE',
     title: 'Ce qui entre dans la filiale et ce qui reste hors du chantier initial',
-    surface: 'light',
     tableVariant: 'reference',
     columns: [{ header: 'À faire maintenant' }, { header: 'À différer' }],
     rows: [
@@ -407,7 +398,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'DÉCISIONS À PRENDRE',
     title: 'Six décisions conditionnent le démarrage',
-    surface: 'dark',
     tableVariant: 'reference',
     columns: [{ header: 'Décision' }, { header: 'Réponse attendue' }],
     rows: [

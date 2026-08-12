@@ -46,6 +46,6 @@ export function renderMermaid(block: MermaidBlockData, ctx?: RenderCtx): string 
   // the slide root rather than a wrapper div, so the fence stays unwrapped.
   const body = [header, diagram, caption, defFooterSlot()].filter(Boolean).join('\n\n');
 
-  const tone = surfaceClass(block.surface ?? ctx?.surface);
+  const tone = surfaceClass(ctx?.surface ?? 'light');
   return wrapSlide({ classAttr: `${tone} k-diagram-slide`, body });
 }

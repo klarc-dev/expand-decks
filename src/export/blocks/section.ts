@@ -40,10 +40,9 @@ ${md(block.title)}
   ${defFooterSlot()}
 </div>`;
 
-  // section/cover/cta default dark; an explicit block.surface or resolved tone wins.
   return wrapSlide({
     layout: 'center',
-    classAttr: surfaceClass(block.surface ?? ctx?.surface),
+    classAttr: surfaceClass(ctx?.surface ?? 'dark'),
     hideChrome: true,
     image,
     body,

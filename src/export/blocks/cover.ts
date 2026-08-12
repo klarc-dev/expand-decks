@@ -104,13 +104,7 @@ function renderPeople(block: CoverBlockData): string {
   return `\n      <div class="${K.coverPeople}" aria-label="Intervenants">\n${cards}\n      </div>`;
 }
 
-// ctx is accepted for signature parity with the other renderers (the RENDERERS
-// map types every entry with the optional ctx arg). The cover defines its own
-// tone (dark unless surface:'light'), so the resolved deck tone is ignored here.
 export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
-  const isDark = block.surface !== 'light';
-  const darkClass = isDark ? ' k-dark' : '';
-
   const image: SlideImage | null = block.image?.url
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
@@ -125,9 +119,7 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   // half), so the cover fills the content slot. Without an image the cover goes
   // full-bleed over the whole slide. Both behaviours are CSS-owned (k-cover sets
   // height:100%; k-cover--full-bleed adds the absolute inset overlay).
-  const wrapperClass = [darkClass.trim(), K.cover, image ? '' : K.coverFullBleed]
-    .filter(Boolean)
-    .join(' ');
+  const wrapperClass = [K.cover, image ? '' : K.coverFullBleed].filter(Boolean).join(' ');
 
   const body = `<div class="${wrapperClass}">
   <div class="${K.coverMain}">
@@ -138,5 +130,5 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   ${defFooterSlot()}
 </div>`;
 
-  return wrapSlide({ layout: 'cover', classAttr: '', hideChrome: true, image, body });
+  return wrapSlide({ layout: 'cover', surface: 'gradient', hideChrome: true, image, body });
 }

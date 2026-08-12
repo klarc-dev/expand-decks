@@ -20,7 +20,6 @@ import {
   optionalRender,
   optionalRichTextRender,
   rawField,
-  surfaceFieldSpec,
   titleFieldSpec,
 } from './dsl';
 
@@ -36,7 +35,6 @@ const footer = optionalRichTextRender();
 // variety even if the author/AI never picks (the Section-block lesson, KTD6b).
 const STATEMENT_VARIANTS = ['centered-hero', 'pull-quote', 'big-statement', 'split'] as const;
 const variant = optionalRender(z.enum(STATEMENT_VARIANTS));
-const surface = optionalRender(z.enum(['dark', 'light']));
 
 export const statementSpec = block({
   slug: 'statement',
@@ -64,7 +62,6 @@ export const statementSpec = block({
         'Disposition : centered-hero (centré), pull-quote (citation), big-statement (énoncé large), split (titre/texte). Laisser vide pour une alternance automatique.',
       options: STATEMENT_VARIANTS.map((v) => ({ label: v, value: v })),
     }),
-    surfaceFieldSpec(surface),
     factoryField('preview', 'preview', z.any(), false),
   ],
   promptMeta: {
@@ -86,7 +83,6 @@ export const statementRenderSchema = z.object({
   body,
   footer,
   variant,
-  surface,
 });
 
 export type StatementBlockData = InferRender<typeof statementRenderSchema>;

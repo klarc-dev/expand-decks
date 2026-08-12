@@ -16,7 +16,6 @@ import {
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const surface = optionalRender(z.enum(['dark', 'light']));
 // Table layout variant (U10): 'reference' is the default plain table; 'matrix'
 // renders ok/warn/blocked status cells as pills via the StatusPill helper.
 const TABLE_VARIANTS = ['reference', 'matrix'] as const;
@@ -42,20 +41,6 @@ export const tableSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du tableau'),
-    // NB: kept as an explicit rawField (not surfaceFieldSpec) — table/timeline
-    // default to 'light' with Clair-first options, whereas the shared
-    // surfaceField factory defaults to 'dark'. Consolidating here would flip the
-    // default and reorder options (generate:types drift).
-    rawField('surface', surface, optionalAi(z.enum(['dark', 'light'])), {
-      type: 'select',
-      label: 'Surface',
-      defaultValue: 'light',
-      description: 'Apparence de fond de la diapositive',
-      options: [
-        { label: 'Clair', value: 'light' },
-        { label: 'Sombre', value: 'dark' },
-      ],
-    }),
     rawField('tableVariant', tableVariant, optionalAi(z.enum(TABLE_VARIANTS)), {
       type: 'select',
       label: 'Type de tableau',
@@ -115,7 +100,7 @@ export const tableSpec = block({
     summary:
       'Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)',
     lines: [
-      'eyebrow, title (obligatoire), surface ("light" | "dark")',
+      'eyebrow, title (obligatoire)',
       'tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.',
       'columns: [{header}] — 2 à 5 colonnes',
       'rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre',
@@ -127,7 +112,6 @@ export const tableRenderSchema = z.object({
   blockType: z.literal('table'),
   eyebrow,
   title,
-  surface,
   tableVariant,
   columns,
   rows,

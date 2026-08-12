@@ -6,7 +6,6 @@ const slide: SlideFactory = ({ rt }) => ({
   number: 'IV',
   title: 'Mise en œuvre',
   subtitle: rt('Un plan à 90 jours pour installer le dispositif.'),
-  surface: 'dark',
 });
 
 export default slide;

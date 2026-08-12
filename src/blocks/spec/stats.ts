@@ -8,13 +8,11 @@ import {
   optionalAi,
   optionalRender,
   rawField,
-  surfaceFieldSpec,
   titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const surface = optionalRender(z.enum(['dark', 'light']));
 const stats = optionalRender(
   z.array(
     z.object({
@@ -33,7 +31,6 @@ export const statsSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre principal de la diapositive'),
-    surfaceFieldSpec(surface),
     rawField(
       'stats',
       z.array(z.unknown()),
@@ -74,7 +71,7 @@ export const statsSpec = block({
     index: 6,
     heading: 'stats',
     summary: 'Chiffres clés en grille',
-    lines: ['eyebrow, title (obligatoire), surface', 'stats: [{value, label}]'],
+    lines: ['eyebrow, title (obligatoire)', 'stats: [{value, label}]'],
   },
 });
 
@@ -82,7 +79,6 @@ export const statsRenderSchema = z.object({
   blockType: z.literal('stats'),
   eyebrow,
   title,
-  surface,
   stats,
 });
 

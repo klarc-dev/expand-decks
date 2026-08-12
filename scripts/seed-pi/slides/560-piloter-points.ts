@@ -8,7 +8,6 @@ const slide: SlideFactory = ({ rt }) => ({
   body: rt(
     "L'échéancier d'annuités doit être géré par un système avec alertes automatiques — la déchéance pour non-paiement est irréversible *(L.612-19 CPI)*, sous réserve du recours en restauration dans les conditions de L.612-16 CPI (6 mois, excuse légitime).",
   ),
-  surface: 'light',
 });
 
 export default slide;

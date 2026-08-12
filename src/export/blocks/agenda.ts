@@ -56,5 +56,5 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     mainAlign: fit ? 'stretch' : 'center',
   });
 
-  return wrapSlide({ classAttr: surfaceClass(block.surface ?? ctx?.surface), body: bodyHtml });
+  return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });
 }

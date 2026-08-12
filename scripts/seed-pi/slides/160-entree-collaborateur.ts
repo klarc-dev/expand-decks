@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 1 — Embauche',
   title: 'Cadrer avant le premier jour (1/2)',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [{ header: 'Action' }, { header: 'Livrable' }, { header: 'Référence' }],
   rows: [

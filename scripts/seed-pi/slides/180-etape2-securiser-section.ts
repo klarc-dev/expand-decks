@@ -8,7 +8,6 @@ const slide: SlideFactory = ({ rt }) => ({
   number: '2',
   title: 'Sécuriser le secret',
   subtitle: rt('Le secret n’existe juridiquement que s’il est organisé.'),
-  surface: 'dark',
 });
 
 export default slide;

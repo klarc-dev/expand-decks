@@ -86,14 +86,7 @@ import { z } from 'zod';
  * either call a `_shared` factory of the matching name, or assemble the Field
  * from the plain `payload` metadata when `factory: 'raw'`.
  */
-export type FieldFactory =
-  | 'eyebrow'
-  | 'title'
-  | 'surface'
-  | 'image'
-  | 'preview'
-  | 'cardTitleDesc'
-  | 'raw';
+export type FieldFactory = 'eyebrow' | 'title' | 'image' | 'preview' | 'cardTitleDesc' | 'raw';
 
 /** Render-facing optional that infers as `prop?: T | null`. */
 export const optionalRender = <T extends z.ZodType>(inner: T) => z.nullable(inner).optional();
@@ -131,7 +124,7 @@ export interface PayloadOption {
  *
  * For `factory: 'raw'` fields the emitter reads `type` + the matching keys to
  * construct the admin Field. For factory fields, only `factoryArgs` is relevant
- * (e.g. eyebrow description, surface `{ gradient: true }`, image description);
+ * (e.g. eyebrow or image description);
  * it is also surfaced on `FieldSpec.factoryArgs` for convenience.
  *
  * This is deliberately permissive-but-typed: the emitter owns the actual
@@ -179,7 +172,6 @@ export interface PayloadFieldMeta {
 /** Arguments forwarded to a `_shared` factory (superset across factories). */
 export interface FactoryArgs {
   description?: string;
-  gradient?: boolean;
 }
 
 /**
@@ -253,7 +245,7 @@ export function rawField(
 }
 
 /**
- * Author a factory-backed field (eyebrow/title/surface/image/preview/
+ * Author a factory-backed field (eyebrow/title/image/preview/
  * cardTitleDesc). The emitter calls the matching `_shared` factory with
  * `factoryArgs`; `render`/`ai` still define the data contract.
  */
@@ -279,7 +271,7 @@ export function block(spec: BlockSpec): BlockSpec {
 }
 
 // ---------------------------------------------------------------------------
-// Header-field factories (U7) — the eyebrow/title/surface trio is declared
+// Header-field factories (U7) — eyebrow/title fields are declared
 // identically across nearly every spec. These return the exact same FieldSpec
 // the inline `factoryField(...)` calls produced, so render/AI key sets cannot
 // drift and the spec files stop copy-pasting. Byte-identical emission is the
@@ -306,18 +298,6 @@ export function titleFieldSpec(render: z.ZodType, description?: string): FieldSp
     z.string(),
     description !== undefined ? { description } : undefined,
   );
-}
-
-/**
- * `surface` field: render Zod + AI enum. `gradient` couples both the 3-value AI
- * enum AND the `{ gradient: true }` factoryArg the emitter reads to build the
- * Payload select with the gradient option.
- */
-export function surfaceFieldSpec(render: z.ZodType, gradient = false): FieldSpec {
-  const ai = gradient
-    ? optionalAi(z.enum(['dark', 'light', 'gradient']))
-    : optionalAi(z.enum(['dark', 'light']));
-  return factoryField('surface', 'surface', render, ai, gradient ? { gradient: true } : undefined);
 }
 
 // ---------------------------------------------------------------------------

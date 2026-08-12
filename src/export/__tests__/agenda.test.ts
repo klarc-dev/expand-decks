@@ -6,7 +6,6 @@ const base = {
   blockType: 'agenda' as const,
   title: 'Au programme',
   eyebrow: null,
-  surface: null,
   items: null,
   active: null,
 };

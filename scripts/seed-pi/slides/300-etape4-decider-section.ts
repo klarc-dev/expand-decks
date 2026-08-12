@@ -6,7 +6,6 @@ const slide: SlideFactory = ({ rt }) => ({
   number: '4',
   title: 'Décider',
   subtitle: rt('Quel outil de protection pour quelle création.'),
-  surface: 'dark',
 });
 
 export default slide;

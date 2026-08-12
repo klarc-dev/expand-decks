@@ -13,7 +13,6 @@ const slides = [
     title: 'Structurer la R&D du groupe Perrin',
     subtitle:
       '**Sécuriser l’existant.** Installer une filiale R&D opérationnelle. Rationaliser progressivement l’historique.',
-    surface: 'gradient',
   },
   {
     blockType: 'statement',
@@ -23,13 +22,11 @@ const slides = [
     footer:
       'Le financement ne transfère, à lui seul, ni la propriété des résultats, ni le droit de les exploiter.',
     variant: 'big-statement',
-    surface: 'dark',
   },
   {
     blockType: 'agenda',
     eyebrow: 'TRAME DE DÉCISION',
     title: 'Quatre questions à trancher',
-    surface: 'light',
     items: [
       {
         label: 'Pourquoi agir ?',
@@ -93,7 +90,6 @@ const slides = [
     blockType: 'mermaid',
     eyebrow: 'LE SCHÉMA ACTUEL',
     title: 'Six rôles qui ne coïncident pas toujours',
-    surface: 'light',
     source: `flowchart LR
       GE[GE Caves / GE Agricoles] -->|personnel mis à disposition| S[Sociétés du groupe]
       S --> C[Contrats scientifiques]
@@ -111,7 +107,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'FRAGILITÉS PRIORITAIRES',
     title: 'Le risque vient moins du modèle que de sa preuve',
-    surface: 'light',
     tableVariant: 'matrix',
     columns: [{ header: 'Axe' }, { header: 'Point de vigilance' }, { header: 'Priorité' }],
     rows: [
@@ -163,7 +158,6 @@ const slides = [
     blockType: 'timeline',
     eyebrow: 'PRIORITÉ N° 1',
     title: 'Sécuriser le CIR 2025 maintenant',
-    surface: 'dark',
     steps: [
       {
         label: 'Statut',
@@ -194,7 +188,6 @@ const slides = [
     number: '02',
     title: 'Installer la brique qui manque',
     subtitle: 'Une fonction R&D juridiquement, financièrement et opérationnellement identifiable.',
-    surface: 'dark',
   },
   {
     blockType: 'statement',
@@ -204,13 +197,11 @@ const slides = [
     body: 'Mais aucune de ces qualités ne résulte automatiquement du seul financement. **Les actes juridiques et la réalité opérationnelle attribuent les droits, les risques et les rémunérations.**',
     footer: 'L’intérêt propre et la contrepartie de chaque société restent à démontrer.',
     variant: 'split',
-    surface: 'light',
   },
   {
     blockType: 'mermaid',
     eyebrow: 'LE MODÈLE CIBLE',
     title: 'Une chaîne juridique en trois étages',
-    surface: 'light',
     source: `flowchart LR
       A[Société financeuse] -->|1. Capital, compte courant ou prêt admissible| R[Filiale R&D]
       R -->|2. Équipe, laboratoire, contrats, coûts, CIR| X[Résultats & PI]
@@ -267,7 +258,6 @@ const slides = [
     blockType: 'table',
     eyebrow: 'RÈGLE DE DÉCISION PAR PROJET',
     title: 'Choisir le flux selon la réalité économique',
-    surface: 'light',
     tableVariant: 'reference',
     columns: [{ header: 'Situation' }, { header: 'Flux recommandé' }, { header: 'Point clé' }],
     rows: [
@@ -316,13 +306,11 @@ const slides = [
     footer:
       'La détention du capital, la titularité de l’actif, le développement, l’exploitation et la perception des revenus sont cinq positions distinctes.',
     variant: 'pull-quote',
-    surface: 'dark',
   },
   {
     blockType: 'timeline',
     eyebrow: 'FEUILLE DE ROUTE 80/20',
     title: 'Sécuriser maintenant, basculer les nouveaux projets, traiter l’historique ensuite',
-    surface: 'light',
     steps: [
       {
         label: 'Immédiat',

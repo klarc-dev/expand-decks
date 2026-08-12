@@ -8,7 +8,6 @@ const slide: SlideFactory = () => [
     blockType: 'mermaid',
     eyebrow: 'Étape 4 — Décider',
     title: 'Choisir l’outil : solution technique (1/2)',
-    surface: 'light',
     source: `flowchart TD
   A["Solution stratégique et exploitable ?"] -->|Non| B["Abandon documenté ou publication défensive"]
   A -->|Oui| C{"Contrefaçon détectable sur le produit/service commercialisé ?"}
@@ -26,7 +25,6 @@ const slide: SlideFactory = () => [
     blockType: 'mermaid',
     eyebrow: 'Étape 4 — Décider',
     title: 'Choisir l’outil : solution technique (2/2)',
-    surface: 'light',
     source: `flowchart TD
   A["Solution stratégique et exploitable ?"] -->|Oui| K{"Secret tenable durablement (effectif restreint, confinement possible) ?"}
   K -->|Oui| L["Secret d'affaires — durée illimitée"]

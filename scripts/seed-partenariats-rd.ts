@@ -70,7 +70,6 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
       blockType: 'cover',
       eyebrow: 'BLOOM FORMATION',
       title: 'Optimiser et sécuriser ses contrats R&D',
-      surface: 'light',
     },
 
     // PDF page 2 — sommaire (image-right, photo poignée de main)
@@ -95,7 +94,6 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
       subtitle: rt(
         'Un **projet R&D** est une initiative structurée caractérisée par son incertitude scientifique ou technique, et son potentiel à générer de la valeur à travers des avancées dans un domaine spécifique.',
       ),
-      surface: 'dark',
     },
 
     // PDF page 4 — Exemple de projets R&D (image-right, photo presenter)
@@ -176,7 +174,6 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
       subtitle: rt(
         "Certains notions indispensables permettent d'**encadrer la gestion de la propriété intellectuelle** : différents types de droits, définitions intégrant les notions de pré-existence ou de propriété, modalités d'exploitation, etc.",
       ),
-      surface: 'dark',
     },
 
     // PDF page 8 — Notions à maîtriser (4 sections de définitions → markdown)
@@ -236,7 +233,6 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
       subtitle: rt(
         "La **sécurisation des échanges** est un préalable indispensable à toute divulgation d'information confidentielle et à tout envoi de matériel propriétaire.",
       ),
-      surface: 'dark',
     },
 
     // PDF page 11 — Mettre en place un accord de confidentialité — Pourquoi ?
@@ -337,7 +333,6 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
       blockType: 'section',
       title: 'Cadrage du projet',
       subtitle: rt('Le **cadrage du projet** est aussi important que le contenu du contrat.'),
-      surface: 'dark',
     },
 
     // PDF page 16 — Raisons du cadrage
@@ -541,7 +536,6 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
     {
       blockType: 'section',
       title: "Négociation d'un contrat",
-      surface: 'dark',
     },
 
     // PDF page 25 — Term-sheet (intro + tableau exemple)
@@ -655,7 +649,6 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
     {
       blockType: 'section',
       title: 'Points particuliers',
-      surface: 'dark',
     },
 
     // PDF page 31 — Gestion des résultats
@@ -730,7 +723,6 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
     {
       blockType: 'section',
       title: 'Questions & réponses',
-      surface: 'dark',
     },
 
     // PDF page 35 — Contact

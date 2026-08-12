@@ -82,13 +82,11 @@ Layouts disponibles :
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
    - intervenants: personnes affichées en cartes avatar (sélection manuelle)
-   - surface: "dark" | "light" | "gradient"
 
 2. **section** — Intercalaire de section
    - number: numéro (ex. "01")
    - title: titre (obligatoire)
    - subtitle: description
-   - surface: "dark" | "light"
 
 3. **statement** — Affirmation ou citation mise en avant
    - eyebrow, title (obligatoire), body, footer
@@ -104,7 +102,7 @@ Layouts disponibles :
    - cards: [{number, title, description}]
 
 6. **stats** — Chiffres clés en grille
-   - eyebrow, title (obligatoire), surface
+   - eyebrow, title (obligatoire)
    - stats: [{value, label}]
 
 7. **quotes** — Grille de citations
@@ -117,21 +115,21 @@ Layouts disponibles :
    - footerNote: petit texte en bas
 
 9. **table** — Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)
-   - eyebrow, title (obligatoire), surface ("light" | "dark")
+   - eyebrow, title (obligatoire)
    - tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.
    - columns: [{header}] — 2 à 5 colonnes
    - rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre
 
 10. **timeline** — Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)
-   - eyebrow, title (obligatoire), surface ("light" | "dark"), footer (bandeau transverse)
+   - eyebrow, title (obligatoire), footer (bandeau transverse)
    - steps: [{label, description}] — 2 à 6 étapes, dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)
 
 11. **mermaid** — Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)
-   - eyebrow, title (obligatoire), surface ("light" | "dark"), caption
+   - eyebrow, title (obligatoire), caption
    - source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs \`\`\`
 
 12. **agenda** — Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire
-   - eyebrow, title (obligatoire), surface ("light" | "dark")
+   - eyebrow, title (obligatoire)
    - items: [{label, description}] — 2 à 8 sections, dans l’ordre, numérotées automatiquement
 
 Règles :

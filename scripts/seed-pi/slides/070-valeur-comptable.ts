@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Partie I — Les outils',
   title: 'La PI est un actif inscriptible au bilan',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [{ header: 'Situation' }, { header: 'Traitement comptable' }, { header: 'Compte' }],
   rows: [

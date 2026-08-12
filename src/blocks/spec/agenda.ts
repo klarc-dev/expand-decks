@@ -8,13 +8,11 @@ import {
   optionalAi,
   optionalRender,
   rawField,
-  surfaceFieldSpec,
   titleFieldSpec,
 } from './dsl';
 
 const eyebrow = optionalRender(z.string());
 const title = z.string();
-const surface = optionalRender(z.enum(['dark', 'light']));
 const active = optionalRender(z.number());
 
 const item = z.object({
@@ -37,7 +35,6 @@ export const agendaSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du programme (ex. "Au programme")'),
-    surfaceFieldSpec(surface),
     rawField('items', z.array(z.unknown()), optionalAi(z.array(aiItem).min(2).max(8)), {
       type: 'array',
       label: 'Sections',
@@ -71,7 +68,7 @@ export const agendaSpec = block({
     summary:
       'Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire',
     lines: [
-      'eyebrow, title (obligatoire), surface ("light" | "dark")',
+      'eyebrow, title (obligatoire)',
       'items: [{label, description}] — 2 à 8 sections, dans l’ordre, numérotées automatiquement',
     ],
   },
@@ -81,7 +78,6 @@ export const agendaRenderSchema = z.object({
   blockType: z.literal('agenda'),
   eyebrow,
   title,
-  surface,
   items,
   active,
 });

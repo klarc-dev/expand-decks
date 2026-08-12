@@ -46,12 +46,6 @@ const statementSpec = block({
         })),
       },
     ),
-    factoryField(
-      'surface',
-      'surface',
-      optionalRender(z.enum(['dark', 'light'])),
-      optionalAi(z.enum(['dark', 'light'])),
-    ),
     factoryField('preview', 'preview', z.never(), false),
   ],
 });

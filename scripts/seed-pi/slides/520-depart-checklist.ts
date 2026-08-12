@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 5 — Le départ',
   title: 'Procédure de sortie PI',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [{ header: 'Action' }, { header: 'Responsable' }, { header: 'Délai' }],
   rows: [

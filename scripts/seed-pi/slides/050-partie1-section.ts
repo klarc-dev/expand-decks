@@ -8,7 +8,6 @@ const slide: SlideFactory = ({ rt }) => ({
   subtitle: rt(
     'Ce qu’on protège et comment — chaque composant de l’innovation appelle un outil distinct.',
   ),
-  surface: 'dark',
 });
 
 export default slide;

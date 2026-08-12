@@ -8,7 +8,6 @@ const slide: SlideFactory = ({ rt }) => ({
   subtitle: rt(
     'Le départ d’un collaborateur informé est un moment de risque élevé de fuite d’informations.',
   ),
-  surface: 'dark',
 });
 
 export default slide;

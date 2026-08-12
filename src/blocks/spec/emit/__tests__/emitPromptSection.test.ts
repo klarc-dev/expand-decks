@@ -21,13 +21,11 @@ Layouts disponibles :
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
    - intervenants: personnes affichées en cartes avatar (sélection manuelle)
-   - surface: "dark" | "light" | "gradient"
 
 2. **section** — Intercalaire de section
    - number: numéro (ex. "01")
    - title: titre (obligatoire)
    - subtitle: description
-   - surface: "dark" | "light"
 
 3. **statement** — Affirmation ou citation mise en avant
    - eyebrow, title (obligatoire), body, footer
@@ -42,7 +40,7 @@ Layouts disponibles :
    - cards: [{number, title, description}]
 
 6. **stats** — Chiffres clés en grille
-   - eyebrow, title (obligatoire), surface
+   - eyebrow, title (obligatoire)
    - stats: [{value, label}]
 
 7. **quotes** — Grille de citations
@@ -81,19 +79,13 @@ const metas: PromptMeta[] = [
       'title: titre principal (obligatoire)',
       'subtitle: paragraphe descriptif',
       'intervenants: personnes affichées en cartes avatar (sélection manuelle)',
-      'surface: "dark" | "light" | "gradient"',
     ],
   },
   {
     index: 2,
     heading: 'section',
     summary: 'Intercalaire de section',
-    lines: [
-      'number: numéro (ex. "01")',
-      'title: titre (obligatoire)',
-      'subtitle: description',
-      'surface: "dark" | "light"',
-    ],
+    lines: ['number: numéro (ex. "01")', 'title: titre (obligatoire)', 'subtitle: description'],
   },
   {
     index: 3,
@@ -124,7 +116,7 @@ const metas: PromptMeta[] = [
     index: 6,
     heading: 'stats',
     summary: 'Chiffres clés en grille',
-    lines: ['eyebrow, title (obligatoire), surface', 'stats: [{value, label}]'],
+    lines: ['eyebrow, title (obligatoire)', 'stats: [{value, label}]'],
   },
   {
     index: 7,
@@ -151,8 +143,7 @@ describe('emitPromptSection', () => {
    - eyebrow: accroche courte au-dessus du titre
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
-   - intervenants: personnes affichées en cartes avatar (sélection manuelle)
-   - surface: "dark" | "light" | "gradient"`,
+   - intervenants: personnes affichées en cartes avatar (sélection manuelle)`,
     );
   });
 

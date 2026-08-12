@@ -113,21 +113,21 @@ describe('renderCover()', () => {
     expect(result).toContain('Tag Line');
   });
 
-  it('applies dark surface by default', () => {
+  it('always applies the cover gradient surface', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'Test',
     });
-    expect(result).toContain('k-dark');
+    expect(result).toContain('class: relative k-dark k-gradient');
   });
 
-  it('omits dark class for light surface', () => {
+  it('ignores legacy authored surface values', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'Test',
       surface: 'light',
-    });
-    expect(result).not.toContain('k-dark');
+    } as never);
+    expect(result).toContain('class: relative k-dark k-gradient');
   });
 
   it('reserves a footer slot inside the full-height cover frame', () => {
@@ -458,12 +458,12 @@ describe('renderCardGrid()', () => {
 });
 
 describe('renderStats()', () => {
-  it('produces dark surface by default', () => {
+  it('uses the fixed light information surface', () => {
     const result = renderStats({
       blockType: 'stats',
       title: 'Stats',
     });
-    expect(result).toContain('k-dark');
+    expect(result).not.toContain('k-dark');
   });
 
   it('renders each stat value and label', () => {

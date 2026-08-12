@@ -5,7 +5,6 @@ const slide: SlideFactory = ({ rt }) => ({
   blockType: 'table',
   eyebrow: 'Étape 2 — Sécuriser',
   title: 'Donner une date certaine et prouver l’intégrité',
-  surface: 'light',
   tableVariant: 'reference',
   columns: [
     { header: 'Outil' },

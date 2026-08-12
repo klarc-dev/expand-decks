@@ -161,8 +161,8 @@ export type Surface = 'dark' | 'light' | 'gradient';
 
 export function surfaceClass(surface?: Surface | null): string {
   if (surface === 'light') return 'relative';
-  // gradient is a distinct dark surface (k-dark paints the base dark tone,
-  // k-gradient adds the diagonal wash) so the admin/AI choice has a real effect.
+  // Gradient is a distinct dark template surface: k-dark supplies dark-tone
+  // variables and k-gradient paints the cover wash on the Slidev root.
   if (surface === 'gradient') return `relative ${K.dark} k-gradient`;
   return `relative ${K.dark}`;
 }

@@ -6,7 +6,6 @@ const slide: SlideFactory = ({ rt }) => ({
   number: '1',
   title: 'Embauche & cadrage',
   subtitle: rt('Cadrer avant le premier jour de travail.'),
-  surface: 'dark',
 });
 
 export default slide;

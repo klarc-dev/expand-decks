@@ -24,7 +24,6 @@ const coverSpec: BlockSpec = block({
     rawField('subtitle', render, optionalAi(z.string()), { type: 'textarea' }),
     rawField('footerLeft', render, optionalAi(z.string()), { type: 'text' }),
     rawField('footerRight', render, optionalAi(z.string()), { type: 'text' }),
-    factoryField('surface', 'surface', render, optionalAi(z.enum(['dark', 'light', 'gradient']))),
     // image / imagePosition are NOT AI-draftable (ai: false → dropped from L3).
     factoryField('image', 'image', render, false),
     rawField('imagePosition', render, false, { type: 'select' }),
@@ -100,7 +99,6 @@ const currentCoverSchema = z.object({
   subtitle: z.string().optional(),
   footerLeft: z.string().optional(),
   footerRight: z.string().optional(),
-  surface: z.enum(['dark', 'light', 'gradient']).optional(),
 });
 
 const currentStatementSchema = z.object({
@@ -188,7 +186,6 @@ describe('emitDraftSchema() — behavioral parity', () => {
     subtitle: 'Sub',
     footerLeft: 'L',
     footerRight: 'R',
-    surface: 'dark',
   };
   const coverMissingOptionals = { blockType: 'cover', title: 'Hello' };
   const invalidCoverNoTitle = { blockType: 'cover', eyebrow: 'TAG' };

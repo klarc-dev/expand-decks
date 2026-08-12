@@ -103,7 +103,7 @@ describe('buildSlidesMd() — composed deck is injection-free across all block t
   const slides = [
     { blockType: 'cover', title: INJECT, eyebrow: XSS_LINK, subtitle: DATA_LINK },
     { blockType: 'statement', title: INJECT, body: `${XSS_LINK} ${DATA_LINK}` },
-    { blockType: 'section', title: INJECT, number: '01', surface: 'dark' },
+    { blockType: 'section', title: INJECT, number: '01' },
     {
       blockType: 'cardGrid',
       title: INJECT,
