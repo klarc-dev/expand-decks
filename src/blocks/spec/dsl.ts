@@ -132,7 +132,7 @@ export interface PayloadOption {
  */
 export interface PayloadFieldMeta {
   type?: PayloadRawType;
-  label?: string;
+  label?: string | false;
   required?: boolean;
   defaultValue?: unknown;
   description?: string;

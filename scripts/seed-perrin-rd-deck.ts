@@ -382,6 +382,27 @@ const slides = [
 ];
 
 const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
+const speakers = await payload.find({
+  collection: 'users',
+  where: {
+    email: { in: ['joachim.brindeau@klarc.com', 'benjamin.visser@klarc.com'] },
+  },
+  limit: 2,
+  overrideAccess: true,
+});
+
+if (speakers.docs.length !== 2 || richSlides[0]?.blockType !== 'cover') {
+  throw new Error('Joachim, Benjamin, or the Perrin cover slide is missing');
+}
+
+const speakerIdByEmail = new Map(speakers.docs.map((user) => [user.email, user.id]));
+const cover = richSlides[0] as (typeof richSlides)[number] & {
+  intervenants: Array<{ user: string | number }>;
+};
+cover.intervenants = [
+  { user: speakerIdByEmail.get('joachim.brindeau@klarc.com')! },
+  { user: speakerIdByEmail.get('benjamin.visser@klarc.com')! },
+];
 
 let org = (
   await payload.find({

@@ -85,8 +85,7 @@ export const tableSpec = block({
           fields: [
             rawField('value', richTextRender(), optionalAi(z.string()), {
               type: 'richText',
-              label: 'Contenu',
-              description: 'Texte de la cellule',
+              label: false,
             }),
           ],
         }),

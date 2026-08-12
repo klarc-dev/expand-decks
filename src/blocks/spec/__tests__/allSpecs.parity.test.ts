@@ -174,6 +174,20 @@ describe('ALL_SPECS parity', () => {
     }
   });
 
+  it('keeps table cells free of repeated field labels and helper text', () => {
+    const table = emitPayloadBlock(ALL_SPECS.find((spec) => spec.blockType === 'table')!);
+    const rows = table.fields.find((field) => 'name' in field && field.name === 'rows');
+    const cells = rows && 'fields' in rows ? rows.fields[0] : undefined;
+    const value = cells && 'fields' in cells ? cells.fields[0] : undefined;
+
+    expect(value && 'label' in value ? value.label : undefined).toBe(false);
+    expect(
+      value && 'admin' in value
+        ? (value.admin as { description?: unknown } | undefined)?.description
+        : undefined,
+    ).toBeUndefined();
+  });
+
   it('builds the original SYSTEM_PROMPT from the AI-draftable specs', () => {
     const metas = ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : []));
     expect(buildSystemPrompt(metas)).toBe(EXPECTED_PROMPT);
