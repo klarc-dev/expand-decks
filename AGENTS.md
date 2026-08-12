@@ -53,15 +53,9 @@ This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors c
 
 `slidev-workspace/` is a **separate pnpm project** with its own `node_modules` for `@slidev/cli`, `@slidev/theme-default`, `vue`, and `playwright-chromium`. This keeps Slidev's deep Vue/Vite tree out of the Next.js bundle. The Dockerfile has a dedicated `slidev-deps` stage for it and installs the Chromium binary via `npx playwright-chromium install chromium` in the final image. The build job finds the binary via `join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev')` — do not replace this with `npx` or a global install. Staged temp workdirs symlink `slidev-workspace/node_modules`; this intentionally preserves Slidev/Vite's default `node_modules/.vite` cache across builds, so do not add a custom cache directory unless timing logs prove dependency pre-bundling is still expensive.
 
-### Export tuning and smoke verification
+### Export smoke verification
 
-Slidev export knobs live in env only for operational tuning:
-- `SLIDEV_EXPORT_TIMEOUT_MS` defaults to `120000` and feeds Slidev `export --timeout`.
-- `SLIDEV_EXPORT_WITH_TOC=1` adds `--with-toc`; default is off.
-- `SLIDEV_EXPORT_PER_SLIDE=1` restores slower `--per-slide` PDF export; default is off because single-pass export now has baked `kPage` / `kTotal` footer data.
-- `SLIDEV_EXPORT_INCREMENTAL_PDF=0` is default-off phase 2. `SLIDEV_EXPORT_INCREMENTAL_MIN_SLIDES` and `SLIDEV_EXPORT_INCREMENTAL_MAX_DIRTY_RATIO` are only for deliberate partial-PDF smoke/testing, not normal production.
-
-`outputPolicy` is a per-job input, not an env var. Valid values are `both` (default publish/update path), `pdf`, and `spa`; targeted `pdf` / `spa` rebuilds leave the skipped artifact on its previous fingerprint and surfaced as stale where relevant.
+Every build produces the canonical PDF, SPA, and first-slide cover through the native Slidev CLI. PDF export is single-pass with baked `kPage` / `kTotal` footer data. Keep the fixed image/Mermaid settling policy in `slidevExportArgs.ts`; do not add operator tuning, partial-output modes, page caches, or PDF assembly without measured production evidence.
 
 Worker replicas are constrained by Chromium + Vite memory/CPU. Keep `WORKER_REPLICAS <= host cores - 1` and within container memory (`payload-worker` defaults assume about 2g per replica). Do not increase replicas to mask slow exports before checking timing logs.
 
@@ -70,7 +64,6 @@ Cache posture: staged workdirs symlink `slidev-workspace/node_modules`, intentio
 Smoke commands before changing export plumbing:
 - Export CLI help: `pnpm --dir slidev-workspace exec slidev export --help`
 - Full PDF smoke from a temp deck: `pnpm --dir slidev-workspace exec slidev export /tmp/slides.md --format pdf --output /tmp/slides.pdf`
-- Range PDF smoke: `pnpm --dir slidev-workspace exec slidev export /tmp/slides.md --format pdf --range 1-2 --output /tmp/slides-range.pdf`
 - PNG smoke: `pnpm --dir slidev-workspace exec slidev export /tmp/slides.md --format png --output /tmp/slides-png`
 - Docker config smoke: `docker compose config`
 - Focused args tests: `pnpm test src/jobs/__tests__/slidevExportArgs.test.ts`

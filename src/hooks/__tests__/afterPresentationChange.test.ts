@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CTX } from '../../lib/context';
 import { BUILD_SLIDES_TASK } from '../../jobs/buildSlides';
-import { DEFAULT_OUTPUT_POLICY } from '../../lib/outputPolicy';
 import { BUILD_STATUS } from '../../lib/status';
 import { afterPresentationChange, buildInputsChanged } from '../afterPresentationChange';
 
@@ -49,7 +48,6 @@ describe('afterPresentationChange', () => {
         input: {
           presentationId: 'presentation-1',
           buildToken: updateOne.mock.calls[0]?.[0].data.lastBuildToken,
-          outputPolicy: DEFAULT_OUTPUT_POLICY,
         },
       }),
     );

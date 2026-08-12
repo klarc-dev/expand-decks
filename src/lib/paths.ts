@@ -1,11 +1,6 @@
 import { join } from 'node:path';
 
 export const MEDIA_DIR = join(/* turbopackIgnore: true */ process.cwd(), 'media');
-export const PAGE_CACHE_DIR = join(
-  /* turbopackIgnore: true */ process.cwd(),
-  '.artifact-cache',
-  'pdf-pages',
-);
 export const PUBLIC_FONTS_DIR = join(/* turbopackIgnore: true */ process.cwd(), 'public', 'fonts');
 export const SPA_DIR = 'spa';
 export const INDEX_HTML = 'index.html';

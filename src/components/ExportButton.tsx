@@ -5,29 +5,19 @@ import { toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
 import { primaryButtonStyle } from '@/components/adminUi/styles';
 import { adminPost } from '@/lib/adminFetch';
-import { OUTPUT_POLICIES, type OutputPolicy } from '@/lib/outputPolicy';
 import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
 
 const BUILDING_POLL_MS = 2000;
 
-const POLICY_LABELS: Record<OutputPolicy, string> = {
-  both: 'PDF + SPA',
-  pdf: 'PDF seul',
-  spa: 'SPA seul',
-};
-
 /**
  * Export button rendered beside Save (via admin.components.edit
  * .beforeDocumentControls). Triggers the existing `/:id/build` endpoint, which
- * rebuilds the deck from the current content and produces artifacts controlled
- * by the selected outputPolicy. A new media record replaces `pdfFile` every
- * PDF run, so the export is always clean (no stale PDF). Polls
- * `lastBuildStatus` so the label tracks the build.
+ * rebuilds the deck from the current content and always produces PDF, SPA and
+ * cover artifacts. Polls `lastBuildStatus` so the label tracks the build.
  */
 const ExportButton: React.FC = () => {
   const { id } = useDocumentInfo();
   const [starting, setStarting] = useState(false);
-  const [policy, setPolicy] = useState<OutputPolicy>('both');
   const wasBuilding = useRef(false);
 
   // Native document read; refetched on a short interval only while building.
@@ -65,12 +55,12 @@ const ExportButton: React.FC = () => {
         ok,
         status: httpStatus,
         data: res,
-      } = await adminPost(`/api/presentations/${id}/build`, { outputPolicy: policy });
+      } = await adminPost(`/api/presentations/${id}/build`);
       if (!ok) {
         toast.error(res?.error || `Échec du démarrage (HTTP ${httpStatus})`);
         return;
       }
-      toast.success(`Export lancé (${POLICY_LABELS[policy]})…`);
+      toast.success('Export lancé…');
       // Kick the poller immediately so the label flips to "en cours".
       setParams({ depth: 0, t: Date.now() });
     } catch (err) {
@@ -78,34 +68,13 @@ const ExportButton: React.FC = () => {
     } finally {
       setStarting(false);
     }
-  }, [id, building, policy, setParams]);
+  }, [id, building, setParams]);
 
   // No id yet (new, unsaved doc) — nothing to export.
   if (!id) return null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'stretch', height: '100%', gap: '4px' }}>
-      <select
-        value={policy}
-        onChange={(e) => setPolicy(e.target.value as OutputPolicy)}
-        disabled={building}
-        style={{
-          fontSize: '12px',
-          border: '1px solid var(--theme-elevation-200)',
-          borderRadius: '4px',
-          padding: '0 6px',
-          backgroundColor: 'var(--theme-elevation-50)',
-          cursor: building ? 'not-allowed' : 'pointer',
-        }}
-        title="Artefacts à produire"
-        aria-label="Politique de sortie"
-      >
-        {OUTPUT_POLICIES.map((p) => (
-          <option key={p} value={p}>
-            {POLICY_LABELS[p]}
-          </option>
-        ))}
-      </select>
+    <div style={{ display: 'flex', alignItems: 'stretch', height: '100%' }}>
       <button
         type="button"
         onClick={handleExport}

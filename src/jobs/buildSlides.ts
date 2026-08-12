@@ -18,11 +18,6 @@ export const buildSlidesTask: TaskConfig = {
       name: 'buildToken',
       type: 'text',
     },
-    {
-      // 'both' | 'pdf' | 'spa' — see src/lib/outputPolicy.ts
-      name: 'outputPolicy',
-      type: 'text',
-    },
   ],
   outputSchema: [
     {

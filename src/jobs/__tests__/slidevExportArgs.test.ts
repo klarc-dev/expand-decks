@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { slideHasImages } from '../buildSlidesRunner';
-import { buildSlidevEnv, buildSlidevExportArgs, parsePositiveInt } from '../slidevExportArgs';
+import { buildSlidevEnv, buildSlidevExportArgs } from '../slidevExportArgs';
 
 describe('buildSlidevExportArgs', () => {
   it('uses native single-pass PDF export flags by default', () => {
@@ -88,7 +88,7 @@ describe('buildSlidevExportArgs', () => {
     ]);
   });
 
-  it('supports Slidev range exports for future partial-PDF cache work', () => {
+  it('supports Slidev range exports needed by cover and agent PNG generation', () => {
     expect(
       buildSlidevExportArgs({ output: 'partial.pdf', hasMermaid: false, range: '2,4-6' }),
     ).toContain('--range');
@@ -97,16 +97,10 @@ describe('buildSlidevExportArgs', () => {
     ).toContain('2,4-6');
   });
 
-  it('keeps per-slide export as an explicit escape hatch', () => {
+  it('keeps per-slide export for cover and agent PNG generation', () => {
     expect(
       buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false, perSlide: true }),
     ).toContain('--per-slide');
-  });
-
-  it('can enable native PDF TOC generation', () => {
-    expect(
-      buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false, withToc: true }),
-    ).toContain('--with-toc');
   });
 
   it('forces Slidev dev mode and strips AI secrets from production subprocesses', () => {
@@ -123,14 +117,6 @@ describe('buildSlidevExportArgs', () => {
       ANTHROPIC_API_KEY: undefined,
       PATH: '/usr/bin',
     });
-  });
-
-  it('parses positive integer env values with a safe fallback', () => {
-    expect(parsePositiveInt('60000', 120000)).toBe(60000);
-    expect(parsePositiveInt('0', 120000)).toBe(120000);
-    expect(parsePositiveInt('-1', 120000)).toBe(120000);
-    expect(parsePositiveInt('nope', 120000)).toBe(120000);
-    expect(parsePositiveInt(undefined, 120000)).toBe(120000);
   });
 });
 
