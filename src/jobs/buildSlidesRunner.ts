@@ -6,6 +6,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -55,6 +56,7 @@ const SLIDEV_WORKSPACE = join(PROJECT_ROOT, 'slidev-workspace');
 const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
+const COVER_DIR = 'cover';
 
 async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string; stderr: string }> {
   const slidevPath = join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev');
@@ -84,6 +86,14 @@ function hasMediaObject(value: unknown): boolean {
 
 export function slideHasImages(block: SlideWithMedia): boolean {
   return hasMediaObject(block.image) || hasMediaObject(block.intervenants);
+}
+
+export function firstPngPath(directory: string): string {
+  const filename = readdirSync(directory)
+    .filter((entry) => entry.toLowerCase().endsWith('.png'))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))[0];
+  if (!filename) throw new Error('Slidev did not generate a cover PNG');
+  return join(directory, filename);
 }
 
 // Exported for a staging contract test (U8): the symlinked `node_modules`
@@ -307,6 +317,10 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     const initialFingerprint = buildFingerprint(presentation as unknown as Record<string, unknown>);
     const previousPdfId =
       typeof presentation.pdfFile === 'object' ? presentation.pdfFile?.id : presentation.pdfFile;
+    const previousCoverId =
+      typeof presentation.coverImage === 'object'
+        ? presentation.coverImage?.id
+        : presentation.coverImage;
 
     const slug = presentation.slug as string;
     if (!SLUG_RE.test(slug)) {
@@ -412,11 +426,11 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       withToc: process.env.SLIDEV_EXPORT_WITH_TOC === '1',
     };
 
-    // build (SPA dist/) and export (PDF) are independent — disjoint outputs, no
-    // shared mutable state — so run them concurrently. outputPolicy gates which
-    // are produced. They share the Vite dep cache under the symlinked
-    // node_modules/.vite, which already tolerates up-to-5 concurrent jobs;
-    // two processes here is no new class of contention.
+    // SPA, PDF, and first-slide cover export are independent and use disjoint
+    // outputs, so run them concurrently. The cover is always refreshed because
+    // it represents the presentation itself, not an optional output format.
+    // They share the Vite dep cache under the symlinked
+    // node_modules/.vite, which already tolerates the worker concurrency limit.
     const slidevTasks: Promise<unknown>[] = [];
     let pdfExportResult: PdfExportResult = { cacheMode: producePdf ? 'full' : 'disabled' };
     if (produceSpa) {
@@ -437,6 +451,24 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
             themeCss,
           });
         }),
+      );
+    }
+    if (slides.length > 0) {
+      slidevTasks.push(
+        timer.stage('slidevExportCover', () =>
+          runSlidev(
+            buildSlidevExportArgs({
+              output: COVER_DIR,
+              format: 'png',
+              hasMermaid: slides[0]?.blockType === 'mermaid',
+              hasImages: Boolean(logoUrl) || slideHasImages(slides[0] ?? {}),
+              perSlide: true,
+              range: '1',
+              timeoutMs: parsePositiveInt(process.env.SLIDEV_EXPORT_TIMEOUT_MS, 120_000),
+            }),
+            workdir!,
+          ),
+        ),
       );
     }
     await Promise.all(slidevTasks);
@@ -465,6 +497,7 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       lastBuildError: '',
     };
     let pdfMediaId: unknown = null;
+    let coverMediaId: unknown = null;
 
     if (producePdf) {
       const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
@@ -482,6 +515,26 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
       );
       pdfMediaId = pdfMedia.id;
       patchData.pdfFile = pdfMedia.id;
+    }
+
+    if (slides.length > 0) {
+      const coverBuffer = readFileSync(firstPngPath(join(workdir, COVER_DIR)));
+      const coverMedia = await timer.stage('uploadCover', () =>
+        req.payload.create({
+          collection: COLLECTIONS.media,
+          data: { alt: `${presentation.title} — couverture`, presentation: Number(presentationId) },
+          file: {
+            data: coverBuffer,
+            mimetype: 'image/png',
+            name: `${randomUUID()}.png`,
+            size: coverBuffer.byteLength,
+          },
+        }),
+      );
+      coverMediaId = coverMedia.id;
+      patchData.coverImage = coverMedia.id;
+    } else {
+      patchData.coverImage = null;
     }
 
     if (produceSpa) {
@@ -508,6 +561,20 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
         )
         .catch((err) =>
           req.payload.logger.warn(`Failed to delete old PDF ${previousPdfId}: ${err}`),
+        );
+    }
+
+    if (previousCoverId && previousCoverId !== coverMediaId) {
+      await timer
+        .stage('deleteOldCover', () =>
+          req.payload.delete({
+            collection: COLLECTIONS.media,
+            id: previousCoverId,
+            overrideAccess: true,
+          }),
+        )
+        .catch((err) =>
+          req.payload.logger.warn(`Failed to delete old cover ${previousCoverId}: ${err}`),
         );
     }
 

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import type { CollectionConfig, PayloadRequest } from 'payload';
 
@@ -6,7 +6,7 @@ import { isAdmin, isAdminOrAuthor, isAdminOrSelf, userIsAdmin } from '../access/
 import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
 import { CTX } from '../lib/context';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
-import { isValidSlug, SLUG_MAX } from '../lib/slug';
+import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
@@ -25,6 +25,28 @@ import { AgendaBlock } from '../blocks/AgendaBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 import { normalizeOutputPolicy } from '../lib/outputPolicy';
+
+async function uniqueSlugFromTitle(req: PayloadRequest, title: string): Promise<string> {
+  const derived = slugFromTitle(title);
+  const base =
+    derived || `presentation-${createHash('sha256').update(title).digest('hex').slice(0, 8)}`;
+
+  for (let suffix = 1; suffix <= 999; suffix += 1) {
+    const marker = suffix === 1 ? '' : `-${suffix}`;
+    const candidate = `${base.slice(0, 64 - marker.length).replace(/-+$/g, '')}${marker}`;
+    const existing = await req.payload.find({
+      collection: COLLECTIONS.presentations,
+      where: { slug: { equals: candidate } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+      req,
+    });
+    if (existing.totalDocs === 0) return candidate;
+  }
+
+  throw new Error('Impossible de générer un identifiant unique pour cette présentation.');
+}
 
 export const Presentations: CollectionConfig = {
   slug: COLLECTIONS.presentations,
@@ -362,25 +384,21 @@ export const Presentations: CollectionConfig = {
               unique: true,
               label: 'Identifiant',
               admin: {
-                description:
-                  'URL unique (lettres minuscules, chiffres et tirets, max 64 caractères). Généré automatiquement à partir du titre si laissé vide.',
+                hidden: true,
+                readOnly: true,
               },
               hooks: {
-                // Auto-slugify from the title so a first save never fails on
-                // an empty required field hidden in another tab.
+                // The identifier is infrastructure, not authoring input. Derive
+                // it once from the title, then keep it stable so published URLs
+                // do not move when an author edits the title later.
                 beforeValidate: [
-                  ({ value, data }) => {
-                    if (value) return value;
+                  async ({ value, data, operation, originalDoc, req }) => {
+                    if (operation !== 'create') {
+                      return (originalDoc as { slug?: string } | undefined)?.slug ?? value;
+                    }
                     const title = (data as { title?: string } | undefined)?.title;
                     if (!title) return value;
-                    return title
-                      .normalize('NFD')
-                      .replace(/[\u0300-\u036f]/g, '') // strip diacritics
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-+|-+$/g, '')
-                      .slice(0, SLUG_MAX)
-                      .replace(/-+$/g, '');
+                    return uniqueSlugFromTitle(req, title);
                   },
                 ],
               },
@@ -476,6 +494,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: 'État du dernier processus de génération',
                 readOnly: true,
+                hidden: true,
               },
               options: [
                 { label: 'En attente', value: BUILD_STATUS.idle },
@@ -491,6 +510,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: 'Lien vers la version web interactive (généré automatiquement)',
                 readOnly: true,
+                hidden: true,
               },
             },
             {
@@ -501,6 +521,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: 'PDF généré automatiquement par le système de build',
                 readOnly: true,
+                hidden: true,
               },
             },
             {
@@ -511,6 +532,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: 'Miniature générée à partir de la première diapositive',
                 readOnly: true,
+                hidden: true,
               },
             },
             {
@@ -520,6 +542,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: "Détails de l'erreur en cas d'échec du build",
                 readOnly: true,
+                hidden: true,
               },
             },
             {
