@@ -32,3 +32,8 @@ mcp.json
 # Scratch dir + throwaway one-off scripts
 tmp/
 scripts/tmp-*
+
+# Root visual-review captures
+/source-pill-dark.png
+/source-pill-light.png
+/source-pill-merged-light.png
