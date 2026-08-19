@@ -34,7 +34,7 @@ const slides = [
       },
       {
         label: 'Que sécuriser maintenant ?',
-        description: 'CIR 2025, personnel, factures, contrats et chaîne de droits.',
+        description: 'Personnel, partenariats, flux, propriété intellectuelle et CIR 2025.',
       },
       {
         label: 'Quel modèle cible ?',
@@ -42,7 +42,7 @@ const slides = [
       },
       {
         label: 'Comment basculer ?',
-        description: 'Une trajectoire 80/20, sans transfert en bloc de l’historique.',
+        description: 'Une trajectoire progressive, sans transfert en bloc de l’historique.',
       },
     ],
   },
@@ -166,35 +166,7 @@ const slides = [
       },
     ],
   },
-  {
-    blockType: 'timeline',
-    eyebrow: 'PRIORITÉ N° 1',
-    title: 'Sécuriser le CIR 2025 maintenant',
-    steps: [
-      {
-        label: 'Statut',
-        description: 'Confirmer déclarations, clôtures et avancement du dossier technique.',
-      },
-      {
-        label: 'Projets',
-        description: 'Définir opérations retenues, verrous, essais, échecs et livrables.',
-      },
-      {
-        label: 'Personnes',
-        description: 'Rapprocher temps, contrats, conventions et sociétés utilisatrices.',
-      },
-      {
-        label: 'Dépenses',
-        description: 'Ventiler paie, factures GE, équipements et prestations externes.',
-      },
-      {
-        label: 'Contrôle',
-        description: 'Une dépense, un projet, un déclarant. Aucun double emploi.',
-      },
-    ],
-    footer:
-      'Ne pas antidater. Reconstituer les preuves disponibles, documenter les écarts et instaurer le suivi mensuel.',
-  },
+
   {
     blockType: 'section',
     number: '02',
@@ -394,13 +366,9 @@ const slides = [
   },
   {
     blockType: 'timeline',
-    eyebrow: 'FEUILLE DE ROUTE 80/20',
-    title: 'Sécuriser maintenant, basculer les nouveaux projets, traiter l’historique ensuite',
+    eyebrow: 'FEUILLE DE ROUTE',
+    title: 'Basculer les nouveaux projets, traiter l’historique ensuite',
     steps: [
-      {
-        label: 'Immédiat',
-        description: 'CIR 2025, temps, conventions, factures et attribution unique des coûts.',
-      },
       {
         label: '0–3 mois',
         description: 'Diagnostic social, PI, capital, fiscalité, laboratoire et modèle financier.',
