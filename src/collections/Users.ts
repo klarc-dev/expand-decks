@@ -19,8 +19,6 @@ const AVATAR_MIME_EXTENSIONS: Record<string, string> = {
 };
 
 const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
-  if (user.avatar) return user;
-
   try {
     const accounts = await req.payload.find({
       collection: COLLECTIONS.accounts,
@@ -48,6 +46,8 @@ const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
       throw new Error(`Unsupported Google avatar content type: ${mimetype || 'none'}`);
 
     const data = Buffer.from(await response.arrayBuffer());
+    const previousAvatarId =
+      typeof user.avatar === 'object' && user.avatar !== null ? user.avatar.id : user.avatar;
     const media = await req.payload.create({
       collection: COLLECTIONS.media,
       data: { alt: `Avatar de ${user.email}` },
@@ -67,6 +67,14 @@ const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
       overrideAccess: true,
       req,
     });
+    if (previousAvatarId && previousAvatarId !== media.id) {
+      await req.payload.delete({
+        collection: COLLECTIONS.media,
+        id: previousAvatarId,
+        overrideAccess: true,
+        req,
+      });
+    }
 
     return { ...user, avatar: media.id };
   } catch (error) {

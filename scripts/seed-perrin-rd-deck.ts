@@ -449,26 +449,68 @@ const slides = [
 ];
 
 const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
-const speakers = await payload.find({
-  collection: 'users',
-  where: {
-    email: { in: ['joachim.brindeau@klarc.com', 'benjamin.visser@klarc.com'] },
+const speakerSeeds = [
+  {
+    email: 'joachim.brindeau@klarc.com',
+    name: 'Joachim Brindeau',
+    title: 'Avocat',
   },
-  limit: 2,
-  overrideAccess: true,
-});
+  {
+    email: 'benjamin.visser@klarc.com',
+    name: 'Benjamin Visser',
+    title: 'Avocat',
+  },
+] as const;
 
-if (speakers.docs.length !== 2 || richSlides[0]?.blockType !== 'cover') {
-  throw new Error('Joachim, Benjamin, or the Perrin cover slide is missing');
+const speakerIds = new Map<string, string | number>();
+for (const speaker of speakerSeeds) {
+  const existingSpeaker = (
+    await payload.find({
+      collection: 'users',
+      where: { email: { equals: speaker.email } },
+      limit: 1,
+      overrideAccess: true,
+    })
+  ).docs[0];
+
+  const savedSpeaker = existingSpeaker
+    ? await payload.update({
+        collection: 'users',
+        id: existingSpeaker.id,
+        data: {
+          name: speaker.name,
+          title: speaker.title,
+          role: 'admin',
+          membershipStatus: 'active',
+        },
+        overrideAccess: true,
+      })
+    : await payload.create({
+        collection: 'users',
+        data: {
+          email: speaker.email,
+          password: crypto.randomUUID(),
+          name: speaker.name,
+          title: speaker.title,
+          role: 'admin',
+          membershipStatus: 'active',
+        },
+        overrideAccess: true,
+      });
+
+  speakerIds.set(speaker.email, savedSpeaker.id);
 }
 
-const speakerIdByEmail = new Map(speakers.docs.map((user) => [user.email, user.id]));
+if (richSlides[0]?.blockType !== 'cover') {
+  throw new Error('The Perrin cover slide is missing');
+}
+
 const cover = richSlides[0] as (typeof richSlides)[number] & {
   intervenants: Array<{ user: string | number }>;
 };
 cover.intervenants = [
-  { user: speakerIdByEmail.get('joachim.brindeau@klarc.com')! },
-  { user: speakerIdByEmail.get('benjamin.visser@klarc.com')! },
+  { user: speakerIds.get('joachim.brindeau@klarc.com')! },
+  { user: speakerIds.get('benjamin.visser@klarc.com')! },
 ];
 
 let org = (
