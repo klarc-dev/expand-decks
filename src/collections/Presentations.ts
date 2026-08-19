@@ -229,6 +229,23 @@ export const Presentations: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeValidate: [
+      // Standardized footer: no free text. Whatever the client submits (admin
+      // is read-only, but the API is not), the stored footer is always the
+      // canonical {org.name} / empty / {page} / {total}. `enabled` stays
+      // user-controlled.
+      ({ data }) => {
+        if (data && typeof data === 'object') {
+          const footer = (data as Record<string, unknown>).footer;
+          if (footer && typeof footer === 'object') {
+            (footer as Record<string, unknown>).left = '{org.name}';
+            (footer as Record<string, unknown>).center = '';
+            (footer as Record<string, unknown>).right = '{page} / {total}';
+          }
+        }
+        return data;
+      },
+    ],
     afterChange: [afterPresentationChange],
   },
   fields: [
@@ -447,7 +464,7 @@ export const Presentations: CollectionConfig = {
               label: 'Pied de page',
               admin: {
                 description:
-                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Balises : {org.name} {title} {date} {page} {total}',
+                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche, {page} / {total} à droite.',
               },
               fields: [
                 {
@@ -464,20 +481,20 @@ export const Presentations: CollectionConfig = {
                       type: 'text',
                       defaultValue: '{org.name}',
                       label: 'Gauche',
-                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                      admin: { readOnly: true, description: 'Standardisé : {org.name}.' },
                     },
                     {
                       name: 'center',
                       type: 'text',
                       label: 'Centre',
-                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                      admin: { readOnly: true, description: 'Standardisé : vide.' },
                     },
                     {
                       name: 'right',
                       type: 'text',
                       defaultValue: '{page} / {total}',
                       label: 'Droite',
-                      admin: { description: 'Texte + balises. Vide = masqué.' },
+                      admin: { readOnly: true, description: 'Standardisé : {page} / {total}.' },
                     },
                   ],
                 },

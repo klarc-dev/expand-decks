@@ -9,6 +9,7 @@ import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { DRAFT_STATUS, type DraftStatus } from '@/lib/status';
 import { deckContext } from '@/lib/deckContext';
+import { currentDeckContext } from '@/lib/currentDeckContext';
 import { ROLES } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { chooseFontPairForBrief } from '@/agents/fonts';
@@ -27,7 +28,7 @@ const RUN_TIMEOUT_MS = (maxDuration - 30) * 1000;
 const requestSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
   brief: z.string().trim().min(10).max(20000),
-  mode: z.enum(['replace', 'augment']).default('replace'),
+  mode: z.enum(['replace', 'augment', 'revise']).default('replace'),
   visual: z.boolean().default(true),
   sourceIds: z.array(z.string()).optional(),
 });
@@ -146,6 +147,7 @@ export async function POST(req: NextRequest) {
   await mirror('gather');
 
   // Fire-and-forget: the run is long; the button polls draftStatus/draftEvents.
+  // fallow-ignore-next-line complexity — async orchestration fan-out, extracted helpers would only move the branches
   void (async () => {
     let timedOut = false;
     try {
@@ -163,8 +165,13 @@ export async function POST(req: NextRequest) {
         user,
         context: { [CTX.skipBuildQueue]: true },
       });
+      const revisionContext =
+        mode === 'revise' ? await currentDeckContext(presentation.slides, payload) : undefined;
+      const revisionBrief = revisionContext
+        ? `${deckContext(presentation)}DECK EXISTANT À RÉVISER :\n${revisionContext}\n\n---\n\nDEMANDE DE RÉVISION :\n${brief}`
+        : deckContext(presentation) + brief;
       const stream = run.stream({
-        inputData: { brief: deckContext(presentation) + brief, sourceIds },
+        inputData: { brief: revisionBrief, sourceIds, revisionContext },
         initialState: { visual, title: presentation.title ?? undefined },
       });
 

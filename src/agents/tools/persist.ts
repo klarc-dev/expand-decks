@@ -17,7 +17,7 @@ export async function persistSlides(opts: {
   payload: Payload;
   presentationId: string | number;
   slides: SlideBlock[];
-  mode: 'replace' | 'augment';
+  mode: 'replace' | 'augment' | 'revise';
   existing?: Presentation['slides'];
   user?: unknown;
 }): Promise<{ slideCount: number }> {
@@ -28,10 +28,13 @@ export async function persistSlides(opts: {
     payload,
   );
 
-  const existing = (
-    mode === 'augment' && Array.isArray(opts.existing) ? opts.existing : []
-  ) as NonNullable<Presentation['slides']>;
-  const nextSlides = mergeAugmentedSlides(existing, draftedRich) as Presentation['slides'];
+  const nextSlides =
+    mode === 'augment'
+      ? (mergeAugmentedSlides(
+          Array.isArray(opts.existing) ? opts.existing : [],
+          draftedRich,
+        ) as Presentation['slides'])
+      : (draftedRich as Presentation['slides']);
 
   await payload.update({
     collection: COLLECTIONS.presentations,

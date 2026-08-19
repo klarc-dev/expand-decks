@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "dev:dx": "node scripts/dev-dx.mjs",
     "prebuild": "cp node_modules/@payloadcms/next/dist/prod/styles.css src/app/\\(payload\\)/payload-admin.css",
     "build": "next build",
     "start": "next start",
@@ -12,6 +13,9 @@
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
     "jobs:run": "payload jobs:run --queue default",
+    "deck:seed": "tsx --env-file-if-exists=.env scripts/run-seed.ts",
+    "deck:build": "tsx --env-file-if-exists=.env scripts/run-build.ts",
+    "deck:dump": "tsx --env-file-if-exists=.env scripts/dump-slides-md.ts",
     "login": "node --env-file=.env scripts/login.mjs",
     "test": "vitest run",
     "test:e2e": "node --env-file=.env node_modules/@playwright/test/cli.js test",
@@ -62,13 +66,17 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "concurrently": "^10.0.5",
     "eslint": "^10.8.1",
     "fallow": "^3.14.0",
+    "kill-port": "^2.0.1",
     "lefthook": "^2.1.10",
     "playwright": "^1.62.1",
+    "tsx": "^4.23.12",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
     "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "wait-on": "^9.1.0"
   }
 }

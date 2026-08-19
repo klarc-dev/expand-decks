@@ -58,6 +58,7 @@ type DeckBundle = {
   stubs: OutlineStub[];
   slides: SlideBlock[];
   titles: string[];
+  revisionContext?: string;
   /** Slides below threshold at the last validate pass (drives the loop + cap). */
   lastFlagged: number;
   /** True once the revise loop hit REVISE_MAX_ITERATIONS without converging. */
@@ -71,7 +72,12 @@ const slideT = z.custom<SlideBlock>();
 const stubT = z.custom<OutlineStub>();
 
 /** One self-contained writer job — foreach passes only the array element. */
-type WriterJob = { stub: OutlineStub; dossier: DeckDossier; allTitles: string[] };
+type WriterJob = {
+  stub: OutlineStub;
+  dossier: DeckDossier;
+  allTitles: string[];
+  revisionContext?: string;
+};
 const writerJob = z.custom<WriterJob>();
 
 // ── steps (step id === phase name; the route maps payload.stepName → status) ──
@@ -117,7 +123,12 @@ const draftStep = createStep({
   inputSchema: writerJob,
   outputSchema: slideT,
   execute: async ({ inputData }) =>
-    (await writeSlide(inputData.stub, inputData.dossier, inputData.allTitles)) as SlideBlock,
+    (await writeSlide(
+      inputData.stub,
+      inputData.dossier,
+      inputData.allTitles,
+      inputData.revisionContext,
+    )) as SlideBlock,
 });
 
 /**
@@ -151,6 +162,7 @@ const validateStep = createStep({
         revisedStub,
         dossier,
         titles.filter((_, j) => j !== i),
+        inputData.revisionContext,
       )) as SlideBlock;
     });
 
@@ -200,6 +212,7 @@ const visualStep = createStep({
           revisedStub,
           inputData.dossier,
           inputData.titles.filter((_, j) => j !== i),
+          inputData.revisionContext,
         )) as SlideBlock;
       });
       return { ...inputData, slides: next };
@@ -245,6 +258,7 @@ const InputSchema = z.object({
   brief: z.string(),
   title: z.string().optional(),
   sourceIds: z.array(z.string()).default([]),
+  revisionContext: z.string().optional(),
 });
 type DeckWorkflowInput = z.infer<typeof InputSchema>;
 
@@ -268,18 +282,19 @@ export const deckWorkflow = createWorkflow({
   .then(gatherStep)
   .then(structureStep)
   // Bake shared context into each writer job — foreach only passes the element.
-  .map(async ({ inputData }) =>
+  .map(async ({ inputData, getInitData }) =>
     inputData.stubs.map(
       (stub): WriterJob => ({
         stub,
         dossier: inputData.dossier,
         allTitles: inputData.stubs.map((s) => s.title),
+        revisionContext: (getInitData() as DeckWorkflowInput).revisionContext,
       }),
     ),
   )
   .foreach(draftStep, { concurrency: WRITER_CONCURRENCY })
   // Re-assemble the bundle from the SlideBlock[] foreach output.
-  .map(async ({ inputData, getStepResult }) => {
+  .map(async ({ inputData, getStepResult, getInitData }) => {
     const slides = inputData as SlideBlock[];
     const structured = getStepResult(structureStep);
     return {
@@ -289,6 +304,7 @@ export const deckWorkflow = createWorkflow({
       stubs: structured.stubs,
       slides,
       titles: structured.stubs.map((s) => s.title),
+      revisionContext: (getInitData() as DeckWorkflowInput).revisionContext,
       lastFlagged: slides.length, // force ≥1 validate pass
       capped: false,
     } satisfies DeckBundle;

@@ -25,6 +25,7 @@ import {
   type FooterConfig,
 } from '../export/chrome';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
+import { buildMermaidConfigSource } from '../export/mermaidConfig';
 import { resolveVarsWith } from '../export/vars';
 import { COLLECTIONS } from '../lib/collections';
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
@@ -56,6 +57,7 @@ async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string;
 type StageOptions = {
   slidesMd: string;
   themeCss: string;
+  mermaidConfigSource: string;
   footerEnabled: boolean;
   logoPresent: boolean;
 };
@@ -87,6 +89,7 @@ export function firstPngPath(directory: string): string {
 export function stageBuildDir({
   slidesMd,
   themeCss,
+  mermaidConfigSource,
   footerEnabled,
   logoPresent,
 }: StageOptions): string {
@@ -112,9 +115,10 @@ export function stageBuildDir({
     join(EXPORT_DIR, ARTIFACTS.mermaidSetupSrc),
     join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
   );
-  cpSync(
-    join(EXPORT_DIR, 'mermaidConfig.ts'),
+  writeFileSync(
     join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'),
+    mermaidConfigSource,
+    'utf-8',
   );
 
   if (existsSync(PUBLIC_FONTS_DIR)) {
@@ -133,7 +137,21 @@ export function stageBuildDir({
   return workdir;
 }
 
-export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildSlides'>) {
+/**
+ * Args accepted by runBuildSlidesTask. The task body only ever reads
+ * `req.payload`, so script callers can pass a minimal `{ payload }` request
+ * instead of faking a full PayloadRequest (which demands context, i18n,
+ * headers, user, t, payloadDataLoader…). `input` stays `unknown` because the
+ * queue passes its own schema type; the runner narrows it at the boundary.
+ * The queue still passes the real PayloadRequest — this widens the accepted
+ * type, it doesn't narrow it.
+ */
+export type BuildSlidesTaskArgs = {
+  input: unknown;
+  req: Pick<TaskHandlerArgs<'buildSlides'>['req'], 'payload'>;
+};
+
+export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
   const { presentationId, buildToken } = input as {
     presentationId: string;
     buildToken?: string;
@@ -236,9 +254,11 @@ export async function runBuildSlidesTask({ input, req }: TaskHandlerArgs<'buildS
     });
 
     const themeCss = buildThemeCss(brand);
+    const mermaidConfigSource = buildMermaidConfigSource(brand);
     workdir = stageBuildDir({
       slidesMd,
       themeCss,
+      mermaidConfigSource,
       footerEnabled: Boolean(footer?.enabled),
       logoPresent: Boolean(logoUrl),
     });

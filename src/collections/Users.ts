@@ -1,4 +1,4 @@
-import { AuthenticationError, type CollectionConfig } from 'payload';
+import { AuthenticationError, type CollectionAfterLoginHook, type CollectionConfig } from 'payload';
 
 import {
   ROLES,
@@ -9,6 +9,71 @@ import {
   userIsAdminOrAuthor,
 } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+
+const GOOGLE_ISSUER = 'https://accounts.google.com';
+const AVATAR_MIME_EXTENSIONS: Record<string, string> = {
+  'image/gif': 'gif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+
+const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
+  if (user.avatar) return user;
+
+  try {
+    const accounts = await req.payload.find({
+      collection: COLLECTIONS.accounts,
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+      req,
+      where: {
+        and: [
+          { user: { equals: user.id } },
+          { issuerName: { equals: GOOGLE_ISSUER } },
+          { picture: { exists: true } },
+        ],
+      },
+    });
+    const account = accounts.docs[0];
+    if (!account?.picture) return user;
+
+    const response = await fetch(account.picture);
+    if (!response.ok) throw new Error(`Google avatar request failed (${response.status})`);
+
+    const mimetype = response.headers.get('content-type')?.split(';')[0]?.trim() ?? '';
+    const extension = AVATAR_MIME_EXTENSIONS[mimetype];
+    if (!extension)
+      throw new Error(`Unsupported Google avatar content type: ${mimetype || 'none'}`);
+
+    const data = Buffer.from(await response.arrayBuffer());
+    const media = await req.payload.create({
+      collection: COLLECTIONS.media,
+      data: { alt: `Avatar de ${user.email}` },
+      file: {
+        data,
+        mimetype,
+        name: `google-avatar-${user.id}.${extension}`,
+        size: data.byteLength,
+      },
+      overrideAccess: true,
+      req,
+    });
+    await req.payload.update({
+      collection: COLLECTIONS.users,
+      id: user.id,
+      data: { avatar: media.id },
+      overrideAccess: true,
+      req,
+    });
+
+    return { ...user, avatar: media.id };
+  } catch (error) {
+    req.payload.logger.warn({ err: error, userId: user.id }, 'Failed to sync Google avatar');
+    return user;
+  }
+};
 
 export const Users: CollectionConfig = {
   slug: COLLECTIONS.users,
@@ -24,6 +89,7 @@ export const Users: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
+    afterLogin: [syncGoogleAvatar],
     beforeLogin: [
       ({ user }) => {
         // OAuth-created users always carry an explicit status. Tolerate a

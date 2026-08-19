@@ -78,4 +78,15 @@ describe('writeSlide invariants', () => {
     expect(out).toEqual({ blockType: 'markdown', title: 'Raw' });
     expect(mocked).not.toHaveBeenCalled();
   });
+
+  it('supplies the existing deck and preservation rule during a revision', async () => {
+    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+
+    await writeSlide(stub, dossier, [], '[{"slide":1,"title":"Existing title"}]');
+
+    const prompt = mocked.mock.calls[0]![0].prompt;
+    expect(prompt).toContain('DECK EXISTANT À RÉVISER');
+    expect(prompt).toContain('Existing title');
+    expect(prompt).toContain('Préserve les formulations, faits et éléments non concernés');
+  });
 });

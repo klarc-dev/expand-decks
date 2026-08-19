@@ -1,5 +1,7 @@
 import type { MermaidConfig } from 'mermaid';
 
+import type { OrgBrand } from './theme';
+
 const KLARC = {
   teal: '#02585c',
   teal700: '#023c3f',
@@ -10,7 +12,42 @@ const KLARC = {
   white: '#ffffff',
 };
 
-export function buildMermaidConfig(): MermaidConfig {
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+type MermaidBrand = Pick<OrgBrand, 'primary' | 'secondary' | 'ink' | 'paper'>;
+
+function resolvePalette(brand: Partial<OrgBrand> | null | undefined): MermaidBrand {
+  const valid =
+    brand &&
+    typeof brand.primary === 'string' &&
+    HEX_RE.test(brand.primary) &&
+    typeof brand.secondary === 'string' &&
+    HEX_RE.test(brand.secondary) &&
+    typeof brand.ink === 'string' &&
+    HEX_RE.test(brand.ink) &&
+    typeof brand.paper === 'string' &&
+    HEX_RE.test(brand.paper);
+
+  if (!valid) {
+    return {
+      primary: KLARC.teal,
+      secondary: KLARC.rose,
+      ink: KLARC.ink,
+      paper: KLARC.teal50,
+    };
+  }
+
+  return {
+    primary: brand.primary!,
+    secondary: brand.secondary!,
+    ink: brand.ink!,
+    paper: brand.paper!,
+  };
+}
+
+export function buildMermaidConfig(brand?: Partial<OrgBrand> | null): MermaidConfig {
+  const palette = resolvePalette(brand);
+
   return {
     theme: 'base',
     startOnLoad: false,
@@ -25,14 +62,22 @@ export function buildMermaidConfig(): MermaidConfig {
     flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis' },
     themeVariables: {
       fontFamily: 'Roboto, ui-sans-serif, system-ui, sans-serif',
-      primaryColor: KLARC.teal50,
-      primaryBorderColor: KLARC.teal,
-      primaryTextColor: KLARC.ink,
-      lineColor: KLARC.teal700,
-      edgeLabelBackground: KLARC.white,
-      secondaryColor: KLARC.white,
-      tertiaryColor: KLARC.teal50,
-      tertiaryBorderColor: KLARC.rose,
+      primaryColor: palette.paper,
+      primaryBorderColor: palette.primary,
+      primaryTextColor: palette.ink,
+      lineColor: palette.primary,
+      // Transparent edge-label chip: the label sits on the slide ground (cream
+      // paper, tinted diagram panel, …) instead of a white sticker that clashes
+      // with non-white backgrounds.
+      edgeLabelBackground: 'transparent',
+      secondaryColor: palette.paper,
+      tertiaryColor: palette.paper,
+      tertiaryBorderColor: palette.secondary,
     },
   } as const;
+}
+
+export function buildMermaidConfigSource(brand: Partial<OrgBrand> | null | undefined): string {
+  const config = JSON.stringify(buildMermaidConfig(brand), null, 2);
+  return `import type { MermaidConfig } from 'mermaid';\n\nexport function buildMermaidConfig(): MermaidConfig {\n  return ${config} as MermaidConfig;\n}\n`;
 }

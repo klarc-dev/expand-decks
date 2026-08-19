@@ -15,7 +15,7 @@ import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
 
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
-type DraftMode = 'replace' | 'augment';
+type DraftMode = 'replace' | 'augment' | 'revise';
 type SourceOption = { id: string; label: string };
 
 const PHASE_LABEL: Record<string, string> = {
@@ -297,6 +297,16 @@ const AgentDraftButton: React.FC = () => {
           marginTop: '12px',
         }}
       >
+        <label style={checkboxRowStyle}>
+          <input
+            type="radio"
+            name="agent-mode"
+            checked={mode === 'revise'}
+            onChange={() => setMode('revise')}
+            disabled={running}
+          />
+          Réviser les diapositives existantes
+        </label>
         <label style={checkboxRowStyle}>
           <input
             type="radio"

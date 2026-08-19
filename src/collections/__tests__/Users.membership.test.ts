@@ -1,13 +1,14 @@
 import { readFileSync } from 'node:fs';
 
 import { AuthenticationError } from 'payload';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Users } from '../Users';
 
 type MembershipStatus = 'pending' | 'active' | 'rejected';
 
 const beforeLogin = Users.hooks?.beforeLogin?.[0];
+const afterLogin = Users.hooks?.afterLogin?.[0];
 
 async function runBeforeLogin(membershipStatus?: MembershipStatus) {
   if (!beforeLogin) throw new Error('Users.beforeLogin is not configured');
@@ -37,6 +38,58 @@ describe('Users membership approval', () => {
       required: true,
       defaultValue: 'active',
     });
+  });
+});
+
+describe('Users Google avatar synchronization', () => {
+  it('retrieves the linked Google picture and assigns the uploaded media on login', async () => {
+    if (!afterLogin) throw new Error('Users.afterLogin is not configured');
+
+    const find = vi.fn().mockResolvedValue({
+      docs: [{ issuerName: 'https://accounts.google.com', picture: 'https://google/avatar.jpg' }],
+    });
+    const create = vi.fn().mockResolvedValue({ id: 42 });
+    const update = vi.fn().mockResolvedValue({ id: 7, avatar: 42 });
+    const fetchImage = vi.fn().mockResolvedValue(
+      new Response(Uint8Array.from([1, 2, 3]), {
+        headers: { 'content-type': 'image/jpeg' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchImage);
+
+    const user = { id: 7, email: 'member@example.com', membershipStatus: 'active' };
+    const result = await afterLogin({
+      user,
+      token: 'token',
+      req: { payload: { find, create, update, logger: { warn: vi.fn() } } },
+    } as unknown as Parameters<typeof afterLogin>[0]);
+
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'accounts',
+        where: {
+          and: [
+            { user: { equals: 7 } },
+            { issuerName: { equals: 'https://accounts.google.com' } },
+            { picture: { exists: true } },
+          ],
+        },
+      }),
+    );
+    expect(fetchImage).toHaveBeenCalledWith('https://google/avatar.jpg');
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'media',
+        data: { alt: 'Avatar de member@example.com' },
+        file: expect.objectContaining({ mimetype: 'image/jpeg', name: 'google-avatar-7.jpg' }),
+      }),
+    );
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'users', id: 7, data: { avatar: 42 } }),
+    );
+    expect(result).toMatchObject({ avatar: 42 });
+
+    vi.unstubAllGlobals();
   });
 });
 

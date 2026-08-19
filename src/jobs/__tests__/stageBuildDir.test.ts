@@ -1,4 +1,12 @@
-import { existsSync, lstatSync, mkdirSync, readlinkSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -22,6 +30,7 @@ function stage() {
   const workdir = stageBuildDir({
     slidesMd: '---\nlayout: cover\n---\n\n# Test',
     themeCss: ':root { --x: 1; }',
+    mermaidConfigSource: 'export const marker = "brand";',
     footerEnabled: false,
     logoPresent: false,
   });
@@ -46,6 +55,13 @@ describe('stageBuildDir cache posture', () => {
 
     expect(lstatSync(media).isSymbolicLink()).toBe(true);
     expect(readlinkSync(media)).toBe(MEDIA_DIR);
+  });
+
+  it('writes the generated Mermaid config into the staged setup directory', () => {
+    const workdir = stage();
+    expect(readFileSync(join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'), 'utf-8')).toBe(
+      'export const marker = "brand";',
+    );
   });
 
   it('copies public fonts into the staged public directory when fonts exist', () => {

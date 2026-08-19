@@ -56,6 +56,7 @@ export async function writeSlide(
   stub: OutlineStub,
   dossier: DeckDossier,
   otherTitles: string[],
+  revisionContext?: string,
 ): Promise<Record<string, unknown>> {
   const spec = SPEC_BY_TYPE.get(stub.blockType);
   if (!spec) {
@@ -73,6 +74,9 @@ export async function writeSlide(
     `\n---\nDIAPOSITIVE À RÉDIGER MAINTENANT :\n- blockType (imposé) : ${stub.blockType}\n- title (imposé) : ${stub.title}\n- intention : ${stub.intent}`,
     otherTitles.length
       ? `\n---\nTITRES DES AUTRES DIAPOSITIVES (ne les redis pas) :\n${otherTitles.map((t) => `- ${t}`).join('\n')}`
+      : '',
+    revisionContext
+      ? `\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nPréserve les formulations, faits et éléments non concernés par la demande de révision. Modifie seulement ce qui est nécessaire pour satisfaire la demande.`
       : '',
   ]
     .filter(Boolean)

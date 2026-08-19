@@ -8,7 +8,16 @@
     "src/components/TableEditor.scss"
   ],
 
-  "ignoreDependencies": ["sharp", "sass", "@vue/compiler-sfc", "playwright-chromium"],
+  "ignoreDependencies": [
+    "sharp",
+    "sass",
+    "@vue/compiler-sfc",
+    "playwright-chromium",
+    "concurrently",
+    "kill-port",
+    "wait-on",
+    "tsx"
+  ],
 
   "ignoreUnresolvedImports": ["./.next/types/routes.d.ts"],
 

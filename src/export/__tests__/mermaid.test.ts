@@ -1,8 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildMermaidConfig, buildMermaidConfigSource } from '../mermaidConfig';
 import { renderMermaid } from '../blocks/mermaid';
 
 const src = 'flowchart TD\n  A[Brief] --> B{Decision}\n  B -->|Yes| C[Build]';
+
+describe('Mermaid organisation theme', () => {
+  const brand = {
+    primary: '#6F1D3B',
+    secondary: '#C9A96E',
+    ink: '#211A1D',
+    paper: '#FBF8F3',
+  };
+
+  it('uses the organisation palette in the runtime config', () => {
+    const variables = buildMermaidConfig(brand).themeVariables;
+    expect(variables).toMatchObject({
+      primaryColor: '#FBF8F3',
+      primaryBorderColor: '#6F1D3B',
+      primaryTextColor: '#211A1D',
+      lineColor: '#6F1D3B',
+      tertiaryBorderColor: '#C9A96E',
+    });
+  });
+
+  it('serializes the same palette for the staged Slidev setup', () => {
+    const source = buildMermaidConfigSource(brand);
+    expect(source).toContain('"lineColor": "#6F1D3B"');
+    expect(source).toContain('"primaryColor": "#FBF8F3"');
+    expect(source).not.toContain('#02585c');
+  });
+});
 
 describe('renderMermaid', () => {
   it('emits the source inside a raw ```mermaid fence, unescaped (S3)', () => {

@@ -12,7 +12,7 @@ const slides = [
     eyebrow: 'DOCUMENT DE DÉCISION · AOÛT 2026',
     title: 'Structurer la R&D du groupe Perrin',
     subtitle:
-      '**Sécuriser l’existant.** Installer une filiale R&D opérationnelle. Rationaliser progressivement l’historique.',
+      '**Sécuriser l’existant.** Constituer une filiale R&D opérationnelle. Traiter l’historique actif par actif.',
   },
   {
     blockType: 'statement',
@@ -91,65 +91,59 @@ const slides = [
     eyebrow: 'LE SCHÉMA ACTUEL',
     title: 'Six rôles qui ne coïncident pas toujours',
     source: `flowchart LR
-      GE[GE Caves / GE Agricoles] -->|personnel mis à disposition| S[Sociétés du groupe]
-      S --> C[Contrats scientifiques]
-      S --> D[Dépenses & équipements]
-      S --> R[Déclarations CIR]
-      C --> P[Résultats & PI dispersés]
+      GE["GE Caves<br/>GE Agricoles"] -->|"met à disposition<br/>le personnel"| S["Sociétés du groupe<br/>(négoce, domaines, cosmétique…)"]
+      S -->|"signe"| C["Contrats<br/>scientifiques"]
+      S -->|"paie"| D["Dépenses<br/>& équipements"]
+      S -->|"déclare"| R["CIR"]
+      C --> P["Résultats & brevets<br/>dispersés"]
       D --> P
-      P --> E[Exploitants métiers]
+      P -->|"sont exploités par"| E["Sociétés<br/>exploitantes"]
       classDef focus fill:#6f1d3b,color:#fff,stroke:#6f1d3b
       class P focus`,
     caption:
-      'Employeur, payeur, cocontractant, déclarant CIR, titulaire de la PI et exploitant doivent être réconciliés projet par projet.',
+      'Aujourd’hui, l’employeur, le payeur, le signataire des contrats, le déclarant CIR, le titulaire des brevets et l’exploitant sont souvent des entités différentes — à réconcilier projet par projet.',
   },
   {
     blockType: 'table',
     eyebrow: 'FRAGILITÉS PRIORITAIRES',
     title: 'Le risque vient moins du modèle que de sa preuve',
-    tableVariant: 'matrix',
-    columns: [{ header: 'Axe' }, { header: 'Point de vigilance' }, { header: 'Priorité' }],
+    tableVariant: 'reference',
+    columns: [{ header: 'Axe' }, { header: 'Point de vigilance' }],
     rows: [
       {
         cells: [
           { value: '**CIR 2025**' },
           { value: 'Dossier technique, verrous, temps et dépenses à consolider.' },
-          { value: 'blocked' },
         ],
       },
       {
         cells: [
           { value: '**Personnel**' },
           { value: 'Conventions nominatives, sites, périodes et sociétés utilisatrices.' },
-          { value: 'blocked' },
         ],
       },
       {
         cells: [
           { value: '**Factures GE**' },
           { value: 'Séparer salaires et cotisations des frais de gestion exclus.' },
-          { value: 'warn' },
         ],
       },
       {
         cells: [
           { value: '**Contrats & flux**' },
           { value: 'Objectiver les clés, livrables, bénéficiaires et contreparties.' },
-          { value: 'warn' },
         ],
       },
       {
         cells: [
           { value: '**Propriété intellectuelle**' },
           { value: 'Identifier financeur, créateur, titulaire et exploitant.' },
-          { value: 'warn' },
         ],
       },
       {
         cells: [
           { value: '**Pilotage**' },
           { value: 'Créer budget, gouvernance et suivi analytique consolidés.' },
-          { value: 'warn' },
         ],
       },
     ],
@@ -186,8 +180,82 @@ const slides = [
   {
     blockType: 'section',
     number: '02',
-    title: 'Installer la brique qui manque',
-    subtitle: 'Une fonction R&D juridiquement, financièrement et opérationnellement identifiable.',
+    title: 'Constituer la fonction R&D qui manque au groupe',
+    subtitle: 'Une entité juridiquement, financièrement et opérationnellement identifiable.',
+  },
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'BÉNÉFICES POUR LE GROUPE',
+    title: 'Ce que la filiale change — sécurité et financement',
+    sidebarText:
+      'La R&D existe déjà, mais elle est dispersée entre plusieurs employeurs, sociétés et contrats. La filiale la transforme en un actif **finançable, traçable et valorisable** — sans restructurer l’existant.',
+    columns: '3',
+    cards: [
+      {
+        number: '01',
+        title: 'Financer depuis la trésorerie du groupe',
+        description:
+          'Apports, comptes courants et conventions de trésorerie remplacent les paiements de charges d’autrui par Perrin et Fils.',
+      },
+      {
+        number: '02',
+        title: 'Rendre chaque dépense CIR défendable',
+        description:
+          'Employeur, projet, dépense et déclarant coïncident. En cas de contrôle, le dossier se démontre au lieu de se reconstruire.',
+      },
+      {
+        number: '03',
+        title: 'Satisfaire aux conditions de fond des aides à l’innovation',
+        description:
+          'ANR, Horizon Europe et France 2030 subventionnent des entreprises innovantes — ETI comprises — dotées d’une activité et de moyens propres.',
+      },
+      {
+        number: '04',
+        title: 'Isoler les brevets des risques d’exploitation',
+        description:
+          'Un sinistre dans une société métier ne met plus en péril les brevets et savoir-faire du groupe.',
+      },
+      {
+        number: '05',
+        title: 'Centraliser la valeur, licencier librement',
+        description:
+          'Les actifs restent dans une entité contrôlée par le groupe : les filiales ad hoc et les partenaires reçoivent une licence, jamais l’actif.',
+      },
+    ],
+  },
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'BÉNÉFICES POUR LE GROUPE',
+    title: 'Ce que la filiale change — valorisation et pilotage',
+    sidebarText:
+      'Au-delà de la sécurisation, la filiale fait de la R&D un actif qui se valorise et se pilote comme tel.',
+    columns: '2',
+    cards: [
+      {
+        number: '06',
+        title: 'Valoriser un même actif plusieurs fois',
+        description:
+          'Un même résultat se licencie par marché, territoire ou usage, et donne lieu à des prestations facturées, y compris à des tiers.',
+      },
+      {
+        number: '07',
+        title: 'Accélérer la diversification',
+        description:
+          'Jus, gin sans alcool, matériaux : les compétences de la vigne servent les nouvelles activités sans recréer une équipe.',
+      },
+      {
+        number: '08',
+        title: 'Mutualiser les investissements',
+        description:
+          'Le laboratoire d’extraction, les équipements et les compétences sont partagés entre filiales au lieu d’être financés en double.',
+      },
+      {
+        number: '09',
+        title: 'Rendre la R&D pilotable',
+        description:
+          'Budget consolidé, coût et résultat par projet : la direction sait ce que la R&D coûte et ce qu’elle rapporte.',
+      },
+    ],
   },
   {
     blockType: 'statement',
@@ -201,16 +269,15 @@ const slides = [
   {
     blockType: 'mermaid',
     eyebrow: 'LE MODÈLE CIBLE',
-    title: 'Une chaîne juridique en trois étages',
+    title: 'Trois rapports distincts, trois actes distincts',
     source: `flowchart LR
-      A[Société financeuse] -->|1. Capital, compte courant ou prêt admissible| R[Filiale R&D]
-      R -->|2. Équipe, laboratoire, contrats, coûts, CIR| X[Résultats & PI]
-      X -->|3. Licence, cession ou prestation| B[Société exploitante]
-      B -->|Rémunération documentée| R
+      A["Entités du groupe"] -->|"1 · financement : apports ou trésorerie"| R["Filiale R&D"]
+      R -->|"2 · réalisation : travaux, coûts, CIR"| X["Résultats & brevets"]
+      X -->|"3 · exploitation : licence contre redevance"| B["Sociétés exploitantes"]
       classDef rd fill:#6f1d3b,color:#fff,stroke:#6f1d3b
       class R rd`,
     caption:
-      'A ne paie pas les charges de B. A finance la filiale, la filiale paie ses dépenses, B exploite sur le fondement de son propre acte.',
+      'Financer, réaliser et exploiter sont trois rapports juridiques distincts. Chacun repose sur son propre acte : le financement ne confère ni la propriété des résultats, ni le droit de les exploiter.',
   },
   {
     blockType: 'cardGrid',
@@ -292,8 +359,8 @@ const slides = [
       {
         cells: [
           { value: '**Projet propre à une société**' },
-          { value: 'Portage direct possible.' },
-          { value: 'Elle assume coûts, contrats, résultats et CIR.' },
+          { value: 'Commande confiée à la filiale R&D.' },
+          { value: 'Définir en amont le prix, les livrables, la PI et l’exploitation.' },
         ],
       },
     ],
@@ -301,7 +368,7 @@ const slides = [
   {
     blockType: 'statement',
     eyebrow: 'PROPRIÉTÉ INTELLECTUELLE',
-    title: 'Ne pas déplacer les brevets pour rendre l’organigramme plus joli.',
+    title: 'Ne pas déplacer les brevets pour des raisons de forme.',
     body: 'Les nouveaux actifs suivent une politique définie **avant** les travaux. L’historique est traité actif par actif, après audit, valorisation, analyse fiscale et vérification des consentements.',
     footer:
       'La détention du capital, la titularité de l’actif, le développement, l’exploitation et la perception des revenus sont cinq positions distinctes.',
@@ -334,7 +401,7 @@ const slides = [
       },
     ],
     footer:
-      'Trajectoire recommandée : ne pas bouleverser immédiatement le groupe, mais rendre tout nouveau projet propre dès son origine.',
+      'Trajectoire recommandée : ne pas bouleverser immédiatement le groupe, mais documenter chaque nouveau projet dès son origine.',
   },
   {
     blockType: 'cardGrid',
@@ -370,14 +437,14 @@ const slides = [
   },
   {
     blockType: 'cta',
-    eyebrow: 'RECOMMANDATION',
-    title: 'Sécuriser l’existant. Créer la filiale. Y faire naître les nouveaux projets.',
+    eyebrow: 'PROCHAINE ÉTAPE',
+    title: 'Décider le lancement de la filiale R&D.',
     subtitle:
-      'Chaque étape doit avoir son **contrat**, sa **contrepartie** et son **flux**. C’est cette chaîne qui rend la dissociation possible et défendable.',
-    primaryAction: 'Valider le lancement',
-    secondaryAction: 'Mandater le groupe projet',
+      'Le mandat initial porte sur le **périmètre**, le **financement**, la **gouvernance** et les **premiers projets** à transférer.',
+    primaryAction: 'Décision attendue',
+    secondaryAction: 'Mandat de structuration',
     footerNote:
-      'Document de décision. Les faits, textes et régimes fiscaux ou sociaux devront être actualisés et validés avant mise en œuvre.',
+      'Les modalités juridiques, fiscales, sociales et financières seront arrêtées après validation des hypothèses avec les équipes du groupe.',
   },
 ];
 
@@ -407,7 +474,7 @@ cover.intervenants = [
 let org = (
   await payload.find({
     collection: 'organisations',
-    where: { name: { equals: 'Groupe Perrin · R&D' } },
+    where: { name: { equals: 'Klarc' } },
     limit: 1,
     overrideAccess: true,
   })
@@ -417,7 +484,7 @@ if (!org) {
   org = await payload.create({
     collection: 'organisations',
     data: {
-      name: 'Groupe Perrin · R&D',
+      name: 'Klarc',
       primary: '#6F1D3B',
       secondary: '#C9A96E',
       ink: '#211A1D',
@@ -445,8 +512,8 @@ const data = {
   tags: ['R&D', 'gouvernance', 'CIR', 'propriété intellectuelle', 'décision'],
   footer: {
     enabled: true,
-    left: 'Groupe Perrin · R&D',
-    center: 'Document de décision',
+    left: '{org.name}',
+    center: '',
     right: '{page} / {total}',
   },
   slides: richSlides,
