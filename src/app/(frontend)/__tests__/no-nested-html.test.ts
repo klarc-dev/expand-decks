@@ -22,7 +22,7 @@ function collectPages(dir: string): string[] {
 describe('(frontend) pages', () => {
   // The route-group layout renders <html>/<body>. A page rendering its own
   // shell nests html inside body — invalid DOM that React reports as
-  // hydration mismatches (seen on /share/[token] during dogfooding).
+  // hydration mismatches (seen during dogfooding).
   it('never render their own <html> or <body> shell', () => {
     const pages = collectPages(FRONTEND_DIR);
     expect(pages.length).toBeGreaterThan(0);

@@ -11,7 +11,7 @@ import { COLLECTIONS } from '@/lib/collections';
 /**
  * Auth-gated viewer for built presentation SPAs (the `spaUrl` shown in the
  * admin Sortie tab). Mirrors the presentations collection's read access
- * (any logged-in user). Anonymous sharing goes through /share/<token> instead.
+ * (any logged-in user).
  */
 export async function GET(
   _request: Request,

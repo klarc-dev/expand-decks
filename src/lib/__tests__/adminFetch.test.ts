@@ -49,11 +49,11 @@ describe('adminPost()', () => {
   });
 
   it('returns ok/status/parsed-data on a successful response', async () => {
-    fetchSpy.mockResolvedValue(jsonResponse(200, { shareUrl: 'https://x/abc' }));
+    fetchSpy.mockResolvedValue(jsonResponse(200, { spaUrl: '/spa/x/index.html' }));
 
     const result = await adminPost('/api/x');
 
-    expect(result).toEqual({ ok: true, status: 200, data: { shareUrl: 'https://x/abc' } });
+    expect(result).toEqual({ ok: true, status: 200, data: { spaUrl: '/spa/x/index.html' } });
   });
 
   it('returns ok:false with the parsed error body on a failed response', async () => {
