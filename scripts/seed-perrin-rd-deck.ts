@@ -148,10 +148,10 @@ const slides = [
       },
       {
         cells: [
-          { value: '**Perrin & Fils porte le CIR du groupe**' },
+          { value: '**Le CIR repose sur des mises à disposition GE non conformes**' },
           {
             value:
-              'La société déclare l’essentiel du CIR sans salarié R&D interne, alors que les travaux et refacturations concernent plusieurs entités.',
+              'Chaque affectation doit viser nominativement une entreprise utilisatrice, une mission R&D, un site et une période ; les interventions de Léo auprès d’autres sociétés exigent des conventions distinctes.',
           },
         ],
       },
