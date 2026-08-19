@@ -9,7 +9,7 @@ const slugBase = 'structuration-rd-groupe-perrin';
 const slides = [
   {
     blockType: 'cover',
-    eyebrow: 'DOCUMENT DE DÉCISION · AOÛT 2026',
+    eyebrow: 'COMPTE-RENDU ET PRÉCONISATIONS',
     title: 'Structurer la R&D du groupe Perrin',
     subtitle:
       '**Sécuriser l’existant.** Constituer une filiale R&D opérationnelle. Traiter l’historique actif par actif.',
