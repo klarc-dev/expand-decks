@@ -194,6 +194,27 @@ describe('renderCover()', () => {
     expect(result).toContain('k-cover--full-bleed');
     expect(result).not.toContain('image:');
   });
+
+  it('uses staged media files for speaker avatars instead of protected API URLs', () => {
+    const result = renderCover({
+      blockType: 'cover',
+      title: 'With speakers',
+      intervenants: [
+        {
+          user: {
+            name: 'Joachim Brindeau',
+            avatar: {
+              filename: 'joachim.png',
+              url: 'https://slides.example/api/media/file/joachim.png',
+            },
+          },
+        },
+      ],
+    } as never);
+
+    expect(result).toContain(`:src='"./media/joachim.png"'`);
+    expect(result).not.toContain('/api/media/file/joachim.png');
+  });
 });
 
 describe('renderSection()', () => {

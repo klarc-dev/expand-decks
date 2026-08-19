@@ -426,17 +426,6 @@ const slides = [
       { number: '08', title: 'Calendrier', description: 'Fixer constitution et date de bascule.' },
     ],
   },
-  {
-    blockType: 'cta',
-    eyebrow: 'PROCHAINE ÉTAPE',
-    title: 'Décider le lancement de la filiale R&D.',
-    subtitle:
-      'Le mandat initial porte sur le **périmètre**, le **financement**, la **gouvernance** et les **premiers projets** à transférer.',
-    primaryAction: 'Décision attendue',
-    secondaryAction: 'Mandat de structuration',
-    footerNote:
-      'Les modalités seront arrêtées après validation des hypothèses avec les équipes du groupe.',
-  },
 ];
 
 const richSlides = await convertSlidesMarkdownToLexical(slides, payload);

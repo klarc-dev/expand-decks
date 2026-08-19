@@ -20,6 +20,10 @@ type PersonCard = {
   title?: string;
 };
 
+function vueBoundSrc(url: string): string {
+  return `:src='${JSON.stringify(url)}'`;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
@@ -35,7 +39,14 @@ function avatarUrl(value: unknown): string | undefined {
   const sizes = asRecord(avatar.sizes);
   const thumbnail = asRecord(sizes?.thumbnail);
   const card = asRecord(sizes?.card);
+  const localMediaUrl = (media: Record<string, unknown> | null): string | null => {
+    const filename = asNonEmptyString(media?.filename);
+    return filename ? `./media/${filename}` : null;
+  };
   return (
+    localMediaUrl(thumbnail) ??
+    localMediaUrl(card) ??
+    localMediaUrl(avatar) ??
     asNonEmptyString(thumbnail?.url) ??
     asNonEmptyString(card?.url) ??
     asNonEmptyString(avatar.thumbnailURL) ??
@@ -87,7 +98,7 @@ function renderPeople(block: CoverBlockData): string {
   const cards = people
     .map((person) => {
       const avatar = person.avatarUrl
-        ? `<img class="${K.personAvatar}" src="${escape(person.avatarUrl)}" alt="" />`
+        ? `<img class="${K.personAvatar}" ${vueBoundSrc(person.avatarUrl)} alt="" />`
         : `<span class="${K.personAvatar} ${K.personInitials}" aria-hidden="true">${escape(person.initials)}</span>`;
       const title = person.title
         ? `\n      <div class="${K.personTitle}">${escape(person.title)}</div>`

@@ -26,13 +26,14 @@ afterEach(() => {
   }
 });
 
-function stage() {
+function stage(mediaFilenames: string[] = []) {
   const workdir = stageBuildDir({
     slidesMd: '---\nlayout: cover\n---\n\n# Test',
     themeCss: ':root { --x: 1; }',
     mermaidConfigSource: 'export const marker = "brand";',
     footerEnabled: false,
     logoPresent: false,
+    mediaFilenames,
   });
   createdWorkdirs.push(workdir);
   return workdir;
@@ -71,5 +72,17 @@ describe('stageBuildDir cache posture', () => {
     const workdir = stage();
 
     expect(existsSync(join(workdir, 'public', ARTIFACTS.fonts, 'contract-font.txt'))).toBe(true);
+  });
+
+  it('copies referenced media into public so Slidev can embed it in SPA and PDF exports', () => {
+    const filename = 'stage-build-avatar.png';
+    writeFileSync(join(MEDIA_DIR, filename), 'avatar');
+
+    try {
+      const workdir = stage([filename]);
+      expect(readFileSync(join(workdir, 'public', 'media', filename), 'utf-8')).toBe('avatar');
+    } finally {
+      rmSync(join(MEDIA_DIR, filename), { force: true });
+    }
   });
 });

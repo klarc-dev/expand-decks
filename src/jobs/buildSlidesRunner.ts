@@ -60,6 +60,7 @@ type StageOptions = {
   mermaidConfigSource: string;
   footerEnabled: boolean;
   logoPresent: boolean;
+  mediaFilenames?: string[];
 };
 
 type SlideWithMedia = {
@@ -92,6 +93,7 @@ export function stageBuildDir({
   mermaidConfigSource,
   footerEnabled,
   logoPresent,
+  mediaFilenames = [],
 }: StageOptions): string {
   const workdir = mkdtempSync(join(tmpdir(), 'slidev-build-'));
 
@@ -123,6 +125,14 @@ export function stageBuildDir({
 
   if (existsSync(PUBLIC_FONTS_DIR)) {
     cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), { recursive: true });
+  }
+
+  for (const filename of mediaFilenames) {
+    const source = join(MEDIA_DIR, filename);
+    if (!existsSync(source)) continue;
+    const destination = join(workdir, 'public', 'media', filename);
+    mkdirSync(join(destination, '..'), { recursive: true });
+    cpSync(source, destination);
   }
 
   const footerLayer = buildFooterLayer(footerEnabled);
@@ -255,12 +265,17 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
 
     const themeCss = buildThemeCss(brand);
     const mermaidConfigSource = buildMermaidConfigSource(brand);
+    const mediaFilenames = Array.from(
+      new Set(slidesMd.matchAll(/(?:src=|image:\s*|:src='"?)["']?(?:\.\/|\/)media\/([^"'\s]+)/g)),
+      (match) => match[1],
+    );
     workdir = stageBuildDir({
       slidesMd,
       themeCss,
       mermaidConfigSource,
       footerEnabled: Boolean(footer?.enabled),
       logoPresent: Boolean(logoUrl),
+      mediaFilenames,
     });
 
     const slides =
