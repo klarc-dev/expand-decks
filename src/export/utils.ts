@@ -290,7 +290,7 @@ export function card(opts: {
  */
 export function cardStack(
   cards: string[],
-  opts: { layout: 'grid' | 'column'; cols?: number },
+  opts: { layout: 'grid' | 'column'; cols?: number; className?: string },
 ): { html: string; crowded: boolean } {
   // No cards → no container (a freshly-added block with empty fields must not
   // emit a stray empty grid div in the live preview).
@@ -303,15 +303,17 @@ export function cardStack(
     // When crowded, also shrink each card box (.k-tight) — density belongs to the
     // body region, not the slide title baseline.
     const tight = crowded ? ' k-tight' : '';
+    const extra = opts.className ? ` ${opts.className}` : '';
     return {
-      html: `<div class="${K.cardStack} ${K.cardStackGrid} ${gridClass(cols)}${tight}">\n\n${inner}\n\n</div>`,
+      html: `<div class="${K.cardStack} ${K.cardStackGrid} ${gridClass(cols)}${tight}${extra}">\n\n${inner}\n\n</div>`,
       crowded,
     };
   }
   const crowded = cards.length >= 4;
   const tight = crowded ? ' k-tight' : '';
+  const extra = opts.className ? ` ${opts.className}` : '';
   return {
-    html: `<div class="${K.cardStack} ${K.cardStackColumn}${tight}">\n\n${inner}\n\n</div>`,
+    html: `<div class="${K.cardStack} ${K.cardStackColumn}${tight}${extra}">\n\n${inner}\n\n</div>`,
     crowded,
   };
 }

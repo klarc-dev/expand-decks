@@ -55,7 +55,7 @@ ${md(block.title)}
   return wrapSlide({
     layout: 'center',
     classAttr: surfaceClass(ctx?.surface ?? 'dark'),
-    hideChrome: true,
+    hideChrome: false,
     body,
   });
 }

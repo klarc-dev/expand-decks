@@ -46,6 +46,14 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     );
     expect(css).toMatch(/\.k-cardgrid-lead\s*\{[\s\S]*max-width:\s*54rem/);
   });
+
+  it('defines shared card-grid scales rather than per-card font sizes', () => {
+    expect(css).toMatch(/\.k-card-scale-sm \.k-card h3/);
+    expect(css).toMatch(/\.k-card-scale-sm \.k-card p/);
+    expect(css).toMatch(/\.k-card-scale-xs \.k-card h3/);
+    expect(css).toMatch(/\.k-card-scale-xs \.k-card p/);
+    expect(css).toMatch(/\.k-card-scale-md\.k-grid-3/);
+  });
 });
 
 describe('style.css source pills', () => {

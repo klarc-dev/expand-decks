@@ -11,6 +11,28 @@ function balancedGridColumns(requested: number, count: number): number {
   return requested;
 }
 
+function textLength(html: string): number {
+  return html.replace(/<[^>]*>/g, '').trim().length;
+}
+
+function sharedCardScale(
+  cards: NonNullable<CardGridBlockData['cards']>,
+  cols: number,
+): 'md' | 'sm' | 'xs' {
+  const maxLength = Math.max(
+    0,
+    ...cards.map((card) => card.title.length + textLength(richTextToHTML(card.description))),
+  );
+  const rows = Math.ceil(cards.length / cols);
+  const normalLimit = cols >= 4 ? 82 : cols === 3 ? 112 : 160;
+  const compactLimit = cols >= 4 ? 122 : cols === 3 ? 158 : 220;
+  const rowPenalty = Math.max(0, rows - 2) * 24;
+
+  if (maxLength + rowPenalty > compactLimit) return 'xs';
+  if (maxLength + rowPenalty > normalLimit) return 'sm';
+  return 'md';
+}
+
 export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): string {
   const leadHtml = richTextToHTML(block.sidebarText);
 
@@ -21,7 +43,12 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
 
   const requestedCols = Number(block.columns ?? '4');
   const cols = balancedGridColumns(requestedCols, cardList.length);
-  const stack = cardStack(cards, { layout: 'grid', cols });
+  const scale = sharedCardScale(cardList, cols);
+  const stack = cardStack(cards, {
+    layout: 'grid',
+    cols,
+    className: `k-card-scale-${scale}`,
+  });
   const lead = leadHtml ? `<div class="k-cardgrid-lead">\n${leadHtml}\n</div>` : '';
   const main =
     lead || stack.html

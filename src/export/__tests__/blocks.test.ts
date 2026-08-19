@@ -421,6 +421,27 @@ describe('renderCardGrid()', () => {
     }
   });
 
+  it('applies one shared compact scale from the densest card', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      columns: '3',
+      cards: [
+        { title: 'Court', description: lexical('Bref.') },
+        {
+          title: 'Une carte nettement plus dense',
+          description: lexical(
+            'Cette description volontairement longue force une réduction commune afin que toutes les cartes conservent exactement la même taille de texte.',
+          ),
+        },
+        { title: 'Court aussi', description: lexical('Bref.') },
+      ],
+    });
+
+    expect(result).toMatch(/k-card-scale-(sm|xs)/);
+    expect(result.match(/k-card-scale-(?:sm|xs)/g)).toHaveLength(1);
+  });
+
   it('renders sidebarText as an in-flow lead band above the cards, not a floating header sidebar', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',

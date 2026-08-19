@@ -344,6 +344,26 @@
   line-height: 1.45;
 }
 
+/* One scale per grid, selected from its densest card. This keeps typography
+   uniform across sibling cards while stepping the entire grid down before any
+   individual card can clip. */
+.k-card-scale-sm .k-card h3 {
+  font-size: calc(var(--t-h3) * 0.88);
+  line-height: 1.15;
+}
+.k-card-scale-sm .k-card p {
+  font-size: calc(var(--t-body) * 0.9);
+  line-height: 1.38;
+}
+.k-card-scale-xs .k-card h3 {
+  font-size: calc(var(--t-h3) * 0.76);
+  line-height: 1.12;
+}
+.k-card-scale-xs .k-card p {
+  font-size: calc(var(--t-body) * 0.78);
+  line-height: 1.25;
+}
+
 .k-card .k-num {
   font-family: var(--k-font-heading);
   font-size: var(--t-small);
@@ -1135,9 +1155,24 @@
 .k-cardgrid-lead strong {
   color: var(--fg);
 }
-.k-grid-3.k-card-stack--grid .k-card h3 {
+.k-card-scale-md.k-grid-3.k-card-stack--grid .k-card h3 {
   font-size: var(--t-lead);
   line-height: 1.15;
+}
+
+/* A five-card, three-column grid uses a six-track sub-grid so its final pair is
+   centered instead of leaving an apparent missing card at bottom-right. */
+.k-grid-3.k-card-stack--grid:has(> .k-card:nth-child(5):last-child) {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+}
+.k-grid-3.k-card-stack--grid:has(> .k-card:nth-child(5):last-child) > .k-card {
+  grid-column: span 2;
+  height: 100%;
+  box-sizing: border-box;
+}
+.k-grid-3.k-card-stack--grid:has(> .k-card:nth-child(5):last-child) > .k-card:nth-child(4) {
+  grid-column: 2 / span 2;
 }
 /* Crowded grids (3+ rows) tighten their row gap so the last row stays on-canvas. */
 .k-grid-1.k-tight,

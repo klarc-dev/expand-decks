@@ -91,14 +91,17 @@ const slides = [
     eyebrow: 'LE SCHÉMA ACTUEL',
     title: 'Six rôles qui ne coïncident pas toujours',
     source: `flowchart LR
-      GE["GE Caves<br/>GE Agricoles"] -->|"met à disposition<br/>le personnel"| S["Sociétés du groupe<br/>(négoce, domaines, cosmétique…)"]
-      S -->|"signe"| C["Contrats<br/>scientifiques"]
-      S -->|"paie"| D["Dépenses<br/>& équipements"]
-      S -->|"déclare"| R["CIR"]
-      C --> P["Résultats & brevets<br/>dispersés"]
+      GE["Employeur<br/>GE Caves / GE Agricoles"] --> MAD["met à disposition"] --> S["Sociétés bénéficiaires<br/>négoce, domaines, cosmétique"]
+      S --> SIG["signe"] --> C["Contrats scientifiques"]
+      S --> PAI["paie"] --> D["Dépenses et équipements"]
+      S --> DEC["déclare"] --> R["CIR"]
+      C --> P["Résultats et brevets<br/>dispersés"]
       D --> P
-      P -->|"sont exploités par"| E["Sociétés<br/>exploitantes"]
+      R --> P
+      P --> EXP["sont exploités par"] --> E["Sociétés exploitantes"]
+      classDef action fill:transparent,color:#0f2a2b,stroke:transparent
       classDef focus fill:#6f1d3b,color:#fff,stroke:#6f1d3b
+      class MAD,SIG,PAI,DEC,EXP action
       class P focus`,
     caption:
       'Aujourd’hui, l’employeur, le payeur, le signataire des contrats, le déclarant CIR, le titulaire des brevets et l’exploitant sont souvent des entités différentes — à réconcilier projet par projet.',
@@ -115,7 +118,7 @@ const slides = [
           { value: '**Aucune mise à disposition nominative**' },
           {
             value:
-              'Aucune convention individuelle ne précise la mission R&D, la société utilisatrice, le site et la période.',
+              'Aucune convention individuelle ne précise la mission, la société utilisatrice, le site et la période.',
           },
         ],
       },
@@ -124,7 +127,7 @@ const slides = [
           { value: '**Léo travaille pour plusieurs sociétés**' },
           {
             value:
-              'Mis à disposition de Perrin & Fils, il intervient aussi dans plusieurs domaines et sur des projets d’autres filiales, notamment le gin sans alcool.',
+              'Rattaché à Perrin & Fils, il intervient aussi pour plusieurs domaines et d’autres filiales.',
           },
         ],
       },
@@ -133,7 +136,7 @@ const slides = [
           { value: '**Anna travaille à l’université**' },
           {
             value:
-              'La doctorante CIFRE travaille toute l’année dans les locaux universitaires à Bordeaux : ses moyens et dépenses doivent être rattachés au projet et à son bénéficiaire.',
+              'La doctorante CIFRE travaille à l’université : ses moyens et dépenses doivent être rattachés au projet bénéficiaire.',
           },
         ],
       },
@@ -142,7 +145,7 @@ const slides = [
           { value: '**Signataires, personnel et bénéficiaires ne coïncident pas**' },
           {
             value:
-              'Les contrats universitaires, le rattachement documentaire de Léo et les sociétés qui bénéficient des travaux désignent des entités différentes.',
+              'Les contrats, le rattachement de Léo et les sociétés bénéficiaires désignent des entités différentes.',
           },
         ],
       },
@@ -151,7 +154,7 @@ const slides = [
           { value: '**Le CIR repose sur des mises à disposition GE non conformes**' },
           {
             value:
-              'Chaque affectation doit viser nominativement une entreprise utilisatrice, une mission R&D, un site et une période ; les interventions de Léo auprès d’autres sociétés exigent des conventions distinctes.',
+              'Chaque affectation doit identifier l’utilisateur, la mission, le site et la période ; une convention distincte est requise par société.',
           },
         ],
       },
@@ -261,10 +264,12 @@ const slides = [
     eyebrow: 'LE MODÈLE CIBLE',
     title: 'Trois rapports distincts, trois actes distincts',
     source: `flowchart LR
-      A["Entités du groupe"] -->|"1 · financement : apports ou trésorerie"| R["Filiale R&D"]
-      R -->|"2 · réalisation : travaux, coûts, CIR"| X["Résultats & brevets"]
-      X -->|"3 · exploitation : licence contre redevance"| B["Sociétés exploitantes"]
+      A["Entités du groupe"] --> F["1 · financent"] --> R["Filiale R&D"]
+      R --> T["2 · réalise les travaux"] --> X["Résultats et brevets"]
+      X --> L["3 · concède des licences"] --> B["Sociétés exploitantes"]
+      classDef action fill:transparent,color:#0f2a2b,stroke:transparent
       classDef rd fill:#6f1d3b,color:#fff,stroke:#6f1d3b
+      class F,T,L action
       class R rd`,
     caption:
       'Financer, réaliser et exploiter sont trois rapports juridiques distincts. Chacun repose sur son propre acte : le financement ne confère ni la propriété des résultats, ni le droit de les exploiter.',
@@ -382,12 +387,12 @@ const slides = [
         description: 'Entrée des nouveaux projets et documentation CIR au fil de l’eau.',
       },
       {
-        label: '2027',
+        label: 'À partir de 2027',
         description: 'Traitement chirurgical des actifs, contrats et projets historiques.',
       },
     ],
     footer:
-      'Trajectoire recommandée : ne pas bouleverser immédiatement le groupe, mais documenter chaque nouveau projet dès son origine.',
+      'Trajectoire : documenter chaque nouveau projet dès son origine, puis traiter l’historique actif par actif.',
   },
   {
     blockType: 'cardGrid',
@@ -430,7 +435,7 @@ const slides = [
     primaryAction: 'Décision attendue',
     secondaryAction: 'Mandat de structuration',
     footerNote:
-      'Les modalités juridiques, fiscales, sociales et financières seront arrêtées après validation des hypothèses avec les équipes du groupe.',
+      'Les modalités seront arrêtées après validation des hypothèses avec les équipes du groupe.',
   },
 ];
 
