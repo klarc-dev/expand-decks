@@ -106,44 +106,62 @@ const slides = [
   {
     blockType: 'table',
     eyebrow: 'FRAGILITÉS PRIORITAIRES',
-    title: 'Le risque vient moins du modèle que de sa preuve',
+    title: 'Six situations concrètes à régulariser',
     tableVariant: 'reference',
-    columns: [{ header: 'Axe' }, { header: 'Point de vigilance' }],
+    columns: [{ header: 'Constat issu des échanges' }, { header: 'Point à sécuriser' }],
     rows: [
       {
         cells: [
-          { value: '**CIR 2025**' },
-          { value: 'Dossier technique, verrous, temps et dépenses à consolider.' },
+          { value: '**Aucune mise à disposition nominative**' },
+          {
+            value:
+              'Aucune convention individuelle ne précise la mission R&D, la société utilisatrice, le site et la période.',
+          },
         ],
       },
       {
         cells: [
-          { value: '**Personnel**' },
-          { value: 'Conventions nominatives, sites, périodes et sociétés utilisatrices.' },
+          { value: '**Léo travaille pour plusieurs sociétés**' },
+          {
+            value:
+              'Mis à disposition de Perrin & Fils, il intervient aussi dans plusieurs domaines et sur des projets d’autres filiales, notamment le gin sans alcool.',
+          },
         ],
       },
       {
         cells: [
-          { value: '**Factures GE**' },
-          { value: 'Séparer salaires et cotisations des frais de gestion exclus.' },
+          { value: '**Anna travaille à l’université**' },
+          {
+            value:
+              'La doctorante CIFRE travaille toute l’année dans les locaux universitaires à Bordeaux : ses moyens et dépenses doivent être rattachés au projet et à son bénéficiaire.',
+          },
         ],
       },
       {
         cells: [
-          { value: '**Contrats & flux**' },
-          { value: 'Objectiver les clés, livrables, bénéficiaires et contreparties.' },
+          { value: '**Signataires, personnel et bénéficiaires ne coïncident pas**' },
+          {
+            value:
+              'Les contrats universitaires, le rattachement documentaire de Léo et les sociétés qui bénéficient des travaux désignent des entités différentes.',
+          },
         ],
       },
       {
         cells: [
-          { value: '**Propriété intellectuelle**' },
-          { value: 'Identifier financeur, créateur, titulaire et exploitant.' },
+          { value: '**Perrin & Fils porte le CIR du groupe**' },
+          {
+            value:
+              'La société déclare l’essentiel du CIR sans salarié R&D interne, alors que les travaux et refacturations concernent plusieurs entités.',
+          },
         ],
       },
       {
         cells: [
-          { value: '**Pilotage**' },
-          { value: 'Créer budget, gouvernance et suivi analytique consolidés.' },
+          { value: '**Dossier technique 2025 non commencé**' },
+          {
+            value:
+              'La justification reste à produire et les temps de Gaëlle et des contributeurs ponctuels ne sont pas ventilés par projet.',
+          },
         ],
       },
     ],
