@@ -4,7 +4,7 @@ import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite';
 import type { Presentation } from '../src/payload-types';
 
 const payload = await getPayload({ config });
-const slugBase = 'structuration-rd-groupe-perrin';
+const deckTitle = 'Structuration de la R&D du groupe Perrin';
 
 const slides = [
   {
@@ -498,14 +498,15 @@ if (!org) {
 
 const existing = await payload.find({
   collection: 'presentations',
-  where: { slug: { equals: slugBase } },
+  // Lookup by title, not slug: the collection hook derives the slug from the
+  // title at create time, so the value we pass is never the stored one.
+  where: { title: { equals: deckTitle } },
   limit: 1,
   overrideAccess: true,
 });
 
 const data = {
-  title: 'Structuration de la R&D du groupe Perrin',
-  slug: slugBase,
+  title: deckTitle,
   language: 'fr',
   status: 'published',
   organisation: org.id,
