@@ -54,8 +54,9 @@ COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/tsconfig.json ./
 COPY --from=builder /app/public ./public
 
-# Copy Payload source (needed at runtime for collections/config)
+# Copy Payload source and operational scripts needed at runtime
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/scripts ./scripts
 
 # Copy Slidev workspace with its own node_modules
 COPY --from=slidev-deps /app/slidev-workspace/node_modules ./slidev-workspace/node_modules
