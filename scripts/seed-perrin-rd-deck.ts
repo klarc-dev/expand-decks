@@ -124,10 +124,12 @@ const slides = [
       },
       {
         cells: [
-          { value: '**Léo travaille pour plusieurs sociétés**' },
+          {
+            value: '**Léo est mis à disposition par le GE dans les locaux de Perrin & Fils**',
+          },
           {
             value:
-              'Rattaché à Perrin & Fils, il intervient aussi pour plusieurs domaines et d’autres filiales.',
+              'Salarié du GE, Léo est mis à disposition de Perrin & Fils et travaille dans ses locaux. Ses temps sur les projets d’autres sociétés du groupe restent leurs travaux internes : faute de prestation de R&D agréée pour Perrin & Fils, ils ne sont pas valorisables dans son CIR.',
           },
         ],
       },
@@ -142,10 +144,13 @@ const slides = [
       },
       {
         cells: [
-          { value: '**Signataires, personnel et bénéficiaires ne coïncident pas**' },
           {
             value:
-              'Les contrats, le rattachement de Léo et les sociétés bénéficiaires désignent des entités différentes.',
+              '**Distinguer la direction de la R&D interne du pilotage pour d’autres sociétés**',
+          },
+          {
+            value:
+              'Les temps de supervision et de gestion de Léo sont valorisables lorsqu’ils relèvent d’une véritable direction de la R&D interne de Perrin & Fils, directement liée à ses opérations éligibles. Le pilotage des projets des autres sociétés, exercé pour leur compte et hors prestation agréée, ne peut pas être valorisé par Perrin & Fils.',
           },
         ],
       },
