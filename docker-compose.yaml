@@ -36,7 +36,9 @@ services:
       TZ: Europe/Paris
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
-      CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL:-https://klarc.tail769c37.ts.net:8317/v1}
+      # Reachable CloudCLIProxy address from inside the container (the tailnet
+      # hostname is not routable from the Docker network — use the host bridge).
+      CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL}
       CLIPROXYAPI_KEY: ${CLIPROXYAPI_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-high}
       AGENT_SOURCE_REGISTRY_JSON: ${AGENT_SOURCE_REGISTRY_JSON:-[]}
