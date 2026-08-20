@@ -354,8 +354,8 @@ const slides = [
   {
     blockType: 'statement',
     eyebrow: 'PROPRIÉTÉ INTELLECTUELLE',
-    title: 'Ne pas déplacer les brevets pour des raisons de forme.',
-    body: 'Les nouveaux actifs suivent une politique définie **avant** les travaux. L’historique est traité actif par actif, après audit, valorisation, analyse fiscale et vérification des consentements.',
+    title: 'Centraliser les brevets de manière raisonnée.',
+    body: 'La filiale R&D peut devenir le centre de détention et de gestion du capital intellectuel afin de **fluidifier les flux, sécuriser les droits et faciliter leur valorisation**. Les actifs historiques sont transférés de manière sélective, actif par actif, après audit, valorisation, analyse fiscale et vérification des consentements.',
     footer:
       'La détention du capital, la titularité de l’actif, le développement, l’exploitation et la perception des revenus sont cinq positions distinctes.',
     variant: 'pull-quote',
