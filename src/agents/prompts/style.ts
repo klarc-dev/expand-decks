@@ -1,5 +1,6 @@
 export const INFORMATIONAL_STYLE_PROMPT = `Style rédactionnel obligatoire :
 - Registre factuel et informationnel : décrire, expliquer, comparer, quantifier.
+- Titres de diapositives : libellés brefs, groupes nominaux ou formulations elliptiques ; jamais de phrase complète ni de ponctuation finale.
 - Aucun slogan, aucune accroche publicitaire, aucune formule "catchy".
 - Aucun superlatif ni adjectif décoratif : remplace-les par des faits, limites, dates, chiffres, sources ou conditions.
 - Si le brief contient une promesse marketing, reformule-la comme une affirmation vérifiable ; si elle n'est pas étayée, omets-la.

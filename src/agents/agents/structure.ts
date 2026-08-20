@@ -28,7 +28,7 @@ const MAX_COVERAGE_RETRIES = 2;
 
 const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
-Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title (un titre-message concis ; cover, agenda et section peuvent rester des titres de repérage), et intent (la fonction pédagogique et ce que la diapositive doit faire comprendre, distinguer, décider ou appliquer).
+Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title (un libellé concis, de préférence un groupe nominal ou une formulation elliptique — jamais une phrase complète ni de ponctuation finale), et intent (la fonction pédagogique et ce que la diapositive doit faire comprendre, distinguer, décider ou appliquer).
 
 ${STRUCTURE_SYSTEM_PROMPT}
 

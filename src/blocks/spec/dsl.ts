@@ -289,13 +289,27 @@ export function eyebrowFieldSpec(render: z.ZodType, description?: string): Field
   );
 }
 
-/** `title` field: render Zod + required AI string. `description` → factoryArgs. */
+/** Audience-facing title text is a short label, not a sentence or inline Markdown. */
+export const aiTitle = () =>
+  z
+    .string()
+    .min(1)
+    .refine(
+      (value) => !/(?:\*\*|__|~~|`|!?\[[^\]]+\]\([^)]+\)|^\s{0,3}#{1,6}\s|^\s*>\s)/mu.test(value),
+      'Le titre doit être du texte brut sans balisage Markdown (gras, italique, lien, code, citation ou titre Markdown)',
+    )
+    .refine(
+      (value) => !/[.!?…]\s*$/u.test(value),
+      'Le titre doit être un libellé bref ou un groupe nominal, sans ponctuation de fin de phrase',
+    );
+
+/** `title` field: render Zod + required AI plain-text title. `description` → factoryArgs. */
 export function titleFieldSpec(render: z.ZodType, description?: string): FieldSpec {
   return factoryField(
     'title',
     'title',
     render,
-    z.string(),
+    aiTitle(),
     description !== undefined ? { description } : undefined,
   );
 }

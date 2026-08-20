@@ -20,7 +20,7 @@
 
 import { z } from 'zod';
 
-import { aiSchemaOf, type BlockSpec } from '../dsl';
+import { aiSchemaOf, aiTitle, type BlockSpec } from '../dsl';
 import { MAX_SLIDES, MIN_SLIDES } from '../../../lib/draftConfig';
 
 /**
@@ -55,7 +55,7 @@ export type OutlineSchema = z.ZodObject<{
 export function emitOutlineSchema(specs: BlockSpec[]): OutlineSchema {
   const stub = z.object({
     blockType: z.enum(draftBlockTypes(specs)),
-    title: z.string(),
+    title: aiTitle(),
     intent: z.string(),
   });
   return z.object({
