@@ -38,15 +38,15 @@ const RubricVerdict = z.object({
   fix: z.string().describe('One imperative instruction to fix the worst issue (empty if none)'),
 });
 
-const JUDGE_INSTRUCTIONS = `Tu es le juge qualité d'une diapositive de présentation d'expert. Tu notes UNE diapositive selon les règles ci-dessous et tu renvoies un score 0..1, les règles enfreintes, et UNE instruction de correction.
+const JUDGE_INSTRUCTIONS = `Tu es le juge qualité d'une diapositive de formation de niveau expert. Tu notes UNE diapositive selon les règles ci-dessous et tu renvoies un score 0..1, les règles enfreintes, et UNE instruction de correction.
 
 ${RUBRIC_PROMPT}
 
 Barème :
-- 1.0 : une seule idée, titre-affirmation, concret, pas de survente, charge maîtrisée.
+- 1.0 : une seule fonction pédagogique, titre-message, concret, exact, charge maîtrisée.
 - 0.7 : correct mais perfectible (un point faible).
-- < 0.5 : enfreint une règle structurante (titre-thème, idée double, survente, vague).
-Sois exigeant mais juste. fix = action concrète et brève (ex. "Réécris le titre en affirmation complète").`;
+- < 0.5 : enfreint une règle structurante (titre-thème, fonctions multiples, invention, survente, vague).
+Sois exigeant mais juste. fix = action concrète et brève (ex. "Réécris le titre comme le message à retenir").`;
 
 async function judge(slide: unknown): Promise<z.infer<typeof RubricVerdict>> {
   return generateStructured({

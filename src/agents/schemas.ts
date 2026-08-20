@@ -40,6 +40,9 @@ export const DeckDossierSchema = z.object({
     .describe(
       'The original natural-language brief, verbatim — used for the deterministic explicit-slide fast-path.',
     ),
+  language: z
+    .enum(['fr', 'en'])
+    .describe('Resolved output language for every audience-facing slide.'),
 });
 
 export type DeckDossier = z.infer<typeof DeckDossierSchema>;

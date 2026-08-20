@@ -21,6 +21,7 @@ const dossier: DeckDossier = {
   data: ['Garner 2013'],
   sources: ['Garner, Legal Writing in Plain English'],
   rawBrief: '',
+  language: 'en',
 };
 
 const stub: OutlineStub = {
@@ -57,6 +58,21 @@ describe('writeSlide invariants', () => {
     // The writer's own intent is present; the dossier core idea is present.
     expect(prompt).toContain('state the BLUF rule');
     expect(prompt).toContain('Lead with the conclusion.');
+  });
+
+  it('receives only the selected layout guidance and no deck-level planning commands', async () => {
+    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+
+    await writeSlide(stub, dossier, []);
+
+    const instructions = mocked.mock.calls[0]![0].instructions;
+    expect(instructions).toContain('**statement**');
+    expect(instructions).not.toContain('**cover**');
+    expect(instructions).not.toContain('**table**');
+    expect(instructions).not.toContain('Commence TOUJOURS');
+    expect(instructions).not.toContain('Termine TOUJOURS');
+    expect(instructions).not.toContain('nombre de diapositives');
+    expect(instructions).toContain('Required output language: English');
   });
 
   it('does not expose dossier sources in the writer prompt while keeping grounded data', async () => {

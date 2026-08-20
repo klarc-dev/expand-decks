@@ -1,12 +1,10 @@
 /**
  * L4 prompt-prose emitter — turns per-block `PromptMeta` records into the
- * numbered "Layouts disponibles" entries of the AI-draft SYSTEM_PROMPT, and
- * assembles the full prompt around two HARD-CODED verbatim French constants
- * (the intro paragraph and the trailing "Règles :" block).
+ * numbered layout catalogue used by the structure prompt, and assembles that
+ * catalogue around fixed introductory and deck-composition rules.
  *
- * Only the 8 layout entries are generated from `metas`; the intro and rules are
- * fixed prose that is not per-block, so they live here as string constants and
- * are reproduced byte-for-byte from the current hand-written prompt.
+ * All draftable layout entries are generated from `metas`; the intro and rules
+ * are global structure guidance, so they live here as string constants.
  *
  * Client-safety: imports ONLY the dsl types (plain TS) — no Payload / Next /
  * `_shared` runtime — so it stays cheap to load anywhere.
@@ -21,7 +19,7 @@ import type { PromptMeta } from '../dsl';
  */
 const INTRO = `Tu génères des diapositives structurées à partir d'un brief en langage naturel.
 
-Tu retournes un tableau de blocs (slides) typés. Chaque bloc a un champ "blockType" qui détermine sa mise en page. Ces blocs sont purement des LAYOUTS : ils ne portent aucune logique métier, seulement une structure visuelle réutilisable.
+Tu retournes un tableau de blocs (slides) typés. Chaque bloc a un champ "blockType" qui détermine sa mise en page. Ces blocs sont des structures visuelles réutilisables et sans vocabulaire métier ; leur choix dépend toutefois de la relation logique entre les informations.
 
 Layouts disponibles :
 `;
@@ -34,8 +32,17 @@ const RULES = `Règles :
 - Utilise "table" pour tout tableau, matrice, échelle ou comparaison ligne/colonne ; chaque tableau est sur sa propre diapositive
 - Utilise "timeline" pour un cycle de vie, un processus séquentiel ou un parcours chronologique (étapes ordonnées reliées par une ligne de progression)
 - Utilise "mermaid" pour un diagramme de flux, un organigramme ou un workflow (à partir de code Mermaid)
-- Varie les layouts pour structurer l'information
-- Reste dans la langue du brief (français par défaut si ambigu)
+- Choisis chaque layout selon la relation logique de l’information, jamais pour créer une variété décorative :
+  - agenda : seulement si la carte du parcours aide réellement l’auditoire à s’orienter
+  - statement : une règle, une distinction, une conclusion ou une mise en garde unique
+  - twoCols : deux catégories, deux perspectives ou un contraste simple ; table si plusieurs critères doivent être croisés
+  - cardGrid : ensemble de critères, options ou composantes de même niveau, pas une séquence
+  - stats : chiffres sourcés dont la comparaison visuelle porte le message
+  - quotes : citation exacte, attribuée et utile comme preuve ou point de vue ; jamais une citation inventée
+  - table : comparaison multi-critères, matrice, référentiel ou aide à la décision
+  - timeline : étapes ordonnées, phases ou chronologie
+  - mermaid : relations, dépendances, flux, décisions ou organisation qu’une liste expliquerait mal
+- Le choix de la langue est fourni séparément par le workflow ; ne l'infère pas ici
 - Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
 - Sinon, génère entre 8 et 15 diapositives selon la complexité du brief
 - Les textes doivent être concis et factuels`;

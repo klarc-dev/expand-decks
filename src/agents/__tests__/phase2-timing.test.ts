@@ -12,7 +12,7 @@ live('phase2 timing', () => {
     const t0 = Date.now();
     const run = await mastra.getWorkflow('deckWorkflow').createRun();
     const stream = run.stream({
-      inputData: { brief: BRIEF, sourceIds: [] },
+      inputData: { brief: BRIEF, language: 'en', sourceIds: [] },
       initialState: { visual: false },
     });
     for await (const chunk of stream) {

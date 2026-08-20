@@ -1,15 +1,34 @@
 /**
- * Prompt catalog — derives DRAFT_SYSTEM_PROMPT from the block-spec SSOT
- * (ALL_SPECS + buildSystemPrompt). Single source for the layout-catalogue prompt
- * shared by the structure and writer agents; replaces the import that previously
- * came from src/lib/draftPresentation.
+ * Phase-specific prompt catalogue derived from the block-spec SSOT.
+ *
+ * Structure receives the complete layout catalogue and deck-level composition
+ * rules. A slide writer receives only the already-selected layout guidance, so
+ * it cannot be distracted by deck count, cover/closing, or unrelated layouts.
  */
 import { ALL_SPECS } from '../../blocks/spec';
-import { buildSystemPrompt } from '../../blocks/spec/emit/emitPromptSection';
+import type { PromptMeta } from '../../blocks/spec/dsl';
+import { buildSystemPrompt, emitPromptSection } from '../../blocks/spec/emit/emitPromptSection';
 import { INFORMATIONAL_STYLE_PROMPT } from './style';
 
-export const DRAFT_SYSTEM_PROMPT = `${buildSystemPrompt(
-  ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : [])),
-)}
+const PROMPT_META = ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : []));
+const META_BY_BLOCK_TYPE = new Map(
+  ALL_SPECS.flatMap((spec) =>
+    spec.promptMeta ? [[spec.blockType, spec.promptMeta] as const] : [],
+  ),
+);
+
+export const STRUCTURE_SYSTEM_PROMPT = `${buildSystemPrompt(PROMPT_META)}
 
 ${INFORMATIONAL_STYLE_PROMPT}`;
+
+export function buildWriterLayoutPrompt(blockType: string): string {
+  const meta: PromptMeta | undefined = META_BY_BLOCK_TYPE.get(blockType);
+  if (!meta) {
+    throw new Error(`[prompt catalog] no AI layout guidance for blockType: ${blockType}`);
+  }
+
+  return `Layout imposé pour cette diapositive :
+${emitPromptSection(meta)}
+
+${INFORMATIONAL_STYLE_PROMPT}`;
+}

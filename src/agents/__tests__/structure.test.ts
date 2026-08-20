@@ -5,12 +5,13 @@ vi.mock('../model', () => ({ generateStructured: vi.fn() }));
 import { generateStructured } from '../model';
 import { structure } from '../agents/structure';
 import type { DeckDossier } from '../schemas';
+import type { DeckLanguage } from '../language';
 
 const mockedGenerateStructured = vi.mocked(generateStructured);
 
 beforeEach(() => mockedGenerateStructured.mockReset());
 
-const baseDossier = (rawBrief: string): DeckDossier => ({
+const baseDossier = (rawBrief: string, language: DeckLanguage = 'fr'): DeckDossier => ({
   coreIdea: 'x',
   audience: 'y',
   soWhat: 'z',
@@ -18,6 +19,7 @@ const baseDossier = (rawBrief: string): DeckDossier => ({
   data: [],
   sources: [],
   rawBrief,
+  language,
 });
 
 describe('structure() explicit-brief fast-path', () => {
@@ -47,6 +49,24 @@ describe('structure() explicit-brief fast-path', () => {
     const stubs = await structure(baseDossier('un brief libre sans marqueurs S1'));
     expect(generateStructured).toHaveBeenCalled();
     expect(Array.isArray(stubs)).toBe(true);
+  });
+
+  it('uses deck-level structure rules and the complete layout catalogue', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      slides: [
+        { blockType: 'cover', title: 'A', intent: 'i' },
+        { blockType: 'statement', title: 'B', intent: 'i2' },
+        { blockType: 'cta', title: 'C', intent: 'i3' },
+      ],
+    });
+
+    await structure(baseDossier('brief libre'));
+
+    const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
+    expect(instructions).toContain('Commence TOUJOURS par un bloc "cover"');
+    expect(instructions).toContain('**statement**');
+    expect(instructions).toContain('**table**');
+    expect(instructions).toContain('Langue de sortie imposée : français');
   });
 
   it('does not expose dossier sources in the structure prompt while keeping grounded data', async () => {

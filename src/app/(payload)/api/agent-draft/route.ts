@@ -171,7 +171,12 @@ export async function POST(req: NextRequest) {
         ? `${deckContext(presentation)}DECK EXISTANT À RÉVISER :\n${revisionContext}\n\n---\n\nDEMANDE DE RÉVISION :\n${brief}`
         : deckContext(presentation) + brief;
       const stream = run.stream({
-        inputData: { brief: revisionBrief, sourceIds, revisionContext },
+        inputData: {
+          brief: revisionBrief,
+          language: presentation.language,
+          sourceIds,
+          revisionContext,
+        },
         initialState: { visual, title: presentation.title ?? undefined },
       });
 

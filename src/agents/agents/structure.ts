@@ -14,7 +14,8 @@
 import { ALL_SPECS } from '../../blocks/spec';
 import { emitOutlineSchema, type OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import { INTENT_MAX } from '../../lib/draftConfig';
-import { DRAFT_SYSTEM_PROMPT } from '../prompts/catalog';
+import { languageInstruction } from '../language';
+import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
@@ -25,11 +26,11 @@ const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
 
 const MAX_COVERAGE_RETRIES = 2;
 
-const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation d'expert à partir d'un dossier (pas d'un brief brut).
+const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
-Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title (une AFFIRMATION, phrase complète), et intent (ce que la diapositive doit contenir).
+Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title (un titre-message concis ; cover, agenda et section peuvent rester des titres de repérage), et intent (la fonction pédagogique et ce que la diapositive doit faire comprendre, distinguer, décider ou appliquer).
 
-${DRAFT_SYSTEM_PROMPT}
+${STRUCTURE_SYSTEM_PROMPT}
 
 ${RUBRIC_PROMPT}
 
@@ -142,7 +143,7 @@ export async function structure(
   for (let attempt = 0; ; attempt++) {
     const { slides } = await generateStructured({
       name: 'structure',
-      instructions: STRUCTURE_INSTRUCTIONS,
+      instructions: `${STRUCTURE_INSTRUCTIONS}\n\n${languageInstruction(dossier.language)}`,
       schema: OUTLINE_SCHEMA,
       prompt,
       validate: findInformationalStyleViolations,

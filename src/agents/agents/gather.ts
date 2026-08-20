@@ -12,14 +12,14 @@
  */
 import type { Evidence } from '../../lib/sources/types';
 import { generateStructured } from '../model';
-import { RUBRIC_PROMPT } from '../prompts/rubric';
+import { languageInstruction, resolveTargetLanguage, type DeckLanguage } from '../language';
 import { findInformationalStyleViolations, INFORMATIONAL_STYLE_PROMPT } from '../prompts/style';
 import { DeckDossierSchema, type DeckDossier } from '../schemas';
 import { researchSources } from './research';
 
-const LLM_SCHEMA = DeckDossierSchema.omit({ rawBrief: true });
+const LLM_SCHEMA = DeckDossierSchema.omit({ rawBrief: true, language: true });
 
-const GATHER_INSTRUCTIONS = `Tu es le chercheur. À partir d'un brief, tu produis un dossier structuré qui servira à planifier une présentation d'expert.
+const GATHER_INSTRUCTIONS = `Tu es le chercheur. À partir d'un brief, tu produis un dossier structuré qui servira à planifier une présentation de formation de niveau expert.
 
 Tu extrais :
 - coreIdea : LA seule idée maîtresse du deck (une phrase complète, pas un thème).
@@ -29,11 +29,15 @@ Tu extrais :
 - data : faits, chiffres, exemples concrets qui ancrent les points (peut être vide).
 - sources : références des faits/affirmations si disponibles (peut être vide).
 
-${RUBRIC_PROMPT}
+Règles du dossier :
+- Préserve le périmètre, la terminologie, le statut épistémique et le point de vue du brief et des sources.
+- Ne transforme pas une explication en plaidoyer, une incertitude en certitude ni une corrélation en causalité.
+- N'invente aucun fait, chiffre, exemple, citation, source, consensus ou recommandation.
+- Calibre le dossier sur les acquis du public et privilégie les distinctions, conditions, limites, exceptions, conséquences et arbitrages utiles.
 
 ${INFORMATIONAL_STYLE_PROMPT}
 
-Reste dans la langue du brief. Ne rédige pas de diapositives — seulement le dossier.`;
+Ne rédige pas de diapositives — seulement le dossier.`;
 
 const RESEARCH_INSTRUCTIONS = `Tu es le chercheur. Tu disposes d'outils de recherche connectés à des bases de connaissances sélectionnées.
 
@@ -46,10 +50,16 @@ Rends des notes structurées (faits + référence de source) que le dossier pour
 
 export type GatherResult = { dossier: DeckDossier; evidence: Evidence[] };
 
-export async function gather(brief: string, sourceIds?: readonly string[]): Promise<GatherResult> {
+export async function gather(
+  brief: string,
+  sourceIds?: readonly string[],
+  requestedLanguage?: DeckLanguage,
+): Promise<GatherResult> {
+  const language = resolveTargetLanguage(requestedLanguage, brief);
+  const localePolicy = languageInstruction(language);
   const { notes, evidence } = await researchSources(sourceIds, {
     name: 'gather:research',
-    instructions: RESEARCH_INSTRUCTIONS,
+    instructions: `${RESEARCH_INSTRUCTIONS}\n\n${localePolicy}`,
     prompt: brief,
   });
 
@@ -59,11 +69,11 @@ export async function gather(brief: string, sourceIds?: readonly string[]): Prom
 
   const dossier = await generateStructured({
     name: 'gather',
-    instructions: GATHER_INSTRUCTIONS,
+    instructions: `${GATHER_INSTRUCTIONS}\n\n${localePolicy}`,
     schema: LLM_SCHEMA,
     prompt,
     validate: findInformationalStyleViolations,
     maxValidationRepairs: 3,
   });
-  return { dossier: { ...dossier, rawBrief: brief }, evidence };
+  return { dossier: { ...dossier, rawBrief: brief, language }, evidence };
 }

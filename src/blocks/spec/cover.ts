@@ -100,7 +100,6 @@ export const coverSpec = block({
       'eyebrow: accroche courte au-dessus du titre',
       'title: titre principal (obligatoire)',
       'subtitle: paragraphe descriptif',
-      'intervenants: personnes affichées en cartes avatar (sélection manuelle)',
     ],
   },
 });

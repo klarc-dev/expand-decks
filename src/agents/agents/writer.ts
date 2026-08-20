@@ -12,7 +12,8 @@
 import { ALL_SPECS } from '../../blocks/spec';
 import { aiSchemaOf } from '../../blocks/spec/dsl';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
-import { DRAFT_SYSTEM_PROMPT } from '../prompts/catalog';
+import { buildWriterLayoutPrompt } from '../prompts/catalog';
+import { languageInstruction } from '../language';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
@@ -20,13 +21,16 @@ import type { DeckDossier } from '../schemas';
 
 const SPEC_BY_TYPE = new Map(ALL_SPECS.map((s) => [s.blockType, s]));
 
-const WRITER_INSTRUCTIONS = `Tu es le rédacteur. Tu rédiges le contenu d'UNE seule diapositive déjà planifiée.
+function writerInstructions(blockType: string, dossier: DeckDossier): string {
+  return `Tu es le rédacteur pédagogique. Tu rédiges le contenu d'UNE seule diapositive de formation de niveau expert déjà planifiée.
 
 On te donne : le dossier (contexte resserré), le blockType et le title imposés de CETTE diapositive, son intention, et la liste des TITRES des autres diapositives (pour éviter les redites). Tu ne vois jamais le corps des autres diapositives.
 
-${DRAFT_SYSTEM_PROMPT}
+${buildWriterLayoutPrompt(blockType)}
 
 ${RUBRIC_PROMPT}
+
+${languageInstruction(dossier.language)}
 
 Règles de rédaction :
 - Conserve EXACTEMENT le blockType et le title imposés.
@@ -34,6 +38,7 @@ Règles de rédaction :
 - Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
 - Les sources servent seulement à vérifier les faits ; les preuves sont conservées en métadonnées. Ne rédige jamais de rubrique bibliographique visible ("Sources :", "Références :", citations brutes).
 - Textes concis et factuels ; reste dans la langue du dossier ; ne répète pas le contenu d'une autre diapositive.`;
+}
 
 function dossierExcerpt(dossier: DeckDossier): string {
   return [
@@ -84,7 +89,7 @@ export async function writeSlide(
 
   const block = await generateStructured<Record<string, unknown>>({
     name: `writer:${stub.blockType}`,
-    instructions: WRITER_INSTRUCTIONS,
+    instructions: writerInstructions(stub.blockType, dossier),
     schema: schema as never,
     prompt,
     validate: findInformationalStyleViolations,

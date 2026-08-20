@@ -22,7 +22,7 @@ maybe('Phase 4 full run (visual pass)', () => {
   it('builds, visually scores, and assembles a deck end to end', { timeout: 480_000 }, async () => {
     const run = await mastra.getWorkflow('deckWorkflow').createRun();
     const res = await run.start({
-      inputData: { brief: BRIEF, sourceIds: [] },
+      inputData: { brief: BRIEF, language: 'en', sourceIds: [] },
       initialState: { visual: true },
     });
 

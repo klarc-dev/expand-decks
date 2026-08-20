@@ -16,6 +16,7 @@ const dossier: DeckDossier = {
   data: [],
   sources: [],
   rawBrief: '',
+  language: 'en',
 };
 
 describe('uncoveredKeyPoints (Structure coverage gate)', () => {

@@ -84,14 +84,22 @@ const writerJob = z.custom<WriterJob>();
 
 const gatherStep = createStep({
   id: 'gather',
-  inputSchema: z.object({ brief: z.string(), sourceIds: z.array(z.string()).default([]) }),
+  inputSchema: z.object({
+    brief: z.string(),
+    language: z.enum(['fr', 'en']),
+    sourceIds: z.array(z.string()).default([]),
+  }),
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceIds: z.array(z.string()),
   }),
   execute: async ({ inputData }) => {
-    const { dossier, evidence } = await gather(inputData.brief, inputData.sourceIds);
+    const { dossier, evidence } = await gather(
+      inputData.brief,
+      inputData.sourceIds,
+      inputData.language,
+    );
     return { dossier, evidence, sourceIds: inputData.sourceIds };
   },
 });
@@ -256,6 +264,7 @@ const assembleStep = createStep({
 
 const InputSchema = z.object({
   brief: z.string(),
+  language: z.enum(['fr', 'en']),
   title: z.string().optional(),
   sourceIds: z.array(z.string()).default([]),
   revisionContext: z.string().optional(),
