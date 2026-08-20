@@ -109,7 +109,7 @@ const slides = [
   {
     blockType: 'table',
     eyebrow: 'FRAGILITÉS PRIORITAIRES',
-    title: 'Six situations concrètes à régulariser',
+    title: 'Cinq situations concrètes à régulariser',
     tableVariant: 'reference',
     columns: [{ header: 'Constat issu des échanges' }, { header: 'Point à sécuriser' }],
     rows: [
@@ -136,7 +136,7 @@ const slides = [
           { value: '**Anna travaille à l’université**' },
           {
             value:
-              'La doctorante CIFRE travaille à l’université : ses moyens et dépenses doivent être rattachés au projet bénéficiaire.',
+              'Si elle est mise à disposition par un GE et réalise ses travaux à l’université, ses dépenses ne sont pas éligibles au CIR de l’entreprise bénéficiaire : les travaux ne sont pas réalisés dans ses locaux.',
           },
         ],
       },
@@ -154,16 +154,7 @@ const slides = [
           { value: '**Le CIR repose sur des mises à disposition GE non conformes**' },
           {
             value:
-              'Chaque affectation doit identifier l’utilisateur, la mission, le site et la période ; une convention distincte est requise par société.',
-          },
-        ],
-      },
-      {
-        cells: [
-          { value: '**Dossier technique 2025 non commencé**' },
-          {
-            value:
-              'La justification reste à produire et les temps de Gaëlle et des contributeurs ponctuels ne sont pas ventilés par projet.',
+              'Chaque affectation doit identifier l’utilisateur, la mission, le site et la période ; une convention distincte est requise par société et par personne.',
           },
         ],
       },

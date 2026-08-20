@@ -40,6 +40,8 @@ describe('buildFooterLayer / buildLogoLayer', () => {
     expect(layer).not.toContain('useNav');
     expect(layer).toContain('hideChrome');
     expect(layer).toContain('k-slide-footer');
+    expect(layer).toContain('k-slide-footer--dark');
+    expect(layer).toContain("includes('k-dark')");
     // only the page/total tokens remain in the Vue resolver
     expect(layer).toContain('page|total');
     expect(layer).not.toContain('cfg.value?.vars');

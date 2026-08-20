@@ -76,3 +76,20 @@ describe('style.css source pills', () => {
     expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*var\(--accent-rule\)/);
   });
 });
+
+describe('style.css corporate flat rendering', () => {
+  it('uses the same shadowless and filterless system in SPA and PDF', () => {
+    expect(css).toMatch(/\.slidev-layout \*,[\s\S]*?box-shadow:\s*none !important/);
+    expect(css).toMatch(/\.slidev-layout \*,[\s\S]*?filter:\s*none !important/);
+    expect(css).not.toMatch(/@media print/);
+  });
+
+  it('uses opaque surfaces for dark corporate components', () => {
+    expect(css).toMatch(/\.k-dark \.k-person-card,[\s\S]*?background:\s*#[0-9a-f]{6} !important/i);
+    expect(css).toMatch(
+      /\.k-dark \.k-table tbody tr:nth-child\(even\)[\s\S]*?background:\s*#[0-9a-f]{6}/i,
+    );
+    expect(css).toMatch(/\.k-gradient\s*\{\s*background:\s*var\(--k-teal\) !important/);
+    expect(css).not.toMatch(/\.k-gradient\s*\{[\s\S]*?radial-gradient/);
+  });
+});

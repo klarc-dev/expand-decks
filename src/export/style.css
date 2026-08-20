@@ -151,15 +151,15 @@
   --bg: var(--k-teal);
   --fg: #fff;
   --fg-muted: var(--fg-dark-muted);
-  --fg-footer: rgba(255, 255, 255, 0.78); /* on the teal gradient ≈ 6:1 */
-  --pill-bg: rgba(255, 255, 255, 0.1);
+  --fg-footer: #eaf2f2;
+  --pill-bg: #1f5e61;
   --pill-fg: #fff;
-  --pill-border: rgba(255, 255, 255, 0.3);
-  --k-surface: rgba(255, 255, 255, 0.07);
-  --k-surface-raised: rgba(255, 255, 255, 0.1);
-  --k-surface-soft: rgba(255, 255, 255, 0.055);
-  --k-hairline: rgba(255, 255, 255, 0.15);
-  --k-shadow-soft: 0 18px 44px -34px rgba(0, 0, 0, 0.58);
+  --pill-border: #6f989a;
+  --k-surface: #195457;
+  --k-surface-raised: #1f5e61;
+  --k-surface-soft: #164d50;
+  --k-hairline: #4b7c7e;
+  --k-shadow-soft: none;
   --k-shadow-lift: 0 24px 58px -42px rgba(0, 0, 0, 0.68);
 }
 
@@ -220,23 +220,12 @@
 
 /* Dark variant for cover / section -------------- */
 .k-dark {
-  background: linear-gradient(135deg, var(--k-teal) 0%, var(--k-teal-700) 100%) !important;
+  background: var(--k-teal) !important;
   color: #fff !important;
 }
 
 .k-gradient {
-  background:
-    radial-gradient(
-      1200px 600px at 85% -10%,
-      color-mix(in srgb, var(--k-rose) 22%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 10% 110%,
-      color-mix(in srgb, var(--k-teal) 55%, transparent),
-      transparent 60%
-    ),
-    linear-gradient(135deg, var(--k-teal) 0%, var(--k-teal-700) 100%) !important;
+  background: var(--k-teal) !important;
 }
 
 .k-dark h1,
@@ -1502,11 +1491,13 @@
   color: var(--k-teal);
 }
 .k-dark .k-slide-header,
-.k-dark .k-slide-footer {
-  color: var(--fg-footer);
+.k-dark .k-slide-footer,
+.k-slide-footer--dark {
+  color: #eaf2f2;
 }
 .k-dark .k-slide-header .brand,
-.k-dark .k-slide-footer .page {
+.k-dark .k-slide-footer .page,
+.k-slide-footer--dark .page {
   color: #fff;
 }
 
@@ -1725,6 +1716,34 @@
    paragraphs but no leading/trailing margin so the block stays centered. */
 .payload-richtext > p + p {
   margin-top: 0.7em;
+}
+
+/* Corporate decks use one flat rendering system in the SPA and PDF. Shadows,
+   filters and translucent raised layers are avoided: they add no information,
+   compress poorly and some PDF viewers expose their rectangular paint bounds. */
+.slidev-layout *,
+.slidev-layout *::before,
+.slidev-layout *::after {
+  box-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.k-card:hover {
+  transform: none;
+}
+
+.k-dark .k-person-card,
+.k-dark .k-def-item,
+.k-dark .k-tl-band,
+.k-dark .k-ag-item--active,
+.k-dark.k-diagram-slide .mermaid {
+  background: #1f5e61 !important;
+  border-color: #4b7c7e !important;
+}
+
+.k-dark .k-table tbody tr:nth-child(even) {
+  background: #195457;
 }
 
 /* On dark surfaces, `.k-dark p` forces white text. A richText <p> living inside

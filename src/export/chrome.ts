@@ -67,6 +67,7 @@ import { useSlideContext } from '@slidev/client'
 const { $slidev, $frontmatter } = useSlideContext()
 const cfg = computed(() => $slidev?.configs?.klarcFooter)
 const hidden = computed(() => $frontmatter?.hideChrome === true)
+const dark = computed(() => String($frontmatter?.class ?? '').split(/\\s+/).includes('k-dark'))
 function resolve(t: string): string {
   if (!t) return ''
   return t.replace(/\\{(page|total)\\}/g, (_m, k) => {
@@ -80,7 +81,7 @@ const right = computed(() => resolve(cfg.value?.right ?? ''))
 </script>
 
 <template>
-  <footer v-if="cfg && !hidden" class="k-slide-footer">
+  <footer v-if="cfg && !hidden" class="k-slide-footer" :class="{ 'k-slide-footer--dark': dark }">
     <span>{{ left }}</span>
     <span>{{ center }}</span>
     <span class="page">{{ right }}</span>
