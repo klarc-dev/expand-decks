@@ -2,6 +2,33 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 import { forceNonStreamFetch } from '../ai';
 
+describe('CloudCLIProxy configuration', () => {
+  it('supports the same CLIPROXYAPI ckey environment used by Hermes', async () => {
+    vi.resetModules();
+    vi.stubEnv('CLIPROXYAPI_BASE_URL', 'https://proxy.example/v1');
+    vi.stubEnv('CLIPROXYAPI_KEY', 'shared-ckey');
+    vi.stubEnv('OPENAI_BASE_URL', 'https://wrong.example/v1');
+    vi.stubEnv('OPENAI_API_KEY', 'wrong-key');
+
+    const { cloudCLIProxy } = await import('../ai');
+    const model = cloudCLIProxy('high') as unknown as {
+      config: {
+        url: (options: { path: string; modelId: string }) => string;
+        headers: () => Record<string, string>;
+      };
+    };
+
+    expect(model.config.url({ path: '/chat/completions', modelId: 'high' })).toBe(
+      'https://proxy.example/v1/chat/completions',
+    );
+    const headers = model.config.headers();
+    expect(headers.authorization ?? headers.Authorization).toBe('Bearer shared-ckey');
+
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+});
+
 describe('forceNonStreamFetch()', () => {
   let fetchSpy: ReturnType<typeof vi.fn>;
 

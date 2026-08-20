@@ -9,8 +9,11 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
  * keeps the contract portable across OpenAI-compatible proxies.
  */
 
-const baseURL = process.env.OPENAI_BASE_URL || 'https://klarc.tail769c37.ts.net:8317/v1';
-const apiKey = process.env.OPENAI_API_KEY || '';
+const baseURL =
+  process.env.CLIPROXYAPI_BASE_URL ||
+  process.env.OPENAI_BASE_URL ||
+  'https://klarc.tail769c37.ts.net:8317/v1';
+const apiKey = process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY || '';
 
 /** CloudCLIProxy's high-quality routing alias. Override only for explicit tests. */
 export const DRAFT_MODEL = process.env.OPENAI_MODEL || 'high';
