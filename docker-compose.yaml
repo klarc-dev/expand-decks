@@ -19,7 +19,10 @@ services:
     networks:
       expand-decks:
         aliases:
-          - postgres
+          # Use an application-specific hostname. Coolify also attaches Compose
+          # services to shared networks where the generic `postgres` alias can
+          # resolve to an unrelated database container.
+          - expand-decks-postgres
 
   payload:
     build: .
