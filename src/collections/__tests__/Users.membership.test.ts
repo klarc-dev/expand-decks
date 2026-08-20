@@ -41,6 +41,25 @@ describe('Users membership approval', () => {
   });
 });
 
+describe('Users native API keys', () => {
+  it('uses Payload authentication so a generated key is shown and can authenticate requests', () => {
+    expect(Users.auth).toMatchObject({ useAPIKey: true });
+  });
+});
+
+describe('Users profile defaults', () => {
+  it('exposes a default organisation relationship in the sidebar', () => {
+    const field = Users.fields.find(
+      (candidate) => 'name' in candidate && candidate.name === 'defaultOrganisation',
+    );
+    expect(field).toMatchObject({
+      type: 'relationship',
+      relationTo: 'organisations',
+      admin: { position: 'sidebar' },
+    });
+  });
+});
+
 describe('Users Google avatar synchronization', () => {
   it('retrieves the linked Google picture and assigns the uploaded media on login', async () => {
     if (!afterLogin) throw new Error('Users.afterLogin is not configured');

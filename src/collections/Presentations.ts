@@ -25,6 +25,20 @@ import { AgendaBlock } from '../blocks/AgendaBlock';
 import { MarkdownBlock } from '../blocks/MarkdownBlock';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
+/**
+ * Resolve the organisation pre-selected for a new presentation: the author's
+ * `defaultOrganisation`, whether the relationship arrives populated (depth > 0)
+ * or as a bare id.
+ */
+function defaultOrganisationId(user: PayloadRequest['user']): number | undefined {
+  const value = (user as { defaultOrganisation?: unknown } | null)?.defaultOrganisation;
+  if (typeof value === 'number') return value;
+  if (value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'number') {
+    return (value as { id: number }).id;
+  }
+  return undefined;
+}
+
 async function uniqueSlugFromTitle(req: PayloadRequest, title: string): Promise<string> {
   const derived = slugFromTitle(title);
   const base =
@@ -250,11 +264,36 @@ export const Presentations: CollectionConfig = {
   },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: { description: 'Titre de la présentation (ex. "Klarc — L\'innovation à 360°")' },
+      // Title and organisation share one row so the charte graphique is picked
+      // inline, right next to the title, instead of hiding in the Réglages tab.
+      type: 'row',
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          required: true,
+          label: 'Titre',
+          admin: {
+            width: '70%',
+            description: 'Titre de la présentation (ex. "Klarc — L\'innovation à 360°")',
+          },
+        },
+        {
+          name: 'organisation',
+          type: 'relationship',
+          relationTo: COLLECTIONS.organisations,
+          required: true,
+          label: 'Organisation',
+          // Pre-select the author's default organisation so a new deck opens
+          // with its charte graphique already applied.
+          defaultValue: ({ user }) => defaultOrganisationId(user),
+          admin: {
+            width: '30%',
+            description:
+              'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
+          },
+        },
+      ],
     },
     {
       type: 'tabs',
@@ -377,17 +416,6 @@ export const Presentations: CollectionConfig = {
                 { label: 'Publiée', value: PRESENTATION_STATUS.published },
                 { label: 'Archivée', value: PRESENTATION_STATUS.archived },
               ],
-            },
-            {
-              name: 'organisation',
-              type: 'relationship',
-              relationTo: COLLECTIONS.organisations,
-              required: true,
-              label: 'Organisation',
-              admin: {
-                description:
-                  'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
-              },
             },
             {
               name: 'createdBy',

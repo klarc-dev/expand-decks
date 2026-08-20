@@ -16,6 +16,7 @@
     "deck:seed": "tsx --env-file-if-exists=.env scripts/run-seed.ts",
     "deck:build": "tsx --env-file-if-exists=.env scripts/run-build.ts",
     "deck:dump": "tsx --env-file-if-exists=.env scripts/dump-slides-md.ts",
+    "users:import": "tsx --env-file-if-exists=.env scripts/import-users.ts",
     "login": "node --env-file=.env scripts/login.mjs",
     "test": "vitest run",
     "test:e2e": "node --env-file=.env node_modules/@playwright/test/cli.js test",

@@ -85,7 +85,9 @@ const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
 
 export const Users: CollectionConfig = {
   slug: COLLECTIONS.users,
-  auth: true,
+  auth: {
+    useAPIKey: true,
+  },
   admin: {
     useAsTitle: 'email',
   },
@@ -140,6 +142,17 @@ export const Users: CollectionConfig = {
       relationTo: COLLECTIONS.media,
       label: 'Avatar',
       admin: { description: 'Image affichée sur les cartes intervenants' },
+    },
+    {
+      name: 'defaultOrganisation',
+      type: 'relationship',
+      relationTo: COLLECTIONS.organisations,
+      label: 'Organisation par défaut',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Charte graphique pré-sélectionnée sur les nouvelles présentations de cet utilisateur.',
+      },
     },
     {
       name: 'membershipStatus',

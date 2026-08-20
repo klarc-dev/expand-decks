@@ -8,6 +8,8 @@ import * as migration_20260630_094458_remove_cover_footers from './20260630_0944
 import * as migration_20260810_154621_add_user_membership_status from './20260810_154621_add_user_membership_status';
 import * as migration_20260811_202948 from './20260811_202948';
 import * as migration_20260811_205401 from './20260811_205401';
+import * as migration_20260820_075122_add_user_default_organisation from './20260820_075122_add_user_default_organisation';
+import * as migration_20260820_092404_native_user_api_keys from './20260820_092404_native_user_api_keys';
 
 export const migrations = [
   {
@@ -59,5 +61,15 @@ export const migrations = [
     up: migration_20260811_205401.up,
     down: migration_20260811_205401.down,
     name: '20260811_205401',
+  },
+  {
+    up: migration_20260820_075122_add_user_default_organisation.up,
+    down: migration_20260820_075122_add_user_default_organisation.down,
+    name: '20260820_075122_add_user_default_organisation',
+  },
+  {
+    up: migration_20260820_092404_native_user_api_keys.up,
+    down: migration_20260820_092404_native_user_api_keys.down,
+    name: '20260820_092404_native_user_api_keys',
   },
 ];

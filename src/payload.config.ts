@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildConfig } from 'payload';
+import { buildConfig, type Plugin } from 'payload';
 import { postgresAdapter } from '@payloadcms/db-postgres';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { fr } from '@payloadcms/translations/languages/fr';
@@ -23,6 +23,20 @@ import { ROLES } from './access/roles';
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
+/** The auth plugin currently adds a non-functional, publicly writable
+ * `apiKeys` collection. Payload's native user API-key strategy below is the
+ * actual supported feature, so keep the OAuth plugin but discard that dead
+ * generated collection from its returned config. */
+const withoutPluginAPIKeys =
+  (plugin: Plugin): Plugin =>
+  async (config) => {
+    const configured = await plugin(config);
+    return {
+      ...configured,
+      collections: configured.collections?.filter((collection) => collection.slug !== 'apiKeys'),
+    };
+  };
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -40,21 +54,23 @@ export default buildConfig({
   serverURL: SERVER_URL,
   collections: [Users, Organisations, Presentations, Media, Accounts],
   plugins: [
-    authPlugin({
-      name: 'auth',
-      providers: [
-        GoogleAuthProvider({
-          client_id: process.env.GOOGLE_CLIENT_ID!,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        }),
-      ],
-      usersCollectionSlug: COLLECTIONS.users,
-      accountsCollectionSlug: COLLECTIONS.accounts,
-      allowOAuthAutoSignUp: true,
-      useAdmin: true,
-      successRedirectPath: '/admin',
-      errorRedirectPath: '/membership-pending',
-    }),
+    withoutPluginAPIKeys(
+      authPlugin({
+        name: 'auth',
+        providers: [
+          GoogleAuthProvider({
+            client_id: process.env.GOOGLE_CLIENT_ID!,
+            client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+          }),
+        ],
+        usersCollectionSlug: COLLECTIONS.users,
+        accountsCollectionSlug: COLLECTIONS.accounts,
+        allowOAuthAutoSignUp: true,
+        useAdmin: true,
+        successRedirectPath: '/admin',
+        errorRedirectPath: '/membership-pending',
+      }),
+    ),
   ],
   onInit: async (payload) => {
     const email = process.env.SEED_ADMIN_EMAIL;
