@@ -825,6 +825,24 @@ describe('renderMarkdown()', () => {
   });
 });
 
+describe('renderTable() — fixed-canvas fitting', () => {
+  it('marks dense tables for fixed-canvas fitting', () => {
+    const result = renderTable({
+      blockType: 'table',
+      title: 'Dense comparison',
+      columns: Array.from({ length: 5 }, (_, index) => ({ header: `Column ${index + 1}` })),
+      rows: Array.from({ length: 8 }, (_, rowIndex) => ({
+        cells: Array.from({ length: 5 }, (_, columnIndex) => ({
+          value: lexical(`Row ${rowIndex + 1}, column ${columnIndex + 1}`),
+        })),
+      })),
+    });
+
+    expect(result).toContain('k-table--fit');
+    expect(result).toContain('k-content-main--stretch');
+  });
+});
+
 describe('renderTable() — reference vs matrix variant + StatusPill (U10)', () => {
   const matrixTable = (statusText: string) => ({
     blockType: 'table' as const,

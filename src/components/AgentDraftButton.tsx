@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast, useDocumentInfo } from '@payloadcms/ui';
+import { toast, useDocumentInfo, useField } from '@payloadcms/ui';
 
 import {
   dashedHintStyle,
@@ -75,7 +75,8 @@ const checkboxRowStyle: React.CSSProperties = {
  * on mount it reads the doc and resumes polling if a run is already active.
  */
 const AgentDraftButton: React.FC = () => {
-  const [brief, setBrief] = useState('');
+  const { setValue: setBriefValue, value: storedBrief } = useField<string>({ path: 'agentBrief' });
+  const brief = storedBrief ?? '';
   const [mode, setMode] = useState<DraftMode>('replace');
   const [visual, setVisual] = useState(true);
   const [sources, setSources] = useState<SourceOption[]>([]);
@@ -270,7 +271,7 @@ const AgentDraftButton: React.FC = () => {
       <textarea
         id="agent-brief"
         value={brief}
-        onChange={(e) => setBrief(e.target.value)}
+        onChange={(e) => setBriefValue(e.target.value)}
         placeholder="Ex : Webinaire de 45 min pour juristes d'entreprise sur comment rendre une présentation d'expert réellement intéressante…"
         disabled={running}
         rows={5}

@@ -252,6 +252,7 @@ export async function POST(req: NextRequest) {
         collection: COLLECTIONS.presentations,
         id: presentationId,
         data: {
+          agentBrief: brief,
           draftStatus: DRAFT_STATUS.done,
           draftSources: sourceIds,
           draftEvidence: deck.evidence ?? [],

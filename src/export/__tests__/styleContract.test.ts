@@ -33,6 +33,22 @@ describe('style.css fitted agenda layout (regression: agenda rows overflow foote
   });
 });
 
+describe('style.css oversized export fitting', () => {
+  it('fits dense tables inside the measured content row', () => {
+    expect(css).toMatch(/\.k-table--fit\s*\{[\s\S]*table-layout:\s*fixed/);
+    expect(css).toMatch(/\.k-table--fit\s*\{[\s\S]*font-size:\s*0\.5rem/);
+    expect(css).toMatch(
+      /\.k-table--fit th,[\s\S]*?\.k-table--fit td\s*\{[\s\S]*overflow-wrap:\s*anywhere/,
+    );
+  });
+
+  it('makes Slidev Mermaid SVG dimensions yield to the fixed diagram stage', () => {
+    expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*min-width:\s*0/);
+    expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*min-height:\s*0/);
+    expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*object-fit:\s*contain/);
+  });
+});
+
 describe('style.css card grid composition (regression: floating sidebar note)', () => {
   it('structures cardGrid body as a full-height vertical system', () => {
     expect(css).toMatch(/\.k-cardgrid-body\s*\{[\s\S]*height:\s*100%/);

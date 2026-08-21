@@ -36,6 +36,7 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const rows = block.rows ?? [];
   const colCount = cols.length;
   const isMatrix = block.tableVariant === 'matrix';
+  const fitted = rows.length >= 6 || colCount >= 4;
 
   const head = colCount
     ? `<thead>\n<tr>${cols.map((c) => `<th>${md(c.header)}</th>`).join('')}</tr>\n</thead>`
@@ -53,10 +54,17 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     })
     .join('\n');
 
-  const tableCls = isMatrix ? `${K.table} k-table--matrix` : K.table;
+  const tableCls = [K.table, isMatrix ? 'k-table--matrix' : '', fitted ? 'k-table--fit' : '']
+    .filter(Boolean)
+    .join(' ');
   const table = `<table class="${tableCls}">\n${head}\n<tbody>\n${body}\n</tbody>\n</table>`;
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
-  const bodyHtml = contentFrame(table, { header, wFull: true, mainAlign: 'start' });
+  const bodyHtml = contentFrame(table, {
+    header,
+    wFull: true,
+    crowded: fitted,
+    mainAlign: fitted ? 'stretch' : 'start',
+  });
 
   return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });
 }

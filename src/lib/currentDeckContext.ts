@@ -43,3 +43,12 @@ export async function currentDeckContext(
     ? serialized
     : `${serialized.slice(0, MAX_CONTEXT_CHARS)}\n[CONTEXTE TRONQUÉ]`;
 }
+
+/** Human-readable context for the per-slide AJAX revision endpoint. */
+export async function currentSlideContext(
+  slide: Record<string, unknown>,
+  payload: Payload,
+): Promise<string> {
+  const editorConfig = await editorConfigFactory.default({ config: payload.config });
+  return JSON.stringify(readableValue(slide, editorConfig), null, 2);
+}

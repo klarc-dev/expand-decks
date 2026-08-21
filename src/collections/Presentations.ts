@@ -334,6 +334,16 @@ export const Presentations: CollectionConfig = {
             "Build agentique : l'agent recherche, structure, rédige, critique et corrige la présentation à partir d'un brief.",
           fields: [
             {
+              name: 'agentBrief',
+              type: 'textarea',
+              label: 'Brief de la présentation',
+              admin: {
+                description:
+                  'Brief conservé après génération pour pouvoir le relire, le corriger et relancer l’agent.',
+                rows: 6,
+              },
+            },
+            {
               name: 'agentDraftFromBrief',
               type: 'ui',
               admin: {

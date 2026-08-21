@@ -14,7 +14,8 @@ describe('Mermaid organisation theme', () => {
   };
 
   it('uses the organisation palette in the runtime config', () => {
-    const variables = buildMermaidConfig(brand).themeVariables;
+    const config = buildMermaidConfig(brand);
+    const variables = config.themeVariables;
     expect(variables).toMatchObject({
       primaryColor: '#FBF8F3',
       primaryBorderColor: '#6F1D3B',
@@ -22,6 +23,9 @@ describe('Mermaid organisation theme', () => {
       lineColor: '#6F1D3B',
       tertiaryBorderColor: '#C9A96E',
     });
+    expect(config.themeCSS).toContain('svg');
+    expect(config.themeCSS).toContain('width: 100% !important');
+    expect(config.themeCSS).toContain('height: 100% !important');
   });
 
   it('serializes the same palette for the staged Slidev setup', () => {

@@ -60,6 +60,22 @@ export function buildMermaidConfig(brand?: Partial<OrgBrand> | null): MermaidCon
     // heuristic, no transform — the SVG is centered on BOTH axes and never clips,
     // identically in the admin preview and the exported PDF.
     flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis' },
+    // Slidev mounts Mermaid output in a ShadowRoot, so deck-level style.css
+    // cannot reach the generated SVG. Mermaid injects themeCSS inside that
+    // shadow tree, making this the authoritative fixed-canvas containment rule
+    // for both the built SPA and Chromium PDF/PNG exports.
+    themeCSS: `
+      svg {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+    `,
     themeVariables: {
       fontFamily: 'Roboto, ui-sans-serif, system-ui, sans-serif',
       primaryColor: palette.paper,

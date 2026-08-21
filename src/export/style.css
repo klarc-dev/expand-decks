@@ -434,6 +434,30 @@
   overflow: hidden;
 }
 
+/* Dense tables must fit the fixed Slidev canvas in both the SPA and Chromium
+   export. Fixed tracks prevent intrinsic cell widths from expanding the table;
+   the compact shared scale preserves all rows without scroll-only behavior. */
+.k-table--fit {
+  table-layout: fixed;
+  font-size: 0.5rem;
+}
+.k-table--fit th,
+.k-table--fit td {
+  padding: 0.18rem 0.36rem;
+  line-height: 1.06;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.k-table--fit td ul,
+.k-table--fit td ol {
+  margin-top: 0.08rem;
+  padding-left: 0.8rem;
+}
+.k-table--fit td li {
+  margin: 0.04rem 0;
+  line-height: 1.08;
+}
+
 .k-table th {
   font-family: var(--k-font-heading);
   font-weight: 600;
@@ -573,10 +597,13 @@
 }
 .k-diagram-slide .mermaid svg {
   display: block;
+  min-width: 0 !important;
+  min-height: 0 !important;
   width: 100% !important;
   height: 100% !important;
   max-width: 100% !important;
   max-height: 100% !important;
+  object-fit: contain;
   overflow: visible;
 }
 .k-mermaid-caption {

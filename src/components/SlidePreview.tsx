@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useDocumentInfo, useFormFields } from '@payloadcms/ui';
+import { toast, useDocumentInfo, useForm, useFormFields } from '@payloadcms/ui';
 
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import {
@@ -10,6 +10,7 @@ import {
   type PreviewRequest,
 } from '@/components/slidePreviewState';
 import { SlideFrame, SLIDE_STAGE_BG, type SlideChrome } from '@/components/SlideFrame';
+import { adminPost } from '@/lib/adminFetch';
 
 import '@/export/style.css';
 
@@ -27,6 +28,43 @@ type PreviewResult = {
   };
 };
 
+type SlideRevisionControlsProps = {
+  instruction: string;
+  revising: boolean;
+  setInstruction: (value: string) => void;
+  submit: () => void;
+};
+
+function SlideRevisionControls({
+  instruction,
+  revising,
+  setInstruction,
+  submit,
+}: SlideRevisionControlsProps) {
+  return (
+    <div style={styles.aiPanel}>
+      <textarea
+        aria-label="Consigne de modification de la diapositive"
+        value={instruction}
+        onChange={(event) => setInstruction(event.target.value)}
+        placeholder="Ex. : raccourcis le tableau, clarifie le message et conserve les chiffres."
+        rows={3}
+        disabled={revising}
+        style={styles.aiInput}
+      />
+      <button
+        type="button"
+        onClick={submit}
+        disabled={revising || !instruction.trim()}
+        style={styles.aiSubmit}
+      >
+        {revising ? 'Révision en cours…' : 'Appliquer à cette diapositive'}
+      </button>
+    </div>
+  );
+}
+
+// fallow-ignore-next-line complexity — preview fetching and form revision share one field lifecycle
 const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const { id } = useDocumentInfo();
   // Subscribe to form state so the preview re-renders while the author types.
@@ -43,6 +81,50 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const [result, setResult] = useState<PreviewResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showAi, setShowAi] = useState(false);
+  const [instruction, setInstruction] = useState('');
+  const [revising, setRevising] = useState(false);
+  const { reset, submit } = useForm();
+
+  async function reviseCurrentSlide() {
+    if (!request.presentationId || !instruction.trim()) return;
+    setRevising(true);
+    setError('');
+    try {
+      // Save the current form first so resetting after the server-side revision
+      // cannot discard unrelated unsaved edits elsewhere in the presentation.
+      const saveResult = await submit({ disableSuccessStatus: true });
+      if (!saveResult?.res.ok) {
+        throw new Error('Enregistrez les champs invalides avant de réviser cette diapositive.');
+      }
+      const response = await adminPost('/api/revise-slide', {
+        presentationId: request.presentationId,
+        slideIndex: request.slideIndex,
+        instruction,
+      });
+      if (!response.ok) {
+        setError(response.data.error || `Révision impossible (HTTP ${response.status}).`);
+        return;
+      }
+      const docResponse = await fetch(`/api/presentations/${request.presentationId}?depth=0`, {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      if (!docResponse.ok) {
+        throw new Error(
+          'La diapositive a été modifiée, mais le formulaire n’a pas pu être actualisé.',
+        );
+      }
+      await reset(await docResponse.json());
+      setInstruction('');
+      setShowAi(false);
+      toast.success(`Diapositive ${request.slideIndex + 1} révisée par l’IA.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Révision impossible.');
+    } finally {
+      setRevising(false);
+    }
+  }
 
   useEffect(() => {
     if (!(request.block as { blockType?: string })?.blockType) {
@@ -100,8 +182,25 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     <section style={styles.section} aria-label="Aperçu de la diapositive">
       <div style={styles.header}>
         <strong>Aperçu de la diapositive</strong>
-        {loading ? <span style={styles.status}>Actualisation…</span> : null}
+        <div style={styles.headerActions}>
+          {loading ? <span style={styles.status}>Actualisation…</span> : null}
+          <button
+            type="button"
+            style={styles.magicButton}
+            onClick={() => setShowAi((value) => !value)}
+          >
+            ✨ Modifier avec l’IA
+          </button>
+        </div>
       </div>
+      {showAi ? (
+        <SlideRevisionControls
+          instruction={instruction}
+          revising={revising}
+          setInstruction={setInstruction}
+          submit={() => void reviseCurrentSlide()}
+        />
+      ) : null}
       {error ? <div style={styles.error}>{error}</div> : null}
       {result ? <PreviewFrame result={result} /> : null}
     </section>
@@ -143,6 +242,51 @@ const styles = {
   status: {
     color: 'var(--theme-elevation-500)',
     fontWeight: 400,
+  },
+  headerActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  magicButton: {
+    border: '1px solid var(--theme-elevation-200)',
+    borderRadius: '999px',
+    background: 'var(--theme-elevation-50)',
+    color: 'var(--theme-text)',
+    padding: '6px 10px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: '12px',
+  },
+  aiPanel: {
+    display: 'grid',
+    gap: '8px',
+    marginBottom: '10px',
+    padding: '10px',
+    border: '1px solid var(--theme-elevation-150)',
+    borderRadius: '6px',
+    background: 'var(--theme-elevation-50)',
+  },
+  aiInput: {
+    width: '100%',
+    boxSizing: 'border-box',
+    resize: 'vertical',
+    border: '1px solid var(--theme-elevation-200)',
+    borderRadius: '4px',
+    padding: '8px',
+    background: 'var(--theme-elevation-0)',
+    color: 'var(--theme-text)',
+    fontFamily: 'inherit',
+  },
+  aiSubmit: {
+    justifySelf: 'start',
+    border: 0,
+    borderRadius: '4px',
+    background: 'var(--theme-success-500)',
+    color: '#fff',
+    padding: '7px 11px',
+    cursor: 'pointer',
+    fontWeight: 600,
   },
   error: {
     marginBottom: '8px',
