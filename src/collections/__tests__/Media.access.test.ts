@@ -22,20 +22,8 @@ describe('Media access', () => {
     await expect(canReadMedia(accessArgs(null))).resolves.toBe(false);
   });
 
-  it('scopes non-admins to unlinked media plus their readable presentations', async () => {
-    find.mockResolvedValue({ docs: [{ id: 7 }, { id: 9 }] });
-
-    const result = await canReadMedia(accessArgs({ id: 'author', role: 'author' }));
-
-    expect(find).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'presentations', overrideAccess: false }),
-    );
-    expect(result).toEqual({
-      or: [
-        { presentation: { exists: false } },
-        { presentation: { equals: null } },
-        { presentation: { in: [7, 9] } },
-      ],
-    });
+  it('lets logged-in authors read any media under the temporary admin policy', async () => {
+    await expect(canReadMedia(accessArgs({ id: 'author', role: 'author' }))).resolves.toBe(true);
+    expect(find).not.toHaveBeenCalled();
   });
 });
