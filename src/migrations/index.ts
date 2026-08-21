@@ -10,6 +10,7 @@ import * as migration_20260811_202948 from './20260811_202948';
 import * as migration_20260811_205401 from './20260811_205401';
 import * as migration_20260820_075122_add_user_default_organisation from './20260820_075122_add_user_default_organisation';
 import * as migration_20260820_092404_native_user_api_keys from './20260820_092404_native_user_api_keys';
+import * as migration_20260821_192342_add_agent_brief from './20260821_192342_add_agent_brief';
 
 export const migrations = [
   {
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20260820_092404_native_user_api_keys.up,
     down: migration_20260820_092404_native_user_api_keys.down,
     name: '20260820_092404_native_user_api_keys',
+  },
+  {
+    up: migration_20260821_192342_add_agent_brief.up,
+    down: migration_20260821_192342_add_agent_brief.down,
+    name: '20260821_192342_add_agent_brief',
   },
 ];
