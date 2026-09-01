@@ -476,6 +476,8 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'aria-selected')).toBe(true);
     expect(sourceContains(path, '<button')).toBe(true);
     expect(sourceContains(path, 'type="button"')).toBe(true);
+    expect(sourceContains(path, 'onClick={() => onSelect(option)}')).toBe(true);
+    expect(sourceContains(path, 'onMouseDown=')).toBe(false);
     expect(sourceContains(path, '<div\n          aria-selected')).toBe(false);
     expect(sourceContains(path, `id={\`typeahead-item-\${index}\`}`)).toBe(true);
     expect(sourceContains(path, 'ref={(element) => option.setRefElement(element)}')).toBe(true);
