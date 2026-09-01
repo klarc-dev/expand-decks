@@ -36,13 +36,16 @@ describe('style.css fitted agenda layout (regression: agenda rows overflow foote
 
 describe('style.css oversized export fitting', () => {
   it('fits dense tables inside the measured content row with a readable shared scale', () => {
-    expect(css).toMatch(/\.k-table--fit\s*\{[\s\S]*table-layout:\s*fixed/);
+    expect(css).toMatch(/\.k-table\s*\{[\s\S]*table-layout:\s*fixed/);
+    expect(css).toMatch(/\.k-table-stage\s*\{[\s\S]*max-width:\s*100%/);
+    expect(css).toMatch(/\.k-table--cols-4 col:nth-child\(3\)\s*\{[\s\S]*width:\s*34%/);
     expect(css).toMatch(/\.k-table\.k-density-compact\s*\{[\s\S]*font-size:\s*calc/);
     expect(css).toMatch(/\.k-table\.k-density-dense\s*\{[\s\S]*font-size:\s*calc/);
     expect(css).not.toMatch(/\.k-table--fit\s*\{[\s\S]*font-size:\s*0\.5rem/);
     expect(css).toMatch(
-      /\.k-table--fit th,[\s\S]*?\.k-table--fit td\s*\{[\s\S]*overflow-wrap:\s*anywhere/,
+      /\.k-table--fit th,[\s\S]*?\.k-table--fit td\s*\{[\s\S]*overflow-wrap:\s*break-word/,
     );
+    expect(css).not.toMatch(/\.k-table--matrix td:not\(:first-child\)/);
   });
 
   it('makes Slidev Mermaid SVG dimensions yield to the fixed diagram stage', () => {

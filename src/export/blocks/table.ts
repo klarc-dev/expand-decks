@@ -20,14 +20,16 @@ const STATUS_PATTERNS: Array<[RegExp, 'ok' | 'warn' | 'blocked']> = [
   [/^(❌|✗|ko|non|blocked|aucune)$/, 'blocked'],
 ];
 
-function statusPill(cellHtml: string): string {
+function statusKind(cellHtml: string): 'ok' | 'warn' | 'blocked' | null {
   const t = cellHtml
     .replace(/<[^>]+>/g, '')
     .trim()
     .toLowerCase();
   const match = STATUS_PATTERNS.find(([re]) => re.test(t));
-  if (!match) return cellHtml; // prose cell — untouched
-  const kind = match[1];
+  return match?.[1] ?? null;
+}
+
+function statusPill(kind: 'ok' | 'warn' | 'blocked'): string {
   const label = { ok: '✓', warn: '⚠', blocked: '✗' }[kind];
   return `<span class="${K.pill} ${K.pill}--${kind}">${label}</span>`;
 }
@@ -51,6 +53,20 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     { compact: 760, dense: 1380 },
   );
   const fitted = density !== 'comfortable';
+  const alignedRows = rows.map((row) => {
+    const cells = (row.cells ?? []).map((cell) => richTextToHTML(cell.value));
+    return colCount ? Array.from({ length: colCount }, (_, index) => cells[index] ?? '') : cells;
+  });
+  const statusColumns = new Set(
+    isMatrix
+      ? Array.from({ length: colCount }, (_, columnIndex) => columnIndex).filter((columnIndex) => {
+          const populated = alignedRows
+            .map((row) => row[columnIndex])
+            .filter((cell) => visibleText(cell));
+          return populated.length > 0 && populated.every((cell) => statusKind(cell) !== null);
+        })
+      : [],
+  );
 
   const head = colCount
     ? `<thead>\n<tr>${cols.map((c) => `<th>${md(c.header)}</th>`).join('')}</tr>\n</thead>`
@@ -60,11 +76,15 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   // can never produce a ragged, broken table. In matrix mode, ANY cell whose
   // whole text is a status token becomes a pill (self-classifying — not a
   // hardcoded column index), so status can live in any column.
-  const body = rows
-    .map((r) => {
-      const cells = (r.cells ?? []).map((c) => richTextToHTML(c.value));
-      const aligned = colCount ? Array.from({ length: colCount }, (_, i) => cells[i] ?? '') : cells;
-      return `<tr>${aligned.map((v) => `<td>${isMatrix ? statusPill(v) : v}</td>`).join('')}</tr>`;
+  const body = alignedRows
+    .map((row) => {
+      return `<tr>${row
+        .map((cell, columnIndex) => {
+          const kind = isMatrix ? statusKind(cell) : null;
+          const classAttr = kind ? ' class="k-table-cell--status"' : '';
+          return `<td${classAttr}>${kind ? statusPill(kind) : cell}</td>`;
+        })
+        .join('')}</tr>`;
     })
     .join('\n');
 
@@ -72,11 +92,16 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     K.table,
     isMatrix ? 'k-table--matrix' : '',
     fitted ? 'k-table--fit' : '',
+    `k-table--cols-${Math.min(Math.max(colCount, 2), 5)}`,
+    statusColumns.size ? 'k-table--has-status' : '',
     densityClass(density),
   ]
     .filter(Boolean)
     .join(' ');
-  const table = `<table class="${tableCls}">\n${head}\n<tbody>\n${body}\n</tbody>\n</table>`;
+  const columns = colCount
+    ? `<colgroup>${Array.from({ length: colCount }, (_, index) => `<col${statusColumns.has(index) ? ' class="k-table-col--status"' : ''}>`).join('')}</colgroup>\n`
+    : '';
+  const table = `<div class="k-table-stage"><table class="${tableCls}">\n${columns}${head}\n<tbody>\n${body}\n</tbody>\n</table></div>`;
   const header = slideHeader({
     eyebrow: block.eyebrow,
     title: block.title,
@@ -88,7 +113,7 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     wFull: true,
     crowded: fitted,
     density,
-    mainAlign: fitted ? 'stretch' : 'start',
+    mainAlign: 'start',
   });
 
   return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });

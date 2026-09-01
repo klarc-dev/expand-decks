@@ -921,7 +921,9 @@ describe('renderTable() — fixed-canvas fitting', () => {
 
     expect(result).toContain('k-table--fit');
     expect(result).toContain('k-density-compact');
-    expect(result).toContain('k-content-main--stretch');
+    expect(result).toContain('k-content-main--start');
+    expect(result).toContain('k-table-stage');
+    expect(result).toContain('k-table--cols-5');
   });
 });
 
@@ -954,6 +956,34 @@ describe('renderTable() — reference vs matrix variant + StatusPill (U10)', () 
     expect(renderTable(matrixTable('non'))).toContain('k-pill--blocked');
     expect(renderTable(matrixTable('❌'))).toContain('k-pill--blocked');
     expect(renderTable(matrixTable('matrix'))).toContain('k-table--matrix');
+    expect(renderTable(matrixTable('oui'))).toContain('k-table--has-status');
+    expect(renderTable(matrixTable('oui'))).toContain('k-table-cell--status');
+  });
+
+  it('keeps prose matrix columns left-aligned and only marks semantic status cells', () => {
+    const result = renderTable({
+      blockType: 'table',
+      title: 'Eligibility',
+      tableVariant: 'matrix',
+      columns: [
+        { header: 'Asset' },
+        { header: 'Protection' },
+        { header: 'Legal test' },
+        { header: 'Status' },
+      ],
+      rows: [
+        {
+          cells: [
+            { value: lexical('Patent') },
+            { value: lexical('Industrial property title') },
+            { value: lexical('Title must remain in force') },
+            { value: lexical('attention') },
+          ],
+        },
+      ],
+    });
+    expect(result).toContain('k-table--cols-4');
+    expect(result.match(/k-table-cell--status/g)).toHaveLength(1);
   });
 
   it('does NOT pill a prose cell that merely contains a status word (no false positive)', () => {

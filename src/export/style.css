@@ -515,6 +515,9 @@
 
 .k-table {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--t-body);
@@ -528,21 +531,61 @@
    Fixed tracks prevent intrinsic widths from expanding the slide; readable type
    and tighter spacing replace the old 0.5rem emergency mode. */
 .k-table--fit {
-  table-layout: fixed;
-  height: 100%;
+  height: auto;
 }
 .k-table.k-density-compact {
-  font-size: calc(var(--t-body) * 0.82);
+  font-size: calc(var(--t-body) * 0.96);
 }
 .k-table.k-density-dense {
-  font-size: calc(var(--t-body) * 0.7);
+  font-size: calc(var(--t-body) * 0.9);
 }
 .k-table--fit th,
 .k-table--fit td {
   padding: calc(0.46rem * var(--density-space)) calc(0.7rem * var(--density-space));
   line-height: calc(1.24 * var(--density-leading));
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
+}
+
+.k-table-stage {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-self: flex-start;
+}
+
+.k-table--cols-2 col:first-child {
+  width: 30%;
+}
+.k-table--cols-2 col:last-child {
+  width: 70%;
+}
+.k-table--cols-3 col:first-child {
+  width: 24%;
+}
+.k-table--cols-3 col:nth-child(2) {
+  width: 54%;
+}
+.k-table--cols-3 col:nth-child(3) {
+  width: 22%;
+}
+.k-table--cols-4 col:nth-child(1) {
+  width: 20%;
+}
+.k-table--cols-4 col:nth-child(2) {
+  width: 22%;
+}
+.k-table--cols-4 col:nth-child(3) {
+  width: 34%;
+}
+.k-table--cols-4 col:nth-child(4) {
+  width: 24%;
+}
+.k-table--cols-5 col {
+  width: 20%;
+}
+.k-table--has-status col.k-table-col--status {
+  width: 12%;
 }
 .k-table--fit td ul,
 .k-table--fit td ol {
@@ -600,12 +643,8 @@
   background: color-mix(in srgb, var(--k-rose-soft) 34%, transparent);
 }
 
-.k-table--matrix td:not(:first-child),
-.k-table--matrix th:not(:first-child) {
+.k-table-cell--status {
   text-align: center;
-}
-
-.k-table--matrix td:not(:first-child) {
   vertical-align: middle;
 }
 

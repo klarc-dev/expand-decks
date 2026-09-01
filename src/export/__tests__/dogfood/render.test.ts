@@ -64,10 +64,8 @@ describe('dogfood all templates', () => {
         {
           blockType: 'twoCols',
           title: 'Decision framework',
-          intro: lexical('A good template supports hierarchy without manual tuning.'),
-          leftTitle: 'What we evaluate',
-          leftBody: lexical(
-            'Fit, readability, scan speed, contrast, and resilience to uneven copy.',
+          intro: lexical(
+            'A good template supports hierarchy without manual tuning. Fit, readability, scan speed, contrast, and resilience to uneven copy all belong to one shared density decision.',
           ),
           leftFooter: lexical(
             'The shared density step must account for both columns rather than shrinking cards independently.',
@@ -185,47 +183,66 @@ describe('dogfood all templates', () => {
         },
         {
           blockType: 'table',
-          title: 'Readiness matrix',
-          tableVariant: 'matrix',
-          columns: [{ header: 'Template' }, { header: 'Fit' }, { header: 'Status' }],
+          eyebrow: 'Périmètre des actifs',
+          title: 'L’éligibilité varie selon la nature et la protection de l’actif',
+          tableVariant: 'reference',
+          columns: [
+            { header: 'Catégorie d’actif' },
+            { header: 'Fondement de protection' },
+            { header: 'Critères juridiques à vérifier' },
+            { header: 'Limite d’éligibilité' },
+          ],
           rows: [
             {
               cells: [
-                { value: lexical('Diagram') },
-                { value: lexical('Centered SVG contain') },
-                { value: lexical('oui') },
-              ],
-            },
-            {
-              cells: [
-                { value: lexical('Timeline') },
-                { value: lexical('Dense rail for five steps') },
-                { value: lexical('attention') },
-              ],
-            },
-            {
-              cells: [
-                { value: lexical('Cards') },
-                { value: lexical('Baseline-aligned grid') },
-                { value: lexical('oui') },
-              ],
-            },
-            {
-              cells: [
-                { value: lexical('Agenda') },
+                { value: lexical('Brevets et titres apparentés') },
+                { value: lexical('Titre de propriété industrielle') },
                 {
                   value: lexical(
-                    'Complete labels and descriptions without clipping substantive copy',
+                    'Brevet, certificat d’utilité ou certificat complémentaire de protection en vigueur',
                   ),
                 },
-                { value: lexical('attention') },
+                { value: lexical('Vérifier la titularité et la durée de protection restante') },
               ],
             },
             {
               cells: [
-                { value: lexical('Split') },
-                { value: lexical('Both columns contribute to one shared density decision') },
-                { value: lexical('oui') },
+                { value: lexical('Certificats d’obtention végétale') },
+                { value: lexical('Droit attaché à une variété végétale') },
+                {
+                  value: lexical(
+                    'Certificat délivré pour la variété concernée et droit détenu par l’entreprise',
+                  ),
+                },
+                { value: lexical('L’actif doit être protégé et effectivement détenu') },
+              ],
+            },
+            {
+              cells: [
+                { value: lexical('Logiciels protégés par le droit d’auteur') },
+                { value: lexical('Droit d’auteur') },
+                {
+                  value: lexical(
+                    'Logiciel original bénéficiant de la protection du droit d’auteur',
+                  ),
+                },
+                { value: lexical('Les fonctions protégées doivent être précisément identifiées') },
+              ],
+            },
+            {
+              cells: [
+                { value: lexical('Procédés de fabrication industriels') },
+                { value: lexical('Savoir-faire associé à un titre de propriété industrielle') },
+                {
+                  value: lexical(
+                    'Procédé issu d’activités de R&D, indispensable à l’exploitation d’un brevet ou titre apparenté, et concédé avec celui-ci dans le même contrat',
+                  ),
+                },
+                {
+                  value: lexical(
+                    'Pas d’éligibilité autonome sans le titre auquel le procédé se rattache',
+                  ),
+                },
               ],
             },
           ],
