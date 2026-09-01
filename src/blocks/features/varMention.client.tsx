@@ -63,6 +63,42 @@ class VarOption extends MenuOption {
   }
 }
 
+type VarMentionMenuProps = {
+  options: VarOption[];
+  selectedIndex: number | null;
+  onHighlight: (index: number) => void;
+  onSelect: (option: VarOption) => void;
+};
+
+function VarMentionMenu({ options, selectedIndex, onHighlight, onSelect }: VarMentionMenuProps) {
+  return (
+    <div aria-label="Variables disponibles" className="var-mention-menu" role="listbox">
+      {options.map((option, index) => (
+        <button
+          aria-selected={selectedIndex === index}
+          className="var-mention-menu__option"
+          id={`typeahead-item-${index}`}
+          key={option.path}
+          ref={(element) => option.setRefElement(element)}
+          role="option"
+          tabIndex={-1}
+          type="button"
+          onClick={() => onSelect(option)}
+          onMouseEnter={() => onHighlight(index)}
+        >
+          <span className="var-mention-menu__label">{option.label}</span>
+          {option.sample ? (
+            <span className="var-mention-menu__sample">
+              <span className="sr-only">Exemple : </span>
+              {option.sample}
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function VarMentionPlugin(): React.ReactElement {
   const [editor] = useLexicalComposerContext();
   const { id } = useDocumentInfo();
@@ -108,27 +144,17 @@ function VarMentionPlugin(): React.ReactElement {
       menuRenderFn={(anchorRef, { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }) => {
         if (!anchorRef.current || options.length === 0) return null;
         return createPortal(
-          <div aria-label="Variables disponibles" className="var-mention-menu" role="listbox">
-            {options.map((option, i) => (
-              <div
-                aria-selected={selectedIndex === i}
-                className="var-mention-menu__option"
-                key={option.path}
-                role="option"
-                tabIndex={-1}
-                onMouseEnter={() => setHighlightedIndex(i)}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  selectOptionAndCleanUp(option);
-                }}
-              >
-                <span className="var-mention-menu__label">{option.label}</span>
-                {option.sample ? (
-                  <span className="var-mention-menu__sample">{option.sample}</span>
-                ) : null}
-              </div>
-            ))}
-          </div>,
+          <VarMentionMenu
+            onHighlight={(index) => {
+              editor
+                .getRootElement()
+                ?.setAttribute('aria-activedescendant', `typeahead-item-${index}`);
+              setHighlightedIndex(index);
+            }}
+            onSelect={selectOptionAndCleanUp}
+            options={options}
+            selectedIndex={selectedIndex}
+          />,
           anchorRef.current,
         );
       }}

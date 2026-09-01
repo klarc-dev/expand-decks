@@ -12,12 +12,17 @@
 
   &__option {
     display: flex;
+    width: 100%;
     justify-content: space-between;
     gap: 12px;
     padding: 6px 8px;
+    border: 0;
     border-radius: var(--style-radius-s);
+    background: transparent;
     color: var(--theme-text);
+    font: inherit;
     font-size: 13px;
+    text-align: left;
     cursor: pointer;
 
     &[aria-selected='true'] {
@@ -26,14 +31,16 @@
   }
 
   &__label {
+    min-width: 0;
     font-weight: 600;
+    overflow-wrap: anywhere;
   }
 
   &__sample {
+    min-width: 0;
     max-width: 50%;
-    overflow: hidden;
     color: var(--theme-elevation-500);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
 }

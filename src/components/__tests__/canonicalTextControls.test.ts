@@ -255,6 +255,13 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, "formatDraftEventPhase('done')")).toBe(true);
     expect(sourceContains(path, "formatDraftEventPhase('failed')")).toBe(true);
     expect(sourceContains(path, "formatDraftEventPhase('cancelled')")).toBe(true);
+    expect(sourceContains(path, 'function getStatusEvent')).toBe(true);
+    expect(sourceContains(path, "event?.phase === 'done'")).toBe(true);
+    expect(sourceContains(path, "event?.phase === 'failed'")).toBe(true);
+    expect(sourceContains(path, "event?.phase === 'cancelled'")).toBe(true);
+    expect(sourceContains(path, 'const statusEvent = getStatusEvent')).toBe(true);
+    expect(sourceContains(path, 'event={statusEvent}')).toBe(true);
+    expect(sourceContains(path, 'event={last}')).toBe(false);
     expect(sourceContains(path, 'const message = running ?')).toBe(false);
     expect(
       sourceContains(path, "const message = [phase, detail].filter(Boolean).join(' — ')"),
@@ -462,10 +469,23 @@ describe('canonical custom admin controls', () => {
 
   it('keeps the variable mention listbox styled by its semantic menu classes', () => {
     const path = 'src/blocks/features/varMention.client.tsx';
+    expect(sourceContains(path, 'function VarMentionMenu')).toBe(true);
+    expect(sourceContains(path, '<VarMentionMenu')).toBe(true);
     expect(sourceContains(path, 'role="listbox"')).toBe(true);
     expect(sourceContains(path, 'role="option"')).toBe(true);
     expect(sourceContains(path, 'aria-selected')).toBe(true);
+    expect(sourceContains(path, '<button')).toBe(true);
+    expect(sourceContains(path, 'type="button"')).toBe(true);
+    expect(sourceContains(path, '<div\n          aria-selected')).toBe(false);
+    expect(sourceContains(path, `id={\`typeahead-item-\${index}\`}`)).toBe(true);
+    expect(sourceContains(path, 'ref={(element) => option.setRefElement(element)}')).toBe(true);
+    expect(sourceContains(path, ".setAttribute('aria-activedescendant'")).toBe(true);
+    expect(sourceContains(path, '<span className="sr-only">Exemple : </span>')).toBe(true);
     expect(sourceContains(path, 'varMenuStyle')).toBe(false);
     expect(sourceContains(path, 'varMenuItemStyle')).toBe(false);
+    const styles = 'src/blocks/features/varMention.scss';
+    expect(sourceContains(styles, 'overflow-wrap: anywhere')).toBe(true);
+    expect(sourceContains(styles, 'text-overflow: ellipsis')).toBe(false);
+    expect(sourceContains(styles, 'white-space: nowrap')).toBe(false);
   });
 });

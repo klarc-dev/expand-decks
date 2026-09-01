@@ -210,6 +210,20 @@ function DraftRunStatus({ event, phase, running }: DraftRunStatusProps) {
   );
 }
 
+type StatusEventInput = {
+  durableStatus: string;
+  event: DraftEvent | undefined;
+  status: string;
+};
+
+function getStatusEvent({ durableStatus, event, status }: StatusEventInput) {
+  if (status === 'done') return event?.phase === 'done' ? event : undefined;
+  if (status === 'failed') return event?.phase === 'failed' ? event : undefined;
+  if (durableStatus === 'canceled') return event?.phase === 'cancelled' ? event : undefined;
+  if (durableStatus === 'queued') return undefined;
+  return event;
+}
+
 type DraftRunActionsProps = {
   approvalRequired: boolean;
   canStart: boolean;
@@ -546,6 +560,7 @@ const AgentDraftButton: React.FC = () => {
               : last
                 ? formatDraftEventPhase(last.phase)
                 : '';
+  const statusEvent = getStatusEvent({ durableStatus, event: last, status });
 
   return (
     <AdminPanel className="agent-draft__panel">
@@ -614,7 +629,7 @@ const AgentDraftButton: React.FC = () => {
         approvalRequired={approvalRequired}
         canStart={!running && Boolean(brief.trim())}
         durableStatus={durableStatus}
-        event={last}
+        event={statusEvent}
         hasRun={Boolean(runId)}
         onCancel={() => handleRunAction('cancel')}
         onRestart={() => handleRunAction('restart')}
