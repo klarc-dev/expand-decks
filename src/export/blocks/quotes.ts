@@ -1,6 +1,6 @@
 import type { QuotesBlockData } from '../../blocks/spec/quotes';
 import { K } from '../classNames';
-import { densityClass, densityFromScore, visibleText } from '../density';
+import { densityFromScore, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
 import { cardStack, contentFrame, escape, slideHeader, wrapSlide, type RenderCtx } from '../utils';
 
@@ -32,20 +32,14 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
   });
 
   const cols = dense ? Math.min(quotes.length, 2) || 1 : quotes.length || 1;
-  const stack = cardStack(quoteCards, { layout: 'grid', cols });
-  // When dense, force the k-tight quote typography even in the 2x2 case (where
-  // the grid is only 2 rows and cardStack's rows>2 crowding heuristic wouldn't
-  // trip), so four long quotes shrink rather than overflow.
-  let stackHtml = stack.html;
-  const sharedDensityClass = densityClass(density);
-  if (sharedDensityClass) {
-    stackHtml = stackHtml.replace('k-card-stack--grid', `k-card-stack--grid ${sharedDensityClass}`);
-  }
-  if (dense && !stackHtml.includes('k-tight')) {
-    stackHtml = stackHtml.replace('k-card-stack--grid', 'k-card-stack--grid k-tight');
-  }
+  const stack = cardStack(quoteCards, {
+    layout: 'grid',
+    cols,
+    density,
+    forceTight: dense,
+  });
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, density });
-  const body = contentFrame(stackHtml, {
+  const body = contentFrame(stack.html, {
     header,
     crowded: dense || stack.crowded,
     density,

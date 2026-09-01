@@ -27,9 +27,10 @@ describe('style.css fitted agenda layout (regression: agenda rows overflow foote
     expect(css).toMatch(/\.k-agenda--fit\s+\.k-ag-item\s*\{[\s\S]*min-height:\s*0/);
   });
 
-  it('bounds overlong row text inside fitted agenda rows instead of pushing chrome', () => {
-    expect(css).toMatch(/\.k-agenda--fit\s+\.k-ag-desc\s*\{[\s\S]*overflow:\s*hidden/);
-    expect(css).toMatch(/-webkit-line-clamp:\s*2/);
+  it('fits complete agenda copy through shared density rather than truncation', () => {
+    expect(css).toMatch(/\.k-agenda--fit\.k-density-compact \.k-ag-item/);
+    expect(css).toMatch(/\.k-agenda--fit\.k-density-dense \.k-ag-desc/);
+    expect(css).not.toMatch(/\.k-agenda--fit \.k-ag-desc\s*\{[\s\S]*-webkit-line-clamp/);
   });
 });
 
@@ -82,8 +83,9 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
 
   it('styles the lead as an in-flow reading band instead of a detached right note', () => {
     expect(css).toMatch(
-      /\.k-cardgrid-lead\s*\{[\s\S]*border-left:\s*3px solid var\(--accent-rule\)/,
+      /\.k-cardgrid-lead\s*\{[\s\S]*border-top:\s*1px solid var\(--accent-rule\)/,
     );
+    expect(css).not.toMatch(/\.k-cardgrid-lead\s*\{[\s\S]*border-left:\s*3px/);
     expect(css).toMatch(/\.k-cardgrid-lead\s*\{[\s\S]*max-width:\s*54rem/);
   });
 
@@ -93,6 +95,11 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-card-scale-xs \.k-card h3/);
     expect(css).toMatch(/\.k-card-scale-xs \.k-card p/);
     expect(css).toMatch(/\.k-card-scale-md\.k-grid-3/);
+  });
+
+  it('gives multi-row comparable grids equal-height tracks through the shared stack', () => {
+    expect(css).toMatch(/\.k-card-stack--multirow\s*\{[\s\S]*grid-auto-rows:\s*minmax\(0, 1fr\)/);
+    expect(css).toMatch(/\.k-card-stack--multirow\s*>\s*\.k-card\s*\{[\s\S]*height:\s*100%/);
   });
 });
 

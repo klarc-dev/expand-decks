@@ -59,7 +59,7 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   // rightCards, when present, stay in the content column instead of being dropped.
   if (image) {
     const cards = renderedCards.map((item) => item.html);
-    const stack = cardStack(cards, { layout: 'column', className: scaleClass });
+    const stack = cardStack(cards, { layout: 'column', className: scaleClass, density });
     const body = [leftBody, stack.html].filter(Boolean).join('\n\n');
     return wrapSlide({
       image,
@@ -71,7 +71,7 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   // size (var(--t-h3)) whether the card sits in a cardGrid or a twoCols column.
   // The old 'text-sm' made twoCols card titles smaller than cardGrid ones.
   const cards = renderedCards.map((item) => item.html);
-  const stack = cardStack(cards, { layout: 'column', className: scaleClass });
+  const stack = cardStack(cards, { layout: 'column', className: scaleClass, density });
   const rightCol = cards.length ? `\n<div class="k-split-cards">${stack.html}\n</div>` : '';
   const leftCol = leftBody || (rightCol ? '<div></div>' : '');
   const main = `<div class="${K.split} k-split--body">\n${leftCol}${rightCol}\n</div>`;

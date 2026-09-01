@@ -367,6 +367,10 @@
   color: var(--k-ink-soft);
   line-height: 1.45;
 }
+.k-dark .k-card h3,
+.k-dark .k-card p {
+  color: inherit;
+}
 
 /* One scale per grid, selected from its densest card. This keeps typography
    uniform across sibling cards while stepping the entire grid down before any
@@ -433,6 +437,16 @@
   padding: 1.55rem 1.25rem 1.45rem;
   text-align: center;
   box-shadow: var(--k-shadow-soft);
+}
+.k-stat-grid.k-grid-1,
+.k-stat-grid.k-grid-2,
+.k-stat-grid.k-grid-3,
+.k-stat-grid.k-grid-4 {
+  align-items: stretch;
+}
+.k-stat-grid .k-stat-card {
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .k-stat {
@@ -768,6 +782,12 @@
   margin: 0 auto;
   padding-left: 0.2rem;
 }
+.k-timeline--vertical.k-density-compact {
+  gap: 0.56rem;
+}
+.k-timeline--vertical.k-density-dense {
+  gap: 0.38rem;
+}
 
 .k-timeline--vertical::before {
   content: "";
@@ -807,6 +827,10 @@
   align-items: start;
   text-align: left;
 }
+.k-timeline--vertical.k-density-compact .k-tl-step,
+.k-timeline--vertical.k-density-dense .k-tl-step {
+  column-gap: calc(1rem * var(--density-space));
+}
 
 .k-tl-dot {
   width: var(--k-tl-dot);
@@ -845,6 +869,10 @@
   line-height: 1.18;
   padding-top: 0.08rem;
 }
+.k-timeline--vertical.k-density-compact .k-tl-label,
+.k-timeline--vertical.k-density-dense .k-tl-label {
+  font-size: calc(var(--t-body) * var(--density-scale));
+}
 
 .k-tl-desc {
   font-size: var(--t-small);
@@ -863,6 +891,11 @@
   max-width: none;
   line-height: 1.28;
   margin-top: 0.14rem;
+}
+.k-timeline--vertical.k-density-compact .k-tl-desc,
+.k-timeline--vertical.k-density-dense .k-tl-desc {
+  font-size: calc(var(--t-small) * var(--density-scale));
+  line-height: calc(1.28 * var(--density-leading));
 }
 
 .k-tl-band {
@@ -920,11 +953,9 @@
 }
 
 /* Fitted agenda: the list owns the full content-main row (a `1fr` track in the
-   .k-content grid) and the rows share that height equally via flex, so any
-   realistic item count fits the fixed canvas by construction — no overflow into
-   the footer, no reliance on the density heuristic guessing right. `min-height:0`
-   on the items lets them shrink below content size; `overflow:hidden` is the last
-   line of defence if a single row's text still can't fit. */
+   .k-content grid) and rows share that height equally. Content remains complete:
+   the density ladder and bounded authoring contract do the fitting, never clamps
+   or ellipses that can hide a section's meaning. */
 .k-agenda--fit {
   height: 100%;
   gap: 0.45rem;
@@ -933,7 +964,6 @@
   flex: 1 1 0;
   min-height: 0;
   align-items: center;
-  overflow: hidden;
 }
 
 .k-ag-item {
@@ -995,11 +1025,26 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.k-agenda--fit .k-ag-desc {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+.k-agenda--fit.k-density-compact .k-ag-item,
+.k-agenda--fit.k-density-dense .k-ag-item {
+  grid-template-columns: calc(3.4rem * var(--density-space)) minmax(0, 1fr);
+  column-gap: calc(1.2rem * var(--density-space));
+  padding: calc(0.7rem * var(--density-space)) calc(1.1rem * var(--density-space));
+}
+.k-agenda--fit.k-density-compact .k-ag-num,
+.k-agenda--fit.k-density-dense .k-ag-num {
+  font-size: calc(var(--t-sub) * var(--density-scale));
+}
+.k-agenda--fit.k-density-compact .k-ag-label,
+.k-agenda--fit.k-density-dense .k-ag-label {
+  font-size: calc(var(--t-h3) * var(--density-scale));
+  line-height: calc(1.15 * var(--density-leading));
+}
+.k-agenda--fit.k-density-compact .k-ag-desc,
+.k-agenda--fit.k-density-dense .k-ag-desc {
+  font-size: calc(var(--t-small) * var(--density-scale));
+  line-height: calc(1.3 * var(--density-leading));
+  margin-top: calc(0.25rem * var(--density-space));
 }
 
 /* Active row: filled teal surface so the current section stands out. */
@@ -1086,6 +1131,9 @@
 
 .k-quote-card .k-quote {
   margin-bottom: 1.2rem;
+}
+.k-card-stack--multirow .k-quote-card .k-quote {
+  margin-bottom: calc(1.2rem * var(--density-space));
 }
 
 .k-quote-card .k-author {
@@ -1266,6 +1314,14 @@
   align-content: center;
   grid-auto-rows: auto;
 }
+.k-card-stack--multirow {
+  height: 100%;
+  grid-auto-rows: minmax(0, 1fr);
+}
+.k-card-stack--multirow > .k-card {
+  height: 100%;
+  box-sizing: border-box;
+}
 .k-card-stack--column {
   display: flex;
   flex-direction: column;
@@ -1290,8 +1346,15 @@
   color: var(--fg-muted);
   font-size: var(--t-body);
   line-height: 1.45;
-  padding-left: 1rem;
-  border-left: 3px solid var(--accent-rule);
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--accent-rule);
+  border-bottom: 1px solid var(--k-hairline);
+}
+.k-content.k-density-compact .k-cardgrid-lead,
+.k-content.k-density-dense .k-cardgrid-lead {
+  font-size: calc(var(--t-body) * var(--density-scale));
+  line-height: calc(1.45 * var(--density-leading));
+  padding: calc(0.8rem * var(--density-space)) calc(1rem * var(--density-space));
 }
 .k-cardgrid-lead strong {
   color: var(--fg);
@@ -1876,6 +1939,10 @@
   gap: 1.35rem;
   max-width: 31rem;
 }
+.k-content.k-density-compact .k-copy-column,
+.k-content.k-density-dense .k-copy-column {
+  gap: calc(1.35rem * var(--density-space));
+}
 
 .k-split-cards {
   min-width: 0;
@@ -1889,11 +1956,22 @@
 .k-copy-stack--lead {
   font-size: var(--t-lead);
 }
+.k-content.k-density-compact .k-copy-stack--lead,
+.k-content.k-density-dense .k-copy-stack--lead {
+  font-size: calc(var(--t-lead) * var(--density-scale));
+  line-height: calc(1.5 * var(--density-leading));
+}
 
 .k-copy-stack--note {
   border-top: 1px solid var(--k-line);
   padding-top: 1rem;
   font-size: var(--t-small);
+}
+.k-content.k-density-compact .k-copy-stack--note,
+.k-content.k-density-dense .k-copy-stack--note {
+  padding-top: calc(1rem * var(--density-space));
+  font-size: calc(var(--t-small) * var(--density-scale));
+  line-height: calc(1.5 * var(--density-leading));
 }
 
 /* Inline label (used in service detail slides) */

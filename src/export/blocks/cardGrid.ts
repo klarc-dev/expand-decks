@@ -51,13 +51,14 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
     layout: 'grid',
     cols,
     className: `k-card-scale-${scale}`,
+    density,
   });
   const lead = leadHtml ? `<div class="k-cardgrid-lead">\n${leadHtml}\n</div>` : '';
   const main =
     lead || stack.html
       ? `<div class="k-cardgrid-body">\n${lead}${lead && stack.html ? '\n' : ''}${stack.html}\n</div>`
       : '';
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title });
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, density });
   const body = contentFrame(main, {
     header,
     crowded: stack.crowded,

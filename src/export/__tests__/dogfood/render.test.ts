@@ -95,20 +95,48 @@ describe('dogfood all templates', () => {
         },
         {
           blockType: 'cardGrid',
-          title: 'Four quality levers',
+          title: 'Six quality levers that must stay visually comparable',
           sidebarText: lexical(
-            'Cards should align on a shared baseline and avoid weak floating side notes.',
+            'Cards should align on shared rows, use one typography scale, and remain balanced when the final row is incomplete.',
           ),
-          columns: '4',
+          columns: '3',
           cards: [
-            { number: '01', title: 'Hierarchy', description: lexical('One clear read order.') },
+            {
+              number: '01',
+              title: 'Hierarchy that survives a substantially longer heading',
+              description: lexical(
+                'One clear read order from slide title to card label to supporting explanation, even when one sibling carries much more copy.',
+              ),
+            },
             {
               number: '02',
               title: 'Density',
-              description: lexical('Enough content, never cramped.'),
+              description: lexical(
+                'Enough content to be useful, never cramped or individually shrunk.',
+              ),
             },
-            { number: '03', title: 'Contrast', description: lexical('AA-safe muted text.') },
-            { number: '04', title: 'Cadence', description: lexical('Consistent spacing rails.') },
+            {
+              number: '03',
+              title: 'Contrast',
+              description: lexical('AA-safe muted text on light and dark presentation surfaces.'),
+            },
+            {
+              number: '04',
+              title: 'Cadence',
+              description: lexical('Consistent spacing rails across every template family.'),
+            },
+            {
+              number: '05',
+              title: 'Alignment',
+              description: lexical('Equal-height rows keep comparable ideas comparable.'),
+            },
+            {
+              number: '06',
+              title: 'Resilience',
+              description: lexical(
+                'The fixed canvas adapts as a system before any content can clip.',
+              ),
+            },
           ],
         },
         {
@@ -126,14 +154,32 @@ describe('dogfood all templates', () => {
           title: 'Voice of the author',
           quotes: [
             {
-              quote: lexical('The deck should look finished before I start polishing.'),
+              quote: lexical(
+                'The deck should look finished before I start polishing, including when a quotation contains enough detail to wrap across several lines.',
+              ),
               authorName: 'Author',
               authorRole: 'Strategy',
             },
             {
-              quote: lexical('If content grows, the template should adapt instead of breaking.'),
+              quote: lexical(
+                'If content grows, the complete template should adapt together instead of breaking one card or silently hiding the end of a sentence.',
+              ),
               authorName: 'Reviewer',
               authorRole: 'Design QA',
+            },
+            {
+              quote: lexical(
+                'Comparable quotes need equal boxes, one scale, stable attribution placement, and enough breathing room to remain credible.',
+              ),
+              authorName: 'Editor',
+              authorRole: 'Content operations',
+            },
+            {
+              quote: lexical(
+                'A fixed canvas is a constraint to design against, not a reason to introduce per-slide font overrides or unexplained truncation.',
+              ),
+              authorName: 'Engineer',
+              authorRole: 'Rendering systems',
             },
           ],
         },
@@ -164,6 +210,24 @@ describe('dogfood all templates', () => {
                 { value: lexical('oui') },
               ],
             },
+            {
+              cells: [
+                { value: lexical('Agenda') },
+                {
+                  value: lexical(
+                    'Complete labels and descriptions without clipping substantive copy',
+                  ),
+                },
+                { value: lexical('attention') },
+              ],
+            },
+            {
+              cells: [
+                { value: lexical('Split') },
+                { value: lexical('Both columns contribute to one shared density decision') },
+                { value: lexical('oui') },
+              ],
+            },
           ],
         },
         {
@@ -185,7 +249,37 @@ describe('dogfood all templates', () => {
           source:
             'flowchart LR\n  A[Brief] --> B[Structure]\n  B --> C[Draft]\n  C --> D{Validate}\n  D -->|Revise| C\n  D -->|Pass| E[Assemble deck]',
         },
-        { blockType: 'agenda', title: 'Auto agenda fallback', items: [] },
+        {
+          blockType: 'agenda',
+          title: 'A complete agenda should fit without losing meaning',
+          items: [
+            {
+              label: 'Frame the decision and the evidence available',
+              description: 'Clarify what the audience must understand before evaluating options.',
+            },
+            {
+              label: 'Compare the viable paths and their trade-offs',
+              description:
+                'Keep the wording complete even when several sections require explanation.',
+            },
+            {
+              label: 'Test operational feasibility and ownership',
+              description: 'Show who acts, in what order, and under which constraints.',
+            },
+            {
+              label: 'Confirm economics, timing, and dependencies',
+              description: 'Make the implications scannable without reducing them to fragments.',
+            },
+            {
+              label: 'Select the preferred direction',
+              description: 'State the decision criterion and the remaining uncertainty.',
+            },
+            {
+              label: 'Define the next actions and review point',
+              description: 'Close with explicit ownership, sequence, and a bounded follow-up.',
+            },
+          ],
+        },
         {
           blockType: 'cta',
           title: 'Keep dogfooding',

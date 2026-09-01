@@ -217,6 +217,43 @@ describe('renderCover()', () => {
   });
 });
 
+describe('shared adaptive card stacks', () => {
+  it('applies one density class and equal-row contract to multi-row card grids', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Long comparison grid',
+      columns: '2',
+      cards: [
+        { title: 'One', description: lexical('A'.repeat(180)) },
+        { title: 'Two', description: lexical('B'.repeat(40)) },
+        { title: 'Three', description: lexical('C'.repeat(40)) },
+        { title: 'Four', description: lexical('D'.repeat(40)) },
+      ],
+    });
+
+    expect(result).toContain('k-card-stack--multirow');
+    expect(result).toContain('k-density-compact');
+    expect(result).toContain('k-card-scale-sm');
+  });
+
+  it('uses the shared stack API for dense quote grids without markup surgery', () => {
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Long quotes',
+      quotes: [
+        { quote: lexical('A'.repeat(180)), authorName: 'A' },
+        { quote: lexical('B'.repeat(180)), authorName: 'B' },
+        { quote: lexical('C'.repeat(180)), authorName: 'C' },
+        { quote: lexical('D'.repeat(180)), authorName: 'D' },
+      ],
+    });
+
+    expect(result).toContain('k-card-stack--multirow');
+    expect(result).toContain('k-tight');
+    expect(result).toContain('k-density-dense');
+  });
+});
+
 describe('renderSection()', () => {
   it('produces layout: center', () => {
     const result = renderSection({
@@ -629,7 +666,7 @@ describe('renderQuotes()', () => {
     expect(result).toContain('k-grid-2');
     expect(result).toContain('k-content-tight');
     // 2x2 grid is only 2 rows, so force the tight quote typography explicitly.
-    expect(result).toContain('k-card-stack--grid k-tight');
+    expect(result).toContain('k-card-stack--multirow k-tight');
   });
 
   it('uses the shared content header/body frame', () => {
