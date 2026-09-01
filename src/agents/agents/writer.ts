@@ -9,7 +9,7 @@
  * blockType/title are force-locked back to the stub (the `alignBatch` invariant)
  * so a model substitution can't drift the structure.
  */
-import { ALL_SPECS } from '../../blocks/spec';
+import { parseAiSlide, SPEC_BY_TYPE } from '../../blocks/spec';
 import { aiSchemaOf } from '../../blocks/spec/dsl';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import { buildWriterLayoutPrompt } from '../prompts/catalog';
@@ -18,8 +18,6 @@ import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
-
-const SPEC_BY_TYPE = new Map(ALL_SPECS.map((s) => [s.blockType, s]));
 
 function writerInstructions(blockType: string, dossier: DeckDossier): string {
   return `Tu es le rédacteur pédagogique. Tu rédiges le contenu d'UNE seule diapositive de formation de niveau expert déjà planifiée.
@@ -68,12 +66,9 @@ export async function writeSlide(
   if (!spec) {
     throw new Error(`[writer] unknown blockType: ${stub.blockType}`);
   }
-  // markdown (aiDraftable:false) has no AI schema; emit a minimal block.
   if (!spec.aiDraftable) {
     return { blockType: stub.blockType, title: stub.title };
   }
-
-  const schema = aiSchemaOf(spec);
 
   const prompt = [
     `DOSSIER :\n${dossierExcerpt(dossier)}`,
@@ -91,7 +86,7 @@ export async function writeSlide(
   const block = await generateStructured<Record<string, unknown>>({
     name: `writer:${stub.blockType}`,
     instructions: writerInstructions(stub.blockType, dossier),
-    schema: schema as never,
+    schema: aiSchemaOf(spec) as never,
     prompt,
     validate: findInformationalStyleViolations,
     maxValidationRepairs: 3,
@@ -99,5 +94,5 @@ export async function writeSlide(
   });
 
   // alignBatch invariant: force the planned structure back onto the block.
-  return { ...block, blockType: stub.blockType, title: stub.title };
+  return parseAiSlide({ ...block, blockType: stub.blockType, title: stub.title });
 }

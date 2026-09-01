@@ -1,4 +1,8 @@
+import { z } from 'zod';
+
 import type { BlockSpec } from './dsl';
+import { aiSchemaOf, renderSchemaOf } from './dsl';
+import { emitOutlineSchema, emitSlidesArraySchema } from './emit/emitDraftSchema';
 
 import { agendaSpec } from './agenda';
 import { cardGridSpec } from './cardGrid';
@@ -31,3 +35,15 @@ export const ALL_SPECS: BlockSpec[] = [
   agendaSpec,
   markdownSpec,
 ];
+
+export const AI_SPECS = ALL_SPECS.filter((spec) => spec.aiDraftable);
+export const SPEC_BY_TYPE = new Map(ALL_SPECS.map((spec) => [spec.blockType, spec]));
+export const AI_SPEC_BY_TYPE = new Map(AI_SPECS.map((spec) => [spec.blockType, spec]));
+export const AI_SLIDE_SCHEMA = z.union(AI_SPECS.map(aiSchemaOf));
+export const AI_SLIDES_SCHEMA = emitSlidesArraySchema(ALL_SPECS);
+export const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
+export const RENDER_SLIDE_SCHEMA = z.union(ALL_SPECS.map(renderSchemaOf));
+
+export function parseAiSlide(value: unknown) {
+  return AI_SLIDE_SCHEMA.parse(value);
+}

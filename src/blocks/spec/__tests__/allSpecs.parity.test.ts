@@ -15,7 +15,14 @@ import { MermaidBlock } from '../../MermaidBlock';
 import { AgendaBlock } from '../../AgendaBlock';
 import { TwoColsBlock } from '../../TwoColsBlock';
 import { aiSchemaOf } from '../dsl';
-import { ALL_SPECS } from '../index';
+import {
+  AI_SLIDE_SCHEMA,
+  AI_SLIDES_SCHEMA,
+  AI_SPEC_BY_TYPE,
+  ALL_SPECS,
+  OUTLINE_SCHEMA,
+  RENDER_SLIDE_SCHEMA,
+} from '../index';
 import { emitPayloadBlock } from '../emit/emitPayloadBlock';
 import { emitSlidesArraySchema } from '../emit/emitDraftSchema';
 import { buildSystemPrompt } from '../emit/emitPromptSection';
@@ -175,6 +182,24 @@ const mask = (o: unknown) =>
   JSON.parse(JSON.stringify(o, (_k, v) => (typeof v === 'function' ? '[fn]' : v)));
 
 describe('ALL_SPECS parity', () => {
+  it('exposes canonical runtime schemas from the single registered spec roster', () => {
+    expect(AI_SPEC_BY_TYPE.size).toBe(DRAFTABLE.length);
+    expect(unionBlockTypes(AI_SLIDES_SCHEMA)).toEqual([...EXPECTED_DRAFTABLE]);
+    expect(AI_SLIDE_SCHEMA.safeParse(minimalSlide(DRAFTABLE[0]!)).success).toBe(true);
+    expect(
+      OUTLINE_SCHEMA.safeParse({
+        slides: [
+          { blockType: 'cover', title: 'Opening', intent: 'Open' },
+          { blockType: 'statement', title: 'Argument', intent: 'Explain' },
+          { blockType: 'cta', title: 'Next step', intent: 'Close' },
+        ],
+      }).success,
+    ).toBe(true);
+    expect(RENDER_SLIDE_SCHEMA.safeParse({ blockType: 'markdown', content: '# Raw' }).success).toBe(
+      true,
+    );
+  });
+
   it('emits a Payload block structurally identical to each registered block', () => {
     for (const spec of ALL_SPECS) {
       const block = BLOCKS[spec.blockType as keyof typeof BLOCKS];

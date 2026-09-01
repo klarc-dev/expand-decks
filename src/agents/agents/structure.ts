@@ -11,8 +11,8 @@
  * Fast-path: if dossier.rawBrief follows the deterministic "S1 — … Sn —"
  * format (≥3 slides), the outline is parsed locally with no LLM call.
  */
-import { ALL_SPECS } from '../../blocks/spec';
-import { emitOutlineSchema, type OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
+import { OUTLINE_SCHEMA } from '../../blocks/spec';
+import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import { INTENT_MAX } from '../../lib/draftConfig';
 import { languageInstruction } from '../language';
 import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
@@ -21,8 +21,6 @@ import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 import { researchSources } from './research';
-
-const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
 
 const MAX_COVERAGE_RETRIES = 2;
 
@@ -136,7 +134,7 @@ export async function structure(
 ): Promise<OutlineStub[]> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
-    return explicit;
+    return OUTLINE_SCHEMA.parse({ slides: explicit }).slides;
   }
 
   let prompt = dossierPrompt(dossier);

@@ -39,6 +39,20 @@ describe('structure() explicit-brief fast-path', () => {
     expect(generateStructured).not.toHaveBeenCalled();
   });
 
+  it('enforces the canonical outline schema on deterministic slide briefs', async () => {
+    const brief = [
+      'S1 — **Couverture**',
+      'intro',
+      'S2 — Le problème',
+      'corps',
+      'S3 — Appel à action',
+      'cta',
+    ].join('\n');
+
+    await expect(structure(baseDossier(brief))).rejects.toThrow('texte brut');
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
   it('falls through to the LLM when the brief is not slide-by-slide', async () => {
     mockedGenerateStructured.mockResolvedValue({
       slides: [

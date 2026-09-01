@@ -47,6 +47,18 @@ describe('writeSlide invariants', () => {
     expect((out as { body: string }).body).toBe('drafted body');
   });
 
+  it('revalidates the complete slide after force-locking the planned title', async () => {
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: 'Valid model title',
+      body: 'drafted body',
+    } as never);
+
+    await expect(
+      writeSlide({ ...stub, title: '**Invalid planned title**' }, dossier, []),
+    ).rejects.toThrow('texte brut');
+  });
+
   it('passes other slides TITLES into the prompt (small-context: no bodies)', async () => {
     mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
 
