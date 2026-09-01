@@ -7,6 +7,7 @@
 import type { Payload } from 'payload';
 
 import type { Presentation } from '@/payload-types';
+import { parseAiSlides } from '../../blocks/spec';
 import { COLLECTIONS } from '../../lib/collections';
 import { CTX } from '../../lib/context';
 import { mergeAugmentedSlides } from '../../lib/augmentSlides';
@@ -23,10 +24,7 @@ export async function persistSlides(opts: {
 }): Promise<{ slideCount: number }> {
   const { payload, presentationId, slides, mode } = opts;
 
-  const draftedRich = await convertSlidesMarkdownToLexical(
-    slides as unknown as Parameters<typeof convertSlidesMarkdownToLexical>[0],
-    payload,
-  );
+  const draftedRich = await convertSlidesMarkdownToLexical(parseAiSlides(slides), payload);
 
   const nextSlides =
     mode === 'augment'

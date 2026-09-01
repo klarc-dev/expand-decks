@@ -15,7 +15,7 @@ describe('reviseSlide', () => {
       blockType: 'table',
       title: 'A clearer comparison',
       columns: [{ header: 'A' }, { header: 'B' }],
-      rows: [],
+      rows: [{ cells: [{ value: 'One' }, { value: 'Two' }] }],
     } as never);
 
     const result = await reviseSlide({
@@ -25,7 +25,7 @@ describe('reviseSlide', () => {
         blockType: 'table',
         title: 'Original comparison',
         columns: [{ header: 'A' }, { header: 'B' }],
-        rows: [],
+        rows: [{ cells: [{ value: 'One' }, { value: 'Two' }] }],
       },
     });
 

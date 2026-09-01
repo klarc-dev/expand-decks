@@ -47,3 +47,7 @@ export const RENDER_SLIDE_SCHEMA = z.union(ALL_SPECS.map(renderSchemaOf));
 export function parseAiSlide(value: unknown) {
   return AI_SLIDE_SCHEMA.parse(value);
 }
+
+export function parseAiSlides(value: unknown) {
+  return z.array(AI_SLIDE_SCHEMA).parse(value);
+}

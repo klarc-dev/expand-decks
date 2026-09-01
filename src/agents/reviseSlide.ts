@@ -1,11 +1,9 @@
-import { ALL_SPECS } from '../blocks/spec';
+import { parseAiSlide, SPEC_BY_TYPE } from '../blocks/spec';
 import { aiSchemaOf } from '../blocks/spec/dsl';
 import { languageInstruction, type DeckLanguage } from './language';
 import { generateStructured } from './model';
 import { buildWriterLayoutPrompt } from './prompts/catalog';
 import { findInformationalStyleViolations } from './prompts/style';
-
-const SPEC_BY_TYPE = new Map(ALL_SPECS.map((spec) => [spec.blockType, spec]));
 
 /** Rewrite one existing slide, preserving its selected layout and using its block schema. */
 export async function reviseSlide({
@@ -31,5 +29,5 @@ export async function reviseSlide({
     maxValidationRepairs: 3,
   });
 
-  return { ...result, blockType };
+  return parseAiSlide({ ...result, blockType });
 }

@@ -28,6 +28,7 @@
 import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
 
+import { AI_SLIDE_SCHEMA, OUTLINE_SCHEMA } from '../blocks/spec';
 import { REVISE_MAX_ITERATIONS, SCORE_THRESHOLD, WRITER_CONCURRENCY } from '../lib/agentConfig';
 import { mapWithConcurrency } from '../lib/concurrency';
 import { buildSlidesMd } from '../export/buildSlidesMd';
@@ -40,7 +41,7 @@ import { scoreSlide } from './scorers/rubric';
 import { scoreVisual } from './scorers/visual';
 import { validateGrounding } from './grounding';
 import { exportSlidePngs } from './tools/exportSlidePngs';
-import type { DeckDossier, DeckEvidence } from './schemas';
+import { DeckDossierSchema, type DeckDossier, type DeckEvidence } from './schemas';
 import { EvidenceSchema, SourceFailureSchema, type SourceFailure } from '../lib/sources/types';
 
 // ── shared shapes ───────────────────────────────────────────────────────────
@@ -61,12 +62,23 @@ type DeckBundle = {
   capped: boolean;
 };
 
-const bundle = z.custom<DeckBundle>();
-const dossierT = z.custom<DeckDossier>();
+const dossierT = DeckDossierSchema;
 const evidenceT = EvidenceSchema;
 const sourceFailureT = SourceFailureSchema;
-const slideT = z.custom<SlideBlock>();
-const stubT = z.custom<OutlineStub>();
+const slideT = AI_SLIDE_SCHEMA;
+const stubT = OUTLINE_SCHEMA.shape.slides.element;
+const bundle = z.object({
+  dossier: dossierT,
+  evidence: z.array(evidenceT),
+  sourceFailures: z.array(sourceFailureT),
+  sourceIds: z.array(z.string()),
+  stubs: z.array(stubT),
+  slides: z.array(slideT),
+  titles: z.array(z.string()),
+  revisionContext: z.string().optional(),
+  lastFlagged: z.number().int().min(0),
+  capped: z.boolean(),
+});
 
 /** One self-contained writer job — foreach passes only the array element. */
 type WriterJob = {
@@ -75,7 +87,12 @@ type WriterJob = {
   allTitles: string[];
   revisionContext?: string;
 };
-const writerJob = z.custom<WriterJob>();
+const writerJob = z.object({
+  stub: stubT,
+  dossier: dossierT,
+  allTitles: z.array(z.string()),
+  revisionContext: z.string().optional(),
+});
 
 // ── steps (step id === phase name; the route maps payload.stepName → status) ──
 
@@ -225,7 +242,7 @@ const visualStep = createStep({
   outputSchema: bundle,
   execute: async ({ inputData, getInitData, abortSignal, writer }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
-    const md = buildSlidesMd({ title, slides: inputData.slides });
+    const md = buildSlidesMd({ title, slides: inputData.slides as SlideBlock[] });
     const { pngs, cleanup } = await exportSlidePngs(md, abortSignal);
     try {
       const scored = await mapWithConcurrency(
@@ -300,7 +317,7 @@ const assembleStep = createStep({
     return {
       dossier: inputData.dossier,
       slides: inputData.slides,
-      md: buildSlidesMd({ title, slides: inputData.slides }),
+      md: buildSlidesMd({ title, slides: inputData.slides as SlideBlock[] }),
       evidence: inputData.evidence,
       sourceFailures: inputData.sourceFailures,
       sourceIds: inputData.sourceIds,
