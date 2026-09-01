@@ -575,6 +575,15 @@ describe('renderStats()', () => {
     expect(result).toContain('Couverture');
   });
 
+  it('offers a line-break opportunity before range punctuation', () => {
+    const result = renderStats({
+      blockType: 'stats',
+      title: 'Stats',
+      stats: [{ value: '€12.45M–€18.9M', label: 'Range' }],
+    });
+    expect(result).toContain('€12.45M–<wbr>€18.9M');
+  });
+
   it('uses the shared content header/body frame', () => {
     const result = renderStats({ blockType: 'stats', title: 'Stats' });
     expect(result).toContain('k-content-header');

@@ -14,7 +14,7 @@ import {
 export type { StatsBlockData };
 
 function balancedStatValue(value: string): string {
-  return escape(value).replace(/([–—])/g, '<wbr>$1');
+  return escape(value).replace(/([–—])/g, '$1<wbr>');
 }
 
 export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
