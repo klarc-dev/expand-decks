@@ -450,10 +450,12 @@
 }
 
 .k-stat {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(calc(var(--t-numeral) * 1.9), auto) auto;
   gap: 0.45rem;
   align-items: center;
+  justify-items: center;
+  height: 100%;
 }
 
 .k-stat .val {
@@ -468,6 +470,9 @@
   text-wrap: balance;
 }
 
+.k-stat-grid.k-density-compact .k-stat {
+  grid-template-rows: minmax(calc(var(--t-numeral) * 1.56), auto) auto;
+}
 .k-stat-grid.k-density-compact .k-stat-card {
   padding: 1.2rem 1rem;
 }
@@ -476,6 +481,9 @@
 }
 .k-stat-grid.k-density-compact .k-stat .lbl {
   font-size: calc(var(--t-small) * 0.92);
+}
+.k-stat-grid.k-density-dense .k-stat {
+  grid-template-rows: minmax(calc(var(--t-numeral) * 1.36), auto) auto;
 }
 .k-stat-grid.k-density-dense .k-stat-card {
   padding: 0.9rem 0.75rem;

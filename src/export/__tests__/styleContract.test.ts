@@ -62,6 +62,9 @@ describe('style.css shared density system', () => {
     expect(css).toMatch(/\.k-density-dense\s*\{[\s\S]*--density-scale:\s*0\.76/);
     expect(css).toMatch(/\.k-stat-grid\.k-density-compact \.k-stat \.val/);
     expect(css).toMatch(/\.k-stat-grid\.k-density-dense \.k-stat \.val/);
+    expect(css).toMatch(/\.k-stat\s*\{[\s\S]*grid-template-rows:/);
+    expect(css).toMatch(/\.k-stat-grid\.k-density-compact \.k-stat\s*\{[\s\S]*grid-template-rows:/);
+    expect(css).toMatch(/\.k-stat-grid\.k-density-dense \.k-stat\s*\{[\s\S]*grid-template-rows:/);
   });
 
   it('applies density to slide headings and content spacing as a group', () => {
