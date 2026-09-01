@@ -25,4 +25,16 @@ describe('persistSlides', () => {
 
     expect(update.mock.calls[0]![0].data.slides).toEqual(revised);
   });
+
+  it('rejects malformed slides before conversion or persistence', async () => {
+    await expect(
+      persistSlides({
+        payload,
+        presentationId: 1,
+        mode: 'replace',
+        slides: [{ blockType: 'statement', title: '**Invalid title**' }] as never,
+      }),
+    ).rejects.toThrow('texte brut');
+    expect(update).not.toHaveBeenCalled();
+  });
 });

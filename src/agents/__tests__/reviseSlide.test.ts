@@ -49,6 +49,28 @@ describe('reviseSlide', () => {
     expect(mockedGenerateStructured).not.toHaveBeenCalled();
   });
 
+  it('revalidates the slide after restoring its locked layout', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      blockType: 'statement',
+      title: '**Invalid revised title**',
+      columns: [{ header: 'A' }, { header: 'B' }],
+      rows: [{ cells: [{ value: 'One' }, { value: 'Two' }] }],
+    } as never);
+
+    await expect(
+      reviseSlide({
+        instruction: 'Clarify it',
+        language: 'en',
+        slide: {
+          blockType: 'table',
+          title: 'Original comparison',
+          columns: [{ header: 'A' }, { header: 'B' }],
+          rows: [{ cells: [{ value: 'One' }, { value: 'Two' }] }],
+        },
+      }),
+    ).rejects.toThrow('texte brut');
+  });
+
   it('rejects an unknown slide layout', async () => {
     await expect(
       reviseSlide({
