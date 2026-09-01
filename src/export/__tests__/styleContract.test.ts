@@ -46,6 +46,9 @@ describe('style.css oversized export fitting', () => {
       /\.k-table--fit th,[\s\S]*?\.k-table--fit td\s*\{[\s\S]*overflow-wrap:\s*break-word/,
     );
     expect(css).not.toMatch(/\.k-table--matrix td:not\(:first-child\)/);
+    expect(css).toMatch(
+      /\.k-dark \.k-btn-ghost\s*\{[\s\S]*border-color:\s*rgba\(255, 255, 255, 0\.58\)/,
+    );
   });
 
   it('makes Slidev Mermaid SVG dimensions yield to the fixed diagram stage', () => {

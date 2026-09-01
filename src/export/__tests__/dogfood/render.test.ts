@@ -52,7 +52,7 @@ describe('dogfood all templates', () => {
           eyebrow: 'Dogfood',
           subtitle: lexical('A realistic deck used to stress every slide template.'),
         },
-        { blockType: 'section', title: '01 — Narrative spine', number: '01' },
+        { blockType: 'section', title: 'Narrative spine', number: '01' },
         {
           blockType: 'statement',
           title:
