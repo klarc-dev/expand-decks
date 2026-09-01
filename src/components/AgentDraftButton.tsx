@@ -48,12 +48,11 @@ const ACTIVE_STATUSES = new Set(['gathering', 'structuring', 'drafting', 'valida
 type DraftFieldGroupProps = {
   children: React.ReactNode;
   label: React.ReactNode;
-  layout?: 'inline' | 'list';
 };
 
-function DraftFieldGroup({ children, label, layout = 'inline' }: DraftFieldGroupProps) {
+function DraftFieldGroup({ children, label }: DraftFieldGroupProps) {
   return (
-    <fieldset className="agent-draft__field-group" data-layout={layout}>
+    <fieldset className="agent-draft__field-group">
       <legend>{label}</legend>
       {children}
     </fieldset>
@@ -602,26 +601,23 @@ const AgentDraftButton: React.FC = () => {
       {sourcesLoaded && sources.length > 0 && (
         <DraftFieldGroup
           label={<>Sources externes{maxSources > 0 ? ` (max ${maxSources})` : ''}</>}
-          layout="list"
         >
-          <div className="agent-draft__source-list">
-            {sources.map((source) => {
-              const checked = selectedSources.includes(source.id);
-              const atCap = maxSources > 0 && selectedSources.length >= maxSources;
-              return (
-                <CheckboxInput
-                  checked={checked}
-                  className="agent-draft__checkbox"
-                  id={`agent-source-${source.id}`}
-                  key={source.id}
-                  label={source.label}
-                  name={`agent-source-${source.id}`}
-                  onToggle={() => toggleSource(source.id)}
-                  readOnly={running || (!checked && atCap)}
-                />
-              );
-            })}
-          </div>
+          {sources.map((source) => {
+            const checked = selectedSources.includes(source.id);
+            const atCap = maxSources > 0 && selectedSources.length >= maxSources;
+            return (
+              <CheckboxInput
+                checked={checked}
+                className="agent-draft__checkbox"
+                id={`agent-source-${source.id}`}
+                key={source.id}
+                label={source.label}
+                name={`agent-source-${source.id}`}
+                onToggle={() => toggleSource(source.id)}
+                readOnly={running || (!checked && atCap)}
+              />
+            );
+          })}
         </DraftFieldGroup>
       )}
 

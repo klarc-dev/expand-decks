@@ -308,7 +308,11 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'function DraftFieldGroup')).toBe(true);
     expect(sourceContains(path, 'className="agent-draft__options"')).toBe(false);
     expect(sourceContains(path, 'className="agent-draft__sources"')).toBe(false);
-    expect(sourceContains(path, 'layout="list"')).toBe(true);
+    expect(sourceContains(path, 'layout="list"')).toBe(false);
+    expect(sourceContains(path, 'agent-draft__source-list')).toBe(false);
+    expect(sourceContains('src/components/AgentDraftButton.scss', "&[data-layout='list']")).toBe(
+      false,
+    );
   });
 
   it('keeps shared panel and notice chrome in AdminSurface', () => {
@@ -471,15 +475,30 @@ describe('canonical custom admin controls', () => {
     const path = 'src/blocks/features/varMention.client.tsx';
     expect(sourceContains(path, 'function VarMentionMenu')).toBe(true);
     expect(sourceContains(path, '<VarMentionMenu')).toBe(true);
-    expect(sourceContains(path, 'role="status"')).toBe(true);
+    expect(sourceContains(path, "role={announceEmptyMessage ? 'status' : undefined}")).toBe(true);
+    expect(sourceContains(path, "aria-live={announceEmptyMessage ? 'polite' : undefined}")).toBe(
+      true,
+    );
+    expect(sourceContains(path, "requestState === 'loading' || requestState === 'failed'")).toBe(
+      true,
+    );
     expect(
       sourceContains(path, "type VarsRequestState = 'idle' | 'loading' | 'ready' | 'failed'"),
     ).toBe(true);
     expect(sourceContains(path, 'Chargement des variables…')).toBe(true);
     expect(sourceContains(path, 'Variables indisponibles.')).toBe(true);
+    expect(sourceContains(path, 'Enregistrez la présentation pour utiliser les variables.')).toBe(
+      true,
+    );
     expect(sourceContains(path, 'Aucune variable disponible.')).toBe(true);
     expect(sourceContains(path, 'Aucune variable correspondante.')).toBe(true);
     expect(sourceContains(path, '.catch(() => {')).toBe(true);
+    expect(
+      sourceContains(path, "if (!id) {\n      setVars([]);\n      setRequestState('idle');"),
+    ).toBe(true);
+    expect(
+      sourceContains(path, "let alive = true;\n    setVars([]);\n    setRequestState('loading');"),
+    ).toBe(true);
     expect(sourceContains(path, "removeAttribute('aria-activedescendant')")).toBe(true);
     expect(sourceContains(path, 'options.length === 0) return null')).toBe(false);
     expect(sourceContains(path, 'role="listbox"')).toBe(true);
@@ -500,5 +519,10 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(styles, 'overflow-wrap: anywhere')).toBe(true);
     expect(sourceContains(styles, 'text-overflow: ellipsis')).toBe(false);
     expect(sourceContains(styles, 'white-space: nowrap')).toBe(false);
+    expect(sourceContains(styles, 'max-height: min(280px, calc(100dvh - 24px))')).toBe(true);
+    expect(sourceContains(styles, 'max-width: min(32rem, calc(100vw - 16px))')).toBe(true);
+    expect(sourceContains(styles, 'overscroll-behavior: contain')).toBe(true);
+    expect(sourceContains(styles, 'scrollbar-gutter: stable')).toBe(true);
+    expect(sourceContains(styles, '&:focus-visible')).toBe(true);
   });
 });

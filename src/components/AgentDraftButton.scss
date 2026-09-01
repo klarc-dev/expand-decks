@@ -36,17 +36,6 @@
       font-size: 12px;
       font-weight: 600;
     }
-
-    &[data-layout='list'] {
-      display: block;
-      margin-top: 16px;
-
-      legend {
-        margin-bottom: 8px;
-        color: var(--theme-text);
-        font-size: 13px;
-      }
-    }
   }
 
   &__choice {
@@ -65,12 +54,6 @@
 
   &__checkbox {
     margin: 0;
-  }
-
-  &__source-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 16px;
   }
 
   &__actions {

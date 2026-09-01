@@ -66,6 +66,7 @@ class VarOption extends MenuOption {
 }
 
 type VarMentionMenuProps = {
+  announceEmptyMessage: boolean;
   emptyMessage: string;
   options: VarOption[];
   selectedIndex: number | null;
@@ -74,6 +75,7 @@ type VarMentionMenuProps = {
 };
 
 function VarMentionMenu({
+  announceEmptyMessage,
   emptyMessage,
   options,
   selectedIndex,
@@ -82,7 +84,12 @@ function VarMentionMenu({
 }: VarMentionMenuProps) {
   if (options.length === 0) {
     return (
-      <div className="var-mention-menu var-mention-menu--empty" role="status">
+      <div
+        aria-atomic={announceEmptyMessage || undefined}
+        aria-live={announceEmptyMessage ? 'polite' : undefined}
+        className="var-mention-menu var-mention-menu--empty"
+        role={announceEmptyMessage ? 'status' : undefined}
+      >
         {emptyMessage}
       </div>
     );
@@ -127,10 +134,12 @@ function VarMentionPlugin(): React.ReactElement {
   // an empty menu rather than erroring (same graceful pattern as other fields).
   useEffect(() => {
     if (!id) {
+      setVars([]);
       setRequestState('idle');
       return;
     }
     let alive = true;
+    setVars([]);
     setRequestState('loading');
     adminGet(`/api/presentations/${id}/vars`)
       .then((res) => {
@@ -162,13 +171,16 @@ function VarMentionPlugin(): React.ReactElement {
   }, [vars, query]);
 
   const emptyMessage =
-    requestState === 'loading'
-      ? 'Chargement des variables…'
-      : requestState === 'failed'
-        ? 'Variables indisponibles.'
-        : vars.length === 0
-          ? 'Aucune variable disponible.'
-          : 'Aucune variable correspondante.';
+    requestState === 'idle'
+      ? 'Enregistrez la présentation pour utiliser les variables.'
+      : requestState === 'loading'
+        ? 'Chargement des variables…'
+        : requestState === 'failed'
+          ? 'Variables indisponibles.'
+          : vars.length === 0
+            ? 'Aucune variable disponible.'
+            : 'Aucune variable correspondante.';
+  const announceEmptyMessage = requestState === 'loading' || requestState === 'failed';
 
   useEffect(() => {
     if (options.length === 0) editor.getRootElement()?.removeAttribute('aria-activedescendant');
@@ -193,6 +205,7 @@ function VarMentionPlugin(): React.ReactElement {
         if (!anchorRef.current) return null;
         return createPortal(
           <VarMentionMenu
+            announceEmptyMessage={announceEmptyMessage}
             emptyMessage={emptyMessage}
             onHighlight={(index) => {
               editor
