@@ -126,11 +126,28 @@ function VarMentionPlugin(): React.ReactElement {
   // Fetch the variable list once the document has an id (saved). New docs show
   // an empty menu rather than erroring (same graceful pattern as other fields).
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setRequestState('idle');
+      return;
+    }
     let alive = true;
-    adminGet(`/api/presentations/${id}/vars`).then((res) => {
-      if (alive && res.ok && Array.isArray(res.data?.vars)) setVars(res.data.vars as VarEntry[]);
-    });
+    setRequestState('loading');
+    adminGet(`/api/presentations/${id}/vars`)
+      .then((res) => {
+        if (!alive) return;
+        if (res.ok && Array.isArray(res.data?.vars)) {
+          setVars(res.data.vars as VarEntry[]);
+          setRequestState('ready');
+        } else {
+          setVars([]);
+          setRequestState('failed');
+        }
+      })
+      .catch(() => {
+        if (!alive) return;
+        setVars([]);
+        setRequestState('failed');
+      });
     return () => {
       alive = false;
     };
@@ -143,6 +160,15 @@ function VarMentionPlugin(): React.ReactElement {
       .slice(0, 12)
       .map((v) => new VarOption(v));
   }, [vars, query]);
+
+  const emptyMessage =
+    requestState === 'loading'
+      ? 'Chargement des variables…'
+      : requestState === 'failed'
+        ? 'Variables indisponibles.'
+        : vars.length === 0
+          ? 'Aucune variable disponible.'
+          : 'Aucune variable correspondante.';
 
   useEffect(() => {
     if (options.length === 0) editor.getRootElement()?.removeAttribute('aria-activedescendant');
@@ -167,9 +193,7 @@ function VarMentionPlugin(): React.ReactElement {
         if (!anchorRef.current) return null;
         return createPortal(
           <VarMentionMenu
-            emptyMessage={
-              vars.length === 0 ? 'Aucune variable disponible.' : 'Aucune variable correspondante.'
-            }
+            emptyMessage={emptyMessage}
             onHighlight={(index) => {
               editor
                 .getRootElement()

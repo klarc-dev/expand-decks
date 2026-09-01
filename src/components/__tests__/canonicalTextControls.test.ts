@@ -472,8 +472,14 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'function VarMentionMenu')).toBe(true);
     expect(sourceContains(path, '<VarMentionMenu')).toBe(true);
     expect(sourceContains(path, 'role="status"')).toBe(true);
+    expect(
+      sourceContains(path, "type VarsRequestState = 'idle' | 'loading' | 'ready' | 'failed'"),
+    ).toBe(true);
+    expect(sourceContains(path, 'Chargement des variables…')).toBe(true);
+    expect(sourceContains(path, 'Variables indisponibles.')).toBe(true);
     expect(sourceContains(path, 'Aucune variable disponible.')).toBe(true);
     expect(sourceContains(path, 'Aucune variable correspondante.')).toBe(true);
+    expect(sourceContains(path, '.catch(() => {')).toBe(true);
     expect(sourceContains(path, "removeAttribute('aria-activedescendant')")).toBe(true);
     expect(sourceContains(path, 'options.length === 0) return null')).toBe(false);
     expect(sourceContains(path, 'role="listbox"')).toBe(true);
