@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ARTIFACTS } from '../lib/paths';
+import { parseRenderSlides } from '../blocks/spec';
 
 import { buildDeckRenderContexts } from './renderContext';
 import { getRenderer, type SlideBlock } from './renderers';
@@ -49,10 +50,14 @@ export function buildSlidesMd(
 }
 
 function foldSlides(presentation: Presentation, headmatter: string): string {
+  // Payload, seed scripts, migrations, and workflow output all converge here.
+  // Validate once at the final render boundary so malformed or over-limit data
+  // fails explicitly instead of reaching a renderer that may clip or omit it.
+  const slides = parseRenderSlides(presentation.slides) as SlideBlock[];
   // One shared deck-context fold drives export and preview parity: tone chain,
   // statement variant rotation, agenda section derivation, and page totals.
-  const contexts = buildDeckRenderContexts(presentation.slides);
-  const slidesMd = presentation.slides.map((block, i) => {
+  const contexts = buildDeckRenderContexts(slides);
+  const slidesMd = slides.map((block, i) => {
     const renderer = getRenderer(block.blockType);
     if (!renderer) {
       throw new Error(`Unknown block type: ${block.blockType}`);
@@ -79,7 +84,7 @@ function foldSlides(presentation: Presentation, headmatter: string): string {
   // PDF export to run with `--per-slide` (global currentPage stays stuck at 1 when
   // all slides render at once). With the numbers baked, a single-pass export is
   // correct — see buildSlidesRunner.
-  const total = presentation.slides.length;
+  const total = slides.length;
   const paged = slidesMd.map((slide, i) =>
     slide.replace(/^---\n/, `---\nkPage: ${i + 1}\nkTotal: ${total}\n`),
   );

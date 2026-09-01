@@ -91,8 +91,7 @@ function renderPeople(block: CoverBlockData): string {
   const rows = block.intervenants ?? [];
   const people = rows
     .map((row) => userToPerson(asRecord(row)?.user))
-    .filter((person): person is PersonCard => Boolean(person))
-    .slice(0, 4);
+    .filter((person): person is PersonCard => Boolean(person));
 
   if (people.length === 0) return '';
 

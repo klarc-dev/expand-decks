@@ -6,6 +6,7 @@ import config from '@payload-config';
 import { renderBlockPreview } from '@/export/preview';
 import { buildPreviewRenderContext } from '@/export/renderContext';
 import type { SlideBlock } from '@/export/renderers';
+import { RENDER_SLIDE_SCHEMA } from '@/blocks/spec';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
@@ -176,7 +177,20 @@ export async function POST(req: NextRequest) {
 
   const hydratedBlock = await hydratePreviewBlock(body.block, payload, user, authedUser.id);
   const hydratedFields = await hydrateChromeFields(fields, payload, user, authedUser.id);
-  const preview = renderBlockPreview(hydratedBlock as SlideBlock, renderContext);
+  const parsedBlock = RENDER_SLIDE_SCHEMA.safeParse(hydratedBlock);
+  if (!parsedBlock.success) {
+    return noStoreJson(
+      {
+        error: 'Contenu de slide invalide',
+        issues: parsedBlock.error.issues.map((issue) => ({
+          message: issue.message,
+          path: issue.path.join('.'),
+        })),
+      },
+      { status: 422 },
+    );
+  }
+  const preview = renderBlockPreview(parsedBlock.data as SlideBlock, renderContext);
   if (!preview)
     return NextResponse.json({ error: 'Prévisualisation indisponible' }, { status: 422 });
 

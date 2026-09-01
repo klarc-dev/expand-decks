@@ -108,7 +108,10 @@ describe('buildSlidesMd() — composed deck is injection-free across all block t
       blockType: 'cardGrid',
       title: INJECT,
       columns: '4',
-      cards: [{ number: '01', title: XSS_LINK, description: DATA_LINK }],
+      cards: [
+        { number: '01', title: XSS_LINK, description: DATA_LINK },
+        { number: '02', title: DATA_LINK, description: XSS_LINK },
+      ],
     },
     {
       blockType: 'twoCols',
@@ -116,7 +119,14 @@ describe('buildSlidesMd() — composed deck is injection-free across all block t
       intro: XSS_LINK,
       rightCards: [{ title: INJECT, description: DATA_LINK }],
     },
-    { blockType: 'stats', title: INJECT, stats: [{ value: XSS_LINK, label: INJECT }] },
+    {
+      blockType: 'stats',
+      title: INJECT,
+      stats: [
+        { value: XSS_LINK, label: INJECT },
+        { value: '2', label: XSS_LINK },
+      ],
+    },
     {
       blockType: 'quotes',
       title: INJECT,

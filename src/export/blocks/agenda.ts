@@ -1,4 +1,5 @@
 import type { AgendaBlockData } from '../../blocks/spec/agenda';
+import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 import { K } from '../classNames';
 import { densityClass, densityFromScore } from '../density';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
@@ -9,9 +10,9 @@ function needsDenseAgenda(items: NonNullable<AgendaBlockData['items']>): boolean
   const descriptionLengths = items.map((item) => item.description?.length ?? 0);
   const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
   return (
-    items.length >= 6 ||
-    totalDescriptionLength > 360 ||
-    descriptionLengths.some((length) => length > 90)
+    items.length >= SLIDE_LIMITS.agenda.items.max - 2 ||
+    totalDescriptionLength > SLIDE_LIMITS.agenda.description.max * 2 ||
+    descriptionLengths.some((length) => length > SLIDE_LIMITS.agenda.description.max / 2)
   );
 }
 

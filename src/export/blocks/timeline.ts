@@ -1,4 +1,5 @@
 import type { TimelineBlockData } from '../../blocks/spec/timeline';
+import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 import { K } from '../classNames';
 import { densityClass, densityFromScore } from '../density';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
@@ -12,9 +13,9 @@ function needsVerticalTimeline(steps: NonNullable<TimelineBlockData['steps']>): 
   const descriptionLengths = steps.map((s) => s.description?.length ?? 0);
   const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
   return (
-    steps.length >= 5 ||
-    totalDescriptionLength > 520 ||
-    descriptionLengths.some((length) => length > 140)
+    steps.length >= SLIDE_LIMITS.timeline.steps.max - 1 ||
+    totalDescriptionLength > SLIDE_LIMITS.timeline.description.max * 2.35 ||
+    descriptionLengths.some((length) => length > SLIDE_LIMITS.timeline.description.max * 0.64)
   );
 }
 

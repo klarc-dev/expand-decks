@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildSlidesMd, type Presentation } from '../buildSlidesMd';
 import { parseDeck } from '../parse';
+import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 
 // Minimal valid Lexical editor state (root > paragraph > text) for richText
 // fields in fixtures, matching what convertLexicalToHTML expects.
@@ -154,10 +155,16 @@ describe('buildSlidesMd()', () => {
     expect(second).not.toContain('Resolved');
   });
 
-  it('throws for unknown block type', () => {
-    expect(() => build([{ blockType: 'unknown' as never, title: 'Bad' } as never])).toThrow(
-      'Unknown block type: unknown',
-    );
+  it('rejects unknown block types at the canonical render boundary', () => {
+    expect(() => build([{ blockType: 'unknown' as never, title: 'Bad' } as never])).toThrow();
+  });
+
+  it('rejects over-limit content before a renderer can clip or omit it', () => {
+    const cards = Array.from({ length: SLIDE_LIMITS.cardGrid.cards.max + 1 }, (_, index) => ({
+      number: String(index + 1),
+      title: `Card ${index + 1}`,
+    }));
+    expect(() => build([{ blockType: 'cardGrid', title: 'Too dense', cards }])).toThrow();
   });
 
   it('handles empty slides array', () => {
@@ -224,9 +231,24 @@ describe('buildSlidesMd()', () => {
       { type: 'twoCols', block: { title: 'Two Cols', intro: lexical('Intro') } },
       {
         type: 'cardGrid',
-        block: { title: 'Grid', cards: [{ number: '01', title: 'A', description: lexical('D') }] },
+        block: {
+          title: 'Grid',
+          cards: [
+            { number: '01', title: 'A', description: lexical('D') },
+            { number: '02', title: 'B', description: lexical('D') },
+          ],
+        },
       },
-      { type: 'stats', block: { title: 'Stats', stats: [{ value: '1', label: 'L' }] } },
+      {
+        type: 'stats',
+        block: {
+          title: 'Stats',
+          stats: [
+            { value: '1', label: 'L' },
+            { value: '2', label: 'M' },
+          ],
+        },
+      },
       {
         type: 'quotes',
         block: { title: 'Quotes', quotes: [{ quote: lexical('Q'), authorName: 'A' }] },
@@ -236,16 +258,31 @@ describe('buildSlidesMd()', () => {
         type: 'table',
         block: {
           title: 'Table',
-          columns: [{ header: 'H' }],
-          rows: [{ cells: [{ value: lexical('c') }] }],
+          columns: [{ header: 'H' }, { header: 'I' }],
+          rows: [{ cells: [{ value: lexical('c') }, { value: lexical('d') }] }],
         },
       },
       {
         type: 'timeline',
-        block: { title: 'Timeline', steps: [{ label: 'S', description: null }] },
+        block: {
+          title: 'Timeline',
+          steps: [
+            { label: 'S', description: null },
+            { label: 'T', description: null },
+          ],
+        },
       },
       { type: 'mermaid', block: { title: 'Diagram', source: 'flowchart TD\nA-->B' } },
-      { type: 'agenda', block: { title: 'Agenda', items: [{ label: 'One', description: null }] } },
+      {
+        type: 'agenda',
+        block: {
+          title: 'Agenda',
+          items: [
+            { label: 'One', description: null },
+            { label: 'Two', description: null },
+          ],
+        },
+      },
     ];
 
     for (const { type, block } of FIXTURES) {
@@ -279,7 +316,10 @@ describe('buildSlidesMd()', () => {
         blockType: 'cardGrid',
         title: 'Grid',
         columns: '4',
-        cards: [{ number: '01', title: 'Card', description: lexical('Desc') }],
+        cards: [
+          { number: '01', title: 'Card', description: lexical('Desc') },
+          { number: '02', title: 'Card 2', description: lexical('Desc') },
+        ],
       },
       {
         blockType: 'twoCols',
@@ -290,7 +330,10 @@ describe('buildSlidesMd()', () => {
       {
         blockType: 'stats',
         title: 'Stats',
-        stats: [{ value: '42', label: 'Things' }],
+        stats: [
+          { value: '42', label: 'Things' },
+          { value: '7', label: 'Others' },
+        ],
       },
       {
         blockType: 'quotes',
@@ -307,13 +350,16 @@ describe('buildSlidesMd()', () => {
       {
         blockType: 'table',
         title: 'Table',
-        columns: [{ header: 'H' }],
-        rows: [{ cells: [{ value: lexical('Cell') }] }],
+        columns: [{ header: 'H' }, { header: 'I' }],
+        rows: [{ cells: [{ value: lexical('Cell') }, { value: lexical('Cell 2') }] }],
       },
       {
         blockType: 'timeline',
         title: 'Timeline',
-        steps: [{ label: 'S', description: 'D' }],
+        steps: [
+          { label: 'S', description: 'D' },
+          { label: 'T', description: 'E' },
+        ],
       },
       {
         blockType: 'mermaid',
@@ -323,7 +369,10 @@ describe('buildSlidesMd()', () => {
       {
         blockType: 'agenda',
         title: 'Agenda',
-        items: [{ label: 'One', description: null }],
+        items: [
+          { label: 'One', description: null },
+          { label: 'Two', description: null },
+        ],
       },
       { blockType: 'markdown', layout: 'center', content: '# Raw' },
     ];

@@ -53,14 +53,13 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     { compact: 760, dense: 1380 },
   );
   const fitted = density !== 'comfortable';
-  const alignedRows = rows.map((row) => {
-    const cells = (row.cells ?? []).map((cell) => richTextToHTML(cell.value));
-    return colCount ? Array.from({ length: colCount }, (_, index) => cells[index] ?? '') : cells;
-  });
+  const renderedRows = rows.map((row) =>
+    (row.cells ?? []).map((cell) => richTextToHTML(cell.value)),
+  );
   const statusColumns = new Set(
     isMatrix
       ? Array.from({ length: colCount }, (_, columnIndex) => columnIndex).filter((columnIndex) => {
-          const populated = alignedRows
+          const populated = renderedRows
             .map((row) => row[columnIndex])
             .filter((cell) => visibleText(cell));
           return populated.length > 0 && populated.every((cell) => statusKind(cell) !== null);
@@ -72,11 +71,10 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     ? `<thead>\n<tr>${cols.map((c) => `<th>${md(c.header)}</th>`).join('')}</tr>\n</thead>`
     : '';
 
-  // Pad/truncate each row to the column count so a model cell-count mismatch
-  // can never produce a ragged, broken table. In matrix mode, ANY cell whose
-  // whole text is a status token becomes a pill (self-classifying — not a
-  // hardcoded column index), so status can live in any column.
-  const body = alignedRows
+  // Row/column parity is enforced by the canonical render schema before this
+  // renderer is called. Matrix status cells remain self-classifying, so status
+  // can live in any column without a hardcoded index.
+  const body = renderedRows
     .map((row) => {
       return `<tr>${row
         .map((cell, columnIndex) => {

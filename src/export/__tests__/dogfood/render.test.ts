@@ -4,6 +4,7 @@ import { describe, it } from 'vitest';
 
 import { buildSlidesMd, type Presentation } from '../../buildSlidesMd';
 import { exportSlidePngs } from '../../../agents/tools/exportSlidePngs';
+import { SLIDE_LIMITS } from '../../../blocks/spec/limits';
 
 function lexical(text: string) {
   return {
@@ -93,49 +94,23 @@ describe('dogfood all templates', () => {
         },
         {
           blockType: 'cardGrid',
-          title: 'Six quality levers that must stay visually comparable',
+          title: 'Eight quality levers that must stay visually comparable',
           sidebarText: lexical(
             'Cards should align on shared rows, use one typography scale, and remain balanced when the final row is incomplete.',
           ),
           columns: '3',
-          cards: [
-            {
-              number: '01',
-              title: 'Hierarchy that survives a substantially longer heading',
-              description: lexical(
-                'One clear read order from slide title to card label to supporting explanation, even when one sibling carries much more copy.',
-              ),
-            },
-            {
-              number: '02',
-              title: 'Density',
-              description: lexical(
-                'Enough content to be useful, never cramped or individually shrunk.',
-              ),
-            },
-            {
-              number: '03',
-              title: 'Contrast',
-              description: lexical('AA-safe muted text on light and dark presentation surfaces.'),
-            },
-            {
-              number: '04',
-              title: 'Cadence',
-              description: lexical('Consistent spacing rails across every template family.'),
-            },
-            {
-              number: '05',
-              title: 'Alignment',
-              description: lexical('Equal-height rows keep comparable ideas comparable.'),
-            },
-            {
-              number: '06',
-              title: 'Resilience',
-              description: lexical(
-                'The fixed canvas adapts as a system before any content can clip.',
-              ),
-            },
-          ],
+          cards: Array.from({ length: SLIDE_LIMITS.cardGrid.cards.max }, (_, index) => ({
+            number: String(index + 1).padStart(2, '0'),
+            title:
+              index === 0
+                ? 'Hierarchy that survives a substantially longer heading'
+                : `Quality lever ${index + 1}`,
+            description: lexical(
+              index === 0
+                ? 'One clear read order from slide title to card label to supporting explanation, even when one sibling carries much more copy.'
+                : 'Enough realistic supporting copy to exercise the maximum valid fixed-canvas grid without hiding content.',
+            ),
+          })),
         },
         {
           blockType: 'stats',
