@@ -465,6 +465,7 @@
   letter-spacing: -0.04em;
   max-width: 100%;
   overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .k-stat-grid.k-density-compact .k-stat-card {
