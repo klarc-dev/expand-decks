@@ -34,6 +34,8 @@ interface VarEntry {
   sample: string;
 }
 
+type VarsRequestState = 'idle' | 'loading' | 'ready' | 'failed';
+
 // Match `@` followed by variable-path chars (word chars AND dots), so dotted
 // paths like `@org.name` keep filtering — the built-in trigger treats `.` as a
 // boundary and closes the menu after the first dot.
@@ -118,6 +120,7 @@ function VarMentionPlugin(): React.ReactElement {
   const [editor] = useLexicalComposerContext();
   const { id } = useDocumentInfo();
   const [vars, setVars] = useState<VarEntry[]>([]);
+  const [requestState, setRequestState] = useState<VarsRequestState>('idle');
   const [query, setQuery] = useState<string | null>(null);
 
   // Fetch the variable list once the document has an id (saved). New docs show
