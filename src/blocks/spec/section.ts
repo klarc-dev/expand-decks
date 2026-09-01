@@ -4,16 +4,21 @@ import {
   block,
   factoryField,
   type InferRender,
-  optionalAi,
+  limitedString,
+  limitedTextPayload,
+  optionalLimitedAi,
+  optionalLimitedRender,
+  optionalLimitedRichTextRender,
   optionalRender,
-  optionalRichTextRender,
+  optionalUnknownRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const number = optionalRender(z.string());
-const title = z.string();
-const subtitle = optionalRichTextRender();
+const number = optionalLimitedRender(SLIDE_LIMITS.section.number);
+const title = limitedString(SLIDE_LIMITS.common.title);
+const subtitle = optionalLimitedRichTextRender(SLIDE_LIMITS.section.subtitle);
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
 
@@ -24,18 +29,24 @@ export const sectionSpec = block({
   labels: { singular: 'Section', plural: 'Sections' },
   imageURL: '/block-previews/section.svg',
   fields: [
-    rawField('number', number, optionalAi(z.string()), {
-      type: 'text',
-      label: 'Numéro',
-      description: 'Numéro de section affiché (ex. "02")',
-    }),
+    rawField(
+      'number',
+      number,
+      optionalLimitedAi(SLIDE_LIMITS.section.number),
+      limitedTextPayload(SLIDE_LIMITS.section.number, {
+        type: 'text',
+        label: 'Numéro',
+        description: 'Numéro de section affiché (ex. "02")',
+      }),
+    ),
     titleFieldSpec(title, 'Titre de la section'),
-    rawField('subtitle', subtitle, optionalAi(z.string()), {
+    rawField('subtitle', subtitle, optionalLimitedAi(SLIDE_LIMITS.section.subtitle), {
       type: 'richText',
       label: 'Sous-titre',
       description: 'Description complémentaire sous le titre',
+      maxLength: SLIDE_LIMITS.section.subtitle.max,
     }),
-    factoryField('image', 'image', z.never(), false),
+    factoryField('image', 'image', optionalUnknownRender(), false),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {

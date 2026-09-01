@@ -21,6 +21,7 @@ import {
   titleField,
 } from '../../_shared';
 import type { FieldSpec, BlockSpec, PayloadFieldMeta } from '../dsl';
+import { validateSerializedTextLength } from '../limitValidation';
 
 function emitAdminMeta(payload: PayloadFieldMeta): Record<string, unknown> {
   const admin: Record<string, unknown> = { description: payload.description };
@@ -76,10 +77,27 @@ function emitRawField(field: FieldSpec): Field {
     'labels',
     'validate',
   ]);
+  // Payload supports native maxLength on plain text-like fields, but richText
+  // requires visible-text validation against the serialized editor state.
+  if (payload.type !== 'richText' && payload.maxLength !== undefined) {
+    result.maxLength = payload.maxLength;
+  }
   if (payload.type === 'array' && payload.fields !== undefined) {
     result.fields = payload.fields.flatMap(emitField);
   }
-  if (payload.type === 'richText') result.editor = slideRichTextEditor;
+  if (payload.type === 'richText') {
+    result.editor = slideRichTextEditor;
+    if (payload.maxLength !== undefined) {
+      const nativeValidate = payload.validate;
+      result.validate = async (value: unknown, options: unknown) => {
+        if (typeof nativeValidate === 'function') {
+          const nativeResult = await nativeValidate(value as never, options as never);
+          if (nativeResult !== true) return nativeResult;
+        }
+        return validateSerializedTextLength(value, payload.maxLength!);
+      };
+    }
+  }
 
   return result as unknown as Field;
 }
@@ -88,17 +106,16 @@ function emitRawField(field: FieldSpec): Field {
 function emitField(field: FieldSpec): Field[] {
   switch (field.factory) {
     case 'eyebrow':
-      return [
-        field.factoryArgs?.description !== undefined
-          ? eyebrowField(field.factoryArgs.description)
-          : eyebrowField(),
-      ];
+      return [eyebrowField(field.factoryArgs?.description, field.factoryArgs?.maxLength)];
     case 'title':
-      return [titleField(field.factoryArgs!.description!)];
+      return [titleField(field.factoryArgs?.description, field.factoryArgs?.maxLength)];
     case 'image':
       return imageFields(field.factoryArgs?.description);
     case 'cardTitleDesc':
-      return cardTitleDescFields();
+      return cardTitleDescFields({
+        titleMaxLength: field.factoryArgs?.titleMaxLength,
+        descriptionMaxLength: field.factoryArgs?.descriptionMaxLength,
+      });
     case 'preview':
       return [previewField];
     case 'raw':
@@ -115,9 +132,9 @@ export function emitPayloadBlock(spec: BlockSpec): Block {
 
   // Every block except `markdown` and `cover` gets the shared "Sources / Notes"
   // repeater. Cover/title slides should stay presentation metadata, not source
-  // carriers. It carries no render/AI data (no renderer reads it; buildSlidesMd
-  // seeds the footnote band directly from the Payload value), so it is injected
-  // here at L1 only — once — instead of in 11 spec field arrays. Placed before
+  // carriers. It is injected here at L1 only — once — instead of in 11 spec
+  // field arrays, and renderSchemaOf projects the same synthetic contract.
+  // Placed before
   // any trailing `preview` UI field so the form ends on the live preview.
   const fields = spec.fields.flatMap(emitField);
   if (spec.slug !== 'markdown' && spec.slug !== 'cover') {

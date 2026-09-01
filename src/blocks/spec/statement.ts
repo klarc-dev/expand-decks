@@ -16,20 +16,24 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  limitedString,
   optionalAi,
+  optionalLimitedAi,
+  optionalLimitedRender,
+  optionalLimitedRichTextRender,
   optionalRender,
-  optionalRichTextRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
 // Per-field render Zods — authored once, reused below.
 // body + footer are rich text (Lexical); their render Zod is the editor state,
 // while their AI Zod stays a markdown string (converted to Lexical on write).
-const eyebrow = optionalRender(z.string());
-const title = z.string();
-const body = optionalRichTextRender();
-const footer = optionalRichTextRender();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
+const body = optionalLimitedRichTextRender(SLIDE_LIMITS.statement.body);
+const footer = optionalLimitedRichTextRender(SLIDE_LIMITS.statement.footer);
 // Layout variant (U8): four visually-distinct emphasis treatments. Optional —
 // when unset, buildSlidesMd assigns one by statement-index so the deck gets
 // variety even if the author/AI never picks (the Section-block lesson, KTD6b).
@@ -45,15 +49,17 @@ export const statementSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Citation ou affirmation principale'),
-    rawField('body', body, optionalAi(z.string()), {
+    rawField('body', body, optionalLimitedAi(SLIDE_LIMITS.statement.body), {
       type: 'richText',
       label: 'Corps',
       description: 'Texte développant l’affirmation',
+      maxLength: SLIDE_LIMITS.statement.body.max,
     }),
-    rawField('footer', footer, optionalAi(z.string()), {
+    rawField('footer', footer, optionalLimitedAi(SLIDE_LIMITS.statement.footer), {
       type: 'richText',
       label: 'Pied de page',
       description: 'Légende ou note en bas de la diapositive',
+      maxLength: SLIDE_LIMITS.statement.footer.max,
     }),
     rawField('variant', variant, optionalAi(z.enum(STATEMENT_VARIANTS)), {
       type: 'select',

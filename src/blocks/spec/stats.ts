@@ -5,20 +5,27 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  limitedArray,
+  limitedArrayPayload,
+  limitedString,
+  limitedTextPayload,
   optionalAi,
+  optionalLimitedRender,
   optionalRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
 const stats = optionalRender(
-  z.array(
+  limitedArray(
     z.object({
-      value: z.string(),
-      label: z.string(),
+      value: limitedString(SLIDE_LIMITS.stats.value),
+      label: limitedString(SLIDE_LIMITS.stats.label),
     }),
+    SLIDE_LIMITS.stats.items,
   ),
 );
 
@@ -33,37 +40,45 @@ export const statsSpec = block({
     titleFieldSpec(title, 'Titre principal de la diapositive'),
     rawField(
       'stats',
-      z.array(z.unknown()),
+      stats,
       optionalAi(
-        z
-          .array(
-            z.object({
-              value: z.string(),
-              label: z.string(),
-            }),
-          )
-          .min(2)
-          .max(4),
+        limitedArray(
+          z.object({
+            value: limitedString(SLIDE_LIMITS.stats.value),
+            label: limitedString(SLIDE_LIMITS.stats.label),
+          }),
+          SLIDE_LIMITS.stats.items,
+        ),
       ),
-      {
+      limitedArrayPayload(SLIDE_LIMITS.stats.items, {
         type: 'array',
         label: 'Chiffres clés',
         description: 'Paires valeur/libellé affichées en ligne',
         fields: [
-          rawField('value', z.string(), z.string(), {
-            type: 'text',
-            required: true,
-            label: 'Valeur',
-            description: 'Chiffre ou donnée (ex. "360°", "4")',
-          }),
-          rawField('label', z.string(), z.string(), {
-            type: 'text',
-            required: true,
-            label: 'Libellé',
-            description: 'Description courte de la valeur',
-          }),
+          rawField(
+            'value',
+            limitedString(SLIDE_LIMITS.stats.value),
+            limitedString(SLIDE_LIMITS.stats.value),
+            limitedTextPayload(SLIDE_LIMITS.stats.value, {
+              type: 'text',
+              required: true,
+              label: 'Valeur',
+              description: 'Chiffre ou donnée (ex. "360°", "4")',
+            }),
+          ),
+          rawField(
+            'label',
+            limitedString(SLIDE_LIMITS.stats.label),
+            limitedString(SLIDE_LIMITS.stats.label),
+            limitedTextPayload(SLIDE_LIMITS.stats.label, {
+              type: 'text',
+              required: true,
+              label: 'Libellé',
+              description: 'Description courte de la valeur',
+            }),
+          ),
         ],
-      },
+      }),
     ),
     factoryField('preview', 'preview', z.never(), false),
   ],

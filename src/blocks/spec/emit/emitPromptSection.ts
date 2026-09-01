@@ -10,7 +10,7 @@
  * `_shared` runtime — so it stays cheap to load anywhere.
  */
 
-import type { PromptMeta } from '../dsl';
+import { promptLinesOf, type BlockSpec, type PromptMeta } from '../dsl';
 
 /**
  * Fixed intro prose, verbatim from the current SYSTEM_PROMPT. Ends with the
@@ -69,6 +69,11 @@ export function emitPromptSection(meta: PromptMeta): string {
   const header = `${meta.index}. **${meta.heading}** — ${meta.summary}`;
   const body = meta.lines.map((line) => `   - ${line}`).join('\n');
   return body.length > 0 ? `${header}\n${body}` : header;
+}
+
+export function promptMetaOf(spec: BlockSpec): PromptMeta | undefined {
+  if (!spec.promptMeta) return undefined;
+  return { ...spec.promptMeta, lines: promptLinesOf(spec) };
 }
 
 /**

@@ -13,6 +13,8 @@ import {
 
 import { COLLECTIONS } from '../lib/collections';
 import { VarMentionFeature } from './features/varMention.server';
+import { validateSerializedTextLength } from './spec/limitValidation';
+import { SLIDE_LIMITS } from './spec/limits';
 
 // Shared minimal inline editor for all rich-text slide fields: paragraphs +
 // bold/italic/underline/link/lists + a floating toolbar + the `@` variable
@@ -38,28 +40,40 @@ export const previewField: Field = {
   admin: { components: { Field: '/components/SlidePreview#default' } },
 };
 
-export const eyebrowField = (description = 'Texte court au-dessus du titre'): Field => ({
+export const eyebrowField = (
+  description = 'Texte court au-dessus du titre',
+  maxLength?: number,
+): Field => ({
   name: 'eyebrow',
   type: 'text',
   label: 'Accroche',
   admin: { description },
+  maxLength,
 });
 
-export const titleField = (description: string): Field => ({
+export const titleField = (
+  description = 'Titre principal de la diapositive',
+  maxLength?: number,
+): Field => ({
   name: 'title',
   type: 'text',
   required: true,
   label: 'Titre',
   admin: { description },
+  maxLength,
 });
 
-export const cardTitleDescFields = (): Field[] => [
+export const cardTitleDescFields = (limits?: {
+  titleMaxLength?: number;
+  descriptionMaxLength?: number;
+}): Field[] => [
   {
     name: 'title',
     type: 'text',
     required: true,
     label: 'Titre',
     admin: { description: 'Titre de la carte' },
+    maxLength: limits?.titleMaxLength,
   },
   {
     name: 'description',
@@ -67,6 +81,9 @@ export const cardTitleDescFields = (): Field[] => [
     editor: slideRichTextEditor,
     label: 'Description',
     admin: { description: 'Contenu descriptif de la carte' },
+    validate: limits?.descriptionMaxLength
+      ? (value: unknown) => validateSerializedTextLength(value, limits.descriptionMaxLength!)
+      : undefined,
   },
 ];
 
@@ -86,7 +103,17 @@ export const footnotesField = (): Field => ({
       'Notes numérotées affichées en bas de diapositive (ex. « Source : … »). Lien possible : [texte](https://…).',
     components: { RowLabel: '/components/RepeaterRowLabel#default' },
   },
-  fields: [{ name: 'text', type: 'text', required: true, label: 'Texte' }],
+  minRows: SLIDE_LIMITS.common.footnotes.min,
+  maxRows: SLIDE_LIMITS.common.footnotes.max,
+  fields: [
+    {
+      name: 'text',
+      type: 'text',
+      required: true,
+      label: 'Texte',
+      maxLength: SLIDE_LIMITS.common.footnotes.text.max,
+    },
+  ],
 });
 
 export const imageFields = (

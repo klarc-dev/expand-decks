@@ -14,13 +14,12 @@ import {
 
 import { AdminTextField } from '@/components/adminUi/AdminTextField';
 import { AdminNotice } from '@/components/adminUi/AdminSurface';
+import { SLIDE_LIMITS } from '@/blocks/spec/limits';
 
 import './TableEditor.scss';
 
-const MIN_COLUMNS = 2;
-const MAX_COLUMNS = 5;
-const MIN_ROWS = 1;
-const MAX_ROWS = 8;
+const { min: MIN_COLUMNS, max: MAX_COLUMNS } = SLIDE_LIMITS.table.columns;
+const { min: MIN_ROWS, max: MAX_ROWS } = SLIDE_LIMITS.table.rows;
 
 type TableActionGroupProps = {
   children: React.ReactNode;

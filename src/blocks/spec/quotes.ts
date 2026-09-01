@@ -5,22 +5,30 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  limitedArray,
+  limitedArrayPayload,
+  limitedRichTextRender,
+  limitedString,
+  limitedTextPayload,
   optionalAi,
+  optionalLimitedAi,
+  optionalLimitedRender,
   optionalRender,
   rawField,
-  richTextRender,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
 const quotes = optionalRender(
-  z.array(
+  limitedArray(
     z.object({
-      quote: richTextRender(),
-      authorName: z.string(),
-      authorRole: optionalRender(z.string()),
+      quote: limitedRichTextRender(SLIDE_LIMITS.quotes.quote),
+      authorName: limitedString(SLIDE_LIMITS.quotes.authorName),
+      authorRole: optionalLimitedRender(SLIDE_LIMITS.quotes.authorRole),
     }),
+    SLIDE_LIMITS.quotes.items,
   ),
 );
 
@@ -35,43 +43,56 @@ export const quotesSpec = block({
     titleFieldSpec(title, 'Titre de la diapositive'),
     rawField(
       'quotes',
-      z.array(z.unknown()),
+      quotes,
       optionalAi(
-        z
-          .array(
-            z.object({
-              quote: z.string(),
-              authorName: z.string(),
-              authorRole: optionalAi(z.string()),
-            }),
-          )
-          .min(1)
-          .max(4),
+        limitedArray(
+          z.object({
+            quote: limitedString(SLIDE_LIMITS.quotes.quote),
+            authorName: limitedString(SLIDE_LIMITS.quotes.authorName),
+            authorRole: optionalLimitedAi(SLIDE_LIMITS.quotes.authorRole),
+          }),
+          SLIDE_LIMITS.quotes.items,
+        ),
       ),
-      {
+      limitedArrayPayload(SLIDE_LIMITS.quotes.items, {
         type: 'array',
         label: 'Citations',
         description: 'Liste des citations à afficher en grille',
         fields: [
-          rawField('quote', richTextRender(), z.string(), {
-            type: 'richText',
-            required: true,
-            label: 'Citation',
-            description: 'Texte de la citation',
-          }),
-          rawField('authorName', z.string(), z.string(), {
-            type: 'text',
-            required: true,
-            label: 'Auteur',
-            description: 'Nom de l’auteur cité',
-          }),
-          rawField('authorRole', optionalRender(z.string()), optionalAi(z.string()), {
-            type: 'text',
-            label: 'Rôle de l’auteur',
-            description: 'Fonction ou contexte (optionnel)',
-          }),
+          rawField(
+            'quote',
+            limitedRichTextRender(SLIDE_LIMITS.quotes.quote),
+            limitedString(SLIDE_LIMITS.quotes.quote),
+            limitedTextPayload(SLIDE_LIMITS.quotes.quote, {
+              type: 'richText',
+              required: true,
+              label: 'Citation',
+              description: 'Texte de la citation',
+            }),
+          ),
+          rawField(
+            'authorName',
+            limitedString(SLIDE_LIMITS.quotes.authorName),
+            limitedString(SLIDE_LIMITS.quotes.authorName),
+            limitedTextPayload(SLIDE_LIMITS.quotes.authorName, {
+              type: 'text',
+              required: true,
+              label: 'Auteur',
+              description: 'Nom de l’auteur cité',
+            }),
+          ),
+          rawField(
+            'authorRole',
+            optionalLimitedRender(SLIDE_LIMITS.quotes.authorRole),
+            optionalLimitedAi(SLIDE_LIMITS.quotes.authorRole),
+            limitedTextPayload(SLIDE_LIMITS.quotes.authorRole, {
+              type: 'text',
+              label: 'Rôle de l’auteur',
+              description: 'Fonction ou contexte (optionnel)',
+            }),
+          ),
         ],
-      },
+      }),
     ),
     factoryField('preview', 'preview', z.never(), false),
   ],

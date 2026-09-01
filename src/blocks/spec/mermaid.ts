@@ -5,16 +5,23 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
-  optionalAi,
-  optionalRender,
+  limitedString,
+  limitedTextPayload,
+  optionalLimitedAi,
+  optionalLimitedRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
-const source = z.string();
-const caption = optionalRender(z.string());
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
+const source = limitedString(SLIDE_LIMITS.mermaid.source);
+const caption = optionalLimitedRender(SLIDE_LIMITS.mermaid.caption);
+const unfencedMermaid = limitedString(SLIDE_LIMITS.mermaid.source).refine(
+  (value) => !value.includes('```'),
+  'Le code Mermaid doit être fourni sans délimiteurs ```',
+);
 
 export const mermaidSpec = block({
   slug: 'mermaid',
@@ -25,18 +32,28 @@ export const mermaidSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du diagramme'),
-    rawField('source', source, z.string(), {
-      type: 'code',
-      label: 'Source du diagramme',
-      required: true,
-      language: 'mermaid',
-      description: 'Code Mermaid brut (flowchart, sequenceDiagram, etc.), sans la clôture ```',
-    }),
-    rawField('caption', caption, optionalAi(z.string()), {
-      type: 'text',
-      label: 'Légende',
-      description: 'Courte légende sous le diagramme (optionnelle)',
-    }),
+    rawField(
+      'source',
+      unfencedMermaid,
+      unfencedMermaid,
+      limitedTextPayload(SLIDE_LIMITS.mermaid.source, {
+        type: 'code',
+        label: 'Source du diagramme',
+        required: true,
+        language: 'mermaid',
+        description: 'Code Mermaid brut (flowchart, sequenceDiagram, etc.), sans la clôture ```',
+      }),
+    ),
+    rawField(
+      'caption',
+      caption,
+      optionalLimitedAi(SLIDE_LIMITS.mermaid.caption),
+      limitedTextPayload(SLIDE_LIMITS.mermaid.caption, {
+        type: 'text',
+        label: 'Légende',
+        description: 'Courte légende sous le diagramme (optionnelle)',
+      }),
+    ),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {

@@ -25,7 +25,7 @@ import {
 } from '../index';
 import { emitPayloadBlock } from '../emit/emitPayloadBlock';
 import { emitSlidesArraySchema } from '../emit/emitDraftSchema';
-import { buildSystemPrompt } from '../emit/emitPromptSection';
+import { buildSystemPrompt, promptMetaOf } from '../emit/emitPromptSection';
 
 const DRAFTABLE = ALL_SPECS.filter((spec) => spec.aiDraftable);
 
@@ -123,12 +123,12 @@ Layouts disponibles :
 9. **table** — Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)
    - eyebrow, title (obligatoire)
    - tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.
-   - columns: [{header}] — 2 à 5 colonnes
+   - columns: [{header}]
    - rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre
 
 10. **timeline** — Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)
    - eyebrow, title (obligatoire), footer (bandeau transverse)
-   - steps: [{label, description}] — 2 à 6 étapes, dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)
+   - steps: [{label, description}] — dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)
 
 11. **mermaid** — Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)
    - eyebrow, title (obligatoire), caption
@@ -136,7 +136,7 @@ Layouts disponibles :
 
 12. **agenda** — Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire
    - eyebrow, title (obligatoire)
-   - items: [{label, description}] — 2 à 8 sections, dans l’ordre, numérotées automatiquement
+   - items: [{label, description}] — dans l’ordre, numérotées automatiquement
 
 Règles :
 - Commence TOUJOURS par un bloc "cover"
@@ -224,6 +224,16 @@ describe('ALL_SPECS parity', () => {
   it('builds the original SYSTEM_PROMPT from the AI-draftable specs', () => {
     const metas = ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : []));
     expect(buildSystemPrompt(metas)).toBe(EXPECTED_PROMPT);
+  });
+
+  it('projects native field limits into generated prompt metadata', () => {
+    const metas = ALL_SPECS.flatMap((spec) => {
+      const meta = promptMetaOf(spec);
+      return meta ? [meta] : [];
+    });
+    const prompt = buildSystemPrompt(metas);
+    expect(prompt).toContain('title: 180 caractères max');
+    expect(prompt).toContain('rows: 1–8 éléments');
   });
 
   it('bounds the generated slides array at min 3 / max 40', () => {

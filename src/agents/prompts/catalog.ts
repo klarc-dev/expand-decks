@@ -7,14 +7,22 @@
  */
 import { ALL_SPECS } from '../../blocks/spec';
 import type { PromptMeta } from '../../blocks/spec/dsl';
-import { buildSystemPrompt, emitPromptSection } from '../../blocks/spec/emit/emitPromptSection';
+import {
+  buildSystemPrompt,
+  emitPromptSection,
+  promptMetaOf,
+} from '../../blocks/spec/emit/emitPromptSection';
 import { INFORMATIONAL_STYLE_PROMPT } from './style';
 
-const PROMPT_META = ALL_SPECS.flatMap((spec) => (spec.promptMeta ? [spec.promptMeta] : []));
+const PROMPT_META = ALL_SPECS.flatMap((spec) => {
+  const meta = promptMetaOf(spec);
+  return meta ? [meta] : [];
+});
 const META_BY_BLOCK_TYPE = new Map(
-  ALL_SPECS.flatMap((spec) =>
-    spec.promptMeta ? [[spec.blockType, spec.promptMeta] as const] : [],
-  ),
+  ALL_SPECS.flatMap((spec) => {
+    const meta = promptMetaOf(spec);
+    return meta ? [[spec.blockType, meta] as const] : [];
+  }),
 );
 
 export const STRUCTURE_SYSTEM_PROMPT = `${buildSystemPrompt(PROMPT_META)}

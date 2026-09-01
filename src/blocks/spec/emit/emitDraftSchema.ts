@@ -29,7 +29,7 @@ import { MAX_SLIDES, MIN_SLIDES } from '../../../lib/draftConfig';
  * dropped.
  */
 export function emitDraftSchema(specs: BlockSpec[]): z.ZodType {
-  const members: z.ZodObject[] = specs
+  const members: z.ZodType[] = specs
     .filter((spec) => spec.aiDraftable)
     .map((spec) => aiSchemaOf(spec));
   return z.union(members);

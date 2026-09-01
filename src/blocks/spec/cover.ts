@@ -5,18 +5,24 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
-  optionalAi,
+  limitedArray,
+  limitedArrayPayload,
+  limitedString,
+  optionalLimitedAi,
+  optionalLimitedRender,
+  optionalLimitedRichTextRender,
   optionalRender,
-  optionalRichTextRender,
+  optionalUnknownRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
 // subtitle is rich text (Lexical); its render Zod is the editor state, while
 // its AI Zod stays a markdown string (converted to Lexical on write).
-const subtitle = optionalRichTextRender();
+const subtitle = optionalLimitedRichTextRender(SLIDE_LIMITS.cover.subtitle);
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
 const mediaRelationship = z.union([
@@ -50,12 +56,13 @@ const userRelationship = z.union([
     .passthrough(),
 ]);
 const intervenants = optionalRender(
-  z.array(
+  limitedArray(
     z
       .object({
         user: userRelationship.nullable().optional(),
       })
       .passthrough(),
+    SLIDE_LIMITS.cover.speakers,
   ),
 );
 
@@ -68,28 +75,33 @@ export const coverSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow, 'Texte court au-dessus du titre principal'),
     titleFieldSpec(title, 'Titre principal de la diapositive de couverture'),
-    rawField('subtitle', subtitle, optionalAi(z.string()), {
+    rawField('subtitle', subtitle, optionalLimitedAi(SLIDE_LIMITS.cover.subtitle), {
       type: 'richText',
       label: 'Sous-titre',
       description: 'Paragraphe descriptif sous le titre',
+      maxLength: SLIDE_LIMITS.cover.subtitle.max,
     }),
-    rawField('intervenants', intervenants, false, {
-      type: 'array',
-      label: 'Intervenants',
-      description: 'Personnes affichées sur la diapositive de couverture',
-      maxRows: 4,
-      fields: [
-        rawField('user', userRelationship, false, {
-          type: 'relationship',
-          relationTo: 'users',
-          required: true,
-          maxDepth: 2,
-          label: 'Utilisateur',
-          description: 'Utilisateur affiché comme intervenant',
-        }),
-      ],
-    }),
-    factoryField('image', 'image', z.never(), false),
+    rawField(
+      'intervenants',
+      intervenants,
+      false,
+      limitedArrayPayload(SLIDE_LIMITS.cover.speakers, {
+        type: 'array',
+        label: 'Intervenants',
+        description: 'Personnes affichées sur la diapositive de couverture',
+        fields: [
+          rawField('user', userRelationship, false, {
+            type: 'relationship',
+            relationTo: 'users',
+            required: true,
+            maxDepth: 2,
+            label: 'Utilisateur',
+            description: 'Utilisateur affiché comme intervenant',
+          }),
+        ],
+      }),
+    ),
+    factoryField('image', 'image', optionalUnknownRender(), false),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {

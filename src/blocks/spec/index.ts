@@ -43,6 +43,7 @@ export const AI_SLIDE_SCHEMA = z.union(AI_SPECS.map(aiSchemaOf));
 export const AI_SLIDES_SCHEMA = emitSlidesArraySchema(ALL_SPECS);
 export const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
 export const RENDER_SLIDE_SCHEMA = z.union(ALL_SPECS.map(renderSchemaOf));
+export const RENDER_SLIDES_SCHEMA = z.array(RENDER_SLIDE_SCHEMA);
 
 export function parseAiSlide(value: unknown) {
   return AI_SLIDE_SCHEMA.parse(value);
@@ -50,4 +51,12 @@ export function parseAiSlide(value: unknown) {
 
 export function parseAiSlides(value: unknown) {
   return z.array(AI_SLIDE_SCHEMA).parse(value);
+}
+
+export function parseRenderSlide(value: unknown) {
+  return RENDER_SLIDE_SCHEMA.parse(value);
+}
+
+export function parseRenderSlides(value: unknown) {
+  return RENDER_SLIDES_SCHEMA.parse(value);
 }

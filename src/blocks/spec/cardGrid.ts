@@ -5,24 +5,32 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  limitedArray,
+  limitedArrayPayload,
+  limitedString,
+  limitedTextPayload,
   optionalAi,
+  optionalLimitedAi,
+  optionalLimitedRender,
+  optionalLimitedRichTextRender,
   optionalRender,
-  optionalRichTextRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
-const sidebarText = optionalRichTextRender();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
+const sidebarText = optionalLimitedRichTextRender(SLIDE_LIMITS.cardGrid.sidebar);
 const columns = optionalRender(z.enum(['2', '3', '4']));
 const cards = optionalRender(
-  z.array(
+  limitedArray(
     z.object({
-      number: optionalRender(z.string()),
-      title: z.string(),
-      description: optionalRichTextRender(),
+      number: optionalLimitedRender(SLIDE_LIMITS.cardGrid.cardNumber),
+      title: limitedString(SLIDE_LIMITS.cardGrid.cardTitle),
+      description: optionalLimitedRichTextRender(SLIDE_LIMITS.cardGrid.cardDescription),
     }),
+    SLIDE_LIMITS.cardGrid.cards,
   ),
 );
 
@@ -35,10 +43,11 @@ export const cardGridSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre principal de la grille'),
-    rawField('sidebarText', sidebarText, optionalAi(z.string()), {
+    rawField('sidebarText', sidebarText, optionalLimitedAi(SLIDE_LIMITS.cardGrid.sidebar), {
       type: 'richText',
       label: 'Texte latéral',
       description: 'Texte optionnel affiché sur le côté de la grille',
+      maxLength: SLIDE_LIMITS.cardGrid.sidebar.max,
     }),
     rawField('columns', columns, optionalAi(z.enum(['2', '3', '4'])), {
       type: 'select',
@@ -53,32 +62,38 @@ export const cardGridSpec = block({
     }),
     rawField(
       'cards',
-      z.array(z.unknown()),
+      cards,
       optionalAi(
-        z
-          .array(
-            z.object({
-              number: optionalAi(z.string()),
-              title: z.string(),
-              description: optionalAi(z.string()),
-            }),
-          )
-          .min(2)
-          .max(6),
+        limitedArray(
+          z.object({
+            number: optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardNumber),
+            title: limitedString(SLIDE_LIMITS.cardGrid.cardTitle),
+            description: optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardDescription),
+          }),
+          SLIDE_LIMITS.cardGrid.cards,
+        ),
       ),
-      {
+      limitedArrayPayload(SLIDE_LIMITS.cardGrid.cards, {
         type: 'array',
         label: 'Cartes',
         description: 'Liste des cartes à afficher dans la grille',
         fields: [
-          rawField('number', optionalRender(z.string()), optionalAi(z.string()), {
-            type: 'text',
-            label: 'Numéro',
-            description: 'Numéro ou identifiant de la carte (ex. "01")',
+          rawField(
+            'number',
+            optionalLimitedRender(SLIDE_LIMITS.cardGrid.cardNumber),
+            optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardNumber),
+            limitedTextPayload(SLIDE_LIMITS.cardGrid.cardNumber, {
+              type: 'text',
+              label: 'Numéro',
+              description: 'Numéro ou identifiant de la carte (ex. "01")',
+            }),
+          ),
+          factoryField('cardTitleDesc', 'cardTitleDesc', z.unknown(), false, {
+            titleMaxLength: SLIDE_LIMITS.cardGrid.cardTitle.max,
+            descriptionMaxLength: SLIDE_LIMITS.cardGrid.cardDescription.max,
           }),
-          factoryField('cardTitleDesc', 'cardTitleDesc', z.unknown(), false),
         ],
-      },
+      }),
     ),
     factoryField('preview', 'preview', z.never(), false),
   ],

@@ -5,25 +5,31 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  limitedArray,
+  limitedString,
+  limitedTextPayload,
   optionalAi,
+  optionalLimitedAi,
+  optionalLimitedRender,
   optionalRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
 const active = optionalRender(z.number());
 
 const item = z.object({
-  label: z.string(),
-  description: optionalRender(z.string()),
+  label: limitedString(SLIDE_LIMITS.agenda.label),
+  description: optionalLimitedRender(SLIDE_LIMITS.agenda.description),
 });
-const items = optionalRender(z.array(item));
+const items = optionalRender(limitedArray(item, SLIDE_LIMITS.agenda.items));
 
 const aiItem = z.object({
-  label: z.string(),
-  description: optionalAi(z.string()),
+  label: limitedString(SLIDE_LIMITS.agenda.label),
+  description: optionalLimitedAi(SLIDE_LIMITS.agenda.description),
 });
 
 export const agendaSpec = block({
@@ -35,23 +41,33 @@ export const agendaSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du programme (ex. "Au programme")'),
-    rawField('items', z.array(z.unknown()), optionalAi(z.array(aiItem).min(2).max(8)), {
+    rawField('items', items, optionalAi(limitedArray(aiItem, SLIDE_LIMITS.agenda.items)), {
       type: 'array',
       label: 'Sections',
-      description:
-        'Laissez vide pour reprendre automatiquement les titres des blocs « Section » du plan. Remplissez pour personnaliser (2 à 8), numérotées automatiquement.',
+      description: `Laissez vide pour reprendre automatiquement les titres des blocs « Section » du plan. Remplissez pour personnaliser (${SLIDE_LIMITS.agenda.items.min} à ${SLIDE_LIMITS.agenda.items.max}), numérotées automatiquement.`,
+      maxRows: SLIDE_LIMITS.agenda.items.max,
       fields: [
-        rawField('label', z.string(), optionalAi(z.string()), {
-          type: 'text',
-          label: 'Section',
-          required: true,
-          description: 'Nom court de la section',
-        }),
-        rawField('description', optionalRender(z.string()), optionalAi(z.string()), {
-          type: 'textarea',
-          label: 'Description',
-          description: 'Texte court sous la section (optionnel)',
-        }),
+        rawField(
+          'label',
+          limitedString(SLIDE_LIMITS.agenda.label),
+          limitedString(SLIDE_LIMITS.agenda.label),
+          limitedTextPayload(SLIDE_LIMITS.agenda.label, {
+            type: 'text',
+            label: 'Section',
+            required: true,
+            description: 'Nom court de la section',
+          }),
+        ),
+        rawField(
+          'description',
+          optionalLimitedRender(SLIDE_LIMITS.agenda.description),
+          optionalLimitedAi(SLIDE_LIMITS.agenda.description),
+          limitedTextPayload(SLIDE_LIMITS.agenda.description, {
+            type: 'textarea',
+            label: 'Description',
+            description: 'Texte court sous la section (optionnel)',
+          }),
+        ),
       ],
     }),
     rawField('active', active, false, {
@@ -69,7 +85,7 @@ export const agendaSpec = block({
       'Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire',
     lines: [
       'eyebrow, title (obligatoire)',
-      'items: [{label, description}] — 2 à 8 sections, dans l’ordre, numérotées automatiquement',
+      'items: [{label, description}] — dans l’ordre, numérotées automatiquement',
     ],
   },
 });

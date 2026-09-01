@@ -1,10 +1,18 @@
 import { z } from 'zod';
 
-import { block, factoryField, type InferRender, optionalRender, rawField } from './dsl';
+import {
+  block,
+  factoryField,
+  type InferRender,
+  limitedTextPayload,
+  optionalLimitedRender,
+  rawField,
+} from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const layout = optionalRender(z.string());
-const frontmatter = optionalRender(z.string());
-const content = optionalRender(z.string());
+const layout = optionalLimitedRender(SLIDE_LIMITS.markdown.layout);
+const frontmatter = optionalLimitedRender(SLIDE_LIMITS.markdown.frontmatter);
+const content = optionalLimitedRender(SLIDE_LIMITS.markdown.content);
 
 export const markdownSpec = block({
   slug: 'markdown',
@@ -13,26 +21,41 @@ export const markdownSpec = block({
   labels: { singular: 'Markdown (avancé)', plural: 'Blocs Markdown' },
   imageURL: '/block-previews/markdown.svg',
   fields: [
-    rawField('layout', layout, false, {
-      type: 'text',
-      label: 'Layout Slidev',
-      access: 'isAdminField',
-      description: 'Nom du layout Slidev (ex. "center", "default", "two-cols")',
-    }),
-    rawField('frontmatter', frontmatter, false, {
-      type: 'code',
-      label: 'Frontmatter YAML',
-      access: 'isAdminField',
-      language: 'yaml',
-      description: 'Métadonnées YAML de la diapositive (hors layout)',
-    }),
-    rawField('content', content, false, {
-      type: 'code',
-      label: 'Contenu Markdown',
-      access: 'isAdminField',
-      language: 'markdown',
-      description: 'Contenu brut de la diapositive en syntaxe Slidev/Markdown',
-    }),
+    rawField(
+      'layout',
+      layout,
+      false,
+      limitedTextPayload(SLIDE_LIMITS.markdown.layout, {
+        type: 'text',
+        label: 'Layout Slidev',
+        access: 'isAdminField',
+        description: 'Nom du layout Slidev (ex. "center", "default", "two-cols")',
+      }),
+    ),
+    rawField(
+      'frontmatter',
+      frontmatter,
+      false,
+      limitedTextPayload(SLIDE_LIMITS.markdown.frontmatter, {
+        type: 'code',
+        label: 'Frontmatter YAML',
+        access: 'isAdminField',
+        language: 'yaml',
+        description: 'Métadonnées YAML de la diapositive (hors layout)',
+      }),
+    ),
+    rawField(
+      'content',
+      content,
+      false,
+      limitedTextPayload(SLIDE_LIMITS.markdown.content, {
+        type: 'code',
+        label: 'Contenu Markdown',
+        access: 'isAdminField',
+        language: 'markdown',
+        description: 'Contenu brut de la diapositive en syntaxe Slidev/Markdown',
+      }),
+    ),
     factoryField('preview', 'preview', z.never(), false),
   ],
 });

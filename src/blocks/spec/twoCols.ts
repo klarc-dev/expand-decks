@@ -5,23 +5,32 @@ import {
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  limitedArray,
+  limitedArrayPayload,
+  limitedString,
+  limitedTextPayload,
   optionalAi,
+  optionalLimitedAi,
+  optionalLimitedRender,
+  optionalLimitedRichTextRender,
   optionalRender,
-  optionalRichTextRender,
+  optionalUnknownRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
+import { SLIDE_LIMITS } from './limits';
 
-const eyebrow = optionalRender(z.string());
-const title = z.string();
-const intro = optionalRichTextRender();
-const leftFooter = optionalRichTextRender();
+const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
+const title = limitedString(SLIDE_LIMITS.common.title);
+const intro = optionalLimitedRichTextRender(SLIDE_LIMITS.twoCols.intro);
+const leftFooter = optionalLimitedRichTextRender(SLIDE_LIMITS.twoCols.leftFooter);
 const rightCards = optionalRender(
-  z.array(
+  limitedArray(
     z.object({
-      title: z.string(),
-      description: optionalRichTextRender(),
+      title: limitedString(SLIDE_LIMITS.twoCols.cardTitle),
+      description: optionalLimitedRichTextRender(SLIDE_LIMITS.twoCols.cardDescription),
     }),
+    SLIDE_LIMITS.twoCols.cards,
   ),
 );
 const image = optionalRender(z.object({ url: z.string() }));
@@ -36,38 +45,51 @@ export const twoColsSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow, 'Texte court au-dessus du titre (ex. "01 · Conseil financier")'),
     titleFieldSpec(title, 'Titre principal de la diapositive'),
-    rawField('intro', intro, optionalAi(z.string()), {
-      type: 'richText',
-      label: 'Introduction',
-      description: 'Paragraphe d’introduction dans la colonne gauche',
-    }),
-    rawField('leftFooter', leftFooter, optionalAi(z.string()), {
-      type: 'richText',
-      label: 'Pied gauche',
-      description: 'Texte ou statistique en bas de la colonne gauche',
-    }),
+    rawField(
+      'intro',
+      intro,
+      optionalLimitedAi(SLIDE_LIMITS.twoCols.intro),
+      limitedTextPayload(SLIDE_LIMITS.twoCols.intro, {
+        type: 'richText',
+        label: 'Introduction',
+        description: 'Paragraphe d’introduction dans la colonne gauche',
+      }),
+    ),
+    rawField(
+      'leftFooter',
+      leftFooter,
+      optionalLimitedAi(SLIDE_LIMITS.twoCols.leftFooter),
+      limitedTextPayload(SLIDE_LIMITS.twoCols.leftFooter, {
+        type: 'richText',
+        label: 'Pied gauche',
+        description: 'Texte ou statistique en bas de la colonne gauche',
+      }),
+    ),
     rawField(
       'rightCards',
-      z.array(z.unknown()),
+      rightCards,
       optionalAi(
-        z
-          .array(
-            z.object({
-              title: z.string(),
-              description: optionalAi(z.string()),
-            }),
-          )
-          .min(1)
-          .max(5),
+        limitedArray(
+          z.object({
+            title: limitedString(SLIDE_LIMITS.twoCols.cardTitle),
+            description: optionalLimitedAi(SLIDE_LIMITS.twoCols.cardDescription),
+          }),
+          SLIDE_LIMITS.twoCols.cards,
+        ),
       ),
-      {
+      limitedArrayPayload(SLIDE_LIMITS.twoCols.cards, {
         type: 'array',
         label: 'Cartes (colonne droite)',
         description: 'Liste de cartes affichées dans la colonne droite',
-        fields: [factoryField('cardTitleDesc', 'cardTitleDesc', z.unknown(), false)],
-      },
+        fields: [
+          factoryField('cardTitleDesc', 'cardTitleDesc', z.unknown(), false, {
+            titleMaxLength: SLIDE_LIMITS.twoCols.cardTitle.max,
+            descriptionMaxLength: SLIDE_LIMITS.twoCols.cardDescription.max,
+          }),
+        ],
+      }),
     ),
-    factoryField('image', 'image', z.never(), false, {
+    factoryField('image', 'image', optionalUnknownRender(), false, {
       description:
         'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Remplace les rightCards si renseignée.',
     }),

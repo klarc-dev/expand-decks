@@ -52,6 +52,11 @@ describe('structure prompt catalogue', () => {
   it('does not advertise non-AI fields in writer layout guidance', () => {
     expect(buildWriterLayoutPrompt('cover')).not.toContain('intervenants');
   });
+
+  it('derives writer cardinality and text budgets from block specs', () => {
+    expect(buildWriterLayoutPrompt('table')).toContain('rows: 1–8 éléments');
+    expect(buildWriterLayoutPrompt('stats')).toContain('title: 180 caractères max');
+  });
 });
 
 describe('RUBRIC_PROMPT', () => {

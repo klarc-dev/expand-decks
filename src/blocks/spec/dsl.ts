@@ -77,6 +77,9 @@
 
 import { z } from 'zod';
 
+import { SLIDE_LIMITS, type RangeLimit, type TextLimit } from './limits';
+import { serializedTextLength } from './limitValidation';
+
 // ---------------------------------------------------------------------------
 // Field-level contract
 // ---------------------------------------------------------------------------
@@ -88,6 +91,15 @@ import { z } from 'zod';
  */
 export type FieldFactory = 'eyebrow' | 'title' | 'image' | 'preview' | 'cardTitleDesc' | 'raw';
 
+export const limitedString = (limit: TextLimit) => z.string().max(limit.max);
+
+export const optionalLimitedRender = (limit: TextLimit) => optionalRender(limitedString(limit));
+
+export const optionalLimitedAi = (limit: TextLimit) => optionalAi(limitedString(limit));
+
+export const limitedArray = <T extends z.ZodType>(item: T, limit: RangeLimit) =>
+  z.array(item).min(limit.min).max(limit.max);
+
 /** Render-facing optional that infers as `prop?: T | null`. */
 export const optionalRender = <T extends z.ZodType>(inner: T) => z.nullable(inner).optional();
 
@@ -95,12 +107,24 @@ export const optionalRender = <T extends z.ZodType>(inner: T) => z.nullable(inne
 export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
 
 // Render Zod for a rich-text (Lexical) field. The type-only import is erased at
-// compile time, so dsl.ts stays client-safe (zod only). The runtime z.custom is
-// a no-op validator — emission is driven by payloadMeta.type:'richText'; this
-// only shapes InferRender so *BlockData carries the Lexical editor state.
+// compile time, so dsl.ts stays client-safe (zod only). The unconstrained form
+// only shapes InferRender; limited fields add visible-text validation.
 export type LexicalRichText = import('@payloadcms/richtext-lexical/lexical').SerializedEditorState;
 export const richTextRender = () => z.custom<LexicalRichText>();
 export const optionalRichTextRender = () => z.custom<LexicalRichText>().nullable().optional();
+export const optionalUnknownRender = () => z.unknown().nullable().optional();
+const footnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });
+export const footnotesRender = () =>
+  optionalRender(limitedArray(footnote, SLIDE_LIMITS.common.footnotes));
+export const limitedRichTextRender = (limit: TextLimit) =>
+  z
+    .custom<LexicalRichText>()
+    .refine(
+      (value) => serializedTextLength(value) <= limit.max,
+      `Maximum ${limit.max} caractères visibles`,
+    );
+export const optionalLimitedRichTextRender = (limit: TextLimit) =>
+  limitedRichTextRender(limit).nullable().optional();
 
 /** Payload field `type` values the emitter knows how to build from raw meta. */
 export type PayloadRawType =
@@ -155,6 +179,11 @@ export interface PayloadFieldMeta {
   minRows?: number;
   /** Maximum rows for `type: 'array'` fields. */
   maxRows?: number;
+  /**
+   * Canonical visible-text/code length. Emitted as native Payload maxLength for
+   * plain text-like fields and as a composed validator for serialized rich text.
+   */
+  maxLength?: number;
   /** Singular/plural labels for `type: 'array'` fields. */
   labels?: { singular: string; plural: string };
   /** Custom client field component emitted into `admin.components.Field`. */
@@ -172,6 +201,23 @@ export interface PayloadFieldMeta {
 /** Arguments forwarded to a `_shared` factory (superset across factories). */
 export interface FactoryArgs {
   description?: string;
+  maxLength?: number;
+  titleMaxLength?: number;
+  descriptionMaxLength?: number;
+}
+
+export function limitedTextPayload(
+  limit: TextLimit,
+  payload: Omit<PayloadFieldMeta, 'maxLength'>,
+): PayloadFieldMeta {
+  return { ...payload, maxLength: limit.max };
+}
+
+export function limitedArrayPayload(
+  limit: RangeLimit,
+  payload: Omit<PayloadFieldMeta, 'minRows' | 'maxRows'>,
+): PayloadFieldMeta {
+  return { ...payload, minRows: limit.min, maxRows: limit.max };
 }
 
 /**
@@ -209,6 +255,30 @@ export interface PromptMeta {
   lines: string[];
 }
 
+function fieldLimitSuffix(field: FieldSpec): string | undefined {
+  const payload = field.payload;
+  const maxLength = payload?.maxLength ?? field.factoryArgs?.maxLength;
+  const rowRange =
+    payload?.minRows !== undefined || payload?.maxRows !== undefined
+      ? [payload.minRows, payload.maxRows]
+          .filter((value): value is number => value !== undefined)
+          .join('–')
+      : undefined;
+  if (rowRange) return `${field.name}: ${rowRange} éléments`;
+  if (maxLength !== undefined) return `${field.name}: ${maxLength} caractères max`;
+  return undefined;
+}
+
+export function promptLinesOf(spec: BlockSpec): string[] {
+  const authored = spec.promptMeta?.lines ?? [];
+  const limits = spec.fields.flatMap((field) => {
+    if (field.ai === false || field.factory === 'preview') return [];
+    const suffix = fieldLimitSuffix(field);
+    return suffix ? [suffix] : [];
+  });
+  return [...authored, ...limits];
+}
+
 /**
  * Block-level spec. `fields` order is LOAD-BEARING: it determines field order in
  * the generated Payload `Block` and therefore the shape of payload-types.ts.
@@ -223,6 +293,10 @@ export interface BlockSpec {
   blockType: string;
   /** ORDERED list of field specs. */
   fields: FieldSpec[];
+  /** Optional cross-field refinement over the AI object projected from fields. */
+  aiRefine?: (schema: z.ZodObject) => z.ZodType;
+  /** Optional render-only cross-field refinement. */
+  renderRefine?: (schema: z.ZodObject) => z.ZodType;
   /** Optional prose record for L4 prompt generation. */
   promptMeta?: PromptMeta;
 }
@@ -279,20 +353,22 @@ export function block(spec: BlockSpec): BlockSpec {
 // ---------------------------------------------------------------------------
 
 /** `eyebrow` field: render Zod + AI optional string. `description` → factoryArgs. */
-export function eyebrowFieldSpec(render: z.ZodType, description?: string): FieldSpec {
+export function eyebrowFieldSpec(
+  render: z.ZodType = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow),
+  description?: string,
+): FieldSpec {
   return factoryField(
     'eyebrow',
     'eyebrow',
     render,
-    optionalAi(z.string()),
-    description !== undefined ? { description } : undefined,
+    optionalLimitedAi(SLIDE_LIMITS.common.eyebrow),
+    { description, maxLength: SLIDE_LIMITS.common.eyebrow.max },
   );
 }
 
 /** Audience-facing title text is a short label, not a sentence or inline Markdown. */
 export const aiTitle = () =>
-  z
-    .string()
+  limitedString(SLIDE_LIMITS.common.title)
     .min(1)
     .refine(
       (value) => !/(?:\*\*|__|~~|`|!?\[[^\]]+\]\([^)]+\)|^\s{0,3}#{1,6}\s|^\s*>\s)/mu.test(value),
@@ -305,13 +381,10 @@ export const aiTitle = () =>
 
 /** `title` field: render Zod + required AI plain-text title. `description` → factoryArgs. */
 export function titleFieldSpec(render: z.ZodType, description?: string): FieldSpec {
-  return factoryField(
-    'title',
-    'title',
-    render,
-    aiTitle(),
-    description !== undefined ? { description } : undefined,
-  );
+  return factoryField('title', 'title', render, aiTitle(), {
+    description,
+    maxLength: SLIDE_LIMITS.common.title.max,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -328,7 +401,7 @@ export function titleFieldSpec(render: z.ZodType, description?: string): FieldSp
  * exports a `z.object({...})` literal instead (see the top-of-file ergonomics
  * note); this helper is for validation/iteration and A4's drift check.
  */
-export function renderSchemaOf(spec: BlockSpec): z.ZodObject {
+export function renderSchemaOf(spec: BlockSpec): z.ZodType<Record<string, unknown>> {
   const shape: Record<string, z.ZodType> = {
     blockType: z.literal(spec.blockType),
   };
@@ -336,7 +409,13 @@ export function renderSchemaOf(spec: BlockSpec): z.ZodObject {
     if (field.factory === 'preview') continue;
     shape[field.name] = field.render;
   }
-  return z.object(shape);
+  if (spec.slug !== 'markdown' && spec.slug !== 'cover') {
+    shape.footnotes = footnotesRender();
+  }
+  const schema = z.object(shape);
+  return (spec.renderRefine ? spec.renderRefine(schema) : schema) as z.ZodType<
+    Record<string, unknown>
+  >;
 }
 
 /**
@@ -344,7 +423,7 @@ export function renderSchemaOf(spec: BlockSpec): z.ZodObject {
  * `ai` is a Zod schema. Fields with `ai: false` and `factory: 'preview'` are
  * dropped. Used by the later `emitDraftSchema`.
  */
-export function aiSchemaOf(spec: BlockSpec): z.ZodObject {
+export function aiSchemaOf(spec: BlockSpec): z.ZodType<Record<string, unknown>> {
   const shape: Record<string, z.ZodType> = {
     blockType: z.literal(spec.blockType),
   };
@@ -353,7 +432,8 @@ export function aiSchemaOf(spec: BlockSpec): z.ZodObject {
     if (field.ai === false) continue;
     shape[field.name] = field.ai;
   }
-  return z.object(shape);
+  const schema = z.object(shape);
+  return (spec.aiRefine ? spec.aiRefine(schema) : schema) as z.ZodType<Record<string, unknown>>;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateTableRows } from '../tableValidation';
+import { findTableAlignmentIssue, validateTableRows } from '../tableValidation';
 
 const options = (columnCount: number) =>
   ({
@@ -9,6 +9,13 @@ const options = (columnCount: number) =>
   }) as unknown as Parameters<typeof validateTableRows>[1];
 
 describe('validateTableRows', () => {
+  it('shares a pure row-alignment invariant with schema validation', () => {
+    expect(findTableAlignmentIssue([{}, {}], [{ cells: [{}] }])).toEqual({
+      rowIndex: 0,
+      cellCount: 1,
+      columnCount: 2,
+    });
+  });
   it('accepts one cell per column', () => {
     expect(validateTableRows([{ cells: [{}, {}, {}] }], options(3))).toBe(true);
   });
