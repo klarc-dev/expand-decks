@@ -64,13 +64,28 @@ class VarOption extends MenuOption {
 }
 
 type VarMentionMenuProps = {
+  emptyMessage: string;
   options: VarOption[];
   selectedIndex: number | null;
   onHighlight: (index: number) => void;
   onSelect: (option: VarOption) => void;
 };
 
-function VarMentionMenu({ options, selectedIndex, onHighlight, onSelect }: VarMentionMenuProps) {
+function VarMentionMenu({
+  emptyMessage,
+  options,
+  selectedIndex,
+  onHighlight,
+  onSelect,
+}: VarMentionMenuProps) {
+  if (options.length === 0) {
+    return (
+      <div className="var-mention-menu var-mention-menu--empty" role="status">
+        {emptyMessage}
+      </div>
+    );
+  }
+
   return (
     <div aria-label="Variables disponibles" className="var-mention-menu" role="listbox">
       {options.map((option, index) => (
@@ -126,6 +141,10 @@ function VarMentionPlugin(): React.ReactElement {
       .map((v) => new VarOption(v));
   }, [vars, query]);
 
+  useEffect(() => {
+    if (options.length === 0) editor.getRootElement()?.removeAttribute('aria-activedescendant');
+  }, [editor, options.length]);
+
   return (
     <LexicalTypeaheadMenuPlugin<VarOption>
       onQueryChange={setQuery}
@@ -142,9 +161,12 @@ function VarMentionPlugin(): React.ReactElement {
       options={options}
       triggerFn={varTriggerFn}
       menuRenderFn={(anchorRef, { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }) => {
-        if (!anchorRef.current || options.length === 0) return null;
+        if (!anchorRef.current) return null;
         return createPortal(
           <VarMentionMenu
+            emptyMessage={
+              vars.length === 0 ? 'Aucune variable disponible.' : 'Aucune variable correspondante.'
+            }
             onHighlight={(index) => {
               editor
                 .getRootElement()

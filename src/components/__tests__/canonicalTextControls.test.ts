@@ -471,6 +471,11 @@ describe('canonical custom admin controls', () => {
     const path = 'src/blocks/features/varMention.client.tsx';
     expect(sourceContains(path, 'function VarMentionMenu')).toBe(true);
     expect(sourceContains(path, '<VarMentionMenu')).toBe(true);
+    expect(sourceContains(path, 'role="status"')).toBe(true);
+    expect(sourceContains(path, 'Aucune variable disponible.')).toBe(true);
+    expect(sourceContains(path, 'Aucune variable correspondante.')).toBe(true);
+    expect(sourceContains(path, "removeAttribute('aria-activedescendant')")).toBe(true);
+    expect(sourceContains(path, 'options.length === 0) return null')).toBe(false);
     expect(sourceContains(path, 'role="listbox"')).toBe(true);
     expect(sourceContains(path, 'role="option"')).toBe(true);
     expect(sourceContains(path, 'aria-selected')).toBe(true);
