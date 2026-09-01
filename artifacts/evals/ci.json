@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "commit": "local",
+  "workflowFixtures": 3,
+  "revisionFixtures": 2,
+  "thresholds": {
+    "workflowContract": 1,
+    "deckQuality": 0.75,
+    "grounding": 0.85,
+    "rubricCalibrationAccuracy": 0.9,
+    "rubricPairMargin": 0.2,
+    "visualClean": 0.7,
+    "visualBrokenMax": 0.5,
+    "revisionRequestedChange": 0.8,
+    "revisionPreservation": 0.85
+  },
+  "errors": []
+}

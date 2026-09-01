@@ -1,81 +1,120 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Tool } from '@mastra/core/tools';
 
-const listToolsets = vi.fn();
-const disconnect = vi.fn();
+const clients: Array<{
+  listToolsetsWithErrors: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
+}> = [];
+const discovery: unknown[] = [];
 const ctor = vi.fn();
 
 vi.mock('@mastra/mcp', () => ({
   MCPClient: vi.fn().mockImplementation(function MCPClient(opts) {
     ctor(opts);
-    return { listToolsets, disconnect };
+    const client = {
+      listToolsetsWithErrors: vi.fn().mockImplementation(async () => discovery.shift()),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+    };
+    clients.push(client);
+    return client;
   }),
 }));
 
 import { openSourceToolsets } from '../mcpConnector';
 import type { ResolvedSource } from '../types';
 
-const httpSource: ResolvedSource = {
-  id: 'web-docs',
-  label: 'Web Docs',
-  transport: 'http',
-  url: 'https://example.com/mcp',
-  timeoutMs: 30_000,
-} as ResolvedSource;
+const source = (overrides: Partial<ResolvedSource> = {}): ResolvedSource =>
+  ({
+    id: 'docs',
+    label: 'Docs',
+    allowedTools: ['search'],
+    failureMode: 'strict',
+    toolCallConcurrency: 2,
+    maxResultBytes: 100_000,
+    transport: 'http',
+    url: 'https://example.com/mcp',
+    timeoutMs: 30_000,
+    ...overrides,
+  }) as ResolvedSource;
 
-const stdioSource: ResolvedSource = {
-  id: 'fiscal-kb',
-  label: 'Fiscal KB',
-  transport: 'stdio',
-  command: 'node',
-  args: ['server.js'],
-  env: { API_KEY: 'secret' },
-  timeoutMs: 60_000,
-} as ResolvedSource;
+const rawTool = (result: unknown) =>
+  new Tool({ id: 'search', description: 'search', execute: async () => result });
 
 beforeEach(() => {
-  listToolsets.mockReset();
-  disconnect.mockReset();
-  disconnect.mockResolvedValue(undefined);
+  clients.length = 0;
+  discovery.length = 0;
   ctor.mockReset();
 });
 
 describe('openSourceToolsets', () => {
-  it('returns empty toolsets without constructing a client for no sources', async () => {
-    const { toolsets, disconnect: dc } = await openSourceToolsets([]);
-    expect(toolsets).toEqual({});
-    await dc();
+  it('returns empty toolsets without clients for no sources', async () => {
+    const opened = await openSourceToolsets([]);
+    expect(opened.toolsets).toEqual({});
     expect(ctor).not.toHaveBeenCalled();
   });
 
-  it('constructs one server entry per source and returns toolsets', async () => {
-    listToolsets.mockResolvedValue({ 'web-docs': {}, 'fiscal-kb': {} });
-    const { toolsets } = await openSourceToolsets([httpSource, stdioSource]);
+  it('constructs one isolated client per source with per-source security policy', async () => {
+    discovery.push(
+      { toolsets: { docs: { search: rawTool('a') } }, errors: {} },
+      { toolsets: { kb: { search: rawTool('b') } }, errors: {} },
+    );
+    const opened = await openSourceToolsets([
+      source(),
+      source({ id: 'kb', label: 'KB', timeoutMs: 60_000 }),
+    ]);
 
-    expect(ctor).toHaveBeenCalledTimes(1);
-    const opts = ctor.mock.calls[0]![0] as {
-      id?: string;
-      servers: Record<string, unknown>;
-      timeout?: number;
-    };
-    expect(opts.id).toMatch(/^agent-sources-/);
-    expect(Object.keys(opts.servers)).toEqual(['web-docs', 'fiscal-kb']);
-    expect(opts.timeout).toBe(60_000);
-    expect(toolsets).toMatchObject({ 'web-docs': {}, 'fiscal-kb': {} });
+    expect(ctor).toHaveBeenCalledTimes(2);
+    expect(ctor.mock.calls[0]![0].servers.docs).toMatchObject({
+      timeout: 30_000,
+      forwardInstructions: false,
+      onToolError: 'throw',
+    });
+    expect(ctor.mock.calls[1]![0].servers.kb.timeout).toBe(60_000);
+    expect(Object.keys(opened.toolsets)).toEqual(['docs', 'kb']);
   });
 
-  it('gives each open a distinct client id so concurrent runs do not collide', async () => {
-    listToolsets.mockResolvedValue({ 'web-docs': {} });
-    await openSourceToolsets([httpSource]);
-    await openSourceToolsets([httpSource]);
+  it('records stable evidence only after a real successful tool execution', async () => {
+    discovery.push({
+      toolsets: {
+        docs: {
+          search: rawTool({ text: 'Verified result', apiKey: 'secret' }),
+          delete: rawTool('must not be exposed'),
+        },
+      },
+      errors: {},
+    });
+    const opened = await openSourceToolsets([source()]);
+    expect(Object.keys(opened.toolsets.docs!)).toEqual(['search']);
+    expect(opened.recorder.snapshot()).toEqual([]);
 
-    const firstId = (ctor.mock.calls[0]![0] as { id: string }).id;
-    const secondId = (ctor.mock.calls[1]![0] as { id: string }).id;
-    expect(firstId).not.toBe(secondId);
+    const result = await opened.toolsets.docs!.search!.execute?.({}, {
+      toolCallId: 'call-1',
+    } as never);
+    expect(result).toMatchObject({ evidenceId: expect.stringMatching(/^ev_/), sourceId: 'docs' });
+    expect(JSON.stringify(result)).not.toContain('secret');
+    expect(opened.recorder.snapshot()).toEqual([
+      expect.objectContaining({
+        id: expect.stringMatching(/^ev_/),
+        sourceId: 'docs',
+        toolName: 'search',
+        toolCallId: 'call-1',
+        excerpt: 'Verified result',
+      }),
+    ]);
   });
 
-  it('disconnects when listing toolsets throws', async () => {
-    listToolsets.mockRejectedValue(new Error('boom'));
-    await expect(openSourceToolsets([httpSource])).rejects.toThrow('boom');
-    expect(disconnect).toHaveBeenCalledTimes(1);
+  it('fails closed for strict discovery failure', async () => {
+    discovery.push({ toolsets: {}, errors: { docs: 'offline' } });
+    await expect(openSourceToolsets([source()])).rejects.toThrow(/docs.*offline/);
+    expect(clients[0]!.disconnect).toHaveBeenCalled();
+  });
+
+  it('returns explicit failures for best-effort discovery errors', async () => {
+    discovery.push({ toolsets: {}, errors: { docs: 'offline' } });
+    const opened = await openSourceToolsets([source({ failureMode: 'best-effort' })]);
+    expect(opened.toolsets).toEqual({});
+    expect(opened.failures).toEqual([
+      expect.objectContaining({ sourceId: 'docs', stage: 'discover', code: 'unavailable' }),
+    ]);
   });
 });

@@ -7,6 +7,7 @@ const HTML_ENTITIES: Record<string, string> = {
 };
 
 import { K } from './classNames';
+import { densityClass, type SlideDensity } from './density';
 import { resolveVars } from './vars';
 
 const HTML_ENTITY_RE = /[&<>"']/g;
@@ -251,10 +252,12 @@ export function slideHeader(opts: {
   size?: 'lg' | 'md';
   sidebar?: string;
   align?: 'left' | 'center';
+  density?: SlideDensity;
 }): string {
   const eb = eyebrow(opts.eyebrow, 'k-eyebrow--header', { indent: '    ' });
   const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
-  const heading = `<h2 class="${sizeClass}">${md(opts.title)}</h2>`;
+  const headingDensity = densityClass(opts.density ?? 'comfortable');
+  const heading = `<h2 class="${[sizeClass, headingDensity].filter(Boolean).join(' ')}">${md(opts.title)}</h2>`;
   if (opts.sidebar) {
     return `<header class="${K.contentHeader} ${K.contentHeaderSplit}">
   <div>${eb}
@@ -330,9 +333,15 @@ export function contentFrame(
     crowded?: boolean;
     wFull?: boolean;
     mainAlign?: 'center' | 'start' | 'stretch';
+    density?: SlideDensity;
   },
 ): string {
-  const cls = [K.content, opts?.crowded ? K.contentTight : '', opts?.wFull ? K.contentFull : '']
+  const cls = [
+    K.content,
+    opts?.crowded ? K.contentTight : '',
+    opts?.wFull ? K.contentFull : '',
+    densityClass(opts?.density ?? 'comfortable'),
+  ]
     .filter(Boolean)
     .join(' ');
   const align = opts?.mainAlign ?? 'center';
@@ -366,13 +375,15 @@ export function heroFrame(opts: {
   align: 'center' | 'left' | 'split';
   surface?: Surface | null;
   accentRule?: boolean;
+  density?: SlideDensity;
 }): string {
   const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption
     ? `\n\n<div class="${K.caption} ${K.heroCaption}">\n  ${opts.caption}\n</div>`
     : '';
-  const heading = `<h1 class="${K.heroTitle}">\n${md(opts.title)}\n</h1>`;
+  const sharedDensityClass = densityClass(opts.density ?? 'comfortable');
+  const heading = `<h1 class="${[K.heroTitle, sharedDensityClass].filter(Boolean).join(' ')}">\n${md(opts.title)}\n</h1>`;
 
   // Split is a two-column layout only when there's a body for the right column;
   // with no body it would emit an empty grid cell, so fall through to the
@@ -384,7 +395,7 @@ export function heroFrame(opts: {
     return wrapSlide({
       layout: 'default',
       surface: opts.surface,
-      body: `<div class="${K.hero} k-hero--${opts.scale} k-hero--left">\n  <div class="${K.heroMain}">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
+      body: `<div class="${[K.hero, `k-hero--${opts.scale}`, 'k-hero--left', sharedDensityClass].filter(Boolean).join(' ')}">\n  <div class="${K.heroMain}">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
     });
   }
 
@@ -394,6 +405,6 @@ export function heroFrame(opts: {
   return wrapSlide({
     layout: opts.align === 'center' ? 'center' : 'default',
     surface: opts.surface,
-    body: `<div class="${K.hero} k-hero--${opts.scale} ${alignClass}">\n  <div class="${K.heroMain}">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
+    body: `<div class="${[K.hero, `k-hero--${opts.scale}`, alignClass, sharedDensityClass].filter(Boolean).join(' ')}">\n  <div class="${K.heroMain}">\n${inner}\n  </div>\n  ${DEF_FOOTER_SLOT}\n</div>`,
   });
 }

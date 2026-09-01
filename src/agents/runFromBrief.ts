@@ -16,8 +16,9 @@ export async function runDeckFromBrief(
       brief,
       language: resolveTargetLanguage(opts.language, brief),
       sourceIds: opts.sourceIds ?? [],
+      visual: opts.visual === true,
+      approvalRequired: false,
     },
-    initialState: { visual: opts.visual === true },
   });
   if (result.status !== 'success') {
     throw new Error(

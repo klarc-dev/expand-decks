@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
+import { Pill, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
+import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
 import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
+
+import './BuildStatusField.scss';
 
 type MediaRef = number | { id?: number; url?: string | null; filename?: string | null } | null;
 
@@ -15,18 +18,18 @@ type BuildInfo = {
   pdfFile?: MediaRef;
 };
 
-const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+type BuildStatusPillStyle = 'error' | 'light-gray' | 'success' | 'warning';
+
+const STATUS_LABELS: Record<string, { label: string; pillStyle: BuildStatusPillStyle }> = {
   [BUILD_STATUS.idle]: {
     label: 'En attente',
-    color: 'var(--theme-elevation-600)',
-    bg: 'var(--theme-elevation-100)',
+    pillStyle: 'light-gray',
   },
-  [BUILD_STATUS.building]: { label: 'En cours…', color: '#8a6d00', bg: '#fff3bf' },
-  [BUILD_STATUS.success]: { label: 'Réussi', color: '#0b6b3a', bg: '#d3f9d8' },
+  [BUILD_STATUS.building]: { label: 'En cours…', pillStyle: 'warning' },
+  [BUILD_STATUS.success]: { label: 'Réussi', pillStyle: 'success' },
   [BUILD_STATUS.failed]: {
     label: 'Échoué',
-    color: 'var(--theme-error-500)',
-    bg: 'var(--theme-error-50)',
+    pillStyle: 'error',
   },
 };
 
@@ -48,6 +51,74 @@ function formatRequestedAt(iso: string | null | undefined): string | null {
   const ts = Date.parse(iso);
   if (Number.isNaN(ts)) return null;
   return new Date(ts).toLocaleString('fr-FR');
+}
+
+type BuildArtifact = {
+  href: string;
+  label: string;
+};
+
+function BuildArtifactLinks({ artifacts }: { artifacts: BuildArtifact[] }) {
+  if (artifacts.length === 0) return null;
+
+  return (
+    <ul aria-label="Artefacts du build" className="build-status__artifacts">
+      {artifacts.map((artifact) => (
+        <li key={artifact.href}>
+          <a href={artifact.href} rel="noreferrer" target="_blank">
+            {artifact.label}
+            <span aria-hidden="true"> ↗</span>
+            <span className="sr-only"> (nouvel onglet)</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+type BuildMetadataProps = {
+  polling: boolean;
+  requestedAt?: string | null;
+  requestedAtLabel: string | null;
+};
+
+function BuildMetadata({ polling, requestedAt, requestedAtLabel }: BuildMetadataProps) {
+  if (!polling && !requestedAtLabel) return null;
+
+  return (
+    <dl aria-label="Informations du build" className="build-status__metadata">
+      {polling && (
+        <div>
+          <dt className="sr-only">Actualisation</dt>
+          <dd>mise à jour automatique…</dd>
+        </div>
+      )}
+      {requestedAtLabel && requestedAt && (
+        <div>
+          <dt>Demandé</dt>
+          <dd>
+            <time dateTime={requestedAt}>{requestedAtLabel}</time>
+          </dd>
+        </div>
+      )}
+    </dl>
+  );
+}
+
+function BuildErrorNotice({ error }: { error: string }) {
+  const summary = error.split('\n')[0];
+
+  return (
+    <AdminNotice className="build-status__error" variant="error">
+      <span>{summary}</span>
+      {error !== summary ? (
+        <details className="build-status__error-details">
+          <summary>Afficher le détail technique</summary>
+          <pre>{error}</pre>
+        </details>
+      ) : null}
+    </AdminNotice>
+  );
 }
 
 const BuildStatusField: React.FC = () => {
@@ -88,70 +159,33 @@ const BuildStatusField: React.FC = () => {
   const meta = STATUS_LABELS[status] ?? STATUS_LABELS[BUILD_STATUS.idle]!;
   const requestedAtLabel = formatRequestedAt(info.lastBuildRequestedAt);
   const pdf = pdfUrl(info.pdfFile);
+  const artifacts: BuildArtifact[] =
+    status === BUILD_STATUS.success
+      ? [
+          ...(info.spaUrl ? [{ href: info.spaUrl, label: 'Ouvrir la présentation web' }] : []),
+          ...(pdf ? [{ href: pdf, label: 'Télécharger le PDF' }] : []),
+        ]
+      : [];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        flexWrap: 'wrap',
-        padding: '12px 16px',
-        marginBottom: '20px',
-        border: '1px solid var(--theme-elevation-150)',
-        borderRadius: '4px',
-        backgroundColor: 'var(--theme-elevation-50)',
-      }}
-    >
-      <span style={{ fontWeight: 600, fontSize: '13px' }}>Build</span>
-      <span
-        style={{
-          padding: '3px 10px',
-          borderRadius: '999px',
-          fontSize: '12px',
-          fontWeight: 600,
-          color: meta.color,
-          backgroundColor: meta.bg,
-        }}
-      >
-        {meta.label}
+    <AdminPanel className="build-status">
+      <span className="build-status__label">Build</span>
+      <span aria-atomic="true" aria-live="polite" role="status">
+        <span className="sr-only">Statut du build : </span>
+        <Pill pillStyle={meta.pillStyle} rounded size="small">
+          {meta.label}
+        </Pill>
       </span>
-      {shouldPoll && (
-        <span style={{ fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
-          mise à jour automatique…
-        </span>
-      )}
-      {requestedAtLabel && (
-        <span style={{ fontSize: '12px', color: 'var(--theme-elevation-500)' }}>
-          Demandé le {requestedAtLabel}
-        </span>
-      )}
-      {status === BUILD_STATUS.success && info.spaUrl && (
-        <a href={info.spaUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px' }}>
-          Ouvrir la présentation web ↗
-        </a>
-      )}
-      {status === BUILD_STATUS.success && pdf && (
-        <a href={pdf} target="_blank" rel="noreferrer" style={{ fontSize: '13px' }}>
-          Télécharger le PDF ↗
-        </a>
-      )}
+      <BuildMetadata
+        polling={shouldPoll}
+        requestedAt={info.lastBuildRequestedAt}
+        requestedAtLabel={requestedAtLabel}
+      />
+      <BuildArtifactLinks artifacts={artifacts} />
       {status === BUILD_STATUS.failed && info.lastBuildError && (
-        <span
-          style={{
-            fontSize: '12px',
-            color: 'var(--theme-error-500)',
-            maxWidth: '100%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-          title={info.lastBuildError}
-        >
-          {info.lastBuildError.split('\n')[0]}
-        </span>
+        <BuildErrorNotice error={info.lastBuildError} />
       )}
-    </div>
+    </AdminPanel>
   );
 };
 

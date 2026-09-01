@@ -130,6 +130,12 @@
   --content-gap: 2rem;
   --content-gap-tight: 1.1rem;
 
+  /* Shared fixed-canvas density ladder. Renderers select one class for the
+     whole comparable region; individual children are never fitted alone. */
+  --density-scale: 1;
+  --density-leading: 1;
+  --density-space: 1;
+
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
      contrast by ground (U3 consumes these). */
   --pill-bg: var(--k-teal-50);
@@ -216,6 +222,35 @@
 .slidev-layout li {
   color: var(--k-ink-soft);
   line-height: 1.55;
+}
+
+.k-density-compact {
+  --density-scale: 0.88;
+  --density-leading: 0.94;
+  --density-space: 0.82;
+}
+
+.k-density-dense {
+  --density-scale: 0.76;
+  --density-leading: 0.88;
+  --density-space: 0.68;
+}
+
+.k-h-lg.k-density-compact,
+.k-content.k-density-compact .k-h-lg {
+  font-size: calc(var(--t-title) * 0.9);
+}
+.k-h-lg.k-density-dense,
+.k-content.k-density-dense .k-h-lg {
+  font-size: calc(var(--t-title) * 0.8);
+}
+.k-h-md.k-density-compact,
+.k-content.k-density-compact .k-h-md {
+  font-size: calc(var(--t-sub) * 0.9);
+}
+.k-h-md.k-density-dense,
+.k-content.k-density-dense .k-h-md {
+  font-size: calc(var(--t-sub) * 0.8);
 }
 
 /* Dark variant for cover / section -------------- */
@@ -353,6 +388,14 @@
   line-height: 1.25;
 }
 
+.k-density-compact .k-card {
+  padding: 1rem 1.08rem;
+}
+.k-density-dense .k-card {
+  padding: 0.76rem 0.9rem;
+  border-radius: 0.82rem;
+}
+
 .k-card .k-num {
   font-family: var(--k-font-heading);
   font-size: var(--t-small);
@@ -406,6 +449,29 @@
   color: var(--k-teal);
   font-weight: 700;
   letter-spacing: -0.04em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.k-stat-grid.k-density-compact .k-stat-card {
+  padding: 1.2rem 1rem;
+}
+.k-stat-grid.k-density-compact .k-stat .val {
+  font-size: calc(var(--t-numeral) * 0.82);
+}
+.k-stat-grid.k-density-compact .k-stat .lbl {
+  font-size: calc(var(--t-small) * 0.92);
+}
+.k-stat-grid.k-density-dense .k-stat-card {
+  padding: 0.9rem 0.75rem;
+}
+.k-stat-grid.k-density-dense .k-stat .val {
+  font-size: calc(var(--t-numeral) * 0.68);
+  line-height: 1;
+}
+.k-stat-grid.k-density-dense .k-stat .lbl {
+  font-size: calc(var(--t-small) * 0.82);
+  line-height: 1.22;
 }
 
 .k-dark .k-stat .val {
@@ -429,22 +495,29 @@
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--t-body);
-  border: 1px solid var(--k-line);
-  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--k-teal) 22%, transparent);
+  border-radius: 1rem;
   overflow: hidden;
+  background: var(--k-surface-raised);
 }
 
-/* Dense tables must fit the fixed Slidev canvas in both the SPA and Chromium
-   export. Fixed tracks prevent intrinsic cell widths from expanding the table;
-   the compact shared scale preserves all rows without scroll-only behavior. */
+/* Tables use the same three-step density ladder as other fixed-canvas regions.
+   Fixed tracks prevent intrinsic widths from expanding the slide; readable type
+   and tighter spacing replace the old 0.5rem emergency mode. */
 .k-table--fit {
   table-layout: fixed;
-  font-size: 0.5rem;
+  height: 100%;
+}
+.k-table.k-density-compact {
+  font-size: calc(var(--t-body) * 0.82);
+}
+.k-table.k-density-dense {
+  font-size: calc(var(--t-body) * 0.7);
 }
 .k-table--fit th,
 .k-table--fit td {
-  padding: 0.18rem 0.36rem;
-  line-height: 1.06;
+  padding: calc(0.46rem * var(--density-space)) calc(0.7rem * var(--density-space));
+  line-height: calc(1.24 * var(--density-leading));
   overflow-wrap: anywhere;
   word-break: normal;
 }
@@ -454,8 +527,8 @@
   padding-left: 0.8rem;
 }
 .k-table--fit td li {
-  margin: 0.04rem 0;
-  line-height: 1.08;
+  margin: 0.08rem 0;
+  line-height: 1.18;
 }
 
 .k-table th {
@@ -463,26 +536,54 @@
   font-weight: 600;
   text-align: left;
   color: #fff;
-  background: var(--k-teal);
-  padding: 0.7rem 1rem;
-  letter-spacing: 0.01em;
+  background: var(--k-teal-700);
+  padding: 0.72rem 0.9rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  line-height: 1.2;
+  vertical-align: bottom;
+}
+
+.k-table th:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .k-table td {
   padding: 0.65rem 1rem;
   color: var(--k-ink);
-  border-top: 1px solid var(--k-line);
+  border-top: 1px solid color-mix(in srgb, var(--k-teal) 12%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--k-teal) 8%, transparent);
   vertical-align: top;
   line-height: 1.35;
 }
 
+.k-table td:last-child {
+  border-right: 0;
+}
+
 .k-table td:first-child {
-  font-weight: 500;
-  color: var(--k-teal);
+  font-family: var(--k-font-heading);
+  font-weight: 600;
+  color: var(--k-teal-700);
+  background: color-mix(in srgb, var(--k-teal-50) 62%, transparent);
 }
 
 .k-table tbody tr:nth-child(even) {
-  background: var(--k-teal-50);
+  background: color-mix(in srgb, var(--k-teal-50) 52%, transparent);
+}
+
+.k-table tbody tr:hover {
+  background: color-mix(in srgb, var(--k-rose-soft) 34%, transparent);
+}
+
+.k-table--matrix td:not(:first-child),
+.k-table--matrix th:not(:first-child) {
+  text-align: center;
+}
+
+.k-table--matrix td:not(:first-child) {
+  vertical-align: middle;
 }
 
 .k-table strong {
@@ -605,6 +706,21 @@
   max-height: 100% !important;
   object-fit: contain;
   overflow: visible;
+}
+.k-diagram-slide .mermaid .edgeLabel rect,
+.k-diagram-slide .mermaid .labelBkg {
+  fill: #ffffff !important;
+  opacity: 1 !important;
+  stroke: color-mix(in srgb, var(--k-teal) 18%, transparent) !important;
+  stroke-width: 1px !important;
+  rx: 5px;
+  ry: 5px;
+}
+.k-diagram-slide .mermaid .edgeLabel,
+.k-diagram-slide .mermaid .edgeLabel span,
+.k-diagram-slide .mermaid .edgeLabel p {
+  color: var(--k-teal-900) !important;
+  background-color: #ffffff !important;
 }
 .k-mermaid-caption {
   text-align: center;
@@ -1092,6 +1208,13 @@
 .k-content-tight {
   row-gap: var(--content-gap-tight);
 }
+.k-content.k-density-compact {
+  row-gap: calc(var(--content-gap) * 0.72);
+}
+.k-content.k-density-dense {
+  row-gap: calc(var(--content-gap) * 0.5);
+  padding-top: calc(var(--header-top) * 0.88);
+}
 .k-content-header {
   min-width: 0;
   align-self: start;
@@ -1140,6 +1263,8 @@
 }
 .k-card-stack--grid {
   align-items: stretch;
+  align-content: center;
+  grid-auto-rows: auto;
 }
 .k-card-stack--column {
   display: flex;
@@ -1229,6 +1354,12 @@
   align-items: center;
   text-align: center;
 }
+.k-hero--center .k-hero-body {
+  width: min(54rem, 100%);
+  max-width: 54rem;
+  margin-left: auto;
+  margin-right: auto;
+}
 .k-hero--left {
   align-items: flex-start;
   text-align: left;
@@ -1250,6 +1381,38 @@
 .k-hero--title .k-hero-title {
   font-size: var(--t-title);
   line-height: 1.1;
+}
+.k-hero-title.k-density-compact,
+.k-hero.k-density-compact .k-hero-title,
+.k-center-hero-title.k-density-compact,
+.k-center-hero.k-density-compact .k-center-hero-title,
+.k-cta-title.k-density-compact,
+.k-cover.k-density-compact .k-hero-big {
+  font-size: calc(var(--t-hero) * 0.9);
+  line-height: 1.02;
+}
+.k-hero-title.k-density-dense,
+.k-hero.k-density-dense .k-hero-title,
+.k-center-hero-title.k-density-dense,
+.k-center-hero.k-density-dense .k-center-hero-title,
+.k-cta-title.k-density-dense,
+.k-cover.k-density-dense .k-hero-big {
+  font-size: calc(var(--t-title) * 0.92);
+  line-height: 1.05;
+}
+.k-hero.k-density-compact .k-hero-body,
+.k-center-hero.k-density-compact .k-section-sub,
+.k-center-hero.k-density-compact .k-cta-sub,
+.k-cover.k-density-compact .k-hero-sub {
+  font-size: calc(var(--t-lead) * 0.9);
+  line-height: 1.4;
+}
+.k-hero.k-density-dense .k-hero-body,
+.k-center-hero.k-density-dense .k-section-sub,
+.k-center-hero.k-density-dense .k-cta-sub,
+.k-cover.k-density-dense .k-hero-sub {
+  font-size: var(--t-body);
+  line-height: 1.34;
 }
 .k-hero-body {
   font-size: var(--t-lead);
@@ -1384,6 +1547,11 @@
   min-height: 100%;
   height: 100%;
 }
+.k-cover.k-density-compact,
+.k-cover.k-density-dense {
+  gap: calc(1.5rem * var(--density-space));
+  padding-top: calc(3.5rem * var(--density-space));
+}
 .k-cover--full-bleed {
   position: absolute;
   inset: 0;
@@ -1407,6 +1575,20 @@
   gap: 0.75rem;
   margin-top: 2rem;
   max-width: min(100%, 46rem);
+}
+.k-cover.k-density-compact .k-cover-people,
+.k-cover.k-density-dense .k-cover-people {
+  margin-top: calc(2rem * var(--density-space));
+  gap: calc(0.75rem * var(--density-space));
+}
+.k-cover.k-density-dense .k-person-card {
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  min-width: min(15rem, 100%);
+  padding: 0.55rem 0.7rem;
+}
+.k-cover.k-density-dense .k-person-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
 }
 .k-person-card {
   display: grid;

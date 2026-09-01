@@ -1,5 +1,6 @@
 import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
+import { densityClass, densityFromScore, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
 import {
   defFooterSlot,
@@ -40,11 +41,19 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   const footerNote = footerNoteHtml
     ? `\n\n<div class="${K.caption} ${K.ctaCaption}">\n  ${footerNoteHtml}\n</div>`
     : '';
+  const density = densityFromScore(
+    block.title.length * 2 +
+      visibleText(subtitleHtml).length +
+      visibleText(footerNoteHtml).length * 0.7 +
+      (block.primaryAction?.length ?? 0) +
+      (block.secondaryAction?.length ?? 0),
+    { compact: 220, dense: 400 },
+  );
 
-  const body = `<div class="k-center-hero ${K.ctaFrame}">
+  const body = `<div class="${['k-center-hero', K.ctaFrame, densityClass(density)].filter(Boolean).join(' ')}">
   <div class="k-center-hero-main">
 ${eyebrow}
-<h1 class="${K.ctaTitle}">
+<h1 class="${[K.ctaTitle, densityClass(density)].filter(Boolean).join(' ')}">
 ${md(block.title)}
 </h1>${subtitle}${buttonsHtml}${footerNote}
   </div>

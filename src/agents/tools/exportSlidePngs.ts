@@ -47,6 +47,7 @@ export function deckHasMermaid(slidesMd: string): boolean {
  */
 export async function exportSlidePngs(
   slidesMd: string,
+  signal?: AbortSignal,
 ): Promise<{ pngs: ExportedPng[]; cleanup: () => void }> {
   const workdir = mkdtempSync(join(tmpdir(), 'slidev-png-'));
   const cleanup = () => {
@@ -94,6 +95,7 @@ export async function exportSlidePngs(
       timeout: EXEC_TIMEOUT_MS,
       maxBuffer: 32 * 1024 * 1024,
       env: buildSlidevEnv(),
+      signal,
     });
 
     // Slidev writes png/<n>.png (or slides-<n>.png depending on version). Sort numerically.

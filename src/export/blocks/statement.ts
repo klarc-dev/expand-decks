@@ -1,4 +1,5 @@
 import type { StatementBlockData, StatementVariant } from '../../blocks/spec/statement';
+import { densityFromScore, visibleText } from '../density';
 import { heroFrame, type RenderCtx } from '../utils';
 import { richTextToHTML } from '../richtext';
 
@@ -28,15 +29,24 @@ export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): str
   const variant: StatementVariant =
     explicit ?? VARIANTS[(ctx?.variantIndex ?? 0) % VARIANTS.length]!;
   const layout = VARIANT_LAYOUT[variant];
+  const bodyHtml = richTextToHTML(block.body);
+  const footerHtml = richTextToHTML(block.footer);
+  const density = densityFromScore(
+    block.title.length * (layout.scale === 'display' ? 2.2 : 1.5) +
+      visibleText(bodyHtml).length +
+      visibleText(footerHtml).length * 0.6,
+    { compact: 250, dense: 480 },
+  );
 
   return heroFrame({
     eyebrow: block.eyebrow,
     title: block.title,
-    body: richTextToHTML(block.body) || undefined,
-    caption: richTextToHTML(block.footer) || undefined,
+    body: bodyHtml || undefined,
+    caption: footerHtml || undefined,
     scale: layout.scale,
     align: layout.align,
     accentRule: layout.accentRule,
+    density,
     surface: ctx?.surface ?? 'dark',
   });
 }

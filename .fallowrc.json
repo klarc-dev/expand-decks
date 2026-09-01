@@ -27,6 +27,7 @@
   },
 
   "health": {
+    "maxCognitive": 60,
     "maxCrap": 1000,
     "ignore": ["scripts/**", "src/migrations/**", "*.mjs"]
   },

@@ -1,19 +1,28 @@
 import type { QuotesBlockData } from '../../blocks/spec/quotes';
 import { K } from '../classNames';
+import { densityClass, densityFromScore, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
 import { cardStack, contentFrame, escape, slideHeader, wrapSlide, type RenderCtx } from '../utils';
 
 export type { QuotesBlockData };
 
-function textLength(html: string): number {
-  return html.replace(/<[^>]*>/g, '').trim().length;
-}
-
 export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
   const quotes = block.quotes ?? [];
   const renderedQuotes = quotes.map((q) => ({ ...q, quoteHtml: richTextToHTML(q.quote) }));
-  const totalQuoteLength = renderedQuotes.reduce((sum, q) => sum + textLength(q.quoteHtml), 0);
-  const dense = quotes.length >= 4 || totalQuoteLength > 520;
+  const maxQuotePressure = Math.max(
+    0,
+    ...renderedQuotes.map(
+      (quote) =>
+        visibleText(quote.quoteHtml).length +
+        quote.authorName.length +
+        (quote.authorRole?.length ?? 0),
+    ),
+  );
+  const density = densityFromScore(maxQuotePressure + quotes.length * 92, {
+    compact: 300,
+    dense: 470,
+  });
+  const dense = density === 'dense' || quotes.length >= 4;
 
   // Quote cards are quote-specific (quote body + attribution), so they're not
   // the generic card() primitive — but they flow through the shared cardStack.
@@ -27,12 +36,20 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
   // When dense, force the k-tight quote typography even in the 2x2 case (where
   // the grid is only 2 rows and cardStack's rows>2 crowding heuristic wouldn't
   // trip), so four long quotes shrink rather than overflow.
-  const stackHtml =
-    dense && !stack.html.includes('k-tight')
-      ? stack.html.replace('k-card-stack--grid', 'k-card-stack--grid k-tight')
-      : stack.html;
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title });
-  const body = contentFrame(stackHtml, { header, crowded: dense || stack.crowded });
+  let stackHtml = stack.html;
+  const sharedDensityClass = densityClass(density);
+  if (sharedDensityClass) {
+    stackHtml = stackHtml.replace('k-card-stack--grid', `k-card-stack--grid ${sharedDensityClass}`);
+  }
+  if (dense && !stackHtml.includes('k-tight')) {
+    stackHtml = stackHtml.replace('k-card-stack--grid', 'k-card-stack--grid k-tight');
+  }
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, density });
+  const body = contentFrame(stackHtml, {
+    header,
+    crowded: dense || stack.crowded,
+    density,
+  });
 
   return wrapSlide({ surface: ctx?.surface, body });
 }

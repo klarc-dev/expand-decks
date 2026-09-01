@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -20,6 +20,7 @@
       "!**/dogfood-output",
       "!**/.agents/skills",
       "!**/.claude",
+      "!**/.hermes",
       "!**/scripts/seed-pi/*-workflow.js"
     ]
   },
@@ -43,7 +44,7 @@
       "next": "recommended"
     },
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "style": {
         "noDescendingSpecificity": "off",
         "noNonNullAssertion": "off",

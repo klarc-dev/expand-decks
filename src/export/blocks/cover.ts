@@ -1,5 +1,6 @@
 import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
+import { densityClass, densityFromScore, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
 import {
   defFooterSlot,
@@ -125,12 +126,20 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
   const people = renderPeople(block);
+  const density = densityFromScore(
+    block.title.length * (image ? 2.5 : 1.7) +
+      visibleText(subtitleHtml).length +
+      (block.intervenants?.length ?? 0) * 70,
+    { compact: image ? 180 : 260, dense: image ? 320 : 440 },
+  );
 
   // With image: half-slide layout (Slidev image-right/-left supplies the other
   // half), so the cover fills the content slot. Without an image the cover goes
   // full-bleed over the whole slide. Both behaviours are CSS-owned (k-cover sets
   // height:100%; k-cover--full-bleed adds the absolute inset overlay).
-  const wrapperClass = [K.cover, image ? '' : K.coverFullBleed].filter(Boolean).join(' ');
+  const wrapperClass = [K.cover, image ? '' : K.coverFullBleed, densityClass(density)]
+    .filter(Boolean)
+    .join(' ');
 
   const body = `<div class="${wrapperClass}">
   <div class="${K.coverMain}">

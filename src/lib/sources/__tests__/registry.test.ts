@@ -33,6 +33,7 @@ describe('source registry', () => {
       {
         id: 'fiscal-kb',
         label: 'Fiscal KB',
+        allowedTools: ['search'],
         transport: 'stdio',
         command: 'node',
         args: ['server.js'],
@@ -41,6 +42,7 @@ describe('source registry', () => {
       {
         id: 'web-docs',
         label: 'Web Docs',
+        allowedTools: ['search'],
         transport: 'http',
         url: 'https://example.com/mcp',
       },
@@ -60,14 +62,28 @@ describe('source registry', () => {
     __resetSourceRegistryForTests();
     expect(() => listSourceDescriptors()).toThrow(SourceConfigError);
 
-    setRegistry([{ id: 'bad', label: '', transport: 'http', url: 'not-a-url' }]);
+    setRegistry([
+      { id: 'bad', label: '', allowedTools: ['search'], transport: 'http', url: 'not-a-url' },
+    ]);
     expect(() => listSourceDescriptors()).toThrow(SourceConfigError);
   });
 
   it('throws for duplicate source ids', () => {
     setRegistry([
-      { id: 'same', label: 'One', transport: 'http', url: 'https://example.com/a' },
-      { id: 'same', label: 'Two', transport: 'http', url: 'https://example.com/b' },
+      {
+        id: 'same',
+        label: 'One',
+        allowedTools: ['search'],
+        transport: 'http',
+        url: 'https://example.com/a',
+      },
+      {
+        id: 'same',
+        label: 'Two',
+        allowedTools: ['search'],
+        transport: 'http',
+        url: 'https://example.com/b',
+      },
     ]);
 
     expect(() => listSourceDescriptors()).toThrow(/duplicate source id/);

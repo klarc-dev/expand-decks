@@ -13,8 +13,8 @@
  *  - The heavy "bundle" (dossier/stubs/slides/titles) threads through each
  *    step's input/output — required so the `.dountil` revise loop can re-feed
  *    its own output as the next iteration's input.
- *  - Run-level constants (`visual`, `title`) live in workflow STATE, passed via
- *    `initialState`, so they don't have to appear in every intermediate schema.
+ *  - Run-level constants (`visual`, `title`) are immutable workflow input.
+ *    Mutable workflow state is deliberately not used for request parameters.
  *  - The revise cap returns `true` (graceful finish) rather than throwing, which
  *    would fail the whole run and lose the old `validate:capped` semantics.
  *  - Sub-phase detail (`validate:revise`, `visual:revise`) is emitted with the
@@ -38,22 +38,18 @@ import { structure } from './agents/structure';
 import { writeSlide } from './agents/writer';
 import { scoreSlide } from './scorers/rubric';
 import { scoreVisual } from './scorers/visual';
+import { validateGrounding } from './grounding';
 import { exportSlidePngs } from './tools/exportSlidePngs';
 import type { DeckDossier, DeckEvidence } from './schemas';
+import { EvidenceSchema, SourceFailureSchema, type SourceFailure } from '../lib/sources/types';
 
 // ── shared shapes ───────────────────────────────────────────────────────────
-
-/** Run-level constants shared across non-adjacent steps (workflow state). */
-const StateSchema = z.object({
-  visual: z.boolean(),
-  title: z.string().optional(),
-});
-export type DeckState = z.infer<typeof StateSchema>;
 
 /** The data bundle threaded step→step (and round-tripped through `.dountil`). */
 type DeckBundle = {
   dossier: DeckDossier;
   evidence: DeckEvidence[];
+  sourceFailures: SourceFailure[];
   sourceIds: string[];
   stubs: OutlineStub[];
   slides: SlideBlock[];
@@ -67,7 +63,8 @@ type DeckBundle = {
 
 const bundle = z.custom<DeckBundle>();
 const dossierT = z.custom<DeckDossier>();
-const evidenceT = z.custom<DeckEvidence>();
+const evidenceT = EvidenceSchema;
+const sourceFailureT = SourceFailureSchema;
 const slideT = z.custom<SlideBlock>();
 const stubT = z.custom<OutlineStub>();
 
@@ -92,15 +89,22 @@ const gatherStep = createStep({
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
+    sourceFailures: z.array(sourceFailureT),
     sourceIds: z.array(z.string()),
   }),
-  execute: async ({ inputData }) => {
-    const { dossier, evidence } = await gather(
+  execute: async ({ inputData, abortSignal }) => {
+    const { dossier, evidence, sourceFailures } = await gather(
       inputData.brief,
       inputData.sourceIds,
       inputData.language,
+      abortSignal,
     );
-    return { dossier, evidence, sourceIds: inputData.sourceIds };
+    return {
+      dossier,
+      evidence: validateGrounding(dossier, evidence),
+      sourceFailures,
+      sourceIds: inputData.sourceIds,
+    };
   },
 });
 
@@ -109,20 +113,45 @@ const structureStep = createStep({
   inputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
+    sourceFailures: z.array(sourceFailureT),
     sourceIds: z.array(z.string()),
   }),
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
+    sourceFailures: z.array(sourceFailureT),
     sourceIds: z.array(z.string()),
     stubs: z.array(stubT),
   }),
-  execute: async ({ inputData }) => ({
+  execute: async ({ inputData, abortSignal }) => ({
     dossier: inputData.dossier,
     evidence: inputData.evidence,
+    sourceFailures: inputData.sourceFailures,
     sourceIds: inputData.sourceIds,
-    stubs: await structure(inputData.dossier, inputData.sourceIds),
+    stubs: await structure(inputData.dossier, inputData.sourceIds, abortSignal),
   }),
+});
+
+const approvalStep = createStep({
+  id: 'approval',
+  inputSchema: structureStep.outputSchema,
+  outputSchema: structureStep.outputSchema,
+  resumeSchema: z.object({ approved: z.boolean() }),
+  suspendSchema: z.object({
+    reason: z.string(),
+    outline: z.array(z.object({ title: z.string(), intent: z.string() })).max(40),
+  }),
+  execute: async ({ inputData, getInitData, resumeData, suspend, bail }) => {
+    if (!(getInitData() as DeckWorkflowInput).approvalRequired) return inputData;
+    if (resumeData?.approved === false) return bail(inputData);
+    if (!resumeData?.approved) {
+      return suspend({
+        reason: 'Approve the proposed deck structure before drafting.',
+        outline: inputData.stubs.map(({ title, intent }) => ({ title, intent })),
+      });
+    }
+    return inputData;
+  },
 });
 
 /** foreach body — drafts EXACTLY ONE slide from its self-contained job. */
@@ -130,12 +159,13 @@ const draftStep = createStep({
   id: 'draft',
   inputSchema: writerJob,
   outputSchema: slideT,
-  execute: async ({ inputData }) =>
+  execute: async ({ inputData, abortSignal }) =>
     (await writeSlide(
       inputData.stub,
       inputData.dossier,
       inputData.allTitles,
       inputData.revisionContext,
+      abortSignal,
     )) as SlideBlock,
 });
 
@@ -148,10 +178,10 @@ const validateStep = createStep({
   id: 'validate',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData }) => {
+  execute: async ({ inputData, abortSignal, writer }) => {
     const { stubs, dossier, titles } = inputData;
     const scored = await mapWithConcurrency(inputData.slides, WRITER_CONCURRENCY, (slide) =>
-      scoreSlide(slide as Record<string, unknown>),
+      scoreSlide(slide as Record<string, unknown>, abortSignal),
     );
     const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
 
@@ -160,6 +190,11 @@ const validateStep = createStep({
     }
 
     const next = [...inputData.slides];
+    await writer.write({
+      type: 'deck-event',
+      phase: 'validate:revise',
+      detail: { count: flagged.length },
+    });
     await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
       const stub = stubs[i]!;
       const revisedStub: OutlineStub = {
@@ -171,6 +206,7 @@ const validateStep = createStep({
         dossier,
         titles.filter((_, j) => j !== i),
         inputData.revisionContext,
+        abortSignal,
       )) as SlideBlock;
     });
 
@@ -187,10 +223,10 @@ const visualStep = createStep({
   id: 'visual',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData, getInitData }) => {
+  execute: async ({ inputData, getInitData, abortSignal, writer }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
     const md = buildSlidesMd({ title, slides: inputData.slides });
-    const { pngs, cleanup } = await exportSlidePngs(md);
+    const { pngs, cleanup } = await exportSlidePngs(md, abortSignal);
     try {
       const scored = await mapWithConcurrency(
         inputData.slides,
@@ -198,10 +234,14 @@ const visualStep = createStep({
         async (slide, i) => {
           const png = pngs[i];
           if (!png) return { score: 1, fix: '' };
-          return scoreVisual(slide as Record<string, unknown>, {
-            base64: png.base64,
-            mimeType: 'image/png',
-          });
+          return scoreVisual(
+            slide as Record<string, unknown>,
+            {
+              base64: png.base64,
+              mimeType: 'image/png',
+            },
+            abortSignal,
+          );
         },
       );
       const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
@@ -210,6 +250,11 @@ const visualStep = createStep({
       }
 
       const next = [...inputData.slides];
+      await writer.write({
+        type: 'deck-event',
+        phase: 'visual:revise',
+        detail: { count: flagged.length },
+      });
       await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
         const stub = inputData.stubs[i]!;
         const revisedStub: OutlineStub = {
@@ -221,6 +266,7 @@ const visualStep = createStep({
           inputData.dossier,
           inputData.titles.filter((_, j) => j !== i),
           inputData.revisionContext,
+          abortSignal,
         )) as SlideBlock;
       });
       return { ...inputData, slides: next };
@@ -246,6 +292,7 @@ const assembleStep = createStep({
     slides: z.array(slideT),
     md: z.string(),
     evidence: z.array(evidenceT),
+    sourceFailures: z.array(sourceFailureT),
     sourceIds: z.array(z.string()),
   }),
   execute: async ({ inputData, getInitData }) => {
@@ -255,6 +302,7 @@ const assembleStep = createStep({
       slides: inputData.slides,
       md: buildSlidesMd({ title, slides: inputData.slides }),
       evidence: inputData.evidence,
+      sourceFailures: inputData.sourceFailures,
       sourceIds: inputData.sourceIds,
     };
   },
@@ -266,8 +314,10 @@ const InputSchema = z.object({
   brief: z.string(),
   language: z.enum(['fr', 'en']),
   title: z.string().optional(),
+  visual: z.boolean().default(false),
   sourceIds: z.array(z.string()).default([]),
-  revisionContext: z.string().optional(),
+  revisionContext: z.string().max(100_000).optional(),
+  approvalRequired: z.boolean().default(false),
 });
 type DeckWorkflowInput = z.infer<typeof InputSchema>;
 
@@ -276,6 +326,7 @@ const OutputSchema = z.object({
   slides: z.array(slideT),
   md: z.string(),
   evidence: z.array(evidenceT),
+  sourceFailures: z.array(sourceFailureT),
   sourceIds: z.array(z.string()),
 });
 export type DeckWorkflowOutput = z.infer<typeof OutputSchema>;
@@ -286,10 +337,10 @@ export const deckWorkflow = createWorkflow({
   id: 'deckWorkflow',
   inputSchema: InputSchema,
   outputSchema: OutputSchema,
-  stateSchema: StateSchema,
 })
   .then(gatherStep)
   .then(structureStep)
+  .then(approvalStep)
   // Bake shared context into each writer job — foreach only passes the element.
   .map(async ({ inputData, getInitData }) =>
     inputData.stubs.map(
@@ -309,6 +360,7 @@ export const deckWorkflow = createWorkflow({
     return {
       dossier: structured.dossier,
       evidence: structured.evidence,
+      sourceFailures: structured.sourceFailures,
       sourceIds: structured.sourceIds,
       stubs: structured.stubs,
       slides,

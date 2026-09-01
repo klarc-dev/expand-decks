@@ -1,0 +1,72 @@
+.build-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+
+  &__label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  &__metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    color: var(--theme-elevation-500);
+    font-size: 12px;
+
+    div {
+      display: flex;
+      gap: 0.35em;
+    }
+
+    dt,
+    dd {
+      margin: 0;
+    }
+
+    dt::after {
+      content: ' le';
+    }
+  }
+
+  &__artifacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    a {
+      font-size: 13px;
+    }
+  }
+
+  &__error {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 12px;
+  }
+
+  &__error-details {
+    margin-top: 8px;
+
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    pre {
+      margin: 8px 0 0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+}

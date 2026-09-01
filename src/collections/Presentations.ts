@@ -383,7 +383,23 @@ export const Presentations: CollectionConfig = {
               },
             },
             {
+              name: 'latestAgentRun',
+              type: 'relationship',
+              relationTo: COLLECTIONS.agentRuns,
+              admin: { hidden: true, readOnly: true },
+            },
+            {
               name: 'draftRunId',
+              type: 'text',
+              admin: { hidden: true, readOnly: true },
+            },
+            {
+              name: 'draftRequestId',
+              type: 'text',
+              admin: { hidden: true, readOnly: true },
+            },
+            {
+              name: 'draftTraceId',
               type: 'text',
               admin: { hidden: true, readOnly: true },
             },

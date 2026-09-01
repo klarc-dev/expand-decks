@@ -2,37 +2,93 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast, useDocumentInfo, useField } from '@payloadcms/ui';
-
 import {
-  dashedHintStyle,
-  errorBoxStyle,
-  mutedTextStyle,
-  panelStyle,
-  primaryButtonStyle,
-} from '@/components/adminUi/styles';
+  Button,
+  CheckboxInput,
+  TextareaInput,
+  toast,
+  useDocumentInfo,
+  useField,
+} from '@payloadcms/ui';
+
+import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
+import {
+  formatDraftEventDetail,
+  formatDraftEventPhase,
+  formatDraftEventTime,
+} from '@/components/agentDraftJournal';
 import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
+
+import './AgentDraftButton.scss';
 
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
 type DraftMode = 'replace' | 'augment' | 'revise';
 type SourceOption = { id: string; label: string };
 
-const PHASE_LABEL: Record<string, string> = {
-  gather: 'Recherche du dossier…',
-  structure: 'Plan des diapositives…',
-  draft: 'Rédaction des diapositives…',
-  validate: 'Critique du contenu…',
-  'validate:revise': 'Correction des diapositives signalées…',
-  'validate:pass': 'Contenu validé.',
-  build: 'Build Slidev (rendu réel)…',
-  visual: 'Critique visuelle des diapositives rendues…',
-  'visual:revise': 'Correction des problèmes visuels…',
-  done: 'Terminé.',
-  failed: 'Échec.',
+const DRAFT_MODE_OPTIONS: ReadonlyArray<{ label: string; value: DraftMode }> = [
+  { value: 'revise', label: 'Réviser les diapositives existantes' },
+  { value: 'replace', label: 'Remplacer les diapositives' },
+  { value: 'augment', label: 'Ajouter aux diapositives existantes' },
+];
+
+const JOURNAL_STATUS_LABEL: Record<string, string> = {
+  idle: 'en attente',
+  gathering: 'recherche',
+  structuring: 'planification',
+  drafting: 'rédaction',
+  validating: 'validation',
+  building: 'rendu',
+  done: 'terminé',
+  failed: 'échec',
 };
 
 const ACTIVE_STATUSES = new Set(['gathering', 'structuring', 'drafting', 'validating', 'building']);
+
+type DraftFieldGroupProps = {
+  children: React.ReactNode;
+  label: React.ReactNode;
+  layout?: 'inline' | 'list';
+};
+
+function DraftFieldGroup({ children, label, layout = 'inline' }: DraftFieldGroupProps) {
+  return (
+    <fieldset className="agent-draft__field-group" data-layout={layout}>
+      <legend>{label}</legend>
+      {children}
+    </fieldset>
+  );
+}
+
+type DraftModeSelectorProps = {
+  readOnly: boolean;
+  value: DraftMode;
+  onChange: (value: DraftMode) => void;
+};
+
+function DraftModeSelector({ readOnly, value, onChange }: DraftModeSelectorProps) {
+  return (
+    <DraftFieldGroup label="Mode de génération">
+      {DRAFT_MODE_OPTIONS.map((option) => {
+        const id = `agent-mode-${option.value}`;
+        return (
+          <label className="agent-draft__choice" htmlFor={id} key={option.value}>
+            <input
+              checked={value === option.value}
+              disabled={readOnly}
+              id={id}
+              name="agent-mode"
+              onChange={() => onChange(option.value)}
+              type="radio"
+              value={option.value}
+            />
+            {option.label}
+          </label>
+        );
+      })}
+    </DraftFieldGroup>
+  );
+}
 
 /** Query the durable Mastra run status; undefined when no handle/unreachable. */
 async function fetchDurableStatus(runId: unknown): Promise<string | undefined> {
@@ -58,14 +114,190 @@ const STEPS: { key: string; label: string }[] = [
   { key: 'building', label: 'Rendu visuel' },
 ];
 
-const checkboxRowStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  fontSize: '13px',
-  color: 'var(--theme-text)',
-  cursor: 'pointer',
+type DraftProgressProps = {
+  running: boolean;
+  status: string;
 };
+
+function DraftProgress({ running, status }: DraftProgressProps) {
+  const stepIndex = STEPS.findIndex((step) => step.key === status);
+
+  return (
+    <ol aria-label="Progression du build agentique" className="agent-draft__progress">
+      {STEPS.map((step, index) => {
+        const reached = status === 'done' || (stepIndex >= 0 && index <= stepIndex);
+        const current = running && index === stepIndex;
+        return (
+          <li
+            aria-current={current ? 'step' : undefined}
+            className="agent-draft__progress-step"
+            data-reached={reached || undefined}
+            key={step.key}
+          >
+            <span className="agent-draft__progress-label">{step.label}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+type AgentJournalProps = {
+  events: DraftEvent[];
+  initiallyOpen: boolean;
+  status: string;
+};
+
+function AgentJournal({ events, initiallyOpen, status }: AgentJournalProps) {
+  const [expanded, setExpanded] = useState(initiallyOpen);
+  if (events.length === 0) return null;
+
+  return (
+    <details
+      className="agent-draft__journal"
+      onToggle={(event) => setExpanded(event.currentTarget.open)}
+      open={expanded}
+    >
+      <summary className="agent-draft__journal-summary">
+        Journal de l&apos;agent — {JOURNAL_STATUS_LABEL[status] ?? 'état inconnu'}
+      </summary>
+      <ol aria-label="Événements du build agentique" className="agent-draft__event-list">
+        {events.map((event) => {
+          const detail = formatDraftEventDetail(event);
+          const time = formatDraftEventTime(event.ts);
+          return (
+            <li key={`${event.ts}:${event.phase}`}>
+              {time && (
+                <time className="agent-draft__event-time" dateTime={time.dateTime}>
+                  {time.label}
+                </time>
+              )}
+              {formatDraftEventPhase(event.phase)}
+              {detail ? ` — ${detail}` : ''}
+            </li>
+          );
+        })}
+      </ol>
+    </details>
+  );
+}
+
+type DraftRunStatusProps = {
+  event: DraftEvent | undefined;
+  phase: string;
+  running: boolean;
+};
+
+function DraftRunStatus({ event, phase, running }: DraftRunStatusProps) {
+  const detail = event ? formatDraftEventDetail(event) : null;
+  const message = [phase, detail].filter(Boolean).join(' — ');
+
+  return (
+    <span
+      aria-atomic="true"
+      aria-live="polite"
+      className="agent-draft__run-status"
+      data-running={running || undefined}
+      role="status"
+    >
+      {message ? (
+        <>
+          <span className="sr-only">Build agentique : </span>
+          {message}
+        </>
+      ) : null}
+    </span>
+  );
+}
+
+type DraftRunActionsProps = {
+  approvalRequired: boolean;
+  canStart: boolean;
+  durableStatus: string;
+  event: DraftEvent | undefined;
+  hasRun: boolean;
+  phase: string;
+  running: boolean;
+  onCancel: () => void;
+  onRestart: () => void;
+  onResume: (approved: boolean) => void;
+  onStart: () => void;
+};
+
+function DraftRunActions({
+  approvalRequired,
+  canStart,
+  durableStatus,
+  event,
+  hasRun,
+  onCancel,
+  onRestart,
+  onResume,
+  onStart,
+  phase,
+  running,
+}: DraftRunActionsProps) {
+  return (
+    <fieldset className="agent-draft__actions">
+      <legend className="sr-only">Actions du build agentique</legend>
+      <Button
+        buttonStyle="primary"
+        disabled={!canStart}
+        margin={false}
+        onClick={onStart}
+        size="medium"
+        type="button"
+      >
+        {running ? 'Agent en cours…' : 'Lancer le build agentique'}
+      </Button>
+      {running && hasRun && (
+        <Button
+          buttonStyle="secondary"
+          margin={false}
+          onClick={onCancel}
+          size="small"
+          type="button"
+        >
+          Annuler
+        </Button>
+      )}
+      {!running && durableStatus === 'stale' && hasRun && (
+        <Button
+          buttonStyle="secondary"
+          margin={false}
+          onClick={onRestart}
+          size="small"
+          type="button"
+        >
+          Redémarrer le worker
+        </Button>
+      )}
+      {!running && durableStatus === 'suspended' && hasRun && approvalRequired && (
+        <>
+          <Button
+            buttonStyle="primary"
+            margin={false}
+            onClick={() => onResume(true)}
+            size="small"
+            type="button"
+          >
+            Approuver le plan
+          </Button>
+          <Button
+            buttonStyle="secondary"
+            margin={false}
+            onClick={() => onResume(false)}
+            size="small"
+            type="button"
+          >
+            Refuser
+          </Button>
+        </>
+      )}
+      <DraftRunStatus event={event} phase={phase} running={running} />
+    </fieldset>
+  );
+}
 
 /**
  * Dedicated "IA" tab panel for the agentic builder. Starts the long multi-agent
@@ -79,12 +311,15 @@ const AgentDraftButton: React.FC = () => {
   const brief = storedBrief ?? '';
   const [mode, setMode] = useState<DraftMode>('replace');
   const [visual, setVisual] = useState(true);
+  const [approvalRequired, setApprovalRequired] = useState(false);
+  const [runId, setRunId] = useState<string>('');
   const [sources, setSources] = useState<SourceOption[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [maxSources, setMaxSources] = useState<number>(0);
   const [sourcesLoaded, setSourcesLoaded] = useState(false);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState<string>('idle');
+  const [durableStatus, setDurableStatus] = useState<string>('');
   const [events, setEvents] = useState<DraftEvent[]>([]);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -107,13 +342,23 @@ const AgentDraftButton: React.FC = () => {
       const mirror: string = doc.draftStatus ?? 'idle';
       setStatus(mirror);
       if (Array.isArray(doc.draftEvents)) setEvents(doc.draftEvents);
+      if (typeof doc.draftRunId === 'string') setRunId(doc.draftRunId);
 
-      // The per-step mirror drives live progress, but a recycled/dead run can
-      // freeze it on an ACTIVE phase forever. Only cross-check Mastra while the
-      // mirror is active; terminal/idle states avoid a second request per poll.
-      const durable = ACTIVE_STATUSES.has(mirror)
-        ? await fetchDurableStatus(doc.draftRunId)
-        : undefined;
+      // The presentation status is a cheap phase mirror; the AgentRuns ledger
+      // remains authoritative for queued, suspended, stale, and terminal state.
+      const durable = doc.draftRunId ? await fetchDurableStatus(doc.draftRunId) : undefined;
+      if (durable) setDurableStatus(durable);
+      if (durable === 'suspended' || durable === 'waiting') {
+        stopPolling();
+        setRunning(false);
+        return;
+      }
+      if (durable === 'stale') {
+        stopPolling();
+        setRunning(false);
+        setError('Le worker a été interrompu. Vous pouvez redémarrer ce run.');
+        return;
+      }
       const state = reconcileRunState(mirror, durable);
 
       if (state === 'done' || state === 'failed') {
@@ -175,11 +420,22 @@ const AgentDraftButton: React.FC = () => {
         if (cancelled) return;
         setStatus(mirror);
         if (Array.isArray(doc.draftEvents)) setEvents(doc.draftEvents);
+        if (typeof doc.draftRunId === 'string') setRunId(doc.draftRunId);
         if (ACTIVE_STATUSES.has(mirror)) {
           // Resuming onto an active mirror: confirm the durable run is still
           // alive before re-polling — if it died while we were away, surface it.
           const durable = await fetchDurableStatus(doc.draftRunId);
+          if (durable) setDurableStatus(durable);
           if (cancelled) return;
+          if (durable === 'suspended' || durable === 'waiting') {
+            setRunning(false);
+            return;
+          }
+          if (durable === 'stale') {
+            setRunning(false);
+            setError('Le worker a été interrompu. Vous pouvez redémarrer ce run.');
+            return;
+          }
           if (reconcileRunState(mirror, durable) === 'failed') {
             setError('Le build agentique a échoué. Voir le journal.');
             return;
@@ -225,6 +481,7 @@ const AgentDraftButton: React.FC = () => {
         mode,
         visual,
         sourceIds: selectedSources,
+        approvalRequired,
       });
       if (!ok) {
         setError(data.error || `Erreur (HTTP ${httpStatus})`);
@@ -232,219 +489,153 @@ const AgentDraftButton: React.FC = () => {
         return;
       }
       setStatus('gathering');
+      setDurableStatus('queued');
+      if (typeof data.runId === 'string') setRunId(data.runId);
       startPolling();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur réseau');
       setRunning(false);
     }
-  }, [brief, id, mode, selectedSources, visual, startPolling]);
+  }, [approvalRequired, brief, id, mode, selectedSources, visual, startPolling]);
+
+  const handleRunAction = useCallback(
+    async (action: 'cancel' | 'restart' | 'resume', approved?: boolean) => {
+      if (!runId) return;
+      const { ok, data } = await adminPost(`/api/agent-draft/${encodeURIComponent(runId)}`, {
+        action,
+        ...(action === 'resume' ? { approved } : {}),
+      });
+      if (!ok) {
+        setError(data.error || 'Action impossible');
+        return;
+      }
+      if (action === 'cancel') {
+        stopPolling();
+        setRunning(false);
+        setStatus('failed');
+        setDurableStatus('canceled');
+      } else {
+        setDurableStatus('queued');
+        setRunning(true);
+        startPolling();
+      }
+    },
+    [runId, startPolling, stopPolling],
+  );
 
   if (!id) {
     return (
-      <div style={dashedHintStyle}>
+      <AdminNotice className="agent-draft__save-notice" variant="hint">
         Enregistrez d&apos;abord la présentation pour lancer le build agentique.
-      </div>
+      </AdminNotice>
     );
   }
 
   const last = events[events.length - 1];
-  const phaseText = last ? (PHASE_LABEL[last.phase] ?? last.phase) : '';
-  const stepIndex = STEPS.findIndex((s) => s.key === status);
-  const draftProgress =
-    last?.phase === 'draft' && last.detail && typeof last.detail === 'object'
-      ? (last.detail as { completed?: number; total?: number })
-      : null;
+  const phaseText =
+    status === 'done'
+      ? formatDraftEventPhase('done')
+      : status === 'failed'
+        ? formatDraftEventPhase('failed')
+        : durableStatus === 'canceled'
+          ? formatDraftEventPhase('cancelled')
+          : durableStatus === 'queued'
+            ? formatDraftEventPhase('queued')
+            : durableStatus === 'suspended'
+              ? 'Plan en attente de validation.'
+              : last
+                ? formatDraftEventPhase(last.phase)
+                : '';
 
   return (
-    <div style={{ ...panelStyle, padding: '20px' }}>
-      <label
-        htmlFor="agent-brief"
-        style={{ display: 'block', fontWeight: 600, marginBottom: '8px', fontSize: '14px' }}
-      >
-        Brief de la présentation
-      </label>
-      <p style={{ ...mutedTextStyle, marginBottom: '12px', marginTop: 0 }}>
-        L&apos;agent recherche, structure, rédige, construit le deck réel, le critique visuellement,
-        puis corrige. Comptez plusieurs minutes.
-      </p>
-
-      <textarea
-        id="agent-brief"
+    <AdminPanel className="agent-draft__panel">
+      <TextareaInput
+        className="agent-draft__brief"
+        description="L’agent recherche, structure, rédige, construit le deck réel, le critique visuellement, puis corrige. Comptez plusieurs minutes."
+        label="Brief de la présentation"
+        path="agentBrief"
         value={brief}
         onChange={(e) => setBriefValue(e.target.value)}
         placeholder="Ex : Webinaire de 45 min pour juristes d'entreprise sur comment rendre une présentation d'expert réellement intéressante…"
-        disabled={running}
+        readOnly={running}
         rows={5}
-        style={{
-          width: '100%',
-          padding: '10px',
-          border: '1px solid var(--theme-elevation-150)',
-          borderRadius: '4px',
-          backgroundColor: 'var(--theme-elevation-0)',
-          color: 'var(--theme-text)',
-          fontFamily: 'inherit',
-          fontSize: '14px',
-          resize: 'vertical',
-          boxSizing: 'border-box',
-        }}
       />
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '20px',
-          marginTop: '12px',
-        }}
-      >
-        <label style={checkboxRowStyle}>
-          <input
-            type="radio"
-            name="agent-mode"
-            checked={mode === 'revise'}
-            onChange={() => setMode('revise')}
-            disabled={running}
-          />
-          Réviser les diapositives existantes
-        </label>
-        <label style={checkboxRowStyle}>
-          <input
-            type="radio"
-            name="agent-mode"
-            checked={mode === 'replace'}
-            onChange={() => setMode('replace')}
-            disabled={running}
-          />
-          Remplacer les diapositives
-        </label>
-        <label style={checkboxRowStyle}>
-          <input
-            type="radio"
-            name="agent-mode"
-            checked={mode === 'augment'}
-            onChange={() => setMode('augment')}
-            disabled={running}
-          />
-          Ajouter aux diapositives existantes
-        </label>
-        <label style={checkboxRowStyle}>
-          <input
-            type="checkbox"
-            checked={visual}
-            onChange={(e) => setVisual(e.target.checked)}
-            disabled={running}
-          />
-          Critique visuelle (plus lent, meilleur rendu)
-        </label>
-      </div>
+      <DraftModeSelector readOnly={running} value={mode} onChange={setMode} />
+
+      <DraftFieldGroup label="Options du build">
+        <CheckboxInput
+          checked={visual}
+          className="agent-draft__checkbox"
+          id="agent-visual-review"
+          label="Critique visuelle (plus lent, meilleur rendu)"
+          name="agent-visual-review"
+          onToggle={(event) => setVisual(event.target.checked)}
+          readOnly={running}
+        />
+        <CheckboxInput
+          checked={approvalRequired}
+          className="agent-draft__checkbox"
+          id="agent-plan-approval"
+          label="Valider le plan avant rédaction"
+          name="agent-plan-approval"
+          onToggle={(event) => setApprovalRequired(event.target.checked)}
+          readOnly={running}
+        />
+      </DraftFieldGroup>
 
       {sourcesLoaded && sources.length > 0 && (
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
-            Sources externes{maxSources > 0 ? ` (max ${maxSources})` : ''}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+        <DraftFieldGroup
+          label={<>Sources externes{maxSources > 0 ? ` (max ${maxSources})` : ''}</>}
+          layout="list"
+        >
+          <div className="agent-draft__source-list">
             {sources.map((source) => {
               const checked = selectedSources.includes(source.id);
               const atCap = maxSources > 0 && selectedSources.length >= maxSources;
               return (
-                <label key={source.id} style={checkboxRowStyle}>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleSource(source.id)}
-                    disabled={running || (!checked && atCap)}
-                  />
-                  {source.label}
-                </label>
+                <CheckboxInput
+                  checked={checked}
+                  className="agent-draft__checkbox"
+                  id={`agent-source-${source.id}`}
+                  key={source.id}
+                  label={source.label}
+                  name={`agent-source-${source.id}`}
+                  onToggle={() => toggleSource(source.id)}
+                  readOnly={running || (!checked && atCap)}
+                />
               );
             })}
           </div>
-        </div>
+        </DraftFieldGroup>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
-        <button
-          type="button"
-          onClick={handleStart}
-          disabled={running || !brief.trim()}
-          style={{
-            ...primaryButtonStyle(running),
-            padding: '10px 20px',
-            cursor: running || !brief.trim() ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-          }}
-        >
-          {running ? 'Agent en cours…' : 'Lancer le build agentique'}
-        </button>
-        {running && (
-          <span style={mutedTextStyle}>
-            {phaseText || 'Démarrage…'}
-            {draftProgress?.total
-              ? ` (${draftProgress.completed ?? 0}/${draftProgress.total})`
-              : ''}
-          </span>
-        )}
-      </div>
+      <DraftRunActions
+        approvalRequired={approvalRequired}
+        canStart={!running && Boolean(brief.trim())}
+        durableStatus={durableStatus}
+        event={last}
+        hasRun={Boolean(runId)}
+        onCancel={() => handleRunAction('cancel')}
+        onRestart={() => handleRunAction('restart')}
+        onResume={(approved) => handleRunAction('resume', approved)}
+        onStart={handleStart}
+        phase={phaseText}
+        running={running}
+      />
 
       {(running || status === 'done' || status === 'failed') && (
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px' }}
-          aria-hidden
-        >
-          {STEPS.map((step, i) => {
-            const reached = status === 'done' || (stepIndex >= 0 && i <= stepIndex);
-            const current = running && i === stepIndex;
-            return (
-              <React.Fragment key={step.key}>
-                {i > 0 && (
-                  <span
-                    style={{
-                      flex: 1,
-                      height: '2px',
-                      backgroundColor: reached
-                        ? 'var(--theme-success-500)'
-                        : 'var(--theme-elevation-150)',
-                    }}
-                  />
-                )}
-                <span
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: current ? 700 : 500,
-                    color: reached ? 'var(--theme-text)' : 'var(--theme-elevation-400)',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {step.label}
-                </span>
-              </React.Fragment>
-            );
-          })}
-        </div>
+        <DraftProgress running={running} status={status} />
       )}
 
-      {events.length > 0 && (
-        <details style={{ marginTop: '12px' }} open={running}>
-          <summary style={{ cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
-            Journal de l&apos;agent ({status})
-          </summary>
-          <ul
-            style={{ ...mutedTextStyle, fontSize: '12px', paddingLeft: '18px', marginTop: '8px' }}
-          >
-            {events.map((e, i) => (
-              <li key={i}>
-                {PHASE_LABEL[e.phase] ?? e.phase}
-                {e.detail ? ` — ${JSON.stringify(e.detail)}` : ''}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+      <AgentJournal events={events} initiallyOpen={running} status={status} />
 
-      {error && <div style={errorBoxStyle}>{error}</div>}
-    </div>
+      {error && (
+        <AdminNotice className="agent-draft__error" variant="error">
+          {error}
+        </AdminNotice>
+      )}
+    </AdminPanel>
   );
 };
 

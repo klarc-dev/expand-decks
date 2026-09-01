@@ -28,6 +28,13 @@ describe('reconcileRunState', () => {
     // The persist step finished the run but the final status mirror write was
     // lost (process recycle) — the durable success is authoritative.
     expect(reconcileRunState('building', 'success')).toBe('done');
+    expect(reconcileRunState('building', 'succeeded')).toBe('done');
+  });
+
+  it('keeps approval waits active and surfaces stale runs', () => {
+    expect(reconcileRunState('validating', 'suspended')).toBe('active');
+    expect(reconcileRunState('validating', 'waiting')).toBe('active');
+    expect(reconcileRunState('drafting', 'stale')).toBe('failed');
   });
 
   it('stays active when no durable status is known yet (run handle not persisted)', () => {

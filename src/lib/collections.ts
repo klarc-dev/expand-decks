@@ -4,4 +4,5 @@ export const COLLECTIONS = {
   media: 'media',
   users: 'users',
   accounts: 'accounts',
+  agentRuns: 'agent-runs',
 } as const;

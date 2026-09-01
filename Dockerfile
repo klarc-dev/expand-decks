@@ -1,8 +1,6 @@
 # -- Stage: base --
-FROM node:20-bookworm-slim AS base
-# Pin pnpm to the lockfile's version. pnpm@latest rolled to 11.x which requires
-# Node >=22.13 (uses node:sqlite) and crashes on this node:20 base -> frozen
-# install fails. 10.33.2 matches pnpm-lock.yaml (lockfileVersion 9.0).
+FROM node:22.13-bookworm-slim AS base
+# Pin pnpm to the lockfile's version for deterministic installs.
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 WORKDIR /app
 
@@ -33,7 +31,7 @@ RUN pnpm generate:types \
     && pnpm build
 
 # -- Stage: production --
-FROM node:20-bookworm-slim AS production
+FROM node:22.13-bookworm-slim AS production
 
 # Install Playwright Chromium system dependencies + fonts
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -43,9 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto fonts-noto-cjk fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
-# Pin pnpm to the lockfile's version. pnpm@latest rolled to 11.x which requires
-# Node >=22.13 (uses node:sqlite) and crashes on this node:20 base -> frozen
-# install fails. 10.33.2 matches pnpm-lock.yaml (lockfileVersion 9.0).
+# Pin pnpm to the lockfile's version for deterministic installs.
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 WORKDIR /app
 

@@ -69,16 +69,28 @@ describe('dogfood all templates', () => {
           leftBody: lexical(
             'Fit, readability, scan speed, contrast, and resilience to uneven copy.',
           ),
+          leftFooter: lexical(
+            'The shared density step must account for both columns rather than shrinking cards independently.',
+          ),
           rightCards: [
             {
               title: 'Signal',
-              description: lexical('Can a reader understand the slide in five seconds?'),
+              description: lexical(
+                'Can a reader understand the slide in five seconds, even when the explanation needs a second line?',
+              ),
             },
             {
               title: 'Stress',
-              description: lexical('Does it stay polished with long labels and mixed content?'),
+              description: lexical(
+                'Does it stay polished with long labels, mixed content, and a substantially denser neighboring card?',
+              ),
             },
-            { title: 'Reuse', description: lexical('Can authors use it without layout surgery?') },
+            {
+              title: 'Reuse across demanding production contexts',
+              description: lexical(
+                'Can authors use it repeatedly without per-slide layout surgery or one-off font overrides?',
+              ),
+            },
           ],
         },
         {
@@ -103,9 +115,10 @@ describe('dogfood all templates', () => {
           blockType: 'stats',
           title: 'Impact targets',
           stats: [
-            { value: '12', label: 'templates covered' },
-            { value: '0', label: 'manual offsets' },
-            { value: '100%', label: 'shared rails' },
+            { value: '€12.45M–€18.9M', label: 'projected annual value range' },
+            { value: '2026–2031', label: 'multi-year adoption horizon' },
+            { value: '99.987%', label: 'target platform availability' },
+            { value: '1:250,000', label: 'maximum supported operating ratio' },
           ],
         },
         {

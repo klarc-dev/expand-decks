@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "session_id": "20260825174359-ef566887",
+  "iterations": {
+    "1": {
+      "prior_art": {
+        "status": "completed",
+        "artifact": "/tmp/slides-prior-art.md",
+        "artifact_hash": "1dd6bedc00699b7205bc7ba91751d4a4acf53b255c6a23cb457595ad126c4d35",
+        "recorded_at": "2026-08-25T154448Z"
+      },
+      "layers": {
+        "status": "completed",
+        "artifact": "/tmp/slides-layer-reports.json",
+        "artifact_hash": "efa33f770bac1bd34447564f6ac842df734f38139caa6e5393487cb7691cdde4",
+        "recorded_at": "2026-08-25T155508Z"
+      },
+      "synthesis": {
+        "status": "pending",
+        "artifact": "",
+        "artifact_hash": "",
+        "recorded_at": ""
+      },
+      "audit": {
+        "status": "pending",
+        "artifact": "",
+        "artifact_hash": "",
+        "recorded_at": ""
+      }
+    }
+  }
+}

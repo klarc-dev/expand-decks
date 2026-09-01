@@ -15,7 +15,10 @@ import { Presentations } from './collections/Presentations';
 import { Organisations } from './collections/Organisations';
 import { Media } from './collections/Media';
 import { Accounts } from './collections/Accounts';
+import { AgentRuns } from './collections/AgentRuns';
 import { buildSlidesTask } from './jobs/buildSlides';
+import { agentDraftTask } from './jobs/agentDraft';
+import { agentRetentionTask } from './jobs/agentRetention';
 import { COLLECTIONS } from './lib/collections';
 import { SERVER_URL, PAYLOAD_SECRET, DATABASE_URL, PAYLOAD_DB_PUSH } from './lib/env';
 import { ROLES } from './access/roles';
@@ -52,7 +55,7 @@ export default buildConfig({
     },
   },
   serverURL: SERVER_URL,
-  collections: [Users, Organisations, Presentations, Media, Accounts],
+  collections: [Users, Organisations, Presentations, Media, Accounts, AgentRuns],
   plugins: [
     withoutPluginAPIKeys(
       authPlugin({
@@ -119,8 +122,11 @@ export default buildConfig({
     fallbackLanguage: 'fr',
   },
   jobs: {
-    tasks: [buildSlidesTask],
-    autoRun: [{ cron: '*/1 * * * *', limit: 5 }],
+    tasks: [buildSlidesTask, agentDraftTask, agentRetentionTask],
+    autoRun: [
+      { cron: '*/1 * * * *', limit: 5 },
+      { cron: '0 3 * * *', queue: 'maintenance', limit: 1 },
+    ],
     deleteJobOnComplete: true,
     enableConcurrencyControl: true,
   },

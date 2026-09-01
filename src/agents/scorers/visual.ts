@@ -37,7 +37,11 @@ Tu IGNORES la qualité rédactionnelle (jugée ailleurs). Renvoie score 0..1, le
 - 1.0 : propre, aéré, lisible, équilibré.
 - < 0.5 : déborde, coupé, ou illisible.`;
 
-type VisualInput = { slide: Record<string, unknown>; image: ImagePart };
+type VisualInput = {
+  slide: Record<string, unknown>;
+  image: ImagePart;
+  abortSignal?: AbortSignal;
+};
 
 async function judgeVisual(input: VisualInput): Promise<z.infer<typeof VisualVerdict>> {
   return generateStructured({
@@ -46,6 +50,8 @@ async function judgeVisual(input: VisualInput): Promise<z.infer<typeof VisualVer
     schema: VisualVerdict,
     prompt: `Évalue le rendu visuel de cette diapositive (type: ${input.slide.blockType}, titre: ${String(input.slide.title ?? '')}).`,
     images: [input.image],
+    modelTier: 'visual',
+    abortSignal: input.abortSignal,
   });
 }
 
@@ -72,8 +78,9 @@ export const visualScorer = createScorer({
 export async function scoreVisual(
   slide: Record<string, unknown>,
   image: ImagePart,
+  abortSignal?: AbortSignal,
 ): Promise<{ score: number; fix: string }> {
   const bounded = await boundVisualImage(image);
-  const res = await visualScorer.run({ output: { slide, image: bounded } });
+  const res = await visualScorer.run({ output: { slide, image: bounded, abortSignal } });
   return { score: res.score ?? 0, fix: (res.reason as string) ?? '' };
 }

@@ -48,19 +48,25 @@ Interroge ces sources pour rassembler des faits, chiffres, exemples et référen
 
 Rends des notes structurées (faits + référence de source) que le dossier pourra absorber.`;
 
-export type GatherResult = { dossier: DeckDossier; evidence: Evidence[] };
+export type GatherResult = {
+  dossier: DeckDossier;
+  evidence: Evidence[];
+  sourceFailures: import('../../lib/sources/types').SourceFailure[];
+};
 
 export async function gather(
   brief: string,
   sourceIds?: readonly string[],
   requestedLanguage?: DeckLanguage,
+  abortSignal?: AbortSignal,
 ): Promise<GatherResult> {
   const language = resolveTargetLanguage(requestedLanguage, brief);
   const localePolicy = languageInstruction(language);
-  const { notes, evidence } = await researchSources(sourceIds, {
+  const { notes, evidence, failures } = await researchSources(sourceIds, {
     name: 'gather:research',
     instructions: `${RESEARCH_INSTRUCTIONS}\n\n${localePolicy}`,
     prompt: brief,
+    abortSignal,
   });
 
   const prompt = notes
@@ -74,6 +80,19 @@ export async function gather(
     prompt,
     validate: findInformationalStyleViolations,
     maxValidationRepairs: 3,
+    modelTier: 'research',
+    abortSignal,
   });
-  return { dossier: { ...dossier, rawBrief: brief, language }, evidence };
+  return {
+    dossier: {
+      ...dossier,
+      // A model may only name external references when the corresponding MCP
+      // call produced captured provenance. Brief-only drafting stays unsourced.
+      sources: evidence.length > 0 ? dossier.sources : [],
+      rawBrief: brief,
+      language,
+    },
+    evidence,
+    sourceFailures: failures,
+  };
 }

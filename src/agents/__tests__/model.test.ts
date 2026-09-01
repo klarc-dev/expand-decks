@@ -13,7 +13,8 @@ vi.mock('@mastra/core/tools', () => ({
 }));
 
 vi.mock('../../lib/ai', () => ({
-  DRAFT_MODEL: 'test/model',
+  DRAFT_MODEL: 'test-model',
+  modelForTier: () => 'test-model',
   cloudCLIProxy: vi.fn(() => ({})),
 }));
 

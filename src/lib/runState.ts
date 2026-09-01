@@ -29,7 +29,9 @@ export function reconcileRunState(
   if (draftStatus === DRAFT_STATUS.failed) return 'failed';
 
   if (ACTIVE.has(draftStatus)) {
-    if (durableStatus === 'success') return 'done';
+    if (durableStatus === 'success' || durableStatus === 'succeeded') return 'done';
+    if (durableStatus === 'suspended' || durableStatus === 'waiting') return 'active';
+    if (durableStatus === 'stale') return 'failed';
     if (durableStatus && DURABLE_FAILED.has(durableStatus)) return 'failed';
     return 'active';
   }

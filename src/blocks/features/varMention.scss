@@ -1,0 +1,39 @@
+.var-mention-menu {
+  z-index: 10;
+  min-width: 220px;
+  max-height: 280px;
+  margin: 4px 0 0;
+  padding: 4px;
+  overflow-y: auto;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-0);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+
+  &__option {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 8px;
+    border-radius: var(--style-radius-s);
+    color: var(--theme-text);
+    font-size: 13px;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      background: var(--theme-elevation-100);
+    }
+  }
+
+  &__label {
+    font-weight: 600;
+  }
+
+  &__sample {
+    max-width: 50%;
+    overflow: hidden;
+    color: var(--theme-elevation-500);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

@@ -62,6 +62,7 @@ export async function writeSlide(
   dossier: DeckDossier,
   otherTitles: string[],
   revisionContext?: string,
+  abortSignal?: AbortSignal,
 ): Promise<Record<string, unknown>> {
   const spec = SPEC_BY_TYPE.get(stub.blockType);
   if (!spec) {
@@ -94,6 +95,7 @@ export async function writeSlide(
     prompt,
     validate: findInformationalStyleViolations,
     maxValidationRepairs: 3,
+    abortSignal,
   });
 
   // alignBatch invariant: force the planned structure back onto the block.

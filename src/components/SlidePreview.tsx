@@ -1,18 +1,27 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { toast, useDocumentInfo, useForm, useFormFields } from '@payloadcms/ui';
+import {
+  Button,
+  TextareaInput,
+  toast,
+  useDocumentInfo,
+  useForm,
+  useFormFields,
+} from '@payloadcms/ui';
 
+import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import {
   previewRequestKey,
   selectPreviewRequest,
   type PreviewRequest,
 } from '@/components/slidePreviewState';
-import { SlideFrame, SLIDE_STAGE_BG, type SlideChrome } from '@/components/SlideFrame';
+import { SlideFrame, type SlideChrome } from '@/components/SlideFrame';
 import { adminPost } from '@/lib/adminFetch';
 
 import '@/export/style.css';
+import './SlidePreview.scss';
 
 const PREVIEW_DEBOUNCE_MS = 200;
 
@@ -29,6 +38,8 @@ type PreviewResult = {
 };
 
 type SlideRevisionControlsProps = {
+  panelId: string;
+  path: string;
   instruction: string;
   revising: boolean;
   setInstruction: (value: string) => void;
@@ -36,31 +47,37 @@ type SlideRevisionControlsProps = {
 };
 
 function SlideRevisionControls({
+  panelId,
+  path,
   instruction,
   revising,
   setInstruction,
   submit,
 }: SlideRevisionControlsProps) {
   return (
-    <div style={styles.aiPanel}>
-      <textarea
-        aria-label="Consigne de modification de la diapositive"
+    <AdminPanel className="slide-preview__ai-panel" density="compact" id={panelId}>
+      <TextareaInput
+        className="slide-preview__revision-field"
+        label="Consigne de modification de la diapositive"
+        path={`${path}.revisionInstruction`}
         value={instruction}
         onChange={(event) => setInstruction(event.target.value)}
         placeholder="Ex. : raccourcis le tableau, clarifie le message et conserve les chiffres."
         rows={3}
-        disabled={revising}
-        style={styles.aiInput}
+        readOnly={revising}
       />
-      <button
-        type="button"
-        onClick={submit}
+      <Button
+        buttonStyle="primary"
+        className="slide-preview__ai-submit"
         disabled={revising || !instruction.trim()}
-        style={styles.aiSubmit}
+        margin={false}
+        onClick={submit}
+        size="small"
+        type="button"
       >
         {revising ? 'Révision en cours…' : 'Appliquer à cette diapositive'}
-      </button>
-    </div>
+      </Button>
+    </AdminPanel>
   );
 }
 
@@ -85,6 +102,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const [instruction, setInstruction] = useState('');
   const [revising, setRevising] = useState(false);
   const { reset, submit } = useForm();
+  const aiPanelId = `${path.replace(/[^a-zA-Z0-9_-]/g, '-')}-revision-panel`;
 
   async function reviseCurrentSlide() {
     if (!request.presentationId || !instruction.trim()) return;
@@ -179,29 +197,59 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   if (!result && !loading && !error) return null;
 
   return (
-    <section style={styles.section} aria-label="Aperçu de la diapositive">
-      <div style={styles.header}>
+    <section
+      aria-label="Aperçu de la diapositive"
+      className="slide-preview"
+      style={previewCanvasVariables}
+    >
+      <div className="slide-preview__header">
         <strong>Aperçu de la diapositive</strong>
-        <div style={styles.headerActions}>
-          {loading ? <span style={styles.status}>Actualisation…</span> : null}
-          <button
-            type="button"
-            style={styles.magicButton}
+        <div className="slide-preview__header-actions">
+          <span
+            aria-atomic="true"
+            aria-live="polite"
+            className="slide-preview__status"
+            role="status"
+          >
+            {loading ? (
+              <>
+                <span className="sr-only">Aperçu de la diapositive : </span>
+                Actualisation…
+              </>
+            ) : null}
+          </span>
+          <Button
+            aria-label={showAi ? 'Masquer la modification par IA' : 'Modifier avec l’IA'}
+            buttonStyle="pill"
+            className="slide-preview__magic-button"
+            extraButtonProps={{
+              'aria-controls': aiPanelId,
+              'aria-expanded': showAi,
+            }}
+            margin={false}
             onClick={() => setShowAi((value) => !value)}
+            size="small"
+            type="button"
           >
             ✨ Modifier avec l’IA
-          </button>
+          </Button>
         </div>
       </div>
       {showAi ? (
         <SlideRevisionControls
+          panelId={aiPanelId}
+          path={path}
           instruction={instruction}
           revising={revising}
           setInstruction={setInstruction}
           submit={() => void reviseCurrentSlide()}
         />
       ) : null}
-      {error ? <div style={styles.error}>{error}</div> : null}
+      {error ? (
+        <AdminNotice className="slide-preview__error" density="compact" variant="error">
+          {error}
+        </AdminNotice>
+      ) : null}
       {result ? <PreviewFrame result={result} /> : null}
     </section>
   );
@@ -211,8 +259,8 @@ function PreviewFrame({ result }: { result: PreviewResult }) {
   const { className, html, image, layout, mermaid } = result.preview;
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.scaler}>
+    <div aria-label="Rendu de la diapositive" className="slide-preview__frame" role="img">
+      <div className="slide-preview__scaler">
         <SlideFrame
           className={className}
           chrome={result.chrome}
@@ -220,108 +268,23 @@ function PreviewFrame({ result }: { result: PreviewResult }) {
           image={image}
           layout={layout}
           mermaid={mermaid}
-          style={styles.slide}
+          style={slideStyle}
         />
       </div>
     </div>
   );
 }
 
-const styles = {
-  section: {
-    marginTop: '12px',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '12px',
-    marginBottom: '8px',
-    fontSize: '13px',
-  },
-  status: {
-    color: 'var(--theme-elevation-500)',
-    fontWeight: 400,
-  },
-  headerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  magicButton: {
-    border: '1px solid var(--theme-elevation-200)',
-    borderRadius: '999px',
-    background: 'var(--theme-elevation-50)',
-    color: 'var(--theme-text)',
-    padding: '6px 10px',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: '12px',
-  },
-  aiPanel: {
-    display: 'grid',
-    gap: '8px',
-    marginBottom: '10px',
-    padding: '10px',
-    border: '1px solid var(--theme-elevation-150)',
-    borderRadius: '6px',
-    background: 'var(--theme-elevation-50)',
-  },
-  aiInput: {
-    width: '100%',
-    boxSizing: 'border-box',
-    resize: 'vertical',
-    border: '1px solid var(--theme-elevation-200)',
-    borderRadius: '4px',
-    padding: '8px',
-    background: 'var(--theme-elevation-0)',
-    color: 'var(--theme-text)',
-    fontFamily: 'inherit',
-  },
-  aiSubmit: {
-    justifySelf: 'start',
-    border: 0,
-    borderRadius: '4px',
-    background: 'var(--theme-success-500)',
-    color: '#fff',
-    padding: '7px 11px',
-    cursor: 'pointer',
-    fontWeight: 600,
-  },
-  error: {
-    marginBottom: '8px',
-    padding: '8px 10px',
-    border: '1px solid var(--theme-error-200)',
-    borderRadius: '4px',
-    color: 'var(--theme-error-500)',
-    backgroundColor: 'var(--theme-error-50)',
-    fontSize: '12px',
-  },
-  wrapper: {
-    marginTop: '12px',
-    borderRadius: '6px',
-    overflow: 'hidden',
-    border: '1px solid var(--theme-elevation-150)',
-    background: SLIDE_STAGE_BG,
-    // Shrink to the scaled slide — without this the wrapper keeps the form
-    // column's full width and shows a dead dark band right of the preview.
-    width: `calc(${SLIDE_CANVAS_WIDTH}px * var(--slide-scale, 0.375))`,
-    maxWidth: '100%',
-  },
-  scaler: {
-    width: `${SLIDE_CANVAS_WIDTH}px`,
-    height: `${SLIDE_CANVAS_HEIGHT}px`,
-    transform: 'scale(var(--slide-scale, 0.375))',
-    transformOrigin: 'top left',
-    marginBottom: `calc(-${SLIDE_CANVAS_HEIGHT}px * (1 - var(--slide-scale, 0.375)))`,
-    marginRight: `calc(-${SLIDE_CANVAS_WIDTH}px * (1 - var(--slide-scale, 0.375)))`,
-  },
-  slide: {
-    width: `${SLIDE_CANVAS_WIDTH}px`,
-    height: `${SLIDE_CANVAS_HEIGHT}px`,
-    overflow: 'hidden',
-    position: 'relative' as const,
-  },
-} as const;
+const slideStyle = {
+  width: `${SLIDE_CANVAS_WIDTH}px`,
+  height: `${SLIDE_CANVAS_HEIGHT}px`,
+  overflow: 'hidden',
+  position: 'relative' as const,
+};
+
+const previewCanvasVariables = {
+  '--slide-preview-height': `${SLIDE_CANVAS_HEIGHT}px`,
+  '--slide-preview-width': `${SLIDE_CANVAS_WIDTH}px`,
+} as React.CSSProperties;
 
 export default SlidePreview;

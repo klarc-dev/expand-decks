@@ -1,6 +1,23 @@
-export function KlarcMark({ size = 28 }: { size?: number }) {
-  // Inline SVG at a fixed size gains nothing from next/image (no optimization
-  // for SVG, and it needs dangerouslyAllowSVG) — a plain img is correct here.
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src="/brand/klarc-logomark.svg" alt="Klarc" style={{ width: size, height: size }} />;
+import type React from 'react';
+
+import './KlarcMark.scss';
+
+type KlarcMarkProps = Omit<
+  React.ComponentPropsWithoutRef<'img'>,
+  'alt' | 'height' | 'src' | 'style' | 'width'
+> & {
+  size?: 'icon' | 'logo';
+};
+
+export function KlarcMark({ className, size = 'icon', ...props }: KlarcMarkProps) {
+  return (
+    // Inline SVG gains nothing from next/image and would require dangerouslyAllowSVG.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      {...props}
+      alt="Klarc"
+      className={['klarc-mark', `klarc-mark--${size}`, className].filter(Boolean).join(' ')}
+      src="/brand/klarc-logomark.svg"
+    />
+  );
 }

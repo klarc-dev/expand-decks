@@ -26,6 +26,9 @@ describe('Mermaid organisation theme', () => {
     expect(config.themeCSS).toContain('svg');
     expect(config.themeCSS).toContain('width: 100% !important');
     expect(config.themeCSS).toContain('height: 100% !important');
+    expect(config.themeCSS).toContain('.edgeLabel rect');
+    expect(config.themeCSS).toContain('fill: #ffffff !important');
+    expect(config.themeCSS).toContain('background-color: #ffffff !important');
   });
 
   it('serializes the same palette for the staged Slidev setup', () => {

@@ -16,10 +16,13 @@
  * runtime — the Mastra-native replacement for `src/lib/ai.ts` `draftObject`.
  */
 import { Agent } from '@mastra/core/agent';
+import type { OutputProcessor } from '@mastra/core/processors';
 import { createTool } from '@mastra/core/tools';
 import type { z } from 'zod';
 
-import { cloudCLIProxy, DRAFT_MODEL } from '../lib/ai';
+import { cloudCLIProxy, modelForTier, type AgentModelTier } from '../lib/ai';
+import { abortableDelay, combineAbortSignals, throwIfAborted } from '../lib/abort';
+import { sanitizeToolResult } from '../lib/sources/toolPolicy';
 import { StylePolicyError } from './prompts/style';
 
 /**
@@ -40,7 +43,7 @@ const DEFAULT_TIMEOUT_MS = 300_000;
  * isolated here so every call site stays fully typed.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const draftModel = cloudCLIProxy(DRAFT_MODEL) as any;
+const modelFor = (tier: AgentModelTier) => cloudCLIProxy(modelForTier(tier)) as any;
 
 /**
  * Run a one-shot structured generation: build a throwaway Agent with a single
@@ -55,21 +58,27 @@ const DEFAULT_RESEARCH_MAX_STEPS = 6;
 
 /** Transient proxy failures worth one retry. */
 const TRANSIENT_RE =
-  /bad gateway|gateway timeout|502|503|504|ECONNRESET|fetch failed|socket hang up/i;
+  /bad gateway|gateway timeout|502|503|504|ECONNRESET|fetch failed|socket hang up|finishReason=tripwire|did not emit via the emit tool/i;
 const TRANSIENT_RETRIES = 2;
 const TRANSIENT_BACKOFF_MS = 5_000;
 
-async function withTransientRetry<R>(name: string, fn: () => Promise<R>): Promise<R> {
+async function withTransientRetry<R>(
+  name: string,
+  signal: AbortSignal | undefined,
+  fn: () => Promise<R>,
+): Promise<R> {
   for (let i = 0; ; i++) {
+    throwIfAborted(signal);
     try {
       return await fn();
     } catch (error) {
+      throwIfAborted(signal);
       const msg = String((error as Error)?.message ?? error);
       if (i >= TRANSIENT_RETRIES || !TRANSIENT_RE.test(msg)) throw error;
       console.warn(
         `[${name}] transient gateway error (retry ${i + 1}/${TRANSIENT_RETRIES}): ${msg}`,
       );
-      await new Promise((r) => setTimeout(r, TRANSIENT_BACKOFF_MS * (i + 1)));
+      await abortableDelay(TRANSIENT_BACKOFF_MS * (i + 1), signal);
     }
   }
 }
@@ -104,6 +113,9 @@ export async function researchWithSources({
   toolsets,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   maxSteps = DEFAULT_RESEARCH_MAX_STEPS,
+  toolCallConcurrency = 2,
+  onToolResult,
+  abortSignal,
 }: {
   name: string;
   instructions: string;
@@ -111,19 +123,46 @@ export async function researchWithSources({
   toolsets: unknown;
   timeoutMs?: number;
   maxSteps?: number;
+  toolCallConcurrency?: number;
+  abortSignal?: AbortSignal;
+  onToolResult?: (result: {
+    toolName: string;
+    toolCallId: string;
+    args: unknown;
+    result: unknown;
+  }) => void;
 }): Promise<string> {
+  const sourceBoundary: OutputProcessor = {
+    id: 'source-tool-boundary',
+    processToolResult({ toolName, toolCallId, args, result, messageList }) {
+      const sanitized = sanitizeToolResult(result);
+      onToolResult?.({ toolName, toolCallId, args, result: sanitized });
+      messageList.updateToolInvocation({
+        type: 'tool-invocation',
+        toolInvocation: {
+          state: 'result',
+          toolCallId,
+          toolName,
+          args,
+          result: sanitized,
+        },
+      });
+    },
+  };
   const agent = new Agent({
     id: name,
     name,
     instructions,
-    model: draftModel,
+    model: modelFor('research'),
+    outputProcessors: [sourceBoundary],
   });
 
-  const res = await withTransientRetry(name, () =>
+  const res = await withTransientRetry(name, abortSignal, () =>
     agent.generate(prompt as never, {
       toolsets: toolsets as never,
       maxSteps,
-      abortSignal: AbortSignal.timeout(timeoutMs),
+      toolCallConcurrency,
+      abortSignal: combineAbortSignals(abortSignal, timeoutMs),
     }),
   );
 
@@ -140,6 +179,8 @@ export async function generateStructured<T>({
   maxRepairs = 1,
   validate,
   maxValidationRepairs = 1,
+  modelTier = 'draft',
+  abortSignal,
 }: {
   name: string;
   instructions: string;
@@ -152,6 +193,8 @@ export async function generateStructured<T>({
   /** Optional semantic/deterministic validation after schema validation succeeds. */
   validate?: (value: T) => string[];
   maxValidationRepairs?: number;
+  modelTier?: AgentModelTier;
+  abortSignal?: AbortSignal;
 }): Promise<T> {
   const emit = createTool({
     id: 'emit',
@@ -164,7 +207,7 @@ export async function generateStructured<T>({
     id: name,
     name,
     instructions: `${instructions}\n\nYou MUST call the \`emit\` tool exactly once with the result. Do not write prose.`,
-    model: draftModel,
+    model: modelFor(modelTier),
     tools: { emit },
   });
 
@@ -199,11 +242,11 @@ export async function generateStructured<T>({
   for (;;) {
     // maxSteps:1 — we only need the validated args of the forced `emit` call
     // from the first response. Avoid an unnecessary second model round-trip.
-    const res = await withTransientRetry(name, () =>
+    const res = await withTransientRetry(name, abortSignal, () =>
       agent.generate(buildInput(userPrompt) as never, {
         toolChoice: 'required',
         maxSteps: 1,
-        abortSignal: AbortSignal.timeout(timeoutMs),
+        abortSignal: combineAbortSignals(abortSignal, timeoutMs),
       }),
     );
 

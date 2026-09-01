@@ -8,7 +8,7 @@ cp .env.example .env   # fill in DATABASE_URL, PAYLOAD_SECRET, OAuth, OPENAI_*
 pnpm dev               # admin at /admin, frontend at /
 ```
 
-Node 20 is the deployment runtime (see `.nvmrc` / Dockerfile); newer Node works locally. pnpm is pinned via `packageManager`.
+Node 22.13+ is the deployment runtime (see `.nvmrc` / Dockerfile). pnpm is pinned via `packageManager`.
 
 ## Quality gates
 

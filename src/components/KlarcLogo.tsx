@@ -1,5 +1,5 @@
 import { KlarcMark } from '@/components/KlarcMark';
 
-export const KlarcLogo = () => <KlarcMark size={120} />;
+export const KlarcLogo = () => <KlarcMark size="logo" />;
 
 export default KlarcLogo;

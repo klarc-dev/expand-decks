@@ -1,5 +1,6 @@
 import type { TimelineBlockData } from '../../blocks/spec/timeline';
 import { K } from '../classNames';
+import { densityClass, densityFromScore } from '../density';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { TimelineBlockData };
@@ -20,6 +21,13 @@ function needsVerticalTimeline(steps: NonNullable<TimelineBlockData['steps']>): 
 export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): string {
   const steps = block.steps ?? [];
   const vertical = needsVerticalTimeline(steps);
+  const density = densityFromScore(
+    steps.reduce(
+      (score, step) => score + step.label.length * 1.2 + (step.description?.length ?? 0),
+      steps.length * 65,
+    ),
+    { compact: 430, dense: 690 },
+  );
 
   // Each step is a self-contained node; the connecting rail is drawn purely in
   // CSS (a pseudo-element behind the numbered dots), so no arrow glyphs or
@@ -39,13 +47,14 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
 
   const band = block.footer ? `\n\n<div class="${K.timelineBand}">${md(block.footer)}</div>` : '';
   const variant = vertical ? K.timelineVertical : K.timelineHorizontal;
-  const timeline = `<div class="${K.timeline} ${variant}" style="--k-tl-count:${steps.length || 1}">\n${nodes}\n</div>${band}`;
+  const timeline = `<div class="${[K.timeline, variant, densityClass(density)].filter(Boolean).join(' ')}" style="--k-tl-count:${steps.length || 1}">\n${nodes}\n</div>${band}`;
 
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
+  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md', density });
   const bodyHtml = contentFrame(timeline, {
     header,
     wFull: true,
     crowded: vertical,
+    density,
   });
 
   return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });

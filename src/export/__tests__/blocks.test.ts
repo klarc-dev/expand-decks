@@ -380,18 +380,33 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('And so should this');
     expect(result).toContain('Some intro');
   });
+
+  it('uses one dense card scale for a pressured right-hand stack', () => {
+    const result = renderTwoCols({
+      blockType: 'twoCols',
+      title: 'Long decision framework title that consumes additional vertical space',
+      intro: lexical('A long introduction '.repeat(12)),
+      leftFooter: lexical('A detailed note '.repeat(10)),
+      rightCards: Array.from({ length: 4 }, (_, index) => ({
+        title: `A deliberately long card heading ${index + 1}`,
+        description: lexical('Detailed card copy '.repeat(16)),
+      })),
+    });
+    expect(result).toContain('k-density-dense');
+    expect(result).toContain('k-card-scale-xs');
+  });
 });
 
 describe('renderCardGrid()', () => {
   const oneCard = [{ title: 'A', description: lexical('Desc') }];
 
-  it('uses k-grid-4 by default', () => {
+  it('treats the requested column count as a maximum for sparse grids', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',
       title: 'Grid',
       cards: oneCard,
     });
-    expect(result).toContain('k-grid-4');
+    expect(result).toContain('k-grid-1');
   });
 
   it('separates header and body in the shared content frame', () => {
@@ -405,14 +420,14 @@ describe('renderCardGrid()', () => {
     expect(result.indexOf('k-content-header')).toBeLessThan(result.indexOf('k-content-main'));
   });
 
-  it('respects columns setting', () => {
+  it('respects columns setting as an upper bound', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',
       title: 'Grid',
       columns: '3',
       cards: oneCard,
     });
-    expect(result).toContain('k-grid-3');
+    expect(result).toContain('k-grid-1');
   });
 
   it('emits no grid container when there are no cards', () => {
@@ -527,6 +542,26 @@ describe('renderStats()', () => {
     const result = renderStats({ blockType: 'stats', title: 'Stats' });
     expect(result).toContain('k-content-header');
     expect(result).toContain('k-content-main');
+  });
+
+  it('omits the empty stat grid', () => {
+    const result = renderStats({ blockType: 'stats', title: 'Stats' });
+    expect(result).not.toContain('k-stat-grid');
+  });
+
+  it('selects one dense scale for long values and labels', () => {
+    const result = renderStats({
+      blockType: 'stats',
+      title: 'Detailed impact targets',
+      stats: [
+        { value: '€12,450,000–€18,900,000', label: 'Projected annual recurring revenue range' },
+        { value: '2026–2031', label: 'Multi-year delivery and adoption horizon' },
+        { value: '99.987%', label: 'Target platform availability across all regions' },
+        { value: '1:250,000', label: 'Maximum supported operating ratio at scale' },
+      ],
+    });
+    expect(result).toContain('k-stat-grid k-grid-4 k-density-dense');
+    expect(result).toContain('k-content k-density-dense');
   });
 
   it('uses production-safe clamped grid classes', () => {
@@ -839,6 +874,7 @@ describe('renderTable() — fixed-canvas fitting', () => {
     });
 
     expect(result).toContain('k-table--fit');
+    expect(result).toContain('k-density-compact');
     expect(result).toContain('k-content-main--stretch');
   });
 });

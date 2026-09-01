@@ -34,9 +34,11 @@ describe('style.css fitted agenda layout (regression: agenda rows overflow foote
 });
 
 describe('style.css oversized export fitting', () => {
-  it('fits dense tables inside the measured content row', () => {
+  it('fits dense tables inside the measured content row with a readable shared scale', () => {
     expect(css).toMatch(/\.k-table--fit\s*\{[\s\S]*table-layout:\s*fixed/);
-    expect(css).toMatch(/\.k-table--fit\s*\{[\s\S]*font-size:\s*0\.5rem/);
+    expect(css).toMatch(/\.k-table\.k-density-compact\s*\{[\s\S]*font-size:\s*calc/);
+    expect(css).toMatch(/\.k-table\.k-density-dense\s*\{[\s\S]*font-size:\s*calc/);
+    expect(css).not.toMatch(/\.k-table--fit\s*\{[\s\S]*font-size:\s*0\.5rem/);
     expect(css).toMatch(
       /\.k-table--fit th,[\s\S]*?\.k-table--fit td\s*\{[\s\S]*overflow-wrap:\s*anywhere/,
     );
@@ -46,6 +48,26 @@ describe('style.css oversized export fitting', () => {
     expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*min-width:\s*0/);
     expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*min-height:\s*0/);
     expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*object-fit:\s*contain/);
+    expect(css).toMatch(/\.k-diagram-slide \.mermaid \.edgeLabel rect,[\s\S]*fill:\s*#ffffff/);
+    expect(css).toMatch(
+      /\.k-diagram-slide \.mermaid \.edgeLabel span,[\s\S]*background-color:\s*#ffffff/,
+    );
+  });
+});
+
+describe('style.css shared density system', () => {
+  it('defines compact and dense fixed-canvas scales once', () => {
+    expect(css).toMatch(/\.k-density-compact\s*\{[\s\S]*--density-scale:\s*0\.88/);
+    expect(css).toMatch(/\.k-density-dense\s*\{[\s\S]*--density-scale:\s*0\.76/);
+    expect(css).toMatch(/\.k-stat-grid\.k-density-compact \.k-stat \.val/);
+    expect(css).toMatch(/\.k-stat-grid\.k-density-dense \.k-stat \.val/);
+  });
+
+  it('applies density to slide headings and content spacing as a group', () => {
+    expect(css).toMatch(/\.k-content\.k-density-compact[\s\S]*row-gap:/);
+    expect(css).toMatch(/\.k-content\.k-density-dense[\s\S]*padding-top:/);
+    expect(css).toMatch(/\.k-hero\.k-density-dense \.k-hero-title/);
+    expect(css).toMatch(/\.k-hero--center \.k-hero-body\s*\{[\s\S]*margin-left:\s*auto/);
   });
 });
 
@@ -54,6 +76,8 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-cardgrid-body\s*\{[\s\S]*height:\s*100%/);
     expect(css).toMatch(/\.k-cardgrid-body\s*\{[\s\S]*display:\s*flex/);
     expect(css).toMatch(/\.k-cardgrid-body\s*>\s*\.k-card-stack\s*\{[\s\S]*flex:\s*1 1 auto/);
+    expect(css).toMatch(/\.k-card-stack--grid\s*\{[\s\S]*align-content:\s*center/);
+    expect(css).toMatch(/\.k-card-stack--grid\s*\{[\s\S]*grid-auto-rows:\s*auto/);
   });
 
   it('styles the lead as an in-flow reading band instead of a detached right note', () => {

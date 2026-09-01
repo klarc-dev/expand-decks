@@ -1,0 +1,26 @@
+.slide-frame {
+  &--image {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0;
+  }
+
+  &__content,
+  &__image {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  &__content {
+    overflow: hidden;
+  }
+
+  &__image {
+    background-position: center;
+    background-size: cover;
+  }
+
+  &__contents {
+    display: contents;
+  }
+}

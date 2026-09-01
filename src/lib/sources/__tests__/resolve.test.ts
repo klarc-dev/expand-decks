@@ -18,8 +18,20 @@ function setRegistry(value: unknown) {
 }
 
 const twoSources = [
-  { id: 'fiscal-kb', label: 'Fiscal KB', transport: 'http', url: 'https://example.com/a' },
-  { id: 'web-docs', label: 'Web Docs', transport: 'http', url: 'https://example.com/b' },
+  {
+    id: 'fiscal-kb',
+    label: 'Fiscal KB',
+    allowedTools: ['search'],
+    transport: 'http',
+    url: 'https://example.com/a',
+  },
+  {
+    id: 'web-docs',
+    label: 'Web Docs',
+    allowedTools: ['search'],
+    transport: 'http',
+    url: 'https://example.com/b',
+  },
 ];
 
 describe('normalizeSourceIds', () => {

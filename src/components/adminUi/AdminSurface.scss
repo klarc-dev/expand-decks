@@ -1,0 +1,33 @@
+.admin-panel {
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
+
+  &[data-density='compact'] {
+    padding: 10px;
+  }
+}
+
+.admin-notice {
+  border-radius: var(--style-radius-m);
+  font-size: 13px;
+
+  &[data-density='compact'] {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  &--hint {
+    padding: 12px 16px;
+    border: 1px dashed var(--theme-elevation-150);
+    color: var(--theme-elevation-500);
+  }
+
+  &--error {
+    padding: 10px;
+    border: 1px solid var(--theme-error-500);
+    background: var(--theme-error-50);
+    color: var(--theme-error-500);
+    overflow-wrap: anywhere;
+  }
+}

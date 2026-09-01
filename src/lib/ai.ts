@@ -15,8 +15,21 @@ const baseURL =
   'https://klarc.tail769c37.ts.net:8317/v1';
 const apiKey = process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY || '';
 
-/** CloudCLIProxy's high-quality routing alias. Override only for explicit tests. */
-export const DRAFT_MODEL = process.env.OPENAI_MODEL || 'high';
+/** CloudCLIProxy model routing. Phase aliases can be evaluated independently. */
+export type AgentModelTier = 'research' | 'draft' | 'judge' | 'visual';
+
+const MODEL_ENV: Record<AgentModelTier, string> = {
+  research: 'OPENAI_RESEARCH_MODEL',
+  draft: 'OPENAI_DRAFT_MODEL',
+  judge: 'OPENAI_JUDGE_MODEL',
+  visual: 'OPENAI_VISUAL_MODEL',
+};
+
+export function modelForTier(tier: AgentModelTier): string {
+  return process.env[MODEL_ENV[tier]] || process.env.OPENAI_MODEL || 'high';
+}
+
+export const DRAFT_MODEL = modelForTier('draft');
 
 /**
  * Wrap fetch to normalise requests for the gateway:

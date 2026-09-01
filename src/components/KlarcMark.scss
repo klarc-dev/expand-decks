@@ -1,0 +1,14 @@
+.klarc-mark {
+  display: block;
+  object-fit: contain;
+
+  &--icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  &--logo {
+    width: 120px;
+    height: 120px;
+  }
+}

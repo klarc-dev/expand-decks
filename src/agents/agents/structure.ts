@@ -132,6 +132,7 @@ Interroge les sources sélectionnées pour trouver des faits, exemples ou angles
 export async function structure(
   dossier: DeckDossier,
   sourceIds?: readonly string[],
+  abortSignal?: AbortSignal,
 ): Promise<OutlineStub[]> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
@@ -148,6 +149,8 @@ export async function structure(
       prompt,
       validate: findInformationalStyleViolations,
       maxValidationRepairs: 3,
+      modelTier: 'research',
+      abortSignal,
     });
 
     const uncovered = uncoveredKeyPoints(dossier, slides);
@@ -163,6 +166,7 @@ export async function structure(
         name: 'structure:research',
         instructions: STRUCTURE_RESEARCH_INSTRUCTIONS,
         prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
+        abortSignal,
       });
       sourceNotes = notes;
     }

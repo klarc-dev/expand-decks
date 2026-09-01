@@ -1,5 +1,6 @@
 import type { TableBlockData } from '../../blocks/spec/table';
 import { K } from '../classNames';
+import { densityClass, densityFromScore, totalVisibleText, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
@@ -36,7 +37,20 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const rows = block.rows ?? [];
   const colCount = cols.length;
   const isMatrix = block.tableVariant === 'matrix';
-  const fitted = rows.length >= 6 || colCount >= 4;
+  const cellHtml = rows.flatMap((row) =>
+    (row.cells ?? []).map((cell) => richTextToHTML(cell.value)),
+  );
+  const textVolume = totalVisibleText([
+    block.title,
+    ...cols.map((column) => column.header),
+    ...cellHtml,
+  ]);
+  const longestCell = Math.max(0, ...cellHtml.map((cell) => visibleText(cell).length));
+  const density = densityFromScore(
+    textVolume + rows.length * 34 + colCount * 54 + longestCell * 1.4,
+    { compact: 760, dense: 1380 },
+  );
+  const fitted = density !== 'comfortable';
 
   const head = colCount
     ? `<thead>\n<tr>${cols.map((c) => `<th>${md(c.header)}</th>`).join('')}</tr>\n</thead>`
@@ -54,15 +68,26 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     })
     .join('\n');
 
-  const tableCls = [K.table, isMatrix ? 'k-table--matrix' : '', fitted ? 'k-table--fit' : '']
+  const tableCls = [
+    K.table,
+    isMatrix ? 'k-table--matrix' : '',
+    fitted ? 'k-table--fit' : '',
+    densityClass(density),
+  ]
     .filter(Boolean)
     .join(' ');
   const table = `<table class="${tableCls}">\n${head}\n<tbody>\n${body}\n</tbody>\n</table>`;
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
+  const header = slideHeader({
+    eyebrow: block.eyebrow,
+    title: block.title,
+    size: 'md',
+    density,
+  });
   const bodyHtml = contentFrame(table, {
     header,
     wFull: true,
     crowded: fitted,
+    density,
     mainAlign: fitted ? 'stretch' : 'start',
   });
 

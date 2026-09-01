@@ -48,12 +48,17 @@ Barème :
 - < 0.5 : enfreint une règle structurante (titre-thème, fonctions multiples, invention, survente, vague).
 Sois exigeant mais juste. fix = action concrète et brève (ex. "Réécris le titre comme le message à retenir").`;
 
-async function judge(slide: unknown): Promise<z.infer<typeof RubricVerdict>> {
+async function judge(
+  slide: unknown,
+  abortSignal?: AbortSignal,
+): Promise<z.infer<typeof RubricVerdict>> {
   return generateStructured({
     name: 'rubricScorer',
     instructions: JUDGE_INSTRUCTIONS,
     schema: RubricVerdict,
     prompt: `Diapositive (JSON) :\n${JSON.stringify(slide, null, 2)}`,
+    modelTier: 'judge',
+    abortSignal,
   });
 }
 
@@ -68,8 +73,9 @@ export const rubricScorer = createScorer({
   description: 'Judges a slide against the interesting-expert-content rules (0..1).',
 })
   .analyze(async ({ run }) => {
-    const slide = (run.output as { slide?: unknown })?.slide ?? run.output;
-    const verdict = await judge(slide);
+    const output = run.output as { slide?: unknown; abortSignal?: AbortSignal };
+    const slide = output?.slide ?? run.output;
+    const verdict = await judge(slide, output?.abortSignal);
     return { result: verdict };
   })
   .generateScore(({ results }) => {
@@ -85,7 +91,8 @@ export const rubricScorer = createScorer({
 /** Convenience wrapper: score one slide, return { score, fix }. */
 export async function scoreSlide(
   slide: Record<string, unknown>,
+  abortSignal?: AbortSignal,
 ): Promise<{ score: number; fix: string }> {
-  const res = await rubricScorer.run({ output: { slide } });
+  const res = await rubricScorer.run({ output: { slide, abortSignal } });
   return { score: res.score ?? 0, fix: (res.reason as string) ?? '' };
 }

@@ -1,8 +1,12 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { FieldError, FieldLabel, useField } from '@payloadcms/ui';
+import { useField } from '@payloadcms/ui';
 import type { TextFieldClientComponent } from 'payload';
+
+import { AdminTextField } from '@/components/adminUi/AdminTextField';
+
+import './ColorField.scss';
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -37,57 +41,33 @@ const ColorField: TextFieldClientComponent = ({ field, path }) => {
   );
 
   return (
-    <div className="field-type text" style={{ marginBottom: '20px' }}>
-      <FieldLabel label={label} required={required} path={path} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <AdminTextField
+      leadingControl={
         <input
           type="color"
           aria-label={`${typeof label === 'string' ? label : 'Couleur'} — sélecteur`}
+          className="color-field__swatch"
           value={swatch}
           onChange={handleSwatch}
-          style={{
-            width: '40px',
-            height: '36px',
-            padding: '2px',
-            border: '1px solid var(--theme-elevation-150)',
-            borderRadius: '4px',
-            backgroundColor: 'var(--theme-elevation-0)',
-            cursor: 'pointer',
-            flex: '0 0 auto',
-          }}
         />
-        <input
-          type="text"
-          value={current}
-          onChange={handleText}
-          placeholder="#02585c"
-          spellCheck={false}
-          autoComplete="off"
-          style={{
-            flex: '1 1 auto',
-            padding: '8px 10px',
-            border: `1px solid ${showError ? 'var(--theme-error-500)' : 'var(--theme-elevation-150)'}`,
-            borderRadius: '4px',
-            backgroundColor: 'var(--theme-elevation-0)',
-            color: 'var(--theme-text)',
-            fontFamily: 'monospace',
-            fontSize: '13px',
-          }}
-        />
-      </div>
-      {showError && <FieldError showError={showError} message={errorMessage} path={path} />}
-      {field.admin?.description && typeof field.admin.description === 'string' && (
-        <p
-          style={{
-            margin: '6px 0 0',
-            fontSize: '13px',
-            color: 'var(--theme-elevation-500)',
-          }}
-        >
-          {field.admin.description}
-        </p>
-      )}
-    </div>
+      }
+      description={
+        typeof field.admin?.description === 'string' ? field.admin.description : undefined
+      }
+      errorMessage={errorMessage}
+      inputProps={{
+        autoComplete: 'off',
+        onChange: handleText,
+        placeholder: '#02585c',
+        spellCheck: false,
+        value: current,
+      }}
+      inputVariant="code"
+      label={label}
+      path={path}
+      required={required}
+      showError={showError}
+    />
   );
 };
 

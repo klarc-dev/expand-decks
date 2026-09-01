@@ -53,6 +53,7 @@ describe('GET /api/agent-sources', () => {
         command: 'node',
         args: ['server.js'],
         env: { API_KEY: 'secret' },
+        allowedTools: ['search'],
       },
     ]);
 

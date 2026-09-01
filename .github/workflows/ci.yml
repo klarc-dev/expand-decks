@@ -4,6 +4,9 @@ on:
   pull_request:
   push:
     branches: [main, master]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'
 
 permissions:
   contents: read
@@ -94,5 +97,78 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Deterministic evaluation checks
+        run: pnpm eval:ci
+
+      - name: Upload deterministic evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-ci-${{ github.sha }}
+          path: artifacts/evals/ci.json
+          if-no-files-found: error
+
       - name: Build
+        env:
+          MASTRA_DISABLE_INIT: '1'
         run: pnpm build
+
+  eval-live:
+    name: Mastra production quality gates
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: slides_eval
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d slides_eval"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/slides_eval
+      OBSERVABILITY_DATABASE_URL: postgres://postgres:postgres@localhost:5432/slides_eval
+      PAYLOAD_SECRET: eval-placeholder-secret
+      NEXT_PUBLIC_SERVER_URL: http://localhost:4317
+      OPENAI_BASE_URL: ${{ secrets.EVAL_OPENAI_BASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.EVAL_OPENAI_MODEL }}
+      WRITER_CONCURRENCY: '1'
+      REVISE_MAX_ITERATIONS: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run Mastra production eval gates
+        run: pnpm test:agent-evals
+      - name: Seed persistent versioned datasets
+        run: pnpm eval:seed
+      - name: Run persistent experiment
+        run: pnpm eval:experiment
+      - name: Upload evaluation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-live-${{ github.sha }}
+          path: artifacts/evals/*.json
+          if-no-files-found: error

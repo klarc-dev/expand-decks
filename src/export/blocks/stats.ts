@@ -1,5 +1,6 @@
 import type { StatsBlockData } from '../../blocks/spec/stats';
 import { K } from '../classNames';
+import { densityClass, densityFromScore } from '../density';
 import {
   contentFrame,
   escape,
@@ -14,7 +15,12 @@ export type { StatsBlockData };
 
 export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
   const stats = block.stats ?? [];
-  const statGrid = gridClass(stats.length || 4);
+  const statGrid = stats.length ? gridClass(stats.length) : '';
+  const density = densityFromScore(
+    Math.max(0, ...stats.map((stat) => stat.value.length * 2.4 + stat.label.length)) +
+      stats.length * 42,
+    { compact: 145, dense: 225 },
+  );
 
   const items = stats
     .map((stat) => {
@@ -22,10 +28,16 @@ export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
     })
     .join('\n\n');
 
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, align: 'center' });
-  const body = contentFrame(`<div class="${K.statGrid} ${statGrid}">\n\n${items}\n\n</div>`, {
-    header,
+  const header = slideHeader({
+    eyebrow: block.eyebrow,
+    title: block.title,
+    align: 'center',
+    density,
   });
+  const main = stats.length
+    ? `<div class="${[K.statGrid, statGrid, densityClass(density)].filter(Boolean).join(' ')}">\n\n${items}\n\n</div>`
+    : '';
+  const body = contentFrame(main, { header, density });
 
   return wrapSlide({
     classAttr: surfaceClass(ctx?.surface ?? 'light'),

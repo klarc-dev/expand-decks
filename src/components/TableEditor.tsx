@@ -12,12 +12,55 @@ import {
   useFormFields,
 } from '@payloadcms/ui';
 
+import { AdminTextField } from '@/components/adminUi/AdminTextField';
+import { AdminNotice } from '@/components/adminUi/AdminSurface';
+
 import './TableEditor.scss';
 
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 5;
 const MIN_ROWS = 1;
 const MAX_ROWS = 8;
+
+type TableActionGroupProps = {
+  children: React.ReactNode;
+  label: string;
+  orientation?: 'horizontal' | 'vertical';
+};
+
+function TableActionGroup({ children, label, orientation = 'horizontal' }: TableActionGroupProps) {
+  return (
+    <fieldset aria-label={label} className="table-editor__controls" data-orientation={orientation}>
+      {children}
+    </fieldset>
+  );
+}
+
+type TableActionProps = {
+  children: React.ReactNode;
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+};
+
+function TableAction({ children, disabled, label, onClick }: TableActionProps) {
+  return (
+    <Button
+      aria-label={label}
+      buttonStyle="transparent"
+      className="table-editor__compact-action"
+      disabled={disabled}
+      margin={false}
+      onClick={onClick}
+      size="xsmall"
+      type="button"
+    >
+      <span aria-hidden="true" className="table-editor__action-glyph">
+        {children}
+      </span>
+    </Button>
+  );
+}
 
 function id() {
   const bytes = new Uint8Array(12);
@@ -63,14 +106,18 @@ export function createRowState(columnCount: number): FormState {
 function HeaderInput({ path, readOnly }: { path: string; readOnly: boolean }) {
   const { setValue, value } = useField<string>({ path });
   return (
-    <input
-      aria-label="En-tête de colonne"
-      className="table-editor__header-input"
-      disabled={readOnly}
-      onChange={(event) => setValue(event.target.value)}
-      placeholder="En-tête"
-      type="text"
-      value={value ?? ''}
+    <AdminTextField
+      inputProps={{
+        disabled: readOnly,
+        onChange: (event) => setValue(event.target.value),
+        placeholder: 'En-tête',
+        value: value ?? '',
+      }}
+      inputVariant="compact-edit"
+      label="En-tête de colonne"
+      labelVisibility="screen-reader"
+      margin="none"
+      path={path}
     />
   );
 }
@@ -145,7 +192,9 @@ export default function TableEditor(props: ArrayFieldClientProps) {
 
   const columnIndexes = useMemo(() => columns.map((_, index) => index), [columns]);
 
-  if (!cellFields) return <div>Configuration de cellule indisponible.</div>;
+  if (!cellFields) {
+    return <AdminNotice variant="error">Configuration de cellule indisponible.</AdminNotice>;
+  }
 
   return (
     <div className="table-editor">
@@ -165,7 +214,7 @@ export default function TableEditor(props: ArrayFieldClientProps) {
       <div className="table-editor__scroll">
         <div
           className="table-editor__grid"
-          style={{ gridTemplateColumns: `3rem repeat(${columns.length}, minmax(14rem, 1fr))` }}
+          style={{ '--table-column-count': columns.length } as React.CSSProperties}
         >
           <div className="table-editor__corner" aria-hidden="true" />
           {columnIndexes.map((columnIndex) => (
@@ -175,35 +224,29 @@ export default function TableEditor(props: ArrayFieldClientProps) {
             >
               <HeaderInput path={`${columnsPath}.${columnIndex}.header`} readOnly={readOnly} />
               {!readOnly ? (
-                <fieldset
-                  className="table-editor__controls"
-                  aria-label={`Actions colonne ${columnIndex + 1}`}
-                >
-                  <button
+                <TableActionGroup label={`Actions colonne ${columnIndex + 1}`}>
+                  <TableAction
                     disabled={columnIndex === 0}
+                    label={`Déplacer la colonne ${columnIndex + 1} à gauche`}
                     onClick={() => moveColumn(columnIndex, columnIndex - 1)}
-                    type="button"
-                    aria-label="Déplacer la colonne à gauche"
                   >
                     ←
-                  </button>
-                  <button
+                  </TableAction>
+                  <TableAction
                     disabled={columnIndex === columns.length - 1}
+                    label={`Déplacer la colonne ${columnIndex + 1} à droite`}
                     onClick={() => moveColumn(columnIndex, columnIndex + 1)}
-                    type="button"
-                    aria-label="Déplacer la colonne à droite"
                   >
                     →
-                  </button>
-                  <button
+                  </TableAction>
+                  <TableAction
                     disabled={columns.length <= MIN_COLUMNS}
+                    label={`Supprimer la colonne ${columnIndex + 1}`}
                     onClick={() => removeColumn(columnIndex)}
-                    type="button"
-                    aria-label="Supprimer la colonne"
                   >
                     ×
-                  </button>
-                </fieldset>
+                  </TableAction>
+                </TableActionGroup>
               ) : null}
             </div>
           ))}
@@ -213,9 +256,10 @@ export default function TableEditor(props: ArrayFieldClientProps) {
               <div className="table-editor__row-actions">
                 <span>{rowIndex + 1}</span>
                 {!readOnly ? (
-                  <div className="table-editor__controls table-editor__controls--vertical">
-                    <button
+                  <TableActionGroup label={`Actions ligne ${rowIndex + 1}`} orientation="vertical">
+                    <TableAction
                       disabled={rowIndex === 0}
+                      label={`Monter la ligne ${rowIndex + 1}`}
                       onClick={() =>
                         moveFieldRow({
                           moveFromIndex: rowIndex,
@@ -223,13 +267,12 @@ export default function TableEditor(props: ArrayFieldClientProps) {
                           path: rowsPath,
                         })
                       }
-                      type="button"
-                      aria-label="Monter la ligne"
                     >
                       ↑
-                    </button>
-                    <button
+                    </TableAction>
+                    <TableAction
                       disabled={rowIndex === rows.length - 1}
+                      label={`Descendre la ligne ${rowIndex + 1}`}
                       onClick={() =>
                         moveFieldRow({
                           moveFromIndex: rowIndex,
@@ -237,26 +280,24 @@ export default function TableEditor(props: ArrayFieldClientProps) {
                           path: rowsPath,
                         })
                       }
-                      type="button"
-                      aria-label="Descendre la ligne"
                     >
                       ↓
-                    </button>
-                    <button
+                    </TableAction>
+                    <TableAction
                       disabled={rows.length <= MIN_ROWS}
+                      label={`Supprimer la ligne ${rowIndex + 1}`}
                       onClick={() => removeFieldRow({ path: rowsPath, rowIndex })}
-                      type="button"
-                      aria-label="Supprimer la ligne"
                     >
                       ×
-                    </button>
-                  </div>
+                    </TableAction>
+                  </TableActionGroup>
                 ) : null}
               </div>
               {columnIndexes.map((columnIndex) => (
                 <div className="table-editor__cell" key={`${row.id}-${columns[columnIndex]?.id}`}>
                   <RenderFields
                     fields={cellFields}
+                    margins={false}
                     parentIndexPath={`${props.indexPath ?? ''}-${rowIndex}-${columnIndex}`}
                     parentPath={`${rowsPath}.${rowIndex}.cells.${columnIndex}`}
                     parentSchemaPath={`${schemaPath}.cells`}
@@ -275,6 +316,7 @@ export default function TableEditor(props: ArrayFieldClientProps) {
           <Button
             buttonStyle="secondary"
             disabled={rows.length >= MAX_ROWS}
+            margin={false}
             onClick={addRow}
             size="small"
             type="button"

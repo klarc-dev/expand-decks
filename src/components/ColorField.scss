@@ -1,0 +1,12 @@
+.color-field {
+  &__swatch {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 36px;
+    padding: 2px;
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-input-bg);
+    cursor: pointer;
+  }
+}

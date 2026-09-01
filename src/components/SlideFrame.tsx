@@ -2,8 +2,7 @@ import React from 'react';
 
 import { MermaidPreview } from './MermaidPreview';
 
-/** Dark stage background behind rendered slides. */
-export const SLIDE_STAGE_BG = '#1a1a2e';
+import './SlideFrame.scss';
 
 export type SlideChrome = {
   footer?: { left: string; center: string; right: string };
@@ -64,16 +63,20 @@ export function SlideFrame({
 
   if (imageSide && image) {
     const imagePane = (
-      <div aria-hidden="true" style={{ ...styles.imagePane, backgroundImage: `url("${image}")` }} />
+      <div
+        aria-hidden="true"
+        className="slide-frame__image"
+        style={{ backgroundImage: `url("${image}")` }}
+      />
     );
     const contentPane = (
-      <div style={styles.contentPane} dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="slide-frame__content" dangerouslySetInnerHTML={{ __html: html }} />
     );
 
     return (
       <>
         {fontHref ? <link href={fontHref} rel="stylesheet" /> : null}
-        <div className={classes} style={{ ...styles.imageLayout, ...frameStyle }}>
+        <div className={`${classes} slide-frame--image`} style={frameStyle}>
           <SlideChromeLayer chrome={chrome} />
           {imageSide === 'left' ? imagePane : contentPane}
           {imageSide === 'left' ? contentPane : imagePane}
@@ -89,9 +92,9 @@ export function SlideFrame({
         {fontHref ? <link href={fontHref} rel="stylesheet" /> : null}
         <div className={classes} style={frameStyle}>
           <SlideChromeLayer chrome={chrome} />
-          <div style={styles.contents} dangerouslySetInnerHTML={{ __html: before }} />
+          <div className="slide-frame__contents" dangerouslySetInnerHTML={{ __html: before }} />
           <MermaidPreview source={mermaid.source} />
-          <div style={styles.contents} dangerouslySetInnerHTML={{ __html: after }} />
+          <div className="slide-frame__contents" dangerouslySetInnerHTML={{ __html: after }} />
         </div>
       </>
     );
@@ -102,7 +105,7 @@ export function SlideFrame({
       {fontHref ? <link href={fontHref} rel="stylesheet" /> : null}
       <div className={classes} style={frameStyle}>
         <SlideChromeLayer chrome={chrome} />
-        <div style={styles.contents} dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="slide-frame__contents" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     </>
   );
@@ -131,25 +134,3 @@ function splitMermaidFence(html: string): [string, string] {
   if (!match || match.index === undefined) return [html, ''];
   return [html.slice(0, match.index), html.slice(match.index + match[0].length)];
 }
-
-const styles = {
-  imageLayout: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    padding: 0,
-  },
-  contentPane: {
-    minWidth: 0,
-    minHeight: 0,
-    overflow: 'hidden',
-  },
-  imagePane: {
-    minWidth: 0,
-    minHeight: 0,
-    backgroundPosition: 'center',
-    backgroundSize: 'cover',
-  },
-  contents: {
-    display: 'contents',
-  },
-} satisfies Record<string, React.CSSProperties>;

@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "session_id": "20260825180641-4bd3f2ee",
+  "iterations": {
+    "1": {
+      "analysis": {
+        "status": "completed",
+        "artifact": "/tmp/slides-analysis.json",
+        "artifact_hash": "34cc604ad2920ecfe1044bac11e49bc317a7fa72929a80a9f2eb12b6962a1535",
+        "recorded_at": "2026-08-25T160701Z"
+      },
+      "prior_art": {
+        "status": "completed",
+        "artifact": "/tmp/slides-prior-art.md",
+        "artifact_hash": "1dd6bedc00699b7205bc7ba91751d4a4acf53b255c6a23cb457595ad126c4d35",
+        "recorded_at": "2026-08-25T160701Z"
+      },
+      "evidence": {
+        "status": "completed",
+        "artifact": "/tmp/slides-evidence.json",
+        "artifact_hash": "119e5d231406d5d0a32634919c2ec89d6ab2a4b7c7d6cf99c6262229f1a5d0c4",
+        "recorded_at": "2026-08-25T160738Z"
+      },
+      "clusters": {
+        "status": "completed",
+        "artifact": "/tmp/slides-clusters.json",
+        "artifact_hash": "2044b9d74e5f3faefc461b9ee15462bc9978f4ff8d2150f6927cae66316ef30c",
+        "recorded_at": "2026-08-25T160739Z"
+      },
+      "confirmation": {
+        "status": "completed",
+        "artifact": "/tmp/slides-confirmation.json",
+        "artifact_hash": "105e01af2dea9150d36c1c96d16db5bece5919ced52da4a1d012c8af6fb24a6c",
+        "recorded_at": "2026-08-25T160758Z"
+      },
+      "synthesis": {
+        "status": "completed",
+        "artifact": "/tmp/slides-synthesis.json",
+        "artifact_hash": "4f3fd90f2bac836319d13531551f91f0d9c94cc40c5afe73162b46ab61bd7383",
+        "recorded_at": "2026-08-25T160758Z"
+      },
+      "audit": {
+        "status": "completed",
+        "artifact": "/Users/joachimbrindeau/Development/expand/production/slides/docs/audits/2026-08-25-lean-refactor-whole-repo.md",
+        "artifact_hash": "1448f3b5187fd7dd7cc4827184006eb06749635261a82b06386c5acc42ebe718",
+        "recorded_at": "2026-08-25T160935Z"
+      }
+    }
+  }
+}

@@ -75,6 +75,19 @@ export function buildMermaidConfig(brand?: Partial<OrgBrand> | null): MermaidCon
         min-height: 0 !important;
         overflow: hidden !important;
       }
+      .edgeLabel rect,
+      .labelBkg {
+        fill: ${KLARC.white} !important;
+        opacity: 1 !important;
+        stroke: ${palette.primary} !important;
+        stroke-width: 1px !important;
+      }
+      .edgeLabel,
+      .edgeLabel span,
+      .edgeLabel p {
+        color: ${palette.ink} !important;
+        background-color: ${KLARC.white} !important;
+      }
     `,
     themeVariables: {
       fontFamily: 'Roboto, ui-sans-serif, system-ui, sans-serif',

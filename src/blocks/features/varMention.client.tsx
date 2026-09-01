@@ -25,7 +25,8 @@ import { $getSelection, $isRangeSelection } from '@payloadcms/richtext-lexical/l
 import { useDocumentInfo } from '@payloadcms/ui';
 
 import { adminGet } from '../../lib/adminFetch';
-import { varMenuItemStyle, varMenuStyle } from '../../components/adminUi/styles';
+
+import './varMention.scss';
 
 interface VarEntry {
   path: string;
@@ -107,33 +108,23 @@ function VarMentionPlugin(): React.ReactElement {
       menuRenderFn={(anchorRef, { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }) => {
         if (!anchorRef.current || options.length === 0) return null;
         return createPortal(
-          <div role="listbox" style={varMenuStyle}>
+          <div aria-label="Variables disponibles" className="var-mention-menu" role="listbox">
             {options.map((option, i) => (
               <div
+                aria-selected={selectedIndex === i}
+                className="var-mention-menu__option"
                 key={option.path}
                 role="option"
-                aria-selected={selectedIndex === i}
                 tabIndex={-1}
-                style={varMenuItemStyle(selectedIndex === i)}
                 onMouseEnter={() => setHighlightedIndex(i)}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   selectOptionAndCleanUp(option);
                 }}
               >
-                <span style={{ fontWeight: 600 }}>{option.label}</span>
+                <span className="var-mention-menu__label">{option.label}</span>
                 {option.sample ? (
-                  <span
-                    style={{
-                      color: 'var(--theme-elevation-500)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '50%',
-                    }}
-                  >
-                    {option.sample}
-                  </span>
+                  <span className="var-mention-menu__sample">{option.sample}</span>
                 ) : null}
               </div>
             ))}
