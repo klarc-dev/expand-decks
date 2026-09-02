@@ -120,6 +120,7 @@ jobs:
       github.event_name == 'schedule' ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: [self-hosted, Linux, X64, expand-decks]
+    environment: production
     timeout-minutes: 45
 
     services:
