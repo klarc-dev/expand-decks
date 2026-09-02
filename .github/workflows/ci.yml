@@ -130,7 +130,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: slides_eval
         ports:
-          - 5432:5432
+          - 55432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d slides_eval"
           --health-interval 10s
@@ -139,8 +139,8 @@ jobs:
 
     env:
       NODE_ENV: test
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/slides_eval
-      OBSERVABILITY_DATABASE_URL: postgres://postgres:postgres@localhost:5432/slides_eval
+      DATABASE_URL: postgres://postgres:postgres@localhost:55432/slides_eval
+      OBSERVABILITY_DATABASE_URL: postgres://postgres:postgres@localhost:55432/slides_eval
       PAYLOAD_SECRET: eval-placeholder-secret
       NEXT_PUBLIC_SERVER_URL: http://localhost:4317
       CLIPROXYAPI_BASE_URL: ${{ secrets.CLIPROXYAPI_BASE_URL }}
