@@ -1,26 +1,19 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { z } from 'zod';
-
 import { ROLES } from '@/access/roles';
 import { reviseSlide } from '@/agents/reviseSlide';
 import { authenticateRequest } from '@/lib/authenticateRequest';
 import { COLLECTIONS } from '@/lib/collections';
 import { currentSlideContext } from '@/lib/currentDeckContext';
+import { slideRevisionSchema } from '@/lib/deckCrudContract';
 import { replaceSlideAt } from '@/lib/replaceSlideAt';
 import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
 import type { Presentation } from '@/payload-types';
-
-const requestSchema = z.object({
-  presentationId: z.union([z.string().min(1).max(128), z.number()]),
-  slideIndex: z.number().int().min(0),
-  instruction: z.string().trim().min(3).max(5000),
-});
 
 export async function POST(req: NextRequest) {
   const { payload, user } = await authenticateRequest(req.headers);
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-  const parsed = requestSchema.safeParse(await req.json().catch(() => null));
+  const parsed = slideRevisionSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Requête invalide' }, { status: 400 });
   }

@@ -11,6 +11,7 @@
     "start": "next start",
     "payload": "payload",
     "mastra:migrate": "MASTRA_DISABLE_INIT=0 tsx --env-file-if-exists=.env scripts/mastra-migrate.ts",
+    "deck:mcp": "tsx --env-file-if-exists=.env scripts/deck-mcp.ts",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
     "jobs:run": "payload jobs:run --queue default",

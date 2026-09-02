@@ -1,23 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
-import { z } from 'zod';
 
 import { ROLES } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
+import { agentDraftCommandSchema } from '@/lib/agentDraftContract';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
-import { AGENT_RUN_STALE_MS, AGENT_TIME_TRAVEL_STEPS } from '@/jobs/agentRunLifecycle';
+import { AGENT_RUN_STALE_MS } from '@/jobs/agentRunLifecycle';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { DRAFT_STATUS } from '@/lib/status';
 import type { AgentRun } from '@/payload-types';
-
-const actionSchema = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('cancel') }),
-  z.object({ action: z.literal('restart') }),
-  z.object({ action: z.literal('resume'), approved: z.boolean() }),
-  z.object({ action: z.literal('time-travel'), step: z.enum(AGENT_TIME_TRAVEL_STEPS) }),
-]);
 
 function idOf(value: number | { id: number }): number {
   return typeof value === 'object' ? value.id : value;
@@ -101,7 +94,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ runI
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params;
-  const parsed = actionSchema.safeParse(await req.json().catch(() => null));
+  const parsed = agentDraftCommandSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'Action invalide' }, { status: 400 });
   const auth = await authorize(req, runId);
   if ('response' in auth) return auth.response;

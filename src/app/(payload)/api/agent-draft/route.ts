@@ -3,29 +3,17 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
-import { z } from 'zod';
 
 import { ROLES } from '@/access/roles';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
+import { agentDraftStartSchema } from '@/lib/agentDraftContract';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { legacySourcePolicy } from '@/lib/sources/policy';
 import { resolveSourcePolicy } from '@/lib/sources/resolve';
 import { SourcePolicyError, TooManySourcesError, UnknownSourceError } from '@/lib/sources/types';
 import { DRAFT_STATUS } from '@/lib/status';
-
-const requestSchema = z.object({
-  presentationId: z.union([z.string().min(1).max(128), z.number()]),
-  brief: z.string().trim().min(10).max(20_000),
-  mode: z.enum(['replace', 'augment', 'revise']).default('replace'),
-  visual: z.boolean().default(true),
-  sourceIds: z.array(z.string()).optional(),
-  sourcePolicy: z
-    .object({ mode: z.enum(['none', 'exclusive', 'multiple']), sourceIds: z.array(z.string()) })
-    .optional(),
-  approvalRequired: z.boolean().default(false),
-});
 
 const ACTIVE = ['queued', 'running', 'suspended', 'waiting'] as const;
 
@@ -34,7 +22,7 @@ export async function POST(req: NextRequest) {
   const { user } = await payload.auth({ headers: req.headers });
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-  const parsed = requestSchema.safeParse(await req.json().catch(() => null));
+  const parsed = agentDraftStartSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Requête invalide', issues: parsed.error.issues.map((issue) => issue.message) },

@@ -44,6 +44,9 @@ export const AI_SLIDES_SCHEMA = emitSlidesArraySchema(ALL_SPECS);
 export const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
 export const RENDER_SLIDE_SCHEMA = z.union(ALL_SPECS.map(renderSchemaOf));
 export const RENDER_SLIDES_SCHEMA = z.array(RENDER_SLIDE_SCHEMA);
+export const WRITABLE_SLIDE_SCHEMA = z.union(
+  ALL_SPECS.map((spec) => (spec.aiDraftable ? aiSchemaOf(spec) : renderSchemaOf(spec))),
+);
 
 export function parseAiSlide(value: unknown) {
   return AI_SLIDE_SCHEMA.parse(value);
