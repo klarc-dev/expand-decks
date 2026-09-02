@@ -129,4 +129,25 @@ describe('writeSlide invariants', () => {
     expect(prompt).toContain('Existing title');
     expect(prompt).toContain('Préserve les formulations, faits et éléments non concernés');
   });
+
+  it('returns an unchanged existing slide when the revision does not target it', async () => {
+    const existing = {
+      blockType: 'statement',
+      title: stub.title,
+      eyebrow: 'Existing eyebrow',
+      body: 'Existing body',
+      footer: 'Existing footer',
+      variant: 'big-statement',
+    };
+
+    const out = await writeSlide(
+      { ...stub, intent: 'Préserve intégralement cette diapositive existante' },
+      dossier,
+      [],
+      JSON.stringify([existing]),
+    );
+
+    expect(out).toEqual(existing);
+    expect(mocked).not.toHaveBeenCalled();
+  });
 });

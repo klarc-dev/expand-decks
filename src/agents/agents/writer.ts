@@ -53,6 +53,27 @@ function dossierExcerpt(dossier: DeckDossier): string {
     .join('\n');
 }
 
+function existingSlideForStub(
+  revisionContext: string | undefined,
+  stub: OutlineStub,
+): Record<string, unknown> | null {
+  if (!revisionContext || !stub.intent.includes('Préserve intégralement')) return null;
+  try {
+    const slides = JSON.parse(revisionContext);
+    if (!Array.isArray(slides)) return null;
+    const slide = slides.find(
+      (candidate) =>
+        candidate &&
+        typeof candidate === 'object' &&
+        candidate.blockType === stub.blockType &&
+        candidate.title === stub.title,
+    );
+    return slide ? parseAiSlide(slide) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Draft one slide. `otherTitles` is every OTHER stub's title (small-context:
  * titles only, never bodies). Returns the block with blockType/title force-locked
@@ -65,6 +86,9 @@ export async function writeSlide(
   revisionContext?: string,
   abortSignal?: AbortSignal,
 ): Promise<Record<string, unknown>> {
+  const existingSlide = existingSlideForStub(revisionContext, stub);
+  if (existingSlide) return existingSlide;
+
   const spec = SPEC_BY_TYPE.get(stub.blockType);
   if (!spec) {
     throw new Error(`[writer] unknown blockType: ${stub.blockType}`);
