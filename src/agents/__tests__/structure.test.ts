@@ -90,6 +90,28 @@ describe('structure() explicit-brief fast-path', () => {
     expect(instructions).toContain('Langue de sortie imposée : français');
   });
 
+  it('includes the existing deck when planning a revision', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      slides: [
+        { blockType: 'cover', title: 'Existing title', intent: 'Keep it' },
+        { blockType: 'statement', title: 'Existing body', intent: 'Keep it' },
+        { blockType: 'cta', title: 'Updated action', intent: 'Change only the CTA' },
+      ],
+    });
+
+    await structureWithProvenance(
+      baseDossier('Replace only the final action'),
+      { mode: 'none', sourceIds: [] },
+      undefined,
+      '[{"blockType":"cover","title":"Existing title"}]',
+    );
+
+    const prompt = mockedGenerateStructured.mock.calls[0]![0].prompt;
+    expect(prompt).toContain('DECK EXISTANT À RÉVISER');
+    expect(prompt).toContain('Existing title');
+    expect(prompt).toContain("conserve exactement le nombre, l'ordre et le blockType");
+  });
+
   it('returns structure-phase evidence and failures with the outline', async () => {
     const dossier = {
       ...baseDossier('brief libre'),

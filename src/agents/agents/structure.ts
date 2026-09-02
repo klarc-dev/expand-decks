@@ -163,10 +163,16 @@ export type StructureResult = {
   sourceFailures: SourceFailure[];
 };
 
+function revisionPrompt(revisionContext?: string): string {
+  if (!revisionContext) return '';
+  return `\n\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : conserve exactement le nombre, l'ordre et le blockType des diapositives existantes. Conserve aussi chaque titre et intention sauf lorsque la demande de révision exige explicitement de les modifier. Ne crée, ne supprime et ne remplace aucune diapositive hors du périmètre demandé.`;
+}
+
 export async function structureWithProvenance(
   dossier: DeckDossier,
   sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   abortSignal?: AbortSignal,
+  revisionContext?: string,
 ): Promise<StructureResult> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
@@ -177,7 +183,7 @@ export async function structureWithProvenance(
     };
   }
 
-  let prompt = dossierPrompt(dossier);
+  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext)}`;
   const evidence: Evidence[] = [];
   const sourceFailures: SourceFailure[] = [];
 
@@ -214,7 +220,7 @@ export async function structureWithProvenance(
       sourceFailures.push(...research.failures);
     }
 
-    prompt = `${dossierPrompt(dossier)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
+    prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
       sourceNotes
         ? `\n\n---\nNOTES DE RECHERCHE (sources sélectionnées — n'utilise que le pertinent) :\n${sourceNotes}`
         : ''
