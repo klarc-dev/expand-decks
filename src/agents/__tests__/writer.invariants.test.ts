@@ -72,6 +72,18 @@ describe('writeSlide invariants', () => {
     expect(prompt).toContain('Lead with the conclusion.');
   });
 
+  it('gives the writer the complete authorized dossier and forbids unsupported elaboration', async () => {
+    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+
+    await writeSlide(stub, dossier, []);
+
+    const call = mocked.mock.calls[0]![0];
+    expect(call.prompt).toContain('Judges decide early.');
+    expect(call.prompt).toContain('BLUF works');
+    expect(call.instructions).toContain('N’ajoute aucun fait, chiffre, attribution, cas');
+    expect(call.instructions).toContain('directement du dossier');
+  });
+
   it('receives only the selected layout guidance and no deck-level planning commands', async () => {
     mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
 

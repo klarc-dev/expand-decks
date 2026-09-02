@@ -72,7 +72,7 @@ export async function researchSources(
   if (policy.mode === 'exclusive' && failures.length > 0) {
     await disconnect();
     throw new SourceResearchError(
-      `Exclusive source ${policy.sourceIds[0]} could not be opened`,
+      `SOURCE_FAILURES:${JSON.stringify(failures)} Exclusive source ${policy.sourceIds[0]} could not be opened`,
       failures,
     );
   }

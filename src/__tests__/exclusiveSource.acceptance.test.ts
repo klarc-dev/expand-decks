@@ -128,6 +128,9 @@ vi.mock('../agents/model', () => ({
         ],
       };
     }
+    if (name === 'gather:grounding-audit') {
+      return { supported: true, unsupportedClaims: [], reason: 'All claims are grounded.' };
+    }
     if (name === 'rubricScorer') return { score: 1, flags: [], fix: '' };
     if (name.startsWith('writer:')) {
       const blockType = name.slice('writer:'.length);
@@ -375,6 +378,40 @@ describe('exclusive source admin-to-worker acceptance', () => {
       errorCode: 'source-unavailable',
       sourcePolicy: 'exclusive',
       sourceIds: ['docs'],
+      sourceFailures: [failure],
+    });
+    expect(state.presentation.draftEvents.at(-1)?.detail).toMatchObject({
+      sourceFailures: [failure],
+    });
+  });
+
+  it('persists best-effort exclusive discovery failures through workflow consumption', async () => {
+    const failure = {
+      sourceId: 'docs',
+      stage: 'discover',
+      code: 'unavailable',
+      message: 'connection refused',
+    };
+    state.sourceFailures = [failure];
+    process.env[SOURCE_REGISTRY_ENV] = JSON.stringify([
+      {
+        id: 'docs',
+        label: 'Docs',
+        transport: 'http',
+        url: 'https://example.com/mcp',
+        allowedTools: ['search'],
+        failureMode: 'best-effort',
+      },
+    ]);
+    __resetSourceRegistryForTests();
+    await queueExclusiveRun();
+
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.modelCalls).toEqual([]);
+    expect(state.ledger).toMatchObject({
+      status: 'failed',
+      errorCode: 'source-unavailable',
       sourceFailures: [failure],
     });
     expect(state.presentation.draftEvents.at(-1)?.detail).toMatchObject({

@@ -25,6 +25,17 @@ import { researchSources } from './research';
 
 const MAX_COVERAGE_RETRIES = 2;
 
+function requestedSlideRange(brief: string): { min: number; max: number } | null {
+  const match = brief.match(
+    /\b(\d{1,2})\s*(?:[–—-]\s*(\d{1,2}))?\s+(?:slide|slides|diapositive|diapositives)\b/i,
+  );
+  if (!match) return null;
+  const min = Number(match[1]);
+  const max = Number(match[2] ?? match[1]);
+  if (!Number.isInteger(min) || !Number.isInteger(max) || min < 3 || max < min) return null;
+  return { min, max };
+}
+
 const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
 Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title (un libellé concis, de préférence un groupe nominal ou une formulation elliptique — jamais une phrase complète ni de ponctuation finale), et intent (la fonction pédagogique et ce que la diapositive doit faire comprendre, distinguer, décider ou appliquer).
@@ -52,6 +63,24 @@ function dossierPrompt(dossier: DeckDossier): string {
   ]
     .filter(Boolean)
     .join('\n\n');
+}
+
+function enforceOutlineEndpoints(slides: OutlineStub[]): OutlineStub[] {
+  if (slides.length === 0) return slides;
+  return slides.map((slide, index) => {
+    if (index === 0) return { ...slide, blockType: 'cover' };
+    if (index === slides.length - 1) return { ...slide, blockType: 'cta' };
+    return slide;
+  });
+}
+
+function outlineSchemaForBrief(brief: string) {
+  const range = requestedSlideRange(brief);
+  if (!range) return OUTLINE_SCHEMA;
+  return OUTLINE_SCHEMA.refine(
+    ({ slides }) => slides.length >= range.min && slides.length <= range.max,
+    `Le brief exige entre ${range.min} et ${range.max} diapositives`,
+  );
 }
 
 /**
@@ -153,16 +182,17 @@ export async function structureWithProvenance(
   const sourceFailures: SourceFailure[] = [];
 
   for (let attempt = 0; ; attempt++) {
-    const { slides } = await generateStructured({
+    const generated = await generateStructured({
       name: 'structure',
       instructions: `${STRUCTURE_INSTRUCTIONS}\n\n${languageInstruction(dossier.language)}`,
-      schema: OUTLINE_SCHEMA,
+      schema: outlineSchemaForBrief(dossier.rawBrief),
       prompt,
       validate: findInformationalStyleViolations,
       maxValidationRepairs: 3,
       modelTier: 'research',
       abortSignal,
     });
+    const slides = enforceOutlineEndpoints(generated.slides);
 
     const uncovered = uncoveredKeyPoints(dossier, slides);
     if (uncovered.length === 0 || attempt >= MAX_COVERAGE_RETRIES) {

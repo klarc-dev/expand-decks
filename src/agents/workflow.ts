@@ -40,6 +40,8 @@ import { writeSlide } from './agents/writer';
 import { scoreSlide } from './scorers/rubric';
 import { scoreVisual } from './scorers/visual';
 import { validateGrounding } from './grounding';
+import { groundDossier } from './dossierGrounding';
+import { prepareSlidesForRender } from './renderSlides';
 import { exportSlidePngs } from './tools/exportSlidePngs';
 import { DeckDossierSchema, type DeckDossier, type DeckEvidence } from './schemas';
 import {
@@ -140,9 +142,10 @@ const gatherStep = createStep({
       inputData.language,
       abortSignal,
     );
+    const groundedDossier = await groundDossier(dossier, evidence, abortSignal);
     return {
-      dossier,
-      evidence: validateGrounding(dossier, evidence),
+      dossier: groundedDossier,
+      evidence: validateGrounding(groundedDossier, evidence),
       sourceFailures,
       sourcePolicy: inputData.sourcePolicy,
     };
@@ -276,10 +279,10 @@ const visualStep = createStep({
   outputSchema: bundle,
   execute: async ({ inputData, getInitData, abortSignal, writer }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
-    const md = buildSlidesMd({
-      title,
-      slides: inputData.slides as SlideBlock[],
-    });
+    const renderSlides = await prepareSlidesForRender(
+      inputData.slides as Array<Record<string, unknown> & { blockType: string }>,
+    );
+    const md = buildSlidesMd({ title, slides: renderSlides as SlideBlock[] });
     const { pngs, cleanup } = await exportSlidePngs(md, abortSignal);
     try {
       const scored = await mapWithConcurrency(
@@ -351,10 +354,13 @@ const assembleStep = createStep({
   }),
   execute: async ({ inputData, getInitData }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
+    const renderSlides = await prepareSlidesForRender(
+      inputData.slides as Array<Record<string, unknown> & { blockType: string }>,
+    );
     return {
       dossier: inputData.dossier,
       slides: inputData.slides,
-      md: buildSlidesMd({ title, slides: inputData.slides as SlideBlock[] }),
+      md: buildSlidesMd({ title, slides: renderSlides as SlideBlock[] }),
       evidence: inputData.evidence,
       sourceFailures: inputData.sourceFailures,
       sourcePolicy: inputData.sourcePolicy,
