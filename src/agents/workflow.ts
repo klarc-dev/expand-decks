@@ -45,10 +45,10 @@ import { DeckDossierSchema, type DeckDossier, type DeckEvidence } from './schema
 import {
   EvidenceSchema,
   SourceFailureSchema,
-  SourcePolicyModeSchema,
   type SourceFailure,
-  type SourcePolicyMode,
+  type SourcePolicy,
 } from '../lib/sources/types';
+import { SourcePolicySchema } from '../lib/sources/policy';
 
 // ── shared shapes ───────────────────────────────────────────────────────────
 
@@ -57,8 +57,7 @@ type DeckBundle = {
   dossier: DeckDossier;
   evidence: DeckEvidence[];
   sourceFailures: SourceFailure[];
-  sourcePolicy: SourcePolicyMode;
-  sourceIds: string[];
+  sourcePolicy: SourcePolicy;
   stubs: OutlineStub[];
   slides: SlideBlock[];
   titles: string[];
@@ -78,8 +77,7 @@ const bundle = z.object({
   dossier: dossierT,
   evidence: z.array(evidenceT),
   sourceFailures: z.array(sourceFailureT),
-  sourcePolicy: SourcePolicyModeSchema,
-  sourceIds: z.array(z.string()),
+  sourcePolicy: SourcePolicySchema,
   stubs: z.array(stubT),
   slides: z.array(slideT),
   titles: z.array(z.string()),
@@ -109,30 +107,27 @@ const gatherStep = createStep({
   inputSchema: z.object({
     brief: z.string(),
     language: z.enum(['fr', 'en']),
-    sourcePolicy: SourcePolicyModeSchema.default('none'),
-    sourceIds: z.array(z.string()).default([]),
+    sourcePolicy: SourcePolicySchema.default({ mode: 'none', sourceIds: [] }),
   }),
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
-    sourcePolicy: SourcePolicyModeSchema,
-    sourceIds: z.array(z.string()),
+    sourcePolicy: SourcePolicySchema,
   }),
   execute: async ({ inputData, abortSignal }) => {
     const { dossier, evidence, sourceFailures } = await gather(
       inputData.brief,
-      inputData.sourceIds,
+      inputData.sourcePolicy.sourceIds,
       inputData.language,
       abortSignal,
-      { mode: inputData.sourcePolicy, sourceIds: inputData.sourceIds },
+      inputData.sourcePolicy,
     );
     return {
       dossier,
       evidence: validateGrounding(dossier, evidence),
       sourceFailures,
       sourcePolicy: inputData.sourcePolicy,
-      sourceIds: inputData.sourceIds,
     };
   },
 });
@@ -143,15 +138,13 @@ const structureStep = createStep({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
-    sourcePolicy: SourcePolicyModeSchema,
-    sourceIds: z.array(z.string()),
+    sourcePolicy: SourcePolicySchema,
   }),
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
-    sourcePolicy: SourcePolicyModeSchema,
-    sourceIds: z.array(z.string()),
+    sourcePolicy: SourcePolicySchema,
     stubs: z.array(stubT),
   }),
   execute: async ({ inputData, abortSignal }) => ({
@@ -159,11 +152,12 @@ const structureStep = createStep({
     evidence: inputData.evidence,
     sourceFailures: inputData.sourceFailures,
     sourcePolicy: inputData.sourcePolicy,
-    sourceIds: inputData.sourceIds,
-    stubs: await structure(inputData.dossier, inputData.sourceIds, abortSignal, {
-      mode: inputData.sourcePolicy,
-      sourceIds: inputData.sourceIds,
-    }),
+    stubs: await structure(
+      inputData.dossier,
+      inputData.sourcePolicy.sourceIds,
+      abortSignal,
+      inputData.sourcePolicy,
+    ),
   }),
 });
 
@@ -328,8 +322,7 @@ const assembleStep = createStep({
     md: z.string(),
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
-    sourcePolicy: SourcePolicyModeSchema,
-    sourceIds: z.array(z.string()),
+    sourcePolicy: SourcePolicySchema,
   }),
   execute: async ({ inputData, getInitData }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
@@ -340,7 +333,6 @@ const assembleStep = createStep({
       evidence: inputData.evidence,
       sourceFailures: inputData.sourceFailures,
       sourcePolicy: inputData.sourcePolicy,
-      sourceIds: inputData.sourceIds,
     };
   },
 });
@@ -352,8 +344,7 @@ const InputSchema = z.object({
   language: z.enum(['fr', 'en']),
   title: z.string().optional(),
   visual: z.boolean().default(false),
-  sourcePolicy: SourcePolicyModeSchema.default('none'),
-  sourceIds: z.array(z.string()).default([]),
+  sourcePolicy: SourcePolicySchema.default({ mode: 'none', sourceIds: [] }),
   revisionContext: z.string().max(100_000).optional(),
   approvalRequired: z.boolean().default(false),
 });
@@ -365,8 +356,7 @@ const OutputSchema = z.object({
   md: z.string(),
   evidence: z.array(evidenceT),
   sourceFailures: z.array(sourceFailureT),
-  sourcePolicy: SourcePolicyModeSchema,
-  sourceIds: z.array(z.string()),
+  sourcePolicy: SourcePolicySchema,
 });
 export type DeckWorkflowOutput = z.infer<typeof OutputSchema>;
 
@@ -401,7 +391,6 @@ export const deckWorkflow = createWorkflow({
       evidence: structured.evidence,
       sourceFailures: structured.sourceFailures,
       sourcePolicy: structured.sourcePolicy,
-      sourceIds: structured.sourceIds,
       stubs: structured.stubs,
       slides,
       titles: structured.stubs.map((s) => s.title),

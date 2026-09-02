@@ -7,6 +7,7 @@ import { openSourceToolsets } from '../../lib/sources/mcpConnector';
 import { legacySourcePolicy } from '../../lib/sources/policy';
 import { resolveSourcePolicy } from '../../lib/sources/resolve';
 import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
+import { SourceResearchError } from '../../lib/sources/types';
 import { researchWithSources } from '../model';
 
 export type ResearchResult = {
@@ -35,6 +36,13 @@ export async function researchSources(
   if (sources.length === 0) return { notes: '', evidence: [], failures: [] };
 
   const { toolsets, failures, recorder, disconnect } = await openSourceToolsets(sources);
+  if (policy.mode === 'exclusive' && failures.length > 0) {
+    await disconnect();
+    throw new SourceResearchError(
+      `SOURCE_FAILURES:${JSON.stringify(failures)} Exclusive source ${policy.sourceIds[0]} could not be opened`,
+      failures,
+    );
+  }
   try {
     const notes = await researchWithSources({
       name: opts.name,

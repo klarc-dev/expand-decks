@@ -2,6 +2,7 @@ import type { Access, CollectionConfig, FieldHook } from 'payload';
 
 import { ROLES } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+import { preserveAgentRunInputs } from './agentRunImmutability';
 
 const runOwnerAccess: Access = async ({ req, id }) => {
   const user = req.user;
@@ -35,6 +36,7 @@ export const AgentRuns: CollectionConfig = {
     update: runOwnerAccess,
     delete: ({ req }) => req.user?.role === ROLES.admin,
   },
+  hooks: { beforeChange: [preserveAgentRunInputs] },
   fields: [
     {
       name: 'presentation',

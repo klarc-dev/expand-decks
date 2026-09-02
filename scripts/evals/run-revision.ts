@@ -24,12 +24,15 @@ async function runDeck(
 
 const itemResults = [];
 for (const fixture of revisionDatasetV1) {
-  const initial = await runDeck({ ...fixture.initial, sourcePolicy: 'none' });
+  const initial = await runDeck({
+    ...fixture.initial,
+    sourcePolicy: { mode: 'none', sourceIds: [] },
+  });
   let previous = initial;
   for (const turn of fixture.turns) {
     previous = await runDeck({
       ...fixture.initial,
-      sourcePolicy: 'none',
+      sourcePolicy: { mode: 'none', sourceIds: [] },
       brief: turn.instruction,
       revisionContext: JSON.stringify(previous.slides),
     });

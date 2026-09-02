@@ -10,6 +10,7 @@ import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
+import { SourceResearchError, type SourceFailure } from '../lib/sources/types';
 import { sanitizeRunError } from './agentRunLifecycle';
 
 const MAX_EVENTS = 200;
@@ -153,6 +154,18 @@ async function consumeWorkflowStream(
   }
 }
 
+function sourceFailuresFromError(error: unknown): SourceFailure[] {
+  if (error instanceof SourceResearchError) return error.failures;
+  const message = error instanceof Error ? error.message : String(error);
+  const match = message.match(/SOURCE_FAILURES:(\[[^\n]+?\])\s/);
+  if (!match?.[1]) return [];
+  try {
+    return JSON.parse(match[1]) as SourceFailure[];
+  } catch {
+    return [];
+  }
+}
+
 export async function runAgentCommand(payload: Payload, agentRunId: number | string) {
   let ledger = (await payload.findByID({
     collection: COLLECTIONS.agentRuns,
@@ -162,6 +175,10 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
   })) as AgentRun;
   const presentationId = idOf(ledger.presentation)!;
   const events = (Array.isArray(ledger.events) ? ledger.events : []) as DraftEvent[];
+  const failureDetail = (message: string, sourceFailures: SourceFailure[]) => ({
+    message,
+    ...(sourceFailures.length > 0 ? { sourceFailures } : {}),
+  });
   const mirror = async (phase: string, detail?: unknown) => {
     events.push({ ts: Date.now(), phase, detail });
     if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
@@ -210,6 +227,12 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
     let workflowResult: unknown;
     if (ledger.command === 'restart') {
       workflowResult = await run.restart({ requestContext, tracingOptions });
+      const resultState = workflowResult as { status?: string; error?: unknown };
+      if (resultState.status === 'failed') {
+        const sourceFailures = sourceFailuresFromError(resultState.error);
+        if (sourceFailures.length > 0)
+          throw new SourceResearchError('Source research failed', sourceFailures);
+      }
     } else if (ledger.command === 'resume') {
       const resumeStream = run.resumeStream({
         step: 'approval',
@@ -246,8 +269,10 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
           language: ledger.language,
           title: presentation.title ?? undefined,
           visual: ledger.visual !== false,
-          sourcePolicy: ledger.sourcePolicy ?? 'none',
-          sourceIds: Array.isArray(ledger.sourceIds) ? (ledger.sourceIds as string[]) : [],
+          sourcePolicy: {
+            mode: ledger.sourcePolicy ?? 'none',
+            sourceIds: Array.isArray(ledger.sourceIds) ? (ledger.sourceIds as string[]) : [],
+          },
           revisionContext,
           approvalRequired: ledger.approvalRequired === true,
         },
@@ -297,19 +322,20 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
     return { success: true, runId: ledger.mastraRunId, suspended: false };
   } catch (error) {
     const message = sanitizeRunError(error);
+    const sourceFailures = sourceFailuresFromError(error);
+    const detail = failureDetail(message, sourceFailures);
     await patchRun(payload, ledger, {
       status: 'failed',
-      errorCode: 'agent-run-failed',
+      errorCode: sourceFailures.length > 0 ? 'source-unavailable' : 'agent-run-failed',
       errorSummary: message,
+      sourceFailures,
       completedAt: new Date().toISOString(),
       heartbeatAt: new Date().toISOString(),
-      events: [...events, { ts: Date.now(), phase: 'failed', detail: message }].slice(-MAX_EVENTS),
+      events: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
     });
     await mirrorPresentation(payload, ledger, {
       draftStatus: DRAFT_STATUS.failed,
-      draftEvents: [...events, { ts: Date.now(), phase: 'failed', detail: message }].slice(
-        -MAX_EVENTS,
-      ),
+      draftEvents: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
     });
     payload.logger.error(`[agent-run:${ledger.mastraRunId}] ${message}`);
     return { success: false, runId: ledger.mastraRunId, suspended: false };

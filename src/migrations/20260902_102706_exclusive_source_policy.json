@@ -6395,6 +6395,11 @@
       "schema": "public",
       "values": ["fr", "en"]
     },
+    "public.enum_agent_runs_source_policy": {
+      "name": "enum_agent_runs_source_policy",
+      "schema": "public",
+      "values": ["none", "exclusive", "multiple"]
+    },
     "public.enum_payload_jobs_log_task_slug": {
       "name": "enum_payload_jobs_log_task_slug",
       "schema": "public",
@@ -6409,11 +6414,6 @@
       "name": "enum_payload_jobs_task_slug",
       "schema": "public",
       "values": ["inline", "buildSlides", "agentDraft", "agentRetention"]
-    },
-    "public.enum_agent_runs_source_policy": {
-      "name": "enum_agent_runs_source_policy",
-      "schema": "public",
-      "values": ["none", "exclusive", "multiple"]
     }
   },
   "schemas": {},
@@ -6426,6 +6426,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "9851297c-676e-4a97-bc6c-c21dd9e8f1e8",
-  "prevId": "00000000-0000-0000-0000-000000000000"
+  "id": "db66626e-812e-40dd-ae1b-834453990bd8",
+  "prevId": "9851297c-676e-4a97-bc6c-c21dd9e8f1e8"
 }

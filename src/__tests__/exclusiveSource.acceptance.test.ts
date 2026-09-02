@@ -2,17 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
   ledger: undefined as Record<string, any> | undefined,
-  presentation: {
-    id: 1,
-    title: 'Test deck',
-    language: 'fr',
-    createdBy: 2,
-    organisation: null,
-    slides: [],
-    tags: [],
-  } as Record<string, any>,
+  presentation: {} as Record<string, any>,
   queuedInput: undefined as Record<string, unknown> | undefined,
-  workflowInput: undefined as Record<string, unknown> | undefined,
+  openedSourceIds: [] as string[],
+  evidence: [] as Record<string, unknown>[],
+  sourceFailures: [] as Record<string, unknown>[],
+  modelCalls: [] as string[],
   persistSlides: vi.fn(),
 }));
 
@@ -46,52 +41,96 @@ vi.mock('payload', () => ({ getPayload: vi.fn(async () => payload) }));
 vi.mock('@payload-config', () => ({ default: {} }));
 vi.mock('../agents/tools/persist', () => ({ persistSlides: state.persistSlides }));
 vi.mock('../agents/fonts', () => ({ chooseFontPairForBrief: vi.fn() }));
-vi.mock('../agents/mastra', () => ({
-  mastra: {
-    getWorkflow: () => ({
-      createRun: vi.fn(async () => ({
-        stream: (opts: { inputData: Record<string, unknown> }) => {
-          state.workflowInput = opts.inputData;
-          const stream = (async function* () {
-            yield { type: 'workflow-step-start', payload: { id: 'gather' } };
-          })() as unknown as AsyncIterable<unknown> & { result: Promise<unknown> };
-          stream.result = Promise.resolve({
-            status: 'success',
-            result: {
-              slides: [{ blockType: 'statement', title: 'Grounded' }],
-              evidence: [
-                {
-                  id: 'ev_000000000000000000000000',
-                  sourceId: 'docs',
-                  sourceLabel: 'Docs',
-                  claim: 'Fact',
-                  excerpt: 'Fact',
-                  toolName: 'search',
-                  toolCallId: 'call-1',
-                  retrievedAt: new Date().toISOString(),
-                  contentSha256: '0'.repeat(64),
-                },
-              ],
-              sourceFailures: [],
-            },
-          });
-          return stream;
-        },
-      })),
-    }),
-  },
+vi.mock('../lib/sources/mcpConnector', () => ({
+  openSourceToolsets: vi.fn(async (sources: Array<{ id: string }>) => {
+    state.openedSourceIds.push(...sources.map((source) => source.id));
+    return {
+      toolsets: Object.fromEntries(sources.map((source) => [source.id, { search: {} }])),
+      failures: state.sourceFailures,
+      recorder: { snapshot: () => state.evidence },
+      disconnect: vi.fn(),
+    };
+  }),
 }));
+vi.mock('../agents/model', () => ({
+  researchWithSources: vi.fn(async ({ name }: { name: string }) => {
+    state.modelCalls.push(name);
+    return 'Grounded research notes';
+  }),
+  generateStructured: vi.fn(async ({ name }: { name: string }) => {
+    state.modelCalls.push(name);
+    if (name === 'gather') {
+      return {
+        coreIdea: 'Grounded decision',
+        audience: 'Executives',
+        soWhat: 'The decision affects risk',
+        keyPoints: ['Grounded decision'],
+        data: ['Fact'],
+        sources: ['docs'],
+      };
+    }
+    if (name === 'structure') {
+      return {
+        slides: [
+          { blockType: 'cover', title: 'Grounded decision', intent: 'Grounded decision' },
+          { blockType: 'statement', title: 'Grounded decision', intent: 'Grounded decision' },
+          { blockType: 'cta', title: 'Act', intent: 'Grounded decision' },
+        ],
+      };
+    }
+    if (name === 'rubricScorer') return { score: 1, flags: [], fix: '' };
+    if (name.startsWith('writer:')) {
+      const blockType = name.slice('writer:'.length);
+      return { blockType, title: blockType === 'cta' ? 'Act' : 'Grounded decision' };
+    }
+    throw new Error(`Unexpected model call ${name}`);
+  }),
+}));
+vi.mock('../agents/mastra', async () => {
+  const { deckWorkflow } = await import('../agents/workflow');
+  return { mastra: { getWorkflow: () => deckWorkflow } };
+});
 
 import { POST } from '../app/(payload)/api/agent-draft/route';
 import { runAgentDraftTask } from '../jobs/agentDraft';
 import { __resetSourceRegistryForTests, SOURCE_REGISTRY_ENV } from '../lib/sources/registry';
+
+const evidence = {
+  id: 'ev_000000000000000000000000',
+  sourceId: 'docs',
+  sourceLabel: 'Docs',
+  claim: 'Fact',
+  excerpt: 'Fact',
+  toolName: 'search',
+  toolCallId: 'call-1',
+  retrievedAt: '2026-09-02T10:00:00.000Z',
+  contentSha256: '0'.repeat(64),
+};
+
+async function queueExclusiveRun() {
+  return POST(
+    new Request('http://local/api/agent-draft', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        presentationId: 1,
+        brief: 'A sufficiently detailed exclusive-source brief',
+        visual: false,
+        sourcePolicy: { mode: 'exclusive', sourceIds: ['docs'] },
+      }),
+    }) as never,
+  );
+}
 
 describe('exclusive source admin-to-worker acceptance', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     state.ledger = undefined;
     state.queuedInput = undefined;
-    state.workflowInput = undefined;
+    state.openedSourceIds = [];
+    state.evidence = [evidence];
+    state.sourceFailures = [];
+    state.modelCalls = [];
     state.presentation = {
       id: 1,
       title: 'Test deck',
@@ -108,6 +147,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
         transport: 'http',
         url: 'https://example.com/mcp',
         allowedTools: ['search'],
+        failureMode: 'best-effort',
       },
       {
         id: 'other',
@@ -120,18 +160,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
     __resetSourceRegistryForTests();
   });
 
-  it('persists one immutable source policy and executes the queued worker with it', async () => {
-    const response = await POST(
-      new Request('http://local/api/agent-draft', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          presentationId: 1,
-          brief: 'A sufficiently detailed exclusive-source brief',
-          sourcePolicy: { mode: 'exclusive', sourceIds: ['docs'] },
-        }),
-      }) as never,
-    );
+  it('runs admin API -> queued task -> real workflow/research with exclusive tool isolation', async () => {
+    const response = await queueExclusiveRun();
 
     expect(response.status).toBe(202);
     expect(state.ledger).toMatchObject({ sourcePolicy: 'exclusive', sourceIds: ['docs'] });
@@ -139,9 +169,57 @@ describe('exclusive source admin-to-worker acceptance', () => {
 
     await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
 
-    expect(state.workflowInput).toMatchObject({ sourcePolicy: 'exclusive', sourceIds: ['docs'] });
-    expect(state.ledger).toMatchObject({ status: 'succeeded' });
+    expect(state.openedSourceIds).toEqual(['docs']);
+    expect(state.openedSourceIds).not.toContain('other');
+    expect(state.modelCalls).toContain('gather:research');
+    expect(state.ledger).toMatchObject({ status: 'succeeded', sourceFailures: [] });
     expect(state.presentation).toMatchObject({ draftStatus: 'done', draftSources: ['docs'] });
-    expect(JSON.stringify(state.workflowInput)).not.toContain('other');
+  });
+
+  it('fails the real workflow when the exclusive source captures zero evidence', async () => {
+    state.evidence = [];
+    await queueExclusiveRun();
+
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.ledger).toMatchObject({ status: 'failed', errorCode: 'agent-run-failed' });
+    expect(state.presentation.draftStatus).toBe('failed');
+    expect(state.persistSlides).not.toHaveBeenCalled();
+  });
+
+  it('fails before model invocation and journals structured exclusive discovery failure', async () => {
+    const failure = {
+      sourceId: 'docs',
+      stage: 'discover',
+      code: 'unavailable',
+      message: 'connection refused',
+    };
+    state.sourceFailures = [failure];
+    await queueExclusiveRun();
+
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.modelCalls).toEqual([]);
+    expect(state.ledger).toMatchObject({
+      status: 'failed',
+      errorCode: 'source-unavailable',
+      sourcePolicy: 'exclusive',
+      sourceIds: ['docs'],
+      sourceFailures: [failure],
+    });
+    expect(state.presentation.draftEvents.at(-1)?.detail).toMatchObject({
+      sourceFailures: [failure],
+    });
+  });
+
+  it('restart commands preserve the stored immutable source policy', async () => {
+    await queueExclusiveRun();
+    const policyBeforeRestart = {
+      sourcePolicy: state.ledger?.sourcePolicy,
+      sourceIds: state.ledger?.sourceIds,
+    };
+    state.ledger = { ...state.ledger, command: 'restart', status: 'queued' };
+
+    expect(state.ledger).toMatchObject(policyBeforeRestart);
   });
 });

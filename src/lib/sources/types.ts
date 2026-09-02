@@ -130,6 +130,15 @@ export class SourcePolicyError extends Error {
   }
 }
 
+export class SourceResearchError extends Error {
+  readonly failures: SourceFailure[];
+  constructor(message: string, failures: SourceFailure[]) {
+    super(message);
+    this.name = 'SourceResearchError';
+    this.failures = failures;
+  }
+}
+
 export class UnknownSourceError extends Error {
   readonly unknownIds: string[];
   constructor(unknownIds: string[]) {
