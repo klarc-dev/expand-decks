@@ -53,4 +53,18 @@ describe('groundDossier', () => {
     expect(repairCall.prompt).toContain(dossier.rawBrief);
     expect(repairCall.instructions).toContain('N’ajoute aucune connaissance externe');
   });
+
+  it('uses additional authorized facts when the caller supplies them', async () => {
+    mockedGenerateStructured.mockResolvedValueOnce({
+      supported: true,
+      unsupportedClaims: [],
+      reason: 'Supported by the evaluation facts.',
+    });
+
+    await groundDossier(dossier, [], undefined, ['A practical checklist may cover caveats.']);
+
+    expect(mockedGenerateStructured.mock.calls[0]![0].prompt).toContain(
+      'A practical checklist may cover caveats.',
+    );
+  });
 });
