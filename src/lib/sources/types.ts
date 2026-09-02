@@ -24,6 +24,9 @@ export const ToolNameSchema = z
   .max(128)
   .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/);
 export const SourceFailureModeSchema = z.enum(['strict', 'best-effort']);
+const SourcePolicyModeSchema = z.enum(['none', 'exclusive', 'multiple']);
+export type SourcePolicyMode = z.infer<typeof SourcePolicyModeSchema>;
+export type SourcePolicy = { mode: SourcePolicyMode; sourceIds: string[] };
 
 const baseSource = z.object({
   id: SourceIdSchema,
@@ -58,7 +61,9 @@ export const HttpSourceDescriptorSchema = baseSource.extend({
           return false;
         }
       },
-      { message: 'HTTP source URLs must use http or https and must not contain credentials' },
+      {
+        message: 'HTTP source URLs must use http or https and must not contain credentials',
+      },
     ),
 });
 
@@ -117,6 +122,31 @@ export class SourceConfigError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'SourceConfigError';
+  }
+}
+
+export class SourcePolicyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SourcePolicyError';
+  }
+}
+
+export class SourceConnectorError extends Error {
+  readonly failures: SourceFailure[];
+  constructor(message: string, failures: SourceFailure[]) {
+    super(message);
+    this.name = 'SourceConnectorError';
+    this.failures = failures;
+  }
+}
+
+export class SourceResearchError extends Error {
+  readonly failures: SourceFailure[];
+  constructor(message: string, failures: SourceFailure[]) {
+    super(message);
+    this.name = 'SourceResearchError';
+    this.failures = failures;
   }
 }
 

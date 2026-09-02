@@ -10,8 +10,9 @@ import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
-import { resolveSources } from '@/lib/sources/resolve';
-import { TooManySourcesError, UnknownSourceError } from '@/lib/sources/types';
+import { legacySourcePolicy } from '@/lib/sources/policy';
+import { resolveSourcePolicy } from '@/lib/sources/resolve';
+import { SourcePolicyError, TooManySourcesError, UnknownSourceError } from '@/lib/sources/types';
 import { DRAFT_STATUS } from '@/lib/status';
 
 const requestSchema = z.object({
@@ -20,6 +21,9 @@ const requestSchema = z.object({
   mode: z.enum(['replace', 'augment', 'revise']).default('replace'),
   visual: z.boolean().default(true),
   sourceIds: z.array(z.string()).optional(),
+  sourcePolicy: z
+    .object({ mode: z.enum(['none', 'exclusive', 'multiple']), sourceIds: z.array(z.string()) })
+    .optional(),
   approvalRequired: z.boolean().default(false),
 });
 
@@ -39,14 +43,21 @@ export async function POST(req: NextRequest) {
   }
   const { presentationId, brief, mode, visual, approvalRequired } = parsed.data;
   let sourceIds: string[];
+  let sourcePolicy: 'none' | 'exclusive' | 'multiple';
   try {
-    sourceIds = resolveSources(parsed.data.sourceIds).map((source) => source.id);
+    const requestedPolicy = parsed.data.sourcePolicy ?? legacySourcePolicy(parsed.data.sourceIds);
+    const resolved = resolveSourcePolicy(requestedPolicy);
+    sourcePolicy = resolved.policy.mode;
+    sourceIds = resolved.sources.map((source) => source.id);
   } catch (error) {
     if (error instanceof UnknownSourceError) {
       return NextResponse.json(
         { error: `Unknown source id(s): ${error.unknownIds.join(', ')}` },
         { status: 400 },
       );
+    }
+    if (error instanceof SourcePolicyError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     if (error instanceof TooManySourcesError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -107,12 +118,14 @@ export async function POST(req: NextRequest) {
       language: presentation.language,
       visual,
       approvalRequired,
+      sourcePolicy,
       sourceIds,
       inputFingerprint: agentRunFingerprint({
         presentationId: String(presentationId),
         brief,
         mode,
         visual,
+        sourcePolicy,
         sourceIds,
         approvalRequired,
       }),

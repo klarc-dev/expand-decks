@@ -24,11 +24,15 @@ async function runDeck(
 
 const itemResults = [];
 for (const fixture of revisionDatasetV1) {
-  const initial = await runDeck(fixture.initial);
+  const initial = await runDeck({
+    ...fixture.initial,
+    sourcePolicy: { mode: 'none', sourceIds: [] },
+  });
   let previous = initial;
   for (const turn of fixture.turns) {
     previous = await runDeck({
       ...fixture.initial,
+      sourcePolicy: { mode: 'none', sourceIds: [] },
       brief: `${fixture.initial.brief}\n\n---\nDEMANDE DE RÉVISION :\n${turn.instruction}`,
       groundingFacts: [
         `The existing deck below is the authoritative factual and structural source for this revision. Preserve every unrelated fact, example, slide, and block type exactly; change only what the revision request names.\n${JSON.stringify(previous.slides)}`,

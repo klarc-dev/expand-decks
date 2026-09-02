@@ -2,6 +2,7 @@ import type { Access, CollectionConfig, FieldHook } from 'payload';
 
 import { ROLES } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+import { preserveAgentRunInputs } from './agentRunImmutability';
 
 const runOwnerAccess: Access = async ({ req, id }) => {
   const user = req.user;
@@ -35,6 +36,7 @@ export const AgentRuns: CollectionConfig = {
     update: runOwnerAccess,
     delete: ({ req }) => req.user?.role === ROLES.admin,
   },
+  hooks: { beforeChange: [preserveAgentRunInputs] },
   fields: [
     {
       name: 'presentation',
@@ -112,6 +114,14 @@ export const AgentRuns: CollectionConfig = {
     { name: 'language', type: 'select', required: true, options: ['fr', 'en'] },
     { name: 'visual', type: 'checkbox', defaultValue: true },
     { name: 'approvalRequired', type: 'checkbox', defaultValue: false },
+    {
+      name: 'sourcePolicy',
+      type: 'select',
+      required: true,
+      defaultValue: 'none',
+      options: ['none', 'exclusive', 'multiple'],
+      admin: { readOnly: true },
+    },
     { name: 'sourceIds', type: 'json' },
     { name: 'revisionContext', type: 'textarea', maxLength: 100_000, admin: { hidden: true } },
     { name: 'inputFingerprint', type: 'text', required: true, index: true },

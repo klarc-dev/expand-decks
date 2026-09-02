@@ -4,8 +4,14 @@
  * the wrapped MCP tool at the exact result boundary before the model sees it.
  */
 import { openSourceToolsets } from '../../lib/sources/mcpConnector';
-import { resolveSources } from '../../lib/sources/resolve';
-import type { Evidence, SourceFailure } from '../../lib/sources/types';
+import { resolveSourcePolicy } from '../../lib/sources/resolve';
+import {
+  SourceConnectorError,
+  SourceResearchError,
+  type Evidence,
+  type SourceFailure,
+  type SourcePolicy,
+} from '../../lib/sources/types';
 import { researchWithSources } from '../model';
 
 export type ResearchResult = {
@@ -14,18 +20,62 @@ export type ResearchResult = {
   failures: SourceFailure[];
 };
 
-export function hasSources(sourceIds: readonly string[] | undefined): boolean {
-  return !!sourceIds && sourceIds.length > 0;
+export function hasSources(policy: SourcePolicy): boolean {
+  return policy.sourceIds.length > 0;
+}
+
+function researchFailure(
+  sourceId: string,
+  stage: SourceFailure['stage'],
+  code: SourceFailure['code'],
+  message: string,
+): SourceResearchError {
+  const failures = [{ sourceId, stage, code, message: message.slice(0, 1_000) }];
+  return new SourceResearchError(
+    `SOURCE_FAILURES:${JSON.stringify(failures)} ${message}`,
+    failures,
+  );
+}
+
+function asResearchError(error: unknown): SourceResearchError | undefined {
+  if (error instanceof SourceResearchError) return error;
+  if (error instanceof SourceConnectorError) {
+    return new SourceResearchError(
+      `SOURCE_FAILURES:${JSON.stringify(error.failures)} ${error.message}`,
+      error.failures,
+    );
+  }
+  return undefined;
 }
 
 export async function researchSources(
-  sourceIds: readonly string[] | undefined,
-  opts: { name: string; instructions: string; prompt: string; abortSignal?: AbortSignal },
+  sourcePolicy: SourcePolicy,
+  opts: {
+    name: string;
+    instructions: string;
+    prompt: string;
+    abortSignal?: AbortSignal;
+  },
 ): Promise<ResearchResult> {
-  const sources = resolveSources(sourceIds);
+  const { policy, sources } = resolveSourcePolicy(sourcePolicy);
   if (sources.length === 0) return { notes: '', evidence: [], failures: [] };
 
-  const { toolsets, failures, recorder, disconnect } = await openSourceToolsets(sources);
+  let opened: Awaited<ReturnType<typeof openSourceToolsets>>;
+  try {
+    opened = await openSourceToolsets(sources);
+  } catch (error) {
+    const researchError = asResearchError(error);
+    if (researchError) throw researchError;
+    throw error;
+  }
+  const { toolsets, failures, recorder, disconnect } = opened;
+  if (policy.mode === 'exclusive' && failures.length > 0) {
+    await disconnect();
+    throw new SourceResearchError(
+      `SOURCE_FAILURES:${JSON.stringify(failures)} Exclusive source ${policy.sourceIds[0]} could not be opened`,
+      failures,
+    );
+  }
   try {
     const notes = await researchWithSources({
       name: opts.name,
@@ -38,20 +88,48 @@ export async function researchSources(
     });
     const evidence = recorder.snapshot();
     if (evidence.length === 0) {
-      throw new Error('Selected sources produced no captured tool evidence');
+      throw researchFailure(
+        policy.sourceIds[0]!,
+        'tool',
+        'invalid-result',
+        'Selected sources produced no captured tool evidence',
+      );
+    }
+    if (
+      policy.mode === 'exclusive' &&
+      evidence.some((item) => item.sourceId !== policy.sourceIds[0])
+    ) {
+      throw researchFailure(
+        policy.sourceIds[0]!,
+        'policy',
+        'invalid-result',
+        'Exclusive source policy rejected evidence from another source',
+      );
     }
     return { notes: notes.trim(), evidence, failures };
   } catch (error) {
-    if (sources.some((source) => source.failureMode === 'strict')) throw error;
+    const researchError = asResearchError(error);
+    if (policy.mode === 'exclusive' || sources.some((source) => source.failureMode === 'strict')) {
+      if (researchError) throw researchError;
+      const message = error instanceof Error ? error.message : String(error);
+      throw researchFailure(
+        policy.sourceIds[0]!,
+        'tool',
+        /timeout/i.test(message) ? 'timeout' : 'unknown',
+        message,
+      );
+    }
     const message = error instanceof Error ? error.message : String(error);
-    const runtimeFailures = sources.map(
-      (source): SourceFailure => ({
-        sourceId: source.id,
-        stage: 'tool',
-        code: /timeout/i.test(message) ? 'timeout' : 'unknown',
-        message: message.slice(0, 1_000),
-      }),
-    );
+    const runtimeFailures =
+      researchError?.failures ??
+      sources.map(
+        (source): SourceFailure => ({
+          sourceId: source.id,
+          stage: 'tool',
+          code: /timeout/i.test(message) ? 'timeout' : 'unknown',
+          message: message.slice(0, 1_000),
+        }),
+      );
     const evidence = recorder.snapshot();
     if (evidence.length === 0) throw error;
     return { notes: '', evidence, failures: [...failures, ...runtimeFailures] };

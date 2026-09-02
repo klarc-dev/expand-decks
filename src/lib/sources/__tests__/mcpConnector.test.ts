@@ -21,7 +21,7 @@ vi.mock('@mastra/mcp', () => ({
 }));
 
 import { openSourceToolsets } from '../mcpConnector';
-import type { ResolvedSource } from '../types';
+import { SourceConnectorError, type ResolvedSource } from '../types';
 
 const source = (overrides: Partial<ResolvedSource> = {}): ResolvedSource =>
   ({
@@ -38,7 +38,20 @@ const source = (overrides: Partial<ResolvedSource> = {}): ResolvedSource =>
   }) as ResolvedSource;
 
 const rawTool = (result: unknown) =>
-  new Tool({ id: 'search', description: 'search', execute: async () => result });
+  new Tool({
+    id: 'search',
+    description: 'search',
+    execute: async () => result,
+  });
+
+const throwingTool = (error: Error) =>
+  new Tool({
+    id: 'search',
+    description: 'search',
+    execute: async () => {
+      throw error;
+    },
+  });
 
 beforeEach(() => {
   clients.length = 0;
@@ -90,7 +103,10 @@ describe('openSourceToolsets', () => {
     const result = await opened.toolsets.docs!.search!.execute?.({}, {
       toolCallId: 'call-1',
     } as never);
-    expect(result).toMatchObject({ evidenceId: expect.stringMatching(/^ev_/), sourceId: 'docs' });
+    expect(result).toMatchObject({
+      evidenceId: expect.stringMatching(/^ev_/),
+      sourceId: 'docs',
+    });
     expect(JSON.stringify(result)).not.toContain('secret');
     expect(opened.recorder.snapshot()).toEqual([
       expect.objectContaining({
@@ -103,9 +119,54 @@ describe('openSourceToolsets', () => {
     ]);
   });
 
-  it('fails closed for strict discovery failure', async () => {
+  it('wraps tool execution errors as bounded structured failures', async () => {
+    discovery.push({
+      toolsets: { docs: { search: throwingTool(new Error(`timeout ${'x'.repeat(2_000)}`)) } },
+      errors: {},
+    });
+    const opened = await openSourceToolsets([source()]);
+
+    const failure = await opened.toolsets
+      .docs!.search!.execute?.({}, {} as never)
+      .catch((error) => error);
+    expect(failure).toBeInstanceOf(SourceConnectorError);
+    expect(failure).toMatchObject({
+      failures: [expect.objectContaining({ sourceId: 'docs', stage: 'tool', code: 'timeout' })],
+    });
+    expect(failure.failures[0].message).toHaveLength(1_000);
+  });
+
+  it('wraps sanitization errors as invalid-result failures', async () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    discovery.push({ toolsets: { docs: { search: rawTool(circular) } }, errors: {} });
+    const opened = await openSourceToolsets([source()]);
+
+    await expect(opened.toolsets.docs!.search!.execute?.({}, {} as never)).rejects.toMatchObject({
+      failures: [
+        expect.objectContaining({
+          sourceId: 'docs',
+          stage: 'sanitize',
+          code: 'invalid-result',
+        }),
+      ],
+    });
+  });
+
+  it('fails closed for strict discovery failure with structured failures', async () => {
     discovery.push({ toolsets: {}, errors: { docs: 'offline' } });
-    await expect(openSourceToolsets([source()])).rejects.toThrow(/docs.*offline/);
+    const failure = await openSourceToolsets([source()]).catch((error) => error);
+    expect(failure).toBeInstanceOf(SourceConnectorError);
+    expect(failure).toMatchObject({
+      failures: [
+        expect.objectContaining({
+          sourceId: 'docs',
+          stage: 'discover',
+          code: 'unavailable',
+          message: 'offline',
+        }),
+      ],
+    });
     expect(clients[0]!.disconnect).toHaveBeenCalled();
   });
 
@@ -114,7 +175,11 @@ describe('openSourceToolsets', () => {
     const opened = await openSourceToolsets([source({ failureMode: 'best-effort' })]);
     expect(opened.toolsets).toEqual({});
     expect(opened.failures).toEqual([
-      expect.objectContaining({ sourceId: 'docs', stage: 'discover', code: 'unavailable' }),
+      expect.objectContaining({
+        sourceId: 'docs',
+        stage: 'discover',
+        code: 'unavailable',
+      }),
     ]);
   });
 });

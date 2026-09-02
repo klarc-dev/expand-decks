@@ -299,8 +299,8 @@ describe('canonical custom admin controls', () => {
     expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'checkbox')).toEqual([]);
   });
 
-  it('keeps generation-mode radio semantics in one typed feature-local owner', () => {
-    expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'radio')).toHaveLength(1);
+  it('keeps generation and source-policy radio semantics in one typed feature-local owner', () => {
+    expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'radio')).toHaveLength(3);
   });
 
   it('keeps AgentDraftButton semantic groups in one feature-local owner', () => {

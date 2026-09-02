@@ -10,7 +10,7 @@
  * The LLM call uses a schema WITHOUT rawBrief (the model doesn't produce it).
  * rawBrief is injected after the call so the returned DeckDossier is complete.
  */
-import type { Evidence } from '../../lib/sources/types';
+import type { Evidence, SourcePolicy } from '../../lib/sources/types';
 import { generateStructured } from '../model';
 import { languageInstruction, resolveTargetLanguage, type DeckLanguage } from '../language';
 import { findInformationalStyleViolations, INFORMATIONAL_STYLE_PROMPT } from '../prompts/style';
@@ -56,13 +56,13 @@ export type GatherResult = {
 
 export async function gather(
   brief: string,
-  sourceIds?: readonly string[],
+  sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   requestedLanguage?: DeckLanguage,
   abortSignal?: AbortSignal,
 ): Promise<GatherResult> {
   const language = resolveTargetLanguage(requestedLanguage, brief);
   const localePolicy = languageInstruction(language);
-  const { notes, evidence, failures } = await researchSources(sourceIds, {
+  const { notes, evidence, failures } = await researchSources(sourcePolicy, {
     name: 'gather:research',
     instructions: `${RESEARCH_INSTRUCTIONS}\n\n${localePolicy}`,
     prompt: brief,

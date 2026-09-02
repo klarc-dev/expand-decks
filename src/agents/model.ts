@@ -160,6 +160,7 @@ export async function researchWithSources({
   const res = await withTransientRetry(name, abortSignal, () =>
     agent.generate(prompt as never, {
       toolsets: toolsets as never,
+      toolChoice: 'required',
       maxSteps,
       toolCallConcurrency,
       abortSignal: combineAbortSignals(abortSignal, timeoutMs),

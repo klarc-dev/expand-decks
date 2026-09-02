@@ -10,6 +10,7 @@ import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
+import { SourceResearchError, type SourceFailure } from '../lib/sources/types';
 import { sanitizeRunError } from './agentRunLifecycle';
 
 const MAX_EVENTS = 200;
@@ -153,6 +154,114 @@ async function consumeWorkflowStream(
   }
 }
 
+function sourceFailuresFromError(error: unknown): SourceFailure[] {
+  if (error instanceof SourceResearchError) return error.failures;
+  const message = error instanceof Error ? error.message : String(error);
+  const match = message.match(/SOURCE_FAILURES:(\[[^\n]+?\])\s/);
+  if (!match?.[1]) return [];
+  try {
+    return JSON.parse(match[1]) as SourceFailure[];
+  } catch {
+    return [];
+  }
+}
+
+async function executeWorkflow(
+  payload: Payload,
+  ledger: AgentRun,
+  presentationId: number,
+  mirror: (phase: string, detail?: unknown) => Promise<void>,
+): Promise<unknown> {
+  const workflow = mastra.getWorkflow('deckWorkflow');
+  const run = await workflow.createRun({
+    runId: ledger.mastraRunId,
+    resourceId: String(presentationId),
+  });
+  const tracingOptions = {
+    traceId: ledger.traceId,
+    hideInput: true,
+    hideOutput: true,
+    tags: ['deck-build', ledger.mode, ledger.visual === false ? 'no-visual' : 'visual'],
+  };
+  const requestContext = createDeckRequestContext({
+    requestId: ledger.requestId,
+    presentationId: String(presentationId),
+    runId: ledger.mastraRunId,
+    userId: String(idOf(ledger.createdBy) ?? ''),
+    organizationId: idOf(ledger.organisation)?.toString(),
+    phase: 'gather',
+  }) as never;
+
+  if (ledger.command === 'restart') {
+    const result = await run.restart({ requestContext, tracingOptions });
+    const resultState = result as { status?: string; error?: unknown };
+    if (resultState.status === 'failed') {
+      const sourceFailures = sourceFailuresFromError(resultState.error);
+      if (sourceFailures.length > 0) {
+        throw new SourceResearchError('Source research failed', sourceFailures);
+      }
+    }
+    return result;
+  }
+  if (ledger.command === 'resume') {
+    const stream = run.resumeStream({
+      step: 'approval',
+      resumeData: ledger.resumeDecision,
+      requestContext,
+      tracingOptions,
+    });
+    await consumeWorkflowStream(stream, mirror);
+    return stream.result;
+  }
+  if (ledger.command === 'timeTravel') {
+    const stream = run.timeTravelStream({
+      step: ledger.targetStep!,
+      requestContext,
+      tracingOptions,
+    });
+    await consumeWorkflowStream(stream, mirror);
+    return stream.result;
+  }
+
+  const presentation = await payload.findByID({
+    collection: COLLECTIONS.presentations,
+    id: presentationId,
+    depth: 2,
+  });
+  const revisionContext =
+    ledger.mode === 'revise'
+      ? await currentDeckContext(presentation.slides, payload)
+      : (ledger.revisionContext ?? undefined);
+  const revisionBrief = revisionContext
+    ? `${deckContext(presentation)}DECK EXISTANT À RÉVISER :\n${revisionContext}\n\n---\n\nDEMANDE DE RÉVISION :\n${ledger.brief}`
+    : deckContext(presentation) + ledger.brief;
+  const stream = run.stream({
+    inputData: {
+      brief: revisionBrief,
+      language: ledger.language,
+      title: presentation.title ?? undefined,
+      visual: ledger.visual !== false,
+      sourcePolicy: {
+        mode: ledger.sourcePolicy ?? 'none',
+        sourceIds: Array.isArray(ledger.sourceIds) ? (ledger.sourceIds as string[]) : [],
+      },
+      revisionContext,
+      approvalRequired: ledger.approvalRequired === true,
+    },
+    requestContext,
+    tracingOptions,
+  });
+  await consumeWorkflowStream(stream, mirror);
+  return stream.result;
+}
+
+function failureDetail(message: string, sourceFailures: SourceFailure[]) {
+  return {
+    message,
+    ...(sourceFailures.length > 0 ? { sourceFailures } : {}),
+  };
+}
+
 export async function runAgentCommand(payload: Payload, agentRunId: number | string) {
   let ledger = (await payload.findByID({
     collection: COLLECTIONS.agentRuns,
@@ -187,75 +296,7 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       errorCode: null,
       errorSummary: null,
     })) as AgentRun;
-    const workflow = mastra.getWorkflow('deckWorkflow');
-    const run = await workflow.createRun({
-      runId: ledger.mastraRunId,
-      resourceId: String(presentationId),
-    });
-    const tracingOptions = {
-      traceId: ledger.traceId,
-      hideInput: true,
-      hideOutput: true,
-      tags: ['deck-build', ledger.mode, ledger.visual === false ? 'no-visual' : 'visual'],
-    };
-    const requestContext = createDeckRequestContext({
-      requestId: ledger.requestId,
-      presentationId: String(presentationId),
-      runId: ledger.mastraRunId,
-      userId: String(idOf(ledger.createdBy) ?? ''),
-      organizationId: idOf(ledger.organisation)?.toString(),
-      phase: 'gather',
-    }) as never;
-
-    let workflowResult: unknown;
-    if (ledger.command === 'restart') {
-      workflowResult = await run.restart({ requestContext, tracingOptions });
-    } else if (ledger.command === 'resume') {
-      const resumeStream = run.resumeStream({
-        step: 'approval',
-        resumeData: ledger.resumeDecision,
-        requestContext,
-        tracingOptions,
-      });
-      await consumeWorkflowStream(resumeStream, mirror);
-      workflowResult = await resumeStream.result;
-    } else if (ledger.command === 'timeTravel') {
-      const travelStream = run.timeTravelStream({
-        step: ledger.targetStep!,
-        requestContext,
-        tracingOptions,
-      });
-      await consumeWorkflowStream(travelStream, mirror);
-      workflowResult = await travelStream.result;
-    } else {
-      const presentation = await payload.findByID({
-        collection: COLLECTIONS.presentations,
-        id: presentationId,
-        depth: 2,
-      });
-      const revisionContext =
-        ledger.mode === 'revise'
-          ? await currentDeckContext(presentation.slides, payload)
-          : (ledger.revisionContext ?? undefined);
-      const revisionBrief = revisionContext
-        ? `${deckContext(presentation)}DECK EXISTANT À RÉVISER :\n${revisionContext}\n\n---\n\nDEMANDE DE RÉVISION :\n${ledger.brief}`
-        : deckContext(presentation) + ledger.brief;
-      const stream = run.stream({
-        inputData: {
-          brief: revisionBrief,
-          language: ledger.language,
-          title: presentation.title ?? undefined,
-          visual: ledger.visual !== false,
-          sourceIds: Array.isArray(ledger.sourceIds) ? (ledger.sourceIds as string[]) : [],
-          revisionContext,
-          approvalRequired: ledger.approvalRequired === true,
-        },
-        requestContext,
-        tracingOptions,
-      });
-      await consumeWorkflowStream(stream, mirror);
-      workflowResult = await stream.result;
-    }
+    const workflowResult = await executeWorkflow(payload, ledger, presentationId, mirror);
 
     const state = workflowResult as { status?: string; suspended?: unknown };
     if (state.status === 'suspended') {
@@ -296,19 +337,20 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
     return { success: true, runId: ledger.mastraRunId, suspended: false };
   } catch (error) {
     const message = sanitizeRunError(error);
+    const sourceFailures = sourceFailuresFromError(error);
+    const detail = failureDetail(message, sourceFailures);
     await patchRun(payload, ledger, {
       status: 'failed',
-      errorCode: 'agent-run-failed',
+      errorCode: sourceFailures.length > 0 ? 'source-unavailable' : 'agent-run-failed',
       errorSummary: message,
+      sourceFailures,
       completedAt: new Date().toISOString(),
       heartbeatAt: new Date().toISOString(),
-      events: [...events, { ts: Date.now(), phase: 'failed', detail: message }].slice(-MAX_EVENTS),
+      events: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
     });
     await mirrorPresentation(payload, ledger, {
       draftStatus: DRAFT_STATUS.failed,
-      draftEvents: [...events, { ts: Date.now(), phase: 'failed', detail: message }].slice(
-        -MAX_EVENTS,
-      ),
+      draftEvents: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
     });
     payload.logger.error(`[agent-run:${ledger.mastraRunId}] ${message}`);
     return { success: false, runId: ledger.mastraRunId, suspended: false };

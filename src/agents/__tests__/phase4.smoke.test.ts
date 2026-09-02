@@ -25,7 +25,7 @@ maybe('Phase 4 full run (visual pass)', () => {
       inputData: {
         brief: BRIEF,
         language: 'en',
-        sourceIds: [],
+        sourcePolicy: { mode: 'none', sourceIds: [] },
         visual: true,
         approvalRequired: false,
       },
