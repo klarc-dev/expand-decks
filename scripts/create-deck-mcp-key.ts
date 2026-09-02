@@ -9,25 +9,27 @@ await runPayloadScript(async (payload) => {
     where: { email: { equals: 'hermes-mcp@expand.local' } },
   });
   const apiKey = randomBytes(32).toString('hex');
-  const user = existing.docs[0]
-    ? await payload.update({
-        collection: 'users',
-        id: existing.docs[0].id,
-        data: { enableAPIKey: true, apiKey },
-      })
-    : await payload.create({
-        collection: 'users',
-        draft: false,
-        data: {
-          email: 'hermes-mcp@expand.local',
-          password: randomBytes(32).toString('hex'),
-          role: 'admin',
-          name: 'Hermes MCP',
-          membershipStatus: 'active',
-          enableAPIKey: true,
-          apiKey,
-        },
-      });
+  if (existing.docs[0]) {
+    await payload.update({
+      collection: 'users',
+      id: existing.docs[0].id,
+      data: { enableAPIKey: true, apiKey },
+    });
+  } else {
+    await payload.create({
+      collection: 'users',
+      draft: false,
+      data: {
+        email: 'hermes-mcp@expand.local',
+        password: randomBytes(32).toString('hex'),
+        role: 'admin',
+        name: 'Hermes MCP',
+        membershipStatus: 'active',
+        enableAPIKey: true,
+        apiKey,
+      },
+    });
+  }
 
   console.log(`users API-Key ${apiKey}`);
 });
