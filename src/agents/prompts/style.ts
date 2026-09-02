@@ -1,6 +1,6 @@
 export const INFORMATIONAL_STYLE_PROMPT = `Style rédactionnel obligatoire :
 - Registre factuel et informationnel : décrire, expliquer, comparer, quantifier.
-- Titres de diapositives : libellés brefs, groupes nominaux ou formulations elliptiques ; jamais de phrase complète ni de ponctuation finale.
+- Titres des diapositives de contenu : une conclusion concise et autonome, formulée comme la règle, la distinction ou la conséquence à retenir ; elle peut être une phrase complète mais sans ponctuation finale. Couverture, plan et intercalaires peuvent utiliser un libellé de navigation.
 - Aucun slogan, aucune accroche publicitaire, aucune formule "catchy".
 - Aucun superlatif ni adjectif décoratif : remplace-les par des faits, limites, dates, chiffres, sources ou conditions.
 - Si le brief contient une promesse marketing, reformule-la comme une affirmation vérifiable ; si elle n'est pas étayée, omets-la.
@@ -96,6 +96,24 @@ function termPattern(term: string): RegExp {
 
 const TERM_PATTERNS = BANNED_TERMS.map((term) => ({ term, pattern: termPattern(term) }));
 
+const EMPTY_AI_PHRASES = [
+  'analyse claire',
+  'claire et complete',
+  'approche robuste',
+  'demarche essentielle',
+  'vision globale',
+  'vision claire',
+  'important de noter',
+  'il convient de noter',
+  'de maniere efficace',
+  'efficacement le dispositif',
+] as const;
+
+const EMPTY_AI_PATTERNS = EMPTY_AI_PHRASES.map((term) => ({
+  term,
+  pattern: termPattern(term),
+}));
+
 function shouldSkip(path: string[]): boolean {
   const key = path
     .at(-1)
@@ -116,6 +134,11 @@ function visit(value: unknown, path: string[], violations: Set<string>): void {
     for (const { term, pattern } of TERM_PATTERNS) {
       if (pattern.test(normalized)) {
         violations.add(`${formatPath(path)} : terme promotionnel ou superlatif "${term}"`);
+      }
+    }
+    for (const { term, pattern } of EMPTY_AI_PATTERNS) {
+      if (pattern.test(normalized)) {
+        violations.add(`${formatPath(path)} : remplissage ou métadiscours "${term}"`);
       }
     }
     if (value.includes('!')) {

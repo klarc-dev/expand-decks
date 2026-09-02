@@ -9,6 +9,7 @@ import {
   limitedArrayPayload,
   limitedString,
   limitedTextPayload,
+  nonBlankLimitedString,
   optionalAi,
   optionalLimitedRender,
   optionalRender,
@@ -41,14 +42,12 @@ export const statsSpec = block({
     rawField(
       'stats',
       stats,
-      optionalAi(
-        limitedArray(
-          z.object({
-            value: limitedString(SLIDE_LIMITS.stats.value),
-            label: limitedString(SLIDE_LIMITS.stats.label),
-          }),
-          SLIDE_LIMITS.stats.items,
-        ),
+      limitedArray(
+        z.object({
+          value: nonBlankLimitedString(SLIDE_LIMITS.stats.value),
+          label: nonBlankLimitedString(SLIDE_LIMITS.stats.label),
+        }),
+        SLIDE_LIMITS.stats.items,
       ),
       limitedArrayPayload(SLIDE_LIMITS.stats.items, {
         type: 'array',

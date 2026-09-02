@@ -7,6 +7,7 @@ import {
   type InferRender,
   limitedString,
   limitedTextPayload,
+  nonBlankLimitedString,
   optionalLimitedAi,
   optionalLimitedRender,
   rawField,
@@ -18,7 +19,7 @@ const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const title = limitedString(SLIDE_LIMITS.common.title);
 const source = limitedString(SLIDE_LIMITS.mermaid.source);
 const caption = optionalLimitedRender(SLIDE_LIMITS.mermaid.caption);
-const unfencedMermaid = limitedString(SLIDE_LIMITS.mermaid.source).refine(
+const unfencedMermaid = nonBlankLimitedString(SLIDE_LIMITS.mermaid.source).refine(
   (value) => !value.includes('```'),
   'Le code Mermaid doit être fourni sans délimiteurs ```',
 );

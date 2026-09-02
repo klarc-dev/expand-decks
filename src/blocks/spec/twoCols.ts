@@ -9,6 +9,7 @@ import {
   limitedArrayPayload,
   limitedString,
   limitedTextPayload,
+  nonBlankLimitedString,
   optionalAi,
   optionalLimitedAi,
   optionalLimitedRender,
@@ -68,14 +69,12 @@ export const twoColsSpec = block({
     rawField(
       'rightCards',
       rightCards,
-      optionalAi(
-        limitedArray(
-          z.object({
-            title: limitedString(SLIDE_LIMITS.twoCols.cardTitle),
-            description: optionalLimitedAi(SLIDE_LIMITS.twoCols.cardDescription),
-          }),
-          SLIDE_LIMITS.twoCols.cards,
-        ),
+      limitedArray(
+        z.object({
+          title: nonBlankLimitedString(SLIDE_LIMITS.twoCols.cardTitle),
+          description: optionalLimitedAi(SLIDE_LIMITS.twoCols.cardDescription),
+        }),
+        SLIDE_LIMITS.twoCols.cards,
       ),
       limitedArrayPayload(SLIDE_LIMITS.twoCols.cards, {
         type: 'array',

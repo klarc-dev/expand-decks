@@ -9,7 +9,7 @@ import {
   limitedArrayPayload,
   limitedString,
   limitedTextPayload,
-  optionalAi,
+  nonBlankLimitedString,
   optionalLimitedAi,
   optionalLimitedRender,
   optionalRender,
@@ -29,7 +29,7 @@ const step = z.object({
 const steps = optionalRender(limitedArray(step, SLIDE_LIMITS.timeline.steps));
 
 const aiStep = z.object({
-  label: limitedString(SLIDE_LIMITS.timeline.label),
+  label: nonBlankLimitedString(SLIDE_LIMITS.timeline.label),
   description: optionalLimitedAi(SLIDE_LIMITS.timeline.description),
 });
 
@@ -45,7 +45,7 @@ export const timelineSpec = block({
     rawField(
       'steps',
       steps,
-      optionalAi(limitedArray(aiStep, SLIDE_LIMITS.timeline.steps)),
+      limitedArray(aiStep, SLIDE_LIMITS.timeline.steps),
       limitedArrayPayload(SLIDE_LIMITS.timeline.steps, {
         type: 'array',
         label: 'Étapes',

@@ -42,6 +42,12 @@ const JUDGE_INSTRUCTIONS = `Tu es le juge qualité d'une diapositive de formatio
 
 ${RUBRIC_PROMPT}
 
+Vérifie aussi la densité informationnelle :
+- Une phrase ne compte que si elle apporte un fait, un critère, une condition, une distinction, une date, une conséquence, une réserve ou une action.
+- Pénalise le métadiscours et les adjectifs creux (par ex. clair, complet, robuste, essentiel, pertinent, vision globale, il est important de).
+- Pour un sujet juridique ou normatif, pénalise une règle centrale dépourvue de la référence courte disponible dans footnotes.
+- Pénalise les résumés généraux qui omettent les conditions cumulatives, exceptions, formalités ou conséquences attendues par l'intention.
+
 Barème :
 - 1.0 : une seule fonction pédagogique, titre-message, concret, exact, charge maîtrisée.
 - 0.7 : correct mais perfectible (un point faible).

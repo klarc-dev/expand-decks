@@ -35,7 +35,9 @@ Règles de rédaction :
 - Remplis tous les champs pertinents du layout à partir du dossier et de l'intention.
 - N’ajoute aucun fait, chiffre, attribution, cas, effet causal, critère ou recommandation qui ne découle pas directement du dossier. Si le dossier n’autorise pas un détail concret, reste général au lieu de l’inventer.
 - Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
-- Les sources servent seulement à vérifier les faits ; les preuves sont conservées en métadonnées. Ne rédige jamais de rubrique bibliographique visible ("Sources :", "Références :", citations brutes).
+- Utilise le champ footnotes pour rattacher les affirmations vérifiables aux références disponibles. Cite la norme, l’article, l’auteur ou l’organisme de façon courte ; n’invente jamais une référence. Les footnotes sont des sources de la diapositive, pas une bibliographie autonome.
+- Pour un contenu juridique ou normatif, remplace toute formule générale par la règle exacte, ses conditions cumulatives, son exception ou incertitude, puis sa conséquence pratique. Mentionne les articles et dates disponibles.
+- Évite les adjectifs d’évaluation et le métadiscours ("clair", "complet", "robuste", "essentiel", "pertinent", "il est important de", "il convient de noter"). Chaque phrase doit apporter un critère, une distinction, une obligation, une date, une conséquence, une réserve ou une action.
 - Textes concis et factuels ; reste dans la langue du dossier ; ne répète pas le contenu d'une autre diapositive.`;
 }
 
@@ -47,6 +49,14 @@ function dossierExcerpt(dossier: DeckDossier): string {
     `POINTS AUTORISÉS :\n${dossier.keyPoints.map((point) => `- ${point}`).join('\n')}`,
     dossier.data.length
       ? `DONNÉES DISPONIBLES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}`
+      : '',
+    dossier.references?.length || dossier.sources.length
+      ? `RÉFÉRENCES AUTORISÉES POUR LES FOOTNOTES :\n${[
+          ...(dossier.references ?? []),
+          ...dossier.sources,
+        ]
+          .map((source) => `- ${source}`)
+          .join('\n')}`
       : '',
   ]
     .filter(Boolean)

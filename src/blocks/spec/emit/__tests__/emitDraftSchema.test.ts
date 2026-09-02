@@ -101,12 +101,19 @@ const currentCoverSchema = z.object({
   footerRight: z.string().optional(),
 });
 
+const currentFootnotesSchema = z
+  .array(z.object({ text: z.string().max(220) }))
+  .min(0)
+  .max(3)
+  .optional();
+
 const currentStatementSchema = z.object({
   blockType: z.literal('statement'),
   eyebrow: z.string().optional(),
   title: z.string(),
   body: z.string().optional(),
   footer: z.string().optional(),
+  footnotes: currentFootnotesSchema,
 });
 
 const currentCardGridSchema = z.object({
@@ -124,6 +131,7 @@ const currentCardGridSchema = z.object({
       }),
     )
     .optional(),
+  footnotes: currentFootnotesSchema,
 });
 
 const jsonSchema = (schema: z.ZodType) => z.toJSONSchema(schema, { io: 'input' });
@@ -139,6 +147,34 @@ describe('emitDraftSchema() — per-block JSON Schema parity', () => {
 
   it('cardGrid member matches the current hand-written cardGrid schema', () => {
     expect(jsonSchema(aiSchemaOf(cardGridSpec))).toEqual(jsonSchema(currentCardGridSchema));
+  });
+  it('injects the shared footnotes contract into AI-draftable content blocks', () => {
+    const parsed = aiSchemaOf(statementSpec).parse({
+      blockType: 'statement',
+      title: 'Claim',
+      footnotes: [{ text: 'Code de la propriété intellectuelle, art. L. 113-9-1' }],
+    });
+    expect(parsed).toMatchObject({
+      footnotes: [{ text: 'Code de la propriété intellectuelle, art. L. 113-9-1' }],
+    });
+  });
+
+  it('rejects footnotes beyond the shared fixed-canvas limits', () => {
+    const result = aiSchemaOf(statementSpec).safeParse({
+      blockType: 'statement',
+      title: 'Claim',
+      footnotes: Array.from({ length: 4 }, (_, index) => ({ text: `Source ${index}` })),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('does not inject footnotes into cover blocks', () => {
+    const parsed = aiSchemaOf(coverSpec).parse({
+      blockType: 'cover',
+      title: 'Cover',
+      footnotes: [{ text: 'Should be stripped' }],
+    });
+    expect(parsed).not.toHaveProperty('footnotes');
   });
 });
 

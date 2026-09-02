@@ -27,9 +27,15 @@ export const DeckDossierSchema = z.object({
   data: z
     .array(z.string())
     .describe('Concrete facts, numbers, or examples that ground the points (may be empty).'),
+  references: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Human-readable citations available in the brief or grounded research notes: article, date, author, institution and URL where available.',
+    ),
   sources: z
     .array(z.string())
-    .describe('Source references for the facts/claims, where available (may be empty).'),
+    .describe('Connected source ids backed by captured tool evidence (may be empty).'),
   rawBrief: z
     .string()
     .describe(

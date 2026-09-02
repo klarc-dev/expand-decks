@@ -19,7 +19,8 @@ const dossier: DeckDossier = {
   soWhat: 'Judges decide early.',
   keyPoints: ['BLUF works'],
   data: ['Garner 2013'],
-  sources: ['Garner, Legal Writing in Plain English'],
+  references: ['Garner, Legal Writing in Plain English'],
+  sources: [],
   rawBrief: '',
   language: 'en',
 };
@@ -99,7 +100,7 @@ describe('writeSlide invariants', () => {
     expect(instructions).toContain('Required output language: English');
   });
 
-  it('does not expose dossier sources in the writer prompt while keeping grounded data', async () => {
+  it('passes source references and requires claim-level footnotes when sources are available', async () => {
     mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
 
     await writeSlide(stub, dossier, []);
@@ -107,9 +108,11 @@ describe('writeSlide invariants', () => {
     const prompt = mocked.mock.calls[0]![0].prompt;
     const instructions = mocked.mock.calls[0]![0].instructions;
     expect(prompt).toContain('Garner 2013');
-    expect(prompt).not.toContain('SOURCES :');
-    expect(prompt).not.toContain('Garner, Legal Writing in Plain English');
-    expect(instructions).toContain('Ne rédige jamais de rubrique bibliographique visible');
+    expect(prompt).toContain('RÉFÉRENCES AUTORISÉES');
+    expect(prompt).toContain('Garner, Legal Writing in Plain English');
+    expect(instructions).toContain('footnotes');
+    expect(instructions).toContain('contenu juridique ou normatif');
+    expect(instructions).not.toContain('Les sources servent seulement à vérifier les faits');
   });
 
   it('returns a minimal block for non-aiDraftable types without calling the model', async () => {

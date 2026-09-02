@@ -16,6 +16,7 @@ import {
   limitedRichTextRender,
   limitedString,
   limitedTextPayload,
+  nonBlankLimitedString,
   optionalAi,
   optionalLimitedAi,
   optionalLimitedRender,
@@ -36,11 +37,11 @@ const row = z.object({ cells: z.array(cell) });
 const columns = optionalRender(limitedArray(column, SLIDE_LIMITS.table.columns));
 const rows = optionalRender(limitedArray(row, SLIDE_LIMITS.table.rows));
 
-const aiCell = z.object({ value: limitedString(SLIDE_LIMITS.table.cell) });
-const aiColumn = z.object({ header: limitedString(SLIDE_LIMITS.table.header) });
+const aiCell = z.object({ value: nonBlankLimitedString(SLIDE_LIMITS.table.cell) });
+const aiColumn = z.object({ header: nonBlankLimitedString(SLIDE_LIMITS.table.header) });
 const aiRow = z.object({ cells: z.array(aiCell) });
-const aiColumns = optionalAi(limitedArray(aiColumn, SLIDE_LIMITS.table.columns));
-const aiRows = optionalAi(limitedArray(aiRow, SLIDE_LIMITS.table.rows));
+const aiColumns = limitedArray(aiColumn, SLIDE_LIMITS.table.columns);
+const aiRows = limitedArray(aiRow, SLIDE_LIMITS.table.rows);
 
 const refineTableAi = (schema: z.ZodObject) =>
   schema.superRefine((value, ctx) => {

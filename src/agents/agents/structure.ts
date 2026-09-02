@@ -38,11 +38,17 @@ function requestedSlideRange(brief: string): { min: number; max: number } | null
 
 const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
-Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title (un libellé concis, de préférence un groupe nominal ou une formulation elliptique — jamais une phrase complète ni de ponctuation finale), et intent (la fonction pédagogique et ce que la diapositive doit faire comprendre, distinguer, décider ou appliquer).
+Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la fonction pédagogique et les faits, conditions, réserves, sources ou actions que la diapositive doit rendre explicites.
 
 ${STRUCTURE_SYSTEM_PROMPT}
 
 ${RUBRIC_PROMPT}
+
+Règles de contenu :
+- Chaque diapositive d'analyse doit avoir une fonction informationnelle précise : énoncer une règle, ordonner des conditions, distinguer deux régimes, exposer une exception ou incertitude, tirer une conséquence, ou prescrire une action.
+- Dans un dossier juridique ou normatif, mets dans title+intent les articles, dates, conditions cumulatives, distinctions de statut et formalités nécessaires. Ils ont priorité sur les résumés généraux.
+- « Approche claire », « dispositif robuste », « enjeu essentiel », « vision globale », « il est important de » et les formules analogues ne couvrent aucun point clé.
+- Les sources ne forment pas une slide autonome, mais l'intention doit indiquer quelle affirmation centrale doit recevoir une footnote.
 
 Arc du deck (sparkline) :
 - Première diapositive = "cover".
@@ -60,6 +66,9 @@ function dossierPrompt(dossier: DeckDossier): string {
     `POURQUOI ÇA COMPTE : ${dossier.soWhat}`,
     `POINTS CLÉS (chacun doit être couvert) :\n${dossier.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
     dossier.data.length ? `DONNÉES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}` : '',
+    dossier.references?.length
+      ? `RÉFÉRENCES DISPONIBLES :\n${dossier.references.map((reference) => `- ${reference}`).join('\n')}`
+      : '',
   ]
     .filter(Boolean)
     .join('\n\n');

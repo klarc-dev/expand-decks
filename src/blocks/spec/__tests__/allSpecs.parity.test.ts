@@ -48,17 +48,40 @@ const EXPECTED_DRAFTABLE = [
   'agenda',
 ] as const;
 
-// Minimal valid object for a draftable member: blockType + title + any other
-// required top-level string field (e.g. mermaid `source`), derived from the
-// spec's OWN aiSchema so it tracks future required fields instead of silently
-// weakening the union assertions.
+// Minimal valid object for a draftable member, derived from the spec's own AI
+// schema so future required semantic arrays remain represented.
+const minimalValueForKey = (key: string, field: z.ZodType): unknown => {
+  const candidatesByKey: Record<string, unknown[]> = {
+    rightCards: [[{ title: 'x' }, { title: 'y' }]],
+    cards: [[{ title: 'x' }, { title: 'y' }]],
+    stats: [
+      [
+        { value: '1', label: 'x' },
+        { value: '2', label: 'y' },
+      ],
+    ],
+    quotes: [[{ quote: 'x', authorName: 'x' }]],
+    columns: [[{ header: 'x' }, { header: 'y' }]],
+    rows: [[{ cells: [{ value: 'x' }, { value: 'y' }] }]],
+    steps: [[{ label: 'x' }, { label: 'y' }]],
+  };
+  for (const candidate of [...(candidatesByKey[key] ?? []), 'x']) {
+    if (field.safeParse(candidate).success) return candidate;
+  }
+  return undefined;
+};
+
 const minimalSlide = (spec: (typeof ALL_SPECS)[number]) => {
   const shape = (aiSchemaOf(spec) as z.ZodObject).shape as Record<string, z.ZodType>;
-  const slide: Record<string, unknown> = { blockType: spec.blockType, title: 'x' };
+  const slide: Record<string, unknown> = {
+    blockType: spec.blockType,
+    title: 'x',
+  };
   for (const [key, field] of Object.entries(shape)) {
     if (key in slide) continue;
-    if (field.safeParse(undefined).success) continue; // optional → skip
-    if (field.safeParse('x').success) slide[key] = 'x'; // required string → fill
+    if (field.safeParse(undefined).success) continue;
+    const value = minimalValueForKey(key, field);
+    if (value !== undefined) slide[key] = value;
   }
   expect(aiSchemaOf(spec).safeParse(slide).success, `${spec.blockType} minimal`).toBe(true);
   return slide;
@@ -69,7 +92,9 @@ const minimalSlide = (spec: (typeof ALL_SPECS)[number]) => {
 const unionBlockTypes = (schema: z.ZodType): string[] => {
   const json = z.toJSONSchema(schema, { io: 'input' }) as unknown as {
     properties: {
-      slides: { items: { anyOf: { properties: { blockType: { const: string } } }[] } };
+      slides: {
+        items: { anyOf: { properties: { blockType: { const: string } } }[] };
+      };
     };
   };
   return json.properties.slides.items.anyOf.map((member) => member.properties.blockType.const);
@@ -249,7 +274,9 @@ describe('ALL_SPECS parity', () => {
   it('accepts a minimal valid slide for every AI-draftable spec', () => {
     const schema = emitSlidesArraySchema(ALL_SPECS);
     for (const spec of DRAFTABLE) {
-      const deck = { slides: [minimalSlide(spec), minimalSlide(spec), minimalSlide(spec)] };
+      const deck = {
+        slides: [minimalSlide(spec), minimalSlide(spec), minimalSlide(spec)],
+      };
       expect(schema.safeParse(deck).success, spec.blockType).toBe(true);
     }
   });
@@ -258,10 +285,14 @@ describe('ALL_SPECS parity', () => {
     const schema = emitSlidesArraySchema(ALL_SPECS);
     const filler = [minimalSlide(DRAFTABLE[0]!), minimalSlide(DRAFTABLE[0]!)];
     expect(
-      schema.safeParse({ slides: [{ blockType: 'nope', title: 'x' }, ...filler] }).success,
+      schema.safeParse({
+        slides: [{ blockType: 'nope', title: 'x' }, ...filler],
+      }).success,
     ).toBe(false);
     expect(
-      schema.safeParse({ slides: [{ blockType: 'markdown', title: 'x' }, ...filler] }).success,
+      schema.safeParse({
+        slides: [{ blockType: 'markdown', title: 'x' }, ...filler],
+      }).success,
     ).toBe(false);
   });
 

@@ -92,6 +92,7 @@ import { serializedTextLength } from './limitValidation';
 export type FieldFactory = 'eyebrow' | 'title' | 'image' | 'preview' | 'cardTitleDesc' | 'raw';
 
 export const limitedString = (limit: TextLimit) => z.string().max(limit.max);
+export const nonBlankLimitedString = (limit: TextLimit) => z.string().trim().min(1).max(limit.max);
 
 export const optionalLimitedRender = (limit: TextLimit) => optionalRender(limitedString(limit));
 
@@ -114,8 +115,11 @@ export const richTextRender = () => z.custom<LexicalRichText>();
 export const optionalRichTextRender = () => z.custom<LexicalRichText>().nullable().optional();
 export const optionalUnknownRender = () => z.unknown().nullable().optional();
 const footnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });
+const aiFootnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });
 export const footnotesRender = () =>
   optionalRender(limitedArray(footnote, SLIDE_LIMITS.common.footnotes));
+export const footnotesAi = () =>
+  optionalAi(limitedArray(aiFootnote, SLIDE_LIMITS.common.footnotes));
 export const limitedRichTextRender = (limit: TextLimit) =>
   z
     .custom<LexicalRichText>()
@@ -366,17 +370,16 @@ export function eyebrowFieldSpec(
   );
 }
 
-/** Audience-facing title text is a short label, not a sentence or inline Markdown. */
+/** Audience-facing title text is a concise headline, not inline Markdown. */
 export const aiTitle = () =>
-  limitedString(SLIDE_LIMITS.common.title)
-    .min(1)
+  nonBlankLimitedString(SLIDE_LIMITS.common.title)
     .refine(
       (value) => !/(?:\*\*|__|~~|`|!?\[[^\]]+\]\([^)]+\)|^\s{0,3}#{1,6}\s|^\s*>\s)/mu.test(value),
       'Le titre doit être du texte brut sans balisage Markdown (gras, italique, lien, code, citation ou titre Markdown)',
     )
     .refine(
       (value) => !/[.!?…]\s*$/u.test(value),
-      'Le titre doit être un libellé bref ou un groupe nominal, sans ponctuation de fin de phrase',
+      'Le titre doit être concis et sans ponctuation de fin de phrase',
     );
 
 /** `title` field: render Zod + required AI plain-text title. `description` → factoryArgs. */
@@ -431,6 +434,9 @@ export function aiSchemaOf(spec: BlockSpec): z.ZodType<Record<string, unknown>> 
     if (field.factory === 'preview') continue;
     if (field.ai === false) continue;
     shape[field.name] = field.ai;
+  }
+  if (spec.slug !== 'markdown' && spec.slug !== 'cover') {
+    shape.footnotes = footnotesAi();
   }
   const schema = z.object(shape);
   return (spec.aiRefine ? spec.aiRefine(schema) : schema) as z.ZodType<Record<string, unknown>>;

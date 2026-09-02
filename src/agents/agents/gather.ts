@@ -27,7 +27,8 @@ Tu extrais :
 - soWhat : pourquoi ce public doit s'en soucier — le problème qu'il possède.
 - keyPoints : les points d'appui distincts (chacun une affirmation nette). C'est l'unité de couverture.
 - data : faits, chiffres, exemples concrets qui ancrent les points (peut être vide).
-- sources : références des faits/affirmations si disponibles (peut être vide).
+- sources : identifiants des sources connectées ayant produit des preuves capturées (peut être vide).
+- references : citations lisibles utilisables dans les notes de source des diapositives : article, date, auteur, organisme et URL si disponibles (peut être vide).
 
 Règles du dossier :
 - Préserve le périmètre, la terminologie, le statut épistémique et le point de vue du brief et des sources.
@@ -86,7 +87,8 @@ export async function gather(
   return {
     dossier: {
       ...dossier,
-      // A model may only name external references when the corresponding MCP
+      references: dossier.references ?? [],
+      // A model may only name external source ids when the corresponding MCP
       // call produced captured provenance. Brief-only drafting stays unsourced.
       sources: evidence.length > 0 ? dossier.sources : [],
       rawBrief: brief,

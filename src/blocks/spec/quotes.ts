@@ -10,6 +10,7 @@ import {
   limitedRichTextRender,
   limitedString,
   limitedTextPayload,
+  nonBlankLimitedString,
   optionalAi,
   optionalLimitedAi,
   optionalLimitedRender,
@@ -44,15 +45,13 @@ export const quotesSpec = block({
     rawField(
       'quotes',
       quotes,
-      optionalAi(
-        limitedArray(
-          z.object({
-            quote: limitedString(SLIDE_LIMITS.quotes.quote),
-            authorName: limitedString(SLIDE_LIMITS.quotes.authorName),
-            authorRole: optionalLimitedAi(SLIDE_LIMITS.quotes.authorRole),
-          }),
-          SLIDE_LIMITS.quotes.items,
-        ),
+      limitedArray(
+        z.object({
+          quote: nonBlankLimitedString(SLIDE_LIMITS.quotes.quote),
+          authorName: nonBlankLimitedString(SLIDE_LIMITS.quotes.authorName),
+          authorRole: optionalLimitedAi(SLIDE_LIMITS.quotes.authorRole),
+        }),
+        SLIDE_LIMITS.quotes.items,
       ),
       limitedArrayPayload(SLIDE_LIMITS.quotes.items, {
         type: 'array',

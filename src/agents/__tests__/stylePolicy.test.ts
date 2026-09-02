@@ -67,6 +67,36 @@ describe('informational style policy', () => {
     expect(findInformationalStyleViolations({ title: 'Le leadership est documenté' })).toEqual([]);
   });
 
+  it('rejects empty AI filler and metadiscourse in nested slide content', () => {
+    const violations = findInformationalStyleViolations({
+      title: 'Une analyse claire et complète',
+      body: 'Il est important de noter que cette approche robuste permet de sécuriser efficacement le dispositif.',
+      cards: [
+        { description: 'Cette démarche essentielle offre une vision globale et pertinente.' },
+      ],
+    });
+
+    expect(violations).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/title.*claire et complete/),
+        expect.stringMatching(/body.*important de noter/),
+        expect.stringMatching(/body.*approche robuste/),
+        expect.stringMatching(/cards\.0\.description.*demarche essentielle/),
+        expect.stringMatching(/cards\.0\.description.*vision globale/),
+      ]),
+    );
+  });
+
+  it('accepts precise legal conditions, consequences and source references', () => {
+    expect(
+      findInformationalStyleViolations({
+        title: 'Quatre conditions cumulatives pour le logiciel du stagiaire',
+        body: 'La dévolution suppose une mission ou des instructions, une contrepartie, l’autorité d’un responsable et l’absence de stipulation contraire.',
+        footnotes: [{ text: 'CPI, art. L. 113-9-1' }],
+      }),
+    ).toEqual([]);
+  });
+
   it('stores violations on StylePolicyError', () => {
     const error = new StylePolicyError(["title : point d'exclamation"]);
     expect(error.name).toBe('StylePolicyError');

@@ -9,6 +9,7 @@ import {
   limitedArrayPayload,
   limitedString,
   limitedTextPayload,
+  nonBlankLimitedString,
   optionalAi,
   optionalLimitedAi,
   optionalLimitedRender,
@@ -63,15 +64,13 @@ export const cardGridSpec = block({
     rawField(
       'cards',
       cards,
-      optionalAi(
-        limitedArray(
-          z.object({
-            number: optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardNumber),
-            title: limitedString(SLIDE_LIMITS.cardGrid.cardTitle),
-            description: optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardDescription),
-          }),
-          SLIDE_LIMITS.cardGrid.cards,
-        ),
+      limitedArray(
+        z.object({
+          number: optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardNumber),
+          title: nonBlankLimitedString(SLIDE_LIMITS.cardGrid.cardTitle),
+          description: optionalLimitedAi(SLIDE_LIMITS.cardGrid.cardDescription),
+        }),
+        SLIDE_LIMITS.cardGrid.cards,
       ),
       limitedArrayPayload(SLIDE_LIMITS.cardGrid.cards, {
         type: 'array',
