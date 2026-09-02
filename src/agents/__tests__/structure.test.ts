@@ -249,4 +249,36 @@ describe('structure() parser — brief with fewer than 3 S-markers falls to LLM'
     expect(stubs[0]?.blockType).toBe('cover');
     expect(stubs.at(-1)?.blockType).toBe('cta');
   });
+
+  it.each([
+    ['Create a concise 5–6 slide deck for executives', 5, 6],
+    ['Deck expert de 5 à 7 diapositives pour dirigeants', 5, 7],
+  ])(
+    'enforces the slide range requested in a natural-language brief',
+    async (rawBrief, min, max) => {
+      const validSlides = Array.from({ length: max }, (_, index) => ({
+        blockType: 'statement',
+        title: `Slide ${index + 1}`,
+        intent: `Intent ${index + 1}`,
+      }));
+      mockedGenerateStructured.mockResolvedValue({ slides: validSlides });
+
+      const stubs = await structure(baseDossier(rawBrief));
+      const schema = mockedGenerateStructured.mock.calls[0]![0].schema;
+      const overLimit = {
+        slides: Array.from({ length: 12 }, (_, index) => ({
+          blockType: 'statement',
+          title: `Slide ${index + 1}`,
+          intent: `Intent ${index + 1}`,
+        })),
+      };
+
+      expect(() => schema.parse(overLimit)).toThrow();
+
+      expect(stubs.length).toBeGreaterThanOrEqual(min);
+      expect(stubs.length).toBeLessThanOrEqual(max);
+      expect(stubs[0]!.blockType).toBe('cover');
+      expect(stubs.at(-1)!.blockType).toBe('cta');
+    },
+  );
 });

@@ -21,4 +21,10 @@ describe('versioned production evaluation datasets', () => {
       expect(threshold).toBeLessThanOrEqual(1);
     }
   });
+
+  it('provides a factual grounding contract for every workflow fixture', () => {
+    for (const item of workflowDatasetV1) {
+      expect(item.groundTruth.allowedFacts.length, item.externalId).toBeGreaterThan(0);
+    }
+  });
 });
