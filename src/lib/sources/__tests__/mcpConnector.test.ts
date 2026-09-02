@@ -44,6 +44,15 @@ const rawTool = (result: unknown) =>
     execute: async () => result,
   });
 
+const throwingTool = (error: Error) =>
+  new Tool({
+    id: 'search',
+    description: 'search',
+    execute: async () => {
+      throw error;
+    },
+  });
+
 beforeEach(() => {
   clients.length = 0;
   discovery.length = 0;
@@ -108,6 +117,40 @@ describe('openSourceToolsets', () => {
         excerpt: 'Verified result',
       }),
     ]);
+  });
+
+  it('wraps tool execution errors as bounded structured failures', async () => {
+    discovery.push({
+      toolsets: { docs: { search: throwingTool(new Error(`timeout ${'x'.repeat(2_000)}`)) } },
+      errors: {},
+    });
+    const opened = await openSourceToolsets([source()]);
+
+    const failure = await opened.toolsets
+      .docs!.search!.execute?.({}, {} as never)
+      .catch((error) => error);
+    expect(failure).toBeInstanceOf(SourceConnectorError);
+    expect(failure).toMatchObject({
+      failures: [expect.objectContaining({ sourceId: 'docs', stage: 'tool', code: 'timeout' })],
+    });
+    expect(failure.failures[0].message).toHaveLength(1_000);
+  });
+
+  it('wraps sanitization errors as invalid-result failures', async () => {
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    discovery.push({ toolsets: { docs: { search: rawTool(circular) } }, errors: {} });
+    const opened = await openSourceToolsets([source()]);
+
+    await expect(opened.toolsets.docs!.search!.execute?.({}, {} as never)).rejects.toMatchObject({
+      failures: [
+        expect.objectContaining({
+          sourceId: 'docs',
+          stage: 'sanitize',
+          code: 'invalid-result',
+        }),
+      ],
+    });
   });
 
   it('fails closed for strict discovery failure with structured failures', async () => {

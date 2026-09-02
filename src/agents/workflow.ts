@@ -35,7 +35,7 @@ import { buildSlidesMd } from '../export/buildSlidesMd';
 import type { SlideBlock } from '../export/renderers';
 import type { OutlineStub } from '../blocks/spec/emit/emitDraftSchema';
 import { gather } from './agents/gather';
-import { structure } from './agents/structure';
+import { structureWithProvenance } from './agents/structure';
 import { writeSlide } from './agents/writer';
 import { scoreSlide } from './scorers/rubric';
 import { scoreVisual } from './scorers/visual';
@@ -49,6 +49,24 @@ import {
   type SourcePolicy,
 } from '../lib/sources/types';
 import { SourcePolicySchema } from '../lib/sources/policy';
+
+const MAX_DURABLE_EVIDENCE = 200;
+const MAX_DURABLE_SOURCE_FAILURES = 100;
+
+function mergeEvidence(...groups: DeckEvidence[][]): DeckEvidence[] {
+  const records = new Map<string, DeckEvidence>();
+  for (const item of groups.flat()) records.set(item.id, item);
+  return [...records.values()].slice(-MAX_DURABLE_EVIDENCE);
+}
+
+function mergeSourceFailures(...groups: SourceFailure[][]): SourceFailure[] {
+  const records = new Map<string, SourceFailure>();
+  for (const item of groups.flat()) {
+    const key = [item.sourceId, item.stage, item.code, item.message].join('\u0000');
+    records.set(key, item);
+  }
+  return [...records.values()].slice(-MAX_DURABLE_SOURCE_FAILURES);
+}
 
 // ── shared shapes ───────────────────────────────────────────────────────────
 
@@ -146,13 +164,20 @@ const structureStep = createStep({
     sourcePolicy: SourcePolicySchema,
     stubs: z.array(stubT),
   }),
-  execute: async ({ inputData, abortSignal }) => ({
-    dossier: inputData.dossier,
-    evidence: inputData.evidence,
-    sourceFailures: inputData.sourceFailures,
-    sourcePolicy: inputData.sourcePolicy,
-    stubs: await structure(inputData.dossier, inputData.sourcePolicy, abortSignal),
-  }),
+  execute: async ({ inputData, abortSignal }) => {
+    const structured = await structureWithProvenance(
+      inputData.dossier,
+      inputData.sourcePolicy,
+      abortSignal,
+    );
+    return {
+      dossier: inputData.dossier,
+      evidence: mergeEvidence(inputData.evidence, structured.evidence),
+      sourceFailures: mergeSourceFailures(inputData.sourceFailures, structured.sourceFailures),
+      sourcePolicy: inputData.sourcePolicy,
+      stubs: structured.stubs,
+    };
+  },
 });
 
 const approvalStep = createStep({

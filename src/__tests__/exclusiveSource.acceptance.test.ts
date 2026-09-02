@@ -6,6 +6,9 @@ const state = vi.hoisted(() => ({
   queuedInput: undefined as Record<string, unknown> | undefined,
   openedSourceIds: [] as string[],
   evidence: [] as Record<string, unknown>[],
+  evidenceByOpen: [] as Record<string, unknown>[][],
+  forceStructureResearch: false,
+  structureCalls: 0,
   sourceFailures: [] as Record<string, unknown>[],
   modelCalls: [] as string[],
   persistSlides: vi.fn(),
@@ -72,10 +75,11 @@ vi.mock('../lib/sources/mcpConnector', async () => {
       ) {
         throw new SourceConnectorError('Strict source unavailable', state.sourceFailures as never);
       }
+      const capturedEvidence = state.evidenceByOpen.shift() ?? state.evidence;
       return {
         toolsets: Object.fromEntries(sources.map((source) => [source.id, { search: {} }])),
         failures: state.sourceFailures,
-        recorder: { snapshot: () => state.evidence },
+        recorder: { snapshot: () => capturedEvidence },
         disconnect: vi.fn(),
       };
     }),
@@ -99,6 +103,15 @@ vi.mock('../agents/model', () => ({
       };
     }
     if (name === 'structure') {
+      state.structureCalls += 1;
+      if (state.forceStructureResearch && state.structureCalls === 1) {
+        return {
+          slides: [
+            { blockType: 'cover', title: 'Unrelated', intent: 'Unrelated' },
+            { blockType: 'cta', title: 'Act', intent: 'Act' },
+          ],
+        };
+      }
       return {
         slides: [
           {
@@ -178,6 +191,15 @@ const evidence = {
   contentSha256: '0'.repeat(64),
 };
 
+const structureEvidence = {
+  ...evidence,
+  id: 'ev_111111111111111111111111',
+  claim: 'Structure fact',
+  excerpt: 'Structure fact',
+  toolCallId: 'call-2',
+  contentSha256: '1'.repeat(64),
+};
+
 async function queueExclusiveRun(approvalRequired = false) {
   return POST(
     new Request('http://local/api/agent-draft', {
@@ -201,6 +223,9 @@ describe('exclusive source admin-to-worker acceptance', () => {
     state.queuedInput = undefined;
     state.openedSourceIds = [];
     state.evidence = [evidence];
+    state.evidenceByOpen = [];
+    state.forceStructureResearch = false;
+    state.structureCalls = 0;
     state.sourceFailures = [];
     state.modelCalls = [];
     state.workflowRuns.clear();
@@ -261,6 +286,27 @@ describe('exclusive source admin-to-worker acceptance', () => {
     });
   });
 
+  it('persists provenance captured during structure research alongside gather evidence', async () => {
+    state.forceStructureResearch = true;
+    state.evidenceByOpen = [[evidence], [structureEvidence]];
+    await queueExclusiveRun();
+
+    await runAgentDraftTask({
+      input: state.queuedInput,
+      req: { payload } as never,
+    });
+
+    expect(state.modelCalls).toContain('structure:research');
+    expect(state.ledger).toMatchObject({
+      status: 'succeeded',
+      evidence: [evidence, structureEvidence],
+    });
+    expect(state.presentation).toMatchObject({
+      draftSources: ['docs'],
+      draftEvidence: [evidence, structureEvidence],
+    });
+  });
+
   it('fails the real workflow when the exclusive source captures zero evidence', async () => {
     state.evidence = [];
     await queueExclusiveRun();
@@ -272,10 +318,40 @@ describe('exclusive source admin-to-worker acceptance', () => {
 
     expect(state.ledger).toMatchObject({
       status: 'failed',
-      errorCode: 'agent-run-failed',
+      errorCode: 'source-unavailable',
+      sourceFailures: [
+        expect.objectContaining({
+          sourceId: 'docs',
+          stage: 'tool',
+          code: 'invalid-result',
+        }),
+      ],
     });
     expect(state.presentation.draftStatus).toBe('failed');
     expect(state.persistSlides).not.toHaveBeenCalled();
+  });
+
+  it('surfaces exclusive MCP tool execution failures as source-unavailable', async () => {
+    const failure = {
+      sourceId: 'docs',
+      stage: 'tool',
+      code: 'timeout',
+      message: 'tool timed out',
+    };
+    const { SourceConnectorError } = await import('../lib/sources/types');
+    const { researchWithSources } = await import('../agents/model');
+    vi.mocked(researchWithSources).mockRejectedValueOnce(
+      new SourceConnectorError('Tool execution failed', [failure] as never),
+    );
+    await queueExclusiveRun();
+
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.ledger).toMatchObject({
+      status: 'failed',
+      errorCode: 'source-unavailable',
+      sourceFailures: [failure],
+    });
   });
 
   it('fails before model invocation and journals structured exclusive discovery failure', async () => {

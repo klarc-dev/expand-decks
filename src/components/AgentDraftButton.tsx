@@ -172,6 +172,98 @@ function ExclusiveSourceSelector({
   );
 }
 
+function MultipleSourceSelector({
+  maxSources,
+  readOnly,
+  selected,
+  sources,
+  onToggle,
+}: {
+  maxSources: number;
+  readOnly: boolean;
+  selected: string[];
+  sources: SourceOption[];
+  onToggle: (id: string) => void;
+}) {
+  if (sources.length === 0) return null;
+  return (
+    <DraftFieldGroup label={`Sources externes${maxSources > 0 ? ` (max ${maxSources})` : ''}`}>
+      {sources.map((source) => {
+        const checked = selected.includes(source.id);
+        const atCap = maxSources > 0 && selected.length >= maxSources;
+        return (
+          <CheckboxInput
+            checked={checked}
+            className="agent-draft__checkbox"
+            id={`agent-source-${source.id}`}
+            key={source.id}
+            label={source.label}
+            name={`agent-source-${source.id}`}
+            onToggle={() => onToggle(source.id)}
+            readOnly={readOnly || (!checked && atCap)}
+          />
+        );
+      })}
+    </DraftFieldGroup>
+  );
+}
+
+function SourceControls({
+  loaded,
+  maxSources,
+  policy,
+  readOnly,
+  selected,
+  sources,
+  onPolicyChange,
+  onExclusiveChange,
+  onMultipleToggle,
+}: {
+  loaded: boolean;
+  maxSources: number;
+  policy: SourcePolicyMode;
+  readOnly: boolean;
+  selected: string[];
+  sources: SourceOption[];
+  onPolicyChange: (value: SourcePolicyMode) => void;
+  onExclusiveChange: (id: string) => void;
+  onMultipleToggle: (id: string) => void;
+}) {
+  return (
+    <>
+      {loaded && (
+        <SourcePolicySelector
+          maxSources={maxSources}
+          onChange={onPolicyChange}
+          readOnly={readOnly}
+          sourcesAvailable={sources.length > 0}
+          value={policy}
+        />
+      )}
+      {policy === 'exclusive' && (
+        <ExclusiveSourceSelector
+          onChange={onExclusiveChange}
+          readOnly={readOnly}
+          selected={selected}
+          sources={sources}
+        />
+      )}
+      {policy === 'multiple' && (
+        <MultipleSourceSelector
+          maxSources={maxSources}
+          onToggle={onMultipleToggle}
+          readOnly={readOnly}
+          selected={selected}
+          sources={sources}
+        />
+      )}
+      {policy === 'exclusive' && selected.length !== 1 && (
+        <AdminNotice variant="hint">Sélectionnez exactement une source exclusive.</AdminNotice>
+      )}
+    </>
+  );
+}
+
 /** Query the durable Mastra run status; undefined when no handle/unreachable. */
 async function fetchDurableStatus(runId: unknown): Promise<string | undefined> {
   if (typeof runId !== 'string' || !runId) return undefined;
@@ -685,52 +777,20 @@ const AgentDraftButton: React.FC = () => {
         />
       </DraftFieldGroup>
 
-      {sourcesLoaded && (
-        <SourcePolicySelector
-          maxSources={maxSources}
-          onChange={(value) => {
-            setSourcePolicy(value);
-            setSelectedSources([]);
-          }}
-          readOnly={running}
-          sourcesAvailable={sources.length > 0}
-          value={sourcePolicy}
-        />
-      )}
-
-      {sourcePolicy === 'exclusive' && (
-        <ExclusiveSourceSelector
-          onChange={(sourceId) => setSelectedSources([sourceId])}
-          readOnly={running}
-          selected={selectedSources}
-          sources={sources}
-        />
-      )}
-
-      {sourcePolicy === 'multiple' && sources.length > 0 && (
-        <DraftFieldGroup label={`Sources externes${maxSources > 0 ? ` (max ${maxSources})` : ''}`}>
-          {sources.map((source) => {
-            const checked = selectedSources.includes(source.id);
-            const atCap = maxSources > 0 && selectedSources.length >= maxSources;
-            return (
-              <CheckboxInput
-                checked={checked}
-                className="agent-draft__checkbox"
-                id={`agent-source-${source.id}`}
-                key={source.id}
-                label={source.label}
-                name={`agent-source-${source.id}`}
-                onToggle={() => toggleSource(source.id)}
-                readOnly={running || (!checked && atCap)}
-              />
-            );
-          })}
-        </DraftFieldGroup>
-      )}
-
-      {sourcePolicy === 'exclusive' && selectedSources.length !== 1 && (
-        <AdminNotice variant="hint">Sélectionnez exactement une source exclusive.</AdminNotice>
-      )}
+      <SourceControls
+        loaded={sourcesLoaded}
+        maxSources={maxSources}
+        onExclusiveChange={(sourceId) => setSelectedSources([sourceId])}
+        onMultipleToggle={toggleSource}
+        onPolicyChange={(value) => {
+          setSourcePolicy(value);
+          setSelectedSources([]);
+        }}
+        policy={sourcePolicy}
+        readOnly={running}
+        selected={selectedSources}
+        sources={sources}
+      />
 
       <DraftRunActions
         approvalRequired={approvalRequired}

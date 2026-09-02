@@ -14,7 +14,7 @@
 import { OUTLINE_SCHEMA } from '../../blocks/spec';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import { INTENT_MAX } from '../../lib/draftConfig';
-import type { SourcePolicy } from '../../lib/sources/types';
+import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
 import { languageInstruction } from '../language';
 import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
@@ -128,17 +128,29 @@ Interroge les sources sélectionnées pour trouver des faits, exemples ou angles
 - N'utilise QUE ce que les sources renvoient ; ne fabrique rien.
 - Reste centré sur les points non couverts ; pas de remplissage hors sujet.`;
 
-export async function structure(
+export type StructureResult = {
+  stubs: OutlineStub[];
+  evidence: Evidence[];
+  sourceFailures: SourceFailure[];
+};
+
+export async function structureWithProvenance(
   dossier: DeckDossier,
   sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   abortSignal?: AbortSignal,
-): Promise<OutlineStub[]> {
+): Promise<StructureResult> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
-    return OUTLINE_SCHEMA.parse({ slides: explicit }).slides;
+    return {
+      stubs: OUTLINE_SCHEMA.parse({ slides: explicit }).slides,
+      evidence: [],
+      sourceFailures: [],
+    };
   }
 
   let prompt = dossierPrompt(dossier);
+  const evidence: Evidence[] = [];
+  const sourceFailures: SourceFailure[] = [];
 
   for (let attempt = 0; ; attempt++) {
     const { slides } = await generateStructured({
@@ -154,20 +166,22 @@ export async function structure(
 
     const uncovered = uncoveredKeyPoints(dossier, slides);
     if (uncovered.length === 0 || attempt >= MAX_COVERAGE_RETRIES) {
-      return slides;
+      return { stubs: slides, evidence, sourceFailures };
     }
 
     // When sources are selected and key points remain uncovered, consult the
     // sources for targeted material before the next re-plan.
     let sourceNotes = '';
     if (sourcePolicy.sourceIds.length > 0) {
-      const { notes } = await researchSources(sourcePolicy, {
+      const research = await researchSources(sourcePolicy, {
         name: 'structure:research',
         instructions: STRUCTURE_RESEARCH_INSTRUCTIONS,
         prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
         abortSignal,
       });
-      sourceNotes = notes;
+      sourceNotes = research.notes;
+      evidence.push(...research.evidence);
+      sourceFailures.push(...research.failures);
     }
 
     prompt = `${dossierPrompt(dossier)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
@@ -176,4 +190,12 @@ export async function structure(
         : ''
     }`;
   }
+}
+
+export async function structure(
+  dossier: DeckDossier,
+  sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
+  abortSignal?: AbortSignal,
+): Promise<OutlineStub[]> {
+  return (await structureWithProvenance(dossier, sourcePolicy, abortSignal)).stubs;
 }

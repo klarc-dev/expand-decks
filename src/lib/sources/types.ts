@@ -24,7 +24,7 @@ export const ToolNameSchema = z
   .max(128)
   .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/);
 export const SourceFailureModeSchema = z.enum(['strict', 'best-effort']);
-export const SourcePolicyModeSchema = z.enum(['none', 'exclusive', 'multiple']);
+const SourcePolicyModeSchema = z.enum(['none', 'exclusive', 'multiple']);
 export type SourcePolicyMode = z.infer<typeof SourcePolicyModeSchema>;
 export type SourcePolicy = { mode: SourcePolicyMode; sourceIds: string[] };
 

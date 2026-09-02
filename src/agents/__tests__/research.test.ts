@@ -71,7 +71,15 @@ describe('researchSources provenance', () => {
         { mode: 'multiple', sourceIds: ['docs'] },
         { name: 'research', instructions: 'research', prompt: 'prompt' },
       ),
-    ).rejects.toThrow(/no captured tool evidence/);
+    ).rejects.toMatchObject({
+      failures: [
+        expect.objectContaining({
+          sourceId: 'docs',
+          stage: 'tool',
+          code: 'invalid-result',
+        }),
+      ],
+    });
   });
 
   it('fails exclusive best-effort discovery before model invocation with structured failures', async () => {
@@ -131,6 +139,14 @@ describe('researchSources provenance', () => {
           prompt: 'prompt',
         },
       ),
-    ).rejects.toThrow(/another source/);
+    ).rejects.toMatchObject({
+      failures: [
+        expect.objectContaining({
+          sourceId: 'docs',
+          stage: 'policy',
+          code: 'invalid-result',
+        }),
+      ],
+    });
   });
 });

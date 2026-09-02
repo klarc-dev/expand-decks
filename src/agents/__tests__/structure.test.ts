@@ -1,15 +1,22 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 vi.mock('../model', () => ({ generateStructured: vi.fn() }));
+vi.mock('../agents/research', () => ({ researchSources: vi.fn() }));
 
 import { generateStructured } from '../model';
-import { structure } from '../agents/structure';
+import { researchSources } from '../agents/research';
+import { structure, structureWithProvenance } from '../agents/structure';
 import type { DeckDossier } from '../schemas';
 import type { DeckLanguage } from '../language';
 
 const mockedGenerateStructured = vi.mocked(generateStructured);
+const mockedResearchSources = vi.mocked(researchSources);
 
-beforeEach(() => mockedGenerateStructured.mockReset());
+beforeEach(() => {
+  mockedGenerateStructured.mockReset();
+  mockedResearchSources.mockReset();
+  mockedResearchSources.mockResolvedValue({ notes: '', evidence: [], failures: [] });
+});
 
 const baseDossier = (rawBrief: string, language: DeckLanguage = 'fr'): DeckDossier => ({
   coreIdea: 'x',
@@ -81,6 +88,38 @@ describe('structure() explicit-brief fast-path', () => {
     expect(instructions).toContain('**statement**');
     expect(instructions).toContain('**table**');
     expect(instructions).toContain('Langue de sortie imposée : français');
+  });
+
+  it('returns structure-phase evidence and failures with the outline', async () => {
+    const dossier = {
+      ...baseDossier('brief libre'),
+      keyPoints: ['alpha decision', 'bravo outcome'],
+    };
+    const incomplete = [
+      { blockType: 'cover', title: 'Unrelated', intent: 'Unrelated' },
+      { blockType: 'cta', title: 'Act', intent: 'Act' },
+    ];
+    const complete = [
+      { blockType: 'cover', title: 'Alpha decision', intent: 'Alpha decision' },
+      { blockType: 'statement', title: 'Bravo outcome', intent: 'Bravo outcome' },
+      { blockType: 'cta', title: 'Act', intent: 'Alpha decision bravo outcome' },
+    ];
+    mockedGenerateStructured
+      .mockResolvedValueOnce({ slides: incomplete })
+      .mockResolvedValueOnce({ slides: complete });
+    const evidence = [{ id: 'ev_000000000000000000000000', sourceId: 'docs' }] as never;
+    const failures = [
+      { sourceId: 'docs', stage: 'tool', code: 'timeout', message: 'slow' },
+    ] as never;
+    mockedResearchSources.mockResolvedValue({ notes: 'grounded', evidence, failures });
+
+    const result = await structureWithProvenance(dossier, {
+      mode: 'multiple',
+      sourceIds: ['docs'],
+    });
+
+    expect(result).toMatchObject({ stubs: complete, evidence, sourceFailures: failures });
+    expect(mockedResearchSources).toHaveBeenCalledOnce();
   });
 
   it('does not expose dossier sources in the structure prompt while keeping grounded data', async () => {

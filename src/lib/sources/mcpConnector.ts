@@ -70,6 +70,11 @@ function sourceFailure(
   return { sourceId: source.id, stage, code, message: raw.slice(0, 1_000) };
 }
 
+function toolFailureCode(error: unknown): SourceFailure['code'] {
+  const message = error instanceof Error ? error.message : String(error);
+  return /timeout|timed out|abort/i.test(message) ? 'timeout' : 'unknown';
+}
+
 function wrapTool(
   source: ResolvedSource,
   advertisedName: string,
@@ -93,10 +98,26 @@ function wrapTool(
     mcp: tool.mcp,
     mcpMetadata: tool.mcpMetadata,
     execute: async (input, context) => {
-      const raw = await execute(input, context);
-      const sanitized = sanitizeToolResult(raw, {
-        maxBytes: source.maxResultBytes,
-      });
+      let raw: unknown;
+      try {
+        raw = await execute(input, context);
+      } catch (error) {
+        throw new SourceConnectorError(`Source ${source.id} tool ${advertisedName} failed`, [
+          sourceFailure(source, 'tool', error, toolFailureCode(error)),
+        ]);
+      }
+
+      let sanitized: ReturnType<typeof sanitizeToolResult>;
+      try {
+        sanitized = sanitizeToolResult(raw, {
+          maxBytes: source.maxResultBytes,
+        });
+      } catch (error) {
+        throw new SourceConnectorError(
+          `Source ${source.id} tool ${advertisedName} result could not be sanitized`,
+          [sourceFailure(source, 'sanitize', error, 'invalid-result')],
+        );
+      }
       const toolCallId =
         (context as { toolCallId?: string } | undefined)?.toolCallId ??
         `${source.id}:${advertisedName}:${randomUUID()}`;
