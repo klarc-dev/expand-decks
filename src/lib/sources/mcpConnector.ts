@@ -4,7 +4,13 @@ import { Tool } from '@mastra/core/tools';
 import { MCPClient, type MastraMCPServerDefinition } from '@mastra/mcp';
 
 import { sanitizeToolResult } from './toolPolicy';
-import { evidenceId, type Evidence, type ResolvedSource, type SourceFailure } from './types';
+import {
+  evidenceId,
+  SourceConnectorError,
+  type Evidence,
+  type ResolvedSource,
+  type SourceFailure,
+} from './types';
 
 type ToolMap = Record<string, Tool<any, any, any, any>>;
 
@@ -88,7 +94,9 @@ function wrapTool(
     mcpMetadata: tool.mcpMetadata,
     execute: async (input, context) => {
       const raw = await execute(input, context);
-      const sanitized = sanitizeToolResult(raw, { maxBytes: source.maxResultBytes });
+      const sanitized = sanitizeToolResult(raw, {
+        maxBytes: source.maxResultBytes,
+      });
       const toolCallId =
         (context as { toolCallId?: string } | undefined)?.toolCallId ??
         `${source.id}:${advertisedName}:${randomUUID()}`;
@@ -187,8 +195,9 @@ export async function openSourceToolsets(
   );
   if (strictFailure) {
     await Promise.allSettled(opened.map((item) => item.disconnect()));
-    throw new Error(
+    throw new SourceConnectorError(
       `Source ${strictFailure.sourceId} ${strictFailure.stage} failed: ${strictFailure.message}`,
+      failures,
     );
   }
 

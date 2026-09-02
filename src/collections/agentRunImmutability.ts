@@ -1,4 +1,4 @@
-import type { CollectionBeforeChangeHook } from 'payload';
+import { ValidationError, type CollectionBeforeChangeHook } from 'payload';
 
 export const AGENT_RUN_IMMUTABLE_FIELDS = [
   'presentation',
@@ -18,21 +18,53 @@ export const AGENT_RUN_IMMUTABLE_FIELDS = [
   'inputFingerprint',
 ] as const;
 
-/**
- * Payload admin readOnly is presentation-only. This hook is the server-side
- * boundary: every public REST, GraphQL, and local API update keeps the original
- * run inputs while still allowing status/command/heartbeat lifecycle updates.
- */
+function relationshipId(value: unknown): unknown {
+  if (value && typeof value === 'object' && 'id' in value) {
+    return (value as { id: unknown }).id;
+  }
+  return value;
+}
+
+function semanticValue(
+  field: (typeof AGENT_RUN_IMMUTABLE_FIELDS)[number],
+  value: unknown,
+): unknown {
+  if (field === 'presentation' || field === 'createdBy' || field === 'organisation') {
+    return relationshipId(value);
+  }
+  return value;
+}
+
+function semanticallyEqual(
+  field: (typeof AGENT_RUN_IMMUTABLE_FIELDS)[number],
+  supplied: unknown,
+  original: unknown,
+): boolean {
+  return (
+    JSON.stringify(semanticValue(field, supplied)) ===
+    JSON.stringify(semanticValue(field, original))
+  );
+}
+
+/** Reject attempts to rewrite the immutable inputs of a durable agent run. */
 export const preserveAgentRunInputs: CollectionBeforeChangeHook = ({
   data,
   operation,
   originalDoc,
+  req,
 }) => {
   if (operation !== 'update' || !originalDoc) return data;
-  const next = { ...data };
-  for (const field of AGENT_RUN_IMMUTABLE_FIELDS) {
-    if (field in originalDoc) next[field] = originalDoc[field];
-    else delete next[field];
+  const changed = AGENT_RUN_IMMUTABLE_FIELDS.filter(
+    (field) => field in data && !semanticallyEqual(field, data[field], originalDoc[field]),
+  );
+  if (changed.length > 0) {
+    throw new ValidationError({
+      errors: changed.map((field) => ({
+        path: field,
+        message: 'Agent run inputs are immutable after creation',
+      })),
+      req,
+    });
   }
-  return next;
+  return data;
 };

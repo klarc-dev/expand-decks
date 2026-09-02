@@ -41,11 +41,14 @@ describe('researchSources provenance', () => {
     });
     mocks.researchWithSources.mockResolvedValue('Model notes that mention an unrelated source.');
 
-    const result = await researchSources(['docs'], {
-      name: 'research',
-      instructions: 'research',
-      prompt: 'prompt',
-    });
+    const result = await researchSources(
+      { mode: 'multiple', sourceIds: ['docs'] },
+      {
+        name: 'research',
+        instructions: 'research',
+        prompt: 'prompt',
+      },
+    );
     expect(result.evidence).toBe(evidence);
     expect(result.notes).toContain('unrelated source');
   });
@@ -64,7 +67,10 @@ describe('researchSources provenance', () => {
     mocks.researchWithSources.mockResolvedValue('Plausible but ungrounded notes');
 
     await expect(
-      researchSources(['docs'], { name: 'research', instructions: 'research', prompt: 'prompt' }),
+      researchSources(
+        { mode: 'multiple', sourceIds: ['docs'] },
+        { name: 'research', instructions: 'research', prompt: 'prompt' },
+      ),
     ).rejects.toThrow(/no captured tool evidence/);
   });
 
@@ -88,12 +94,14 @@ describe('researchSources provenance', () => {
     });
 
     await expect(
-      researchSources(['docs'], {
-        name: 'research',
-        instructions: 'research',
-        prompt: 'prompt',
-        sourcePolicy: { mode: 'exclusive', sourceIds: ['docs'] },
-      }),
+      researchSources(
+        { mode: 'exclusive', sourceIds: ['docs'] },
+        {
+          name: 'research',
+          instructions: 'research',
+          prompt: 'prompt',
+        },
+      ),
     ).rejects.toMatchObject({ failures: [failure] });
     expect(mocks.researchWithSources).not.toHaveBeenCalled();
     expect(disconnect).toHaveBeenCalledOnce();
@@ -115,12 +123,14 @@ describe('researchSources provenance', () => {
     mocks.researchWithSources.mockResolvedValue('notes');
 
     await expect(
-      researchSources(['docs'], {
-        name: 'research',
-        instructions: 'research',
-        prompt: 'prompt',
-        sourcePolicy: { mode: 'exclusive', sourceIds: ['docs'] },
-      }),
+      researchSources(
+        { mode: 'exclusive', sourceIds: ['docs'] },
+        {
+          name: 'research',
+          instructions: 'research',
+          prompt: 'prompt',
+        },
+      ),
     ).rejects.toThrow(/another source/);
   });
 });

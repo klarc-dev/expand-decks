@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { AGENT_RUN_IMMUTABLE_FIELDS, preserveAgentRunInputs } from '../agentRunImmutability';
+import { AgentRuns } from '../AgentRuns';
+import { AGENT_RUN_IMMUTABLE_FIELDS } from '../agentRunImmutability';
 
 const original = {
   presentation: 1,
@@ -21,31 +22,44 @@ const original = {
   status: 'queued',
 };
 
+const beforeChange = AgentRuns.hooks!.beforeChange![0]!;
+
 async function applyUpdate(data: Record<string, unknown>) {
-  return preserveAgentRunInputs({
+  return beforeChange({
+    collection: AgentRuns,
+    context: {},
     data,
     operation: 'update',
     originalDoc: original,
-  } as never) as Promise<Record<string, unknown>> | Record<string, unknown>;
+    req: {} as never,
+  } as never);
 }
 
-describe('AgentRun public mutation boundary', () => {
-  it.each(['owner REST PATCH', 'admin REST PATCH', 'authenticated local update'])(
-    'preserves immutable run inputs for %s',
-    async () => {
-      const attempted: Record<string, unknown> = Object.fromEntries(
-        AGENT_RUN_IMMUTABLE_FIELDS.map((field) => [field, `changed-${field}`]),
-      );
-      attempted.sourceIds = ['other'];
-      attempted.sourcePolicy = 'multiple';
+describe('AgentRun collection mutation boundary', () => {
+  it('rejects a supplied immutable source-policy broadening', async () => {
+    await expect(
+      applyUpdate({ sourcePolicy: 'multiple', sourceIds: ['docs', 'other'] }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
 
-      const result = await applyUpdate(attempted);
+  it('rejects every supplied immutable field whose value changes', async () => {
+    for (const field of AGENT_RUN_IMMUTABLE_FIELDS) {
+      const changed = field === 'sourceIds' ? ['other'] : `changed-${field}`;
+      await expect(applyUpdate({ [field]: changed })).rejects.toMatchObject({
+        status: 400,
+      });
+    }
+  });
 
-      for (const field of AGENT_RUN_IMMUTABLE_FIELDS) {
-        expect(result[field]).toEqual(original[field as keyof typeof original]);
-      }
-    },
-  );
+  it('allows omitted and semantically equal immutable values', async () => {
+    await expect(
+      applyUpdate({
+        presentation: { id: 1 },
+        sourceIds: ['docs'],
+        status: 'running',
+      }),
+    ).resolves.toMatchObject({ status: 'running' });
+  });
 
   it('allows lifecycle fields to change after creation', async () => {
     const result = await applyUpdate({

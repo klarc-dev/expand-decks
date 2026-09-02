@@ -118,10 +118,9 @@ const gatherStep = createStep({
   execute: async ({ inputData, abortSignal }) => {
     const { dossier, evidence, sourceFailures } = await gather(
       inputData.brief,
-      inputData.sourcePolicy.sourceIds,
+      inputData.sourcePolicy,
       inputData.language,
       abortSignal,
-      inputData.sourcePolicy,
     );
     return {
       dossier,
@@ -152,12 +151,7 @@ const structureStep = createStep({
     evidence: inputData.evidence,
     sourceFailures: inputData.sourceFailures,
     sourcePolicy: inputData.sourcePolicy,
-    stubs: await structure(
-      inputData.dossier,
-      inputData.sourcePolicy.sourceIds,
-      abortSignal,
-      inputData.sourcePolicy,
-    ),
+    stubs: await structure(inputData.dossier, inputData.sourcePolicy, abortSignal),
   }),
 });
 
@@ -176,7 +170,10 @@ const approvalStep = createStep({
     if (!resumeData?.approved) {
       return suspend({
         reason: 'Approve the proposed deck structure before drafting.',
-        outline: inputData.stubs.map(({ title, intent }) => ({ title, intent })),
+        outline: inputData.stubs.map(({ title, intent }) => ({
+          title,
+          intent,
+        })),
       });
     }
     return inputData;
@@ -254,7 +251,10 @@ const visualStep = createStep({
   outputSchema: bundle,
   execute: async ({ inputData, getInitData, abortSignal, writer }) => {
     const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
-    const md = buildSlidesMd({ title, slides: inputData.slides as SlideBlock[] });
+    const md = buildSlidesMd({
+      title,
+      slides: inputData.slides as SlideBlock[],
+    });
     const { pngs, cleanup } = await exportSlidePngs(md, abortSignal);
     try {
       const scored = await mapWithConcurrency(

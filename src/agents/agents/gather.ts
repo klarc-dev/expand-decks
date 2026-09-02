@@ -56,19 +56,17 @@ export type GatherResult = {
 
 export async function gather(
   brief: string,
-  sourceIds?: readonly string[],
+  sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   requestedLanguage?: DeckLanguage,
   abortSignal?: AbortSignal,
-  sourcePolicy?: SourcePolicy,
 ): Promise<GatherResult> {
   const language = resolveTargetLanguage(requestedLanguage, brief);
   const localePolicy = languageInstruction(language);
-  const { notes, evidence, failures } = await researchSources(sourceIds, {
+  const { notes, evidence, failures } = await researchSources(sourcePolicy, {
     name: 'gather:research',
     instructions: `${RESEARCH_INSTRUCTIONS}\n\n${localePolicy}`,
     prompt: brief,
     abortSignal,
-    sourcePolicy,
   });
 
   const prompt = notes

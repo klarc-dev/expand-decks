@@ -61,7 +61,9 @@ export const HttpSourceDescriptorSchema = baseSource.extend({
           return false;
         }
       },
-      { message: 'HTTP source URLs must use http or https and must not contain credentials' },
+      {
+        message: 'HTTP source URLs must use http or https and must not contain credentials',
+      },
     ),
 });
 
@@ -127,6 +129,15 @@ export class SourcePolicyError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'SourcePolicyError';
+  }
+}
+
+export class SourceConnectorError extends Error {
+  readonly failures: SourceFailure[];
+  constructor(message: string, failures: SourceFailure[]) {
+    super(message);
+    this.name = 'SourceConnectorError';
+    this.failures = failures;
   }
 }
 

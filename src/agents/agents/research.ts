@@ -4,10 +4,14 @@
  * the wrapped MCP tool at the exact result boundary before the model sees it.
  */
 import { openSourceToolsets } from '../../lib/sources/mcpConnector';
-import { legacySourcePolicy } from '../../lib/sources/policy';
 import { resolveSourcePolicy } from '../../lib/sources/resolve';
-import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
-import { SourceResearchError } from '../../lib/sources/types';
+import {
+  SourceConnectorError,
+  SourceResearchError,
+  type Evidence,
+  type SourceFailure,
+  type SourcePolicy,
+} from '../../lib/sources/types';
 import { researchWithSources } from '../model';
 
 export type ResearchResult = {
@@ -16,30 +20,39 @@ export type ResearchResult = {
   failures: SourceFailure[];
 };
 
-export function hasSources(sourceIds: readonly string[] | undefined): boolean {
-  return !!sourceIds && sourceIds.length > 0;
+export function hasSources(policy: SourcePolicy): boolean {
+  return policy.sourceIds.length > 0;
 }
 
 export async function researchSources(
-  sourceIds: readonly string[] | undefined,
+  sourcePolicy: SourcePolicy,
   opts: {
     name: string;
     instructions: string;
     prompt: string;
     abortSignal?: AbortSignal;
-    sourcePolicy?: SourcePolicy;
   },
 ): Promise<ResearchResult> {
-  const { policy, sources } = resolveSourcePolicy(
-    opts.sourcePolicy ?? legacySourcePolicy(sourceIds),
-  );
+  const { policy, sources } = resolveSourcePolicy(sourcePolicy);
   if (sources.length === 0) return { notes: '', evidence: [], failures: [] };
 
-  const { toolsets, failures, recorder, disconnect } = await openSourceToolsets(sources);
+  let opened: Awaited<ReturnType<typeof openSourceToolsets>>;
+  try {
+    opened = await openSourceToolsets(sources);
+  } catch (error) {
+    if (error instanceof SourceConnectorError) {
+      throw new SourceResearchError(
+        `SOURCE_FAILURES:${JSON.stringify(error.failures)} ${error.message}`,
+        error.failures,
+      );
+    }
+    throw error;
+  }
+  const { toolsets, failures, recorder, disconnect } = opened;
   if (policy.mode === 'exclusive' && failures.length > 0) {
     await disconnect();
     throw new SourceResearchError(
-      `SOURCE_FAILURES:${JSON.stringify(failures)} Exclusive source ${policy.sourceIds[0]} could not be opened`,
+      `Exclusive source ${policy.sourceIds[0]} could not be opened`,
       failures,
     );
   }

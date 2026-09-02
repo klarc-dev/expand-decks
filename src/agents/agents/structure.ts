@@ -130,9 +130,8 @@ Interroge les sources sélectionnées pour trouver des faits, exemples ou angles
 
 export async function structure(
   dossier: DeckDossier,
-  sourceIds?: readonly string[],
+  sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   abortSignal?: AbortSignal,
-  sourcePolicy?: SourcePolicy,
 ): Promise<OutlineStub[]> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
@@ -161,13 +160,12 @@ export async function structure(
     // When sources are selected and key points remain uncovered, consult the
     // sources for targeted material before the next re-plan.
     let sourceNotes = '';
-    if (sourceIds && sourceIds.length > 0) {
-      const { notes } = await researchSources(sourceIds, {
+    if (sourcePolicy.sourceIds.length > 0) {
+      const { notes } = await researchSources(sourcePolicy, {
         name: 'structure:research',
         instructions: STRUCTURE_RESEARCH_INSTRUCTIONS,
         prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
         abortSignal,
-        sourcePolicy,
       });
       sourceNotes = notes;
     }
