@@ -28,6 +28,11 @@ const PHASE_STATUS: Record<string, DraftStatus> = {
   complete: DRAFT_STATUS.done,
 };
 
+export function normalizeWorkflowPhase(phase: string): string | undefined {
+  const base = phase.split(':')[0];
+  return base && base in PHASE_STATUS ? base : undefined;
+}
+
 function idOf(value: number | { id: number } | null | undefined): number | undefined {
   return typeof value === 'object' ? value?.id : (value ?? undefined);
 }
@@ -272,15 +277,17 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
   const presentationId = idOf(ledger.presentation)!;
   const events = (Array.isArray(ledger.events) ? ledger.events : []) as DraftEvent[];
   const mirror = async (phase: string, detail?: unknown) => {
+    const durablePhase = normalizeWorkflowPhase(phase);
+    if (!durablePhase) return;
     events.push({ ts: Date.now(), phase, detail });
     if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
     await patchRun(payload, ledger, {
       status: 'running',
-      phase: phase.split(':')[0],
+      phase: durablePhase,
       heartbeatAt: new Date().toISOString(),
       events,
     });
-    const status = PHASE_STATUS[phase.split(':')[0]!];
+    const status = PHASE_STATUS[durablePhase];
     await mirrorPresentation(payload, ledger, {
       ...(status ? { draftStatus: status } : {}),
       draftEvents: events,
