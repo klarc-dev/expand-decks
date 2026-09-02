@@ -228,7 +228,11 @@ jobs:
                 exit 1
                 ;;
               failed|cancelled)
+                failure=$(curl --fail-with-body --silent --show-error \
+                  --header "Authorization: Bearer $COOLIFY_TOKEN" \
+                  "$COOLIFY_URL/api/v1/deployments/$deployment_uuid")
                 echo "::error::Coolify deployment $deployment_uuid ended with status $status"
+                jq -r '.logs // empty' <<<"$failure" | tail -n 80
                 exit 1
                 ;;
             esac
