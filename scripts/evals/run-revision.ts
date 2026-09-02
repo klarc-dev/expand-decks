@@ -29,7 +29,7 @@ for (const fixture of revisionDatasetV1) {
   for (const turn of fixture.turns) {
     previous = await runDeck({
       ...fixture.initial,
-      brief: turn.instruction,
+      brief: `${fixture.initial.brief}\n\n---\nDEMANDE DE RÉVISION :\n${turn.instruction}`,
       revisionContext: JSON.stringify(previous.slides),
     });
   }
