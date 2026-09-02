@@ -80,7 +80,7 @@ export async function writeSlide(
       ? `\n---\nTITRES DES AUTRES DIAPOSITIVES (ne les redis pas) :\n${otherTitles.map((t) => `- ${t}`).join('\n')}`
       : '',
     revisionContext
-      ? `\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nPréserve les formulations, faits et éléments non concernés par la demande de révision. Modifie seulement ce qui est nécessaire pour satisfaire la demande.`
+      ? `\n---\nDEMANDE DE RÉVISION :\n${dossier.rawBrief}\n\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nApplique uniquement la demande de révision ci-dessus. Préserve mot pour mot les formulations, faits, exemples et champs non concernés. Si cette diapositive n'est pas concernée, reproduis son contenu existant sans modification.`
       : '',
   ]
     .filter(Boolean)
