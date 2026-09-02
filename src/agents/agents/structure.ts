@@ -53,6 +53,15 @@ function dossierPrompt(dossier: DeckDossier): string {
     .join('\n\n');
 }
 
+function enforceOutlineEndpoints(slides: OutlineStub[]): OutlineStub[] {
+  if (slides.length === 0) return slides;
+  return slides.map((slide, index) => {
+    if (index === 0) return { ...slide, blockType: 'cover' };
+    if (index === slides.length - 1) return { ...slide, blockType: 'cta' };
+    return slide;
+  });
+}
+
 /**
  * Which dossier key points are NOT mentioned by any stub's title+intent.
  * A light lexical check (shared significant tokens) — the gate is "every point
@@ -140,7 +149,7 @@ export async function structure(
   let prompt = dossierPrompt(dossier);
 
   for (let attempt = 0; ; attempt++) {
-    const { slides } = await generateStructured({
+    const generated = await generateStructured({
       name: 'structure',
       instructions: `${STRUCTURE_INSTRUCTIONS}\n\n${languageInstruction(dossier.language)}`,
       schema: OUTLINE_SCHEMA,
@@ -150,6 +159,7 @@ export async function structure(
       modelTier: 'research',
       abortSignal,
     });
+    const slides = enforceOutlineEndpoints(generated.slides);
 
     const uncovered = uncoveredKeyPoints(dossier, slides);
     if (uncovered.length === 0 || attempt >= MAX_COVERAGE_RETRIES) {

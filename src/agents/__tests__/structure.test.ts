@@ -234,4 +234,19 @@ describe('structure() parser — brief with fewer than 3 S-markers falls to LLM'
     await structure(baseDossier(brief));
     expect(generateStructured).toHaveBeenCalled();
   });
+
+  it('repairs LLM outlines to the required cover/cta endpoints', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      slides: [
+        { blockType: 'statement', title: 'Opening', intent: 'frame the problem' },
+        { blockType: 'statement', title: 'Middle', intent: 'explain the mechanism' },
+        { blockType: 'statement', title: 'Next', intent: 'make the audience act' },
+      ],
+    });
+
+    const stubs = await structure(baseDossier('brief libre'));
+
+    expect(stubs[0]?.blockType).toBe('cover');
+    expect(stubs.at(-1)?.blockType).toBe('cta');
+  });
 });
