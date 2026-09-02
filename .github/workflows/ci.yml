@@ -146,6 +146,7 @@ jobs:
       NEXT_PUBLIC_SERVER_URL: http://localhost:4317
       CLIPROXYAPI_BASE_URL: ${{ secrets.CLIPROXYAPI_BASE_URL }}
       CLIPROXYAPI_KEY: ${{ secrets.CLIPROXYAPI_KEY }}
+      APP_COMMIT: ${{ github.sha }}
       OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
       WRITER_CONCURRENCY: '1'
       REVISE_MAX_ITERATIONS: '1'
@@ -169,6 +170,38 @@ jobs:
         run: pnpm eval:seed
       - name: Run persistent experiment
         run: pnpm eval:experiment
+      - name: Deploy verified revision to Coolify
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APPLICATION_UUID: ${{ vars.COOLIFY_APPLICATION_UUID }}
+        run: |
+          set -euo pipefail
+          test -n "$COOLIFY_URL"
+          test -n "$COOLIFY_TOKEN"
+          test -n "$COOLIFY_APPLICATION_UUID"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg uuid "$COOLIFY_APPLICATION_UUID" '{uuid: $uuid, force: true}')" \
+            "$COOLIFY_URL/api/v1/deploy" \
+            >/dev/null
+
+          for attempt in $(seq 1 60); do
+            deployed_commit=$(curl --fail-with-body --silent --show-error \
+              "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt" |
+              jq -r '.commit // empty')
+            if [[ "$deployed_commit" == "${{ github.sha }}" ]]; then
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "::error::Production did not report commit ${{ github.sha }} within 10 minutes"
+          exit 1
       - name: Upload evaluation results
         if: always()
         uses: actions/upload-artifact@v4
