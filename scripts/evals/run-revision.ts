@@ -30,6 +30,9 @@ for (const fixture of revisionDatasetV1) {
     previous = await runDeck({
       ...fixture.initial,
       brief: `${fixture.initial.brief}\n\n---\nDEMANDE DE RÉVISION :\n${turn.instruction}`,
+      groundingFacts: [
+        `The existing deck below is the authoritative factual and structural source for this revision. Preserve every unrelated fact, example, slide, and block type exactly; change only what the revision request names.\n${JSON.stringify(previous.slides)}`,
+      ],
       revisionContext: JSON.stringify(previous.slides),
     });
   }
