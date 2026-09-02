@@ -182,25 +182,38 @@ jobs:
           test -n "$COOLIFY_TOKEN"
           test -n "$COOLIFY_APPLICATION_UUID"
 
-          curl --fail-with-body --silent --show-error \
+          response=$(curl --fail-with-body --silent --show-error \
             --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
             --header 'Content-Type: application/json' \
             --data "$(jq -n --arg uuid "$COOLIFY_APPLICATION_UUID" '{uuid: $uuid, force: true}')" \
-            "$COOLIFY_URL/api/v1/deploy" \
-            >/dev/null
+            "$COOLIFY_URL/api/v1/deploy")
+          deployment_uuid=$(jq -r '.deployments[0].deployment_uuid // empty' <<<"$response")
+          test -n "$deployment_uuid"
 
-          for attempt in $(seq 1 60); do
-            deployed_commit=$(curl --fail-with-body --silent --show-error \
-              "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt" |
-              jq -r '.commit // empty')
-            if [[ "$deployed_commit" == "${{ github.sha }}" ]]; then
-              exit 0
-            fi
+          for attempt in $(seq 1 90); do
+            status=$(curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer $COOLIFY_TOKEN" \
+              "$COOLIFY_URL/api/v1/deployments/$deployment_uuid" | \
+              jq -r '.status // empty')
+            case "$status" in
+              finished)
+                deployed_commit=$(curl --retry 6 --retry-delay 5 --retry-all-errors \
+                  --silent --show-error \
+                  "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt" | \
+                  jq -r '.commit // empty')
+                test "$deployed_commit" = "${{ github.sha }}"
+                exit 0
+                ;;
+              failed|cancelled)
+                echo "::error::Coolify deployment $deployment_uuid ended with status $status"
+                exit 1
+                ;;
+            esac
             sleep 10
           done
 
-          echo "::error::Production did not report commit ${{ github.sha }} within 10 minutes"
+          echo "::error::Coolify deployment $deployment_uuid did not finish within 15 minutes"
           exit 1
       - name: Upload evaluation results
         if: always()
