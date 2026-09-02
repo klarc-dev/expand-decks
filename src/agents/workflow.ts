@@ -171,11 +171,13 @@ const structureStep = createStep({
     sourcePolicy: SourcePolicySchema,
     stubs: z.array(stubT),
   }),
-  execute: async ({ inputData, abortSignal }) => {
+  execute: async ({ inputData, getInitData, abortSignal }) => {
+    const init = getInitData() as DeckWorkflowInput;
     const structured = await structureWithProvenance(
       inputData.dossier,
       inputData.sourcePolicy,
       abortSignal,
+      init.revisionContext,
     );
     return {
       dossier: inputData.dossier,

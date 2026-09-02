@@ -145,6 +145,28 @@ describe('structure() explicit-brief fast-path', () => {
     expect(prompt).not.toContain('Private KB — internal memo');
     expect(instructions).toContain('ne planifie jamais une diapositive ou une intention "Sources"');
   });
+
+  it('preserves the existing slide count, order, titles, and block types during revision', async () => {
+    const existing = [
+      { blockType: 'cover', title: 'Existing cover', subtitle: 'Keep me' },
+      { blockType: 'table', title: 'Existing example', columns: ['A'], rows: [] },
+      { blockType: 'cta', title: 'Existing action', actions: [] },
+    ];
+
+    const result = await structureWithProvenance(
+      baseDossier('Change only the CTA'),
+      { mode: 'none', sourceIds: [] },
+      undefined,
+      JSON.stringify(existing),
+    );
+
+    expect(result.stubs.map(({ blockType, title }) => ({ blockType, title }))).toEqual([
+      { blockType: 'cover', title: 'Existing cover' },
+      { blockType: 'table', title: 'Existing example' },
+      { blockType: 'cta', title: 'Existing action' },
+    ]);
+    expect(mockedGenerateStructured).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
