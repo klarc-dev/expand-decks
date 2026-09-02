@@ -32,7 +32,7 @@ const dataset = await getOrCreate();
 await dataset.addItems({
   items: workflowDatasetV1.map((item) => ({
     externalId: item.externalId,
-    input: item.input,
+    input: { ...item.input, groundingFacts: item.groundTruth.allowedFacts },
     groundTruth: item.groundTruth,
     metadata: { fixtureVersion: 1 },
   })),
