@@ -37,6 +37,7 @@ export const K = {
   ctaActions: 'k-cta-actions',
   ctaCaption: 'k-cta-caption',
   sectionNum: 'k-section-num',
+  sectionFrame: 'k-section-frame',
   sectionSub: 'k-section-sub',
   sectionSubWide: 'k-section-sub--wide',
   sectionSubNarrow: 'k-section-sub--narrow',

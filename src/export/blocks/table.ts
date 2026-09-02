@@ -49,8 +49,8 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   ]);
   const longestCell = Math.max(0, ...cellHtml.map((cell) => visibleText(cell).length));
   const density = densityFromScore(
-    textVolume + rows.length * 34 + colCount * 54 + longestCell * 1.4,
-    { compact: 760, dense: 1380 },
+    textVolume + rows.length * 34 + colCount * 54 + longestCell * 2.6,
+    { compact: 700, dense: 1120 },
   );
   const fitted = density !== 'comfortable';
   const renderedRows = rows.map((row) =>

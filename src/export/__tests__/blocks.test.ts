@@ -255,12 +255,13 @@ describe('shared adaptive card stacks', () => {
 });
 
 describe('renderSection()', () => {
-  it('produces layout: center', () => {
+  it('produces layout: center with a section-specific full-canvas centering frame', () => {
     const result = renderSection({
       blockType: 'section',
       title: 'Section Title',
     });
     expect(result).toContain('layout: center');
+    expect(result).toContain('k-section-frame');
   });
 
   it('reserves a footer slot inside the full-height section frame', () => {
@@ -920,10 +921,31 @@ describe('renderTable() — fixed-canvas fitting', () => {
     });
 
     expect(result).toContain('k-table--fit');
-    expect(result).toContain('k-density-compact');
+    expect(result).toContain('k-density-dense');
     expect(result).toContain('k-content-main--start');
     expect(result).toContain('k-table-stage');
     expect(result).toContain('k-table--cols-5');
+  });
+
+  it('promotes a few exceptionally long cells to the dense table tier', () => {
+    const result = renderTable({
+      blockType: 'table',
+      title: 'Long-form comparison',
+      columns: Array.from({ length: 5 }, (_, index) => ({ header: `Column ${index + 1}` })),
+      rows: Array.from({ length: 3 }, (_, rowIndex) => ({
+        cells: Array.from({ length: 5 }, (_, columnIndex) => ({
+          value: lexical(
+            rowIndex === 1 && columnIndex === 4
+              ? 'A deliberately long operational explanation '.repeat(8)
+              : `Short ${rowIndex + 1}-${columnIndex + 1}`,
+          ),
+        })),
+      })),
+    });
+
+    expect(result).toContain('k-table--fit');
+    expect(result).toContain('k-density-dense');
+    expect(result).toContain('k-content k-content-tight k-content--full k-density-dense');
   });
 });
 

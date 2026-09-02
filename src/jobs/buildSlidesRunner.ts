@@ -43,6 +43,7 @@ const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
 const COVER_DIR = 'cover';
+const LAYOUT_VALIDATOR = join(SLIDEV_WORKSPACE, 'validate-layout.mjs');
 
 async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string; stderr: string }> {
   const slidevPath = join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev');
@@ -52,6 +53,19 @@ async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string;
     maxBuffer: 32 * 1024 * 1024,
     env: buildSlidevEnv(),
   });
+}
+
+async function validateSlideLayout(workdir: string, slideCount: number): Promise<void> {
+  if (slideCount === 0) return;
+  await execFile(
+    process.execPath,
+    [LAYOUT_VALIDATOR, join(workdir, ARTIFACTS.dist), String(slideCount)],
+    {
+      cwd: SLIDEV_WORKSPACE,
+      timeout: EXEC_TIMEOUT_MS,
+      maxBuffer: 32 * 1024 * 1024,
+    },
+  );
 }
 
 type StageOptions = {
@@ -287,6 +301,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     // deterministic output. The export helper retains the fixed 120s CLI timeout,
     // Mermaid/image settling, and range/per-slide options needed by PNG exports.
     await runSlidev(['build', '--base', './'], workdir);
+    await validateSlideLayout(workdir, slides.length);
     await runSlidev(
       buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
       workdir,

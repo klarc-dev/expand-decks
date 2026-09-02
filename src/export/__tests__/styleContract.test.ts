@@ -6,6 +6,52 @@ import { describe, expect, it } from 'vitest';
 
 const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'style.css'), 'utf-8');
 
+describe('style.css fixed-canvas safe frame', () => {
+  it('derives every content bottom inset from the global footer exclusion zone', () => {
+    expect(css).toMatch(/--chrome-footer-bottom:\s*1\.1rem/);
+    expect(css).toMatch(/--chrome-footer-height:\s*1rem/);
+    expect(css).toMatch(
+      /--content-bottom:\s*calc\(\s*var\(--chrome-footer-bottom\)\s*\+\s*var\(--chrome-footer-height\)\s*\+\s*var\(--chrome-footer-gap\)\s*\)/,
+    );
+    expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*bottom:\s*var\(--chrome-footer-bottom\)/);
+  });
+
+  it('uses one canonical safe-area padding contract across every template frame', () => {
+    expect(css).toMatch(
+      /\.k-markdown-slide,\s*\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*padding:\s*var\(--header-top\) var\(--content-inset\) var\(--content-bottom\)/,
+    );
+  });
+
+  it('bounds every template frame to the fixed canvas so content cannot paint through chrome', () => {
+    expect(css).toMatch(
+      /\.k-markdown-slide,\s*\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*height:\s*100%/,
+    );
+    expect(css).toMatch(
+      /\.k-markdown-slide,\s*\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*overflow:\s*clip/,
+    );
+  });
+
+  it('constrains semantic main viewports inside the chrome-free safe area', () => {
+    expect(css).toMatch(/\.k-content-main\s*\{[\s\S]*overflow:\s*clip/);
+    expect(css).toMatch(/\.k-hero-main\s*\{[\s\S]*overflow:\s*clip/);
+    expect(css).toMatch(/\.k-center-hero-main\s*\{[\s\S]*overflow:\s*clip/);
+    expect(css).toMatch(/\.k-cover-main\s*\{[\s\S]*overflow:\s*clip/);
+  });
+
+  it('makes the declared footer height authoritative and non-wrapping', () => {
+    expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*height:\s*var\(--chrome-footer-height\)/);
+    expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*white-space:\s*nowrap/);
+    expect(css).toMatch(/\.k-slide-footer\s*>\s*\*\s*\{[\s\S]*text-overflow:\s*ellipsis/);
+  });
+
+  it('centers section-title content against the full chrome-free canvas', () => {
+    expect(css).toMatch(/\.k-section-frame\s*\{[\s\S]*position:\s*absolute/);
+    expect(css).toMatch(/\.k-section-frame\s*\{[\s\S]*inset:\s*0/);
+    expect(css).toMatch(/\.k-section-frame\s*\{[\s\S]*place-items:\s*center/);
+    expect(css).toMatch(/\.k-section-frame\s*>\s*\.k-center-hero-main\s*\{[\s\S]*width:\s*100%/);
+  });
+});
+
 describe('style.css richText normalization (regression: cover footerLeft circle)', () => {
   it('collapses the .payload-richtext wrapper so it does not inflate inline pills', () => {
     expect(css).toMatch(/\.payload-richtext\s*\{\s*display:\s*contents/);
@@ -51,6 +97,11 @@ describe('style.css oversized export fitting', () => {
     );
   });
 
+  it('gives table stages an explicit measured-row boundary instead of relying on ancestor clipping', () => {
+    expect(css).toMatch(/\.k-table-stage\s*\{[\s\S]*max-height:\s*100%/);
+    expect(css).toMatch(/\.k-table-stage\s*\{[\s\S]*overflow:\s*clip/);
+  });
+
   it('makes Slidev Mermaid SVG dimensions yield to the fixed diagram stage', () => {
     expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*min-width:\s*0/);
     expect(css).toMatch(/\.k-diagram-slide \.mermaid svg\s*\{[\s\S]*min-height:\s*0/);
@@ -73,9 +124,11 @@ describe('style.css shared density system', () => {
     expect(css).toMatch(/\.k-stat-grid\.k-density-dense \.k-stat\s*\{[\s\S]*grid-template-rows:/);
   });
 
-  it('applies density to slide headings and content spacing as a group', () => {
+  it('applies density to slide headings and content spacing without moving the shared rails', () => {
     expect(css).toMatch(/\.k-content\.k-density-compact[\s\S]*row-gap:/);
-    expect(css).toMatch(/\.k-content\.k-density-dense[\s\S]*padding-top:/);
+    expect(css).toMatch(/\.k-content\.k-density-dense[\s\S]*row-gap:/);
+    const denseFrame = css.match(/\.k-content\.k-density-dense\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(denseFrame).not.toMatch(/padding(?:-top)?:/);
     expect(css).toMatch(/\.k-hero\.k-density-dense \.k-hero-title/);
     expect(css).toMatch(/\.k-hero--center \.k-hero-body\s*\{[\s\S]*margin-left:\s*auto/);
   });

@@ -33,7 +33,12 @@ export function renderSection(block: SectionBlockData, ctx?: RenderCtx): string 
   );
 
   // Image variant left-aligns; otherwise the centered-hero treatment.
-  const wrapperClass = ['k-center-hero', image ? 'k-center-hero--left' : '', densityClass(density)]
+  const wrapperClass = [
+    'k-center-hero',
+    K.sectionFrame,
+    image ? 'k-center-hero--left' : '',
+    densityClass(density),
+  ]
     .filter(Boolean)
     .join(' ');
 
