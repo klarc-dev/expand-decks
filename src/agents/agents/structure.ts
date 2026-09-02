@@ -124,20 +124,31 @@ function parseSlideBySlideBrief(brief: string): OutlineStub[] | null {
   });
 }
 
-function parseRevisionContext(revisionContext: string): OutlineStub[] | null {
+function parseRevisionContext(
+  revisionContext: string,
+  revisionBrief: string,
+): OutlineStub[] | null {
   try {
     const slides = JSON.parse(revisionContext);
     if (!Array.isArray(slides) || slides.length < 3) return null;
     return OUTLINE_SCHEMA.parse({
-      slides: slides.map((slide) => ({
-        blockType: slide.blockType,
-        title: slide.title,
-        intent:
-          `Préserve intégralement cette diapositive existante et modifie uniquement ce que demande explicitement la révision. Contenu existant : ${JSON.stringify(slide)}`.slice(
-            0,
-            INTENT_MAX,
-          ),
-      })),
+      slides: slides.map((slide, index) => {
+        const targetsEveryTitle = /\b(?:titres?|titles?|tone|ton)\b/i.test(revisionBrief);
+        const targetsFinalSlide =
+          index === slides.length - 1 &&
+          /\b(?:final|finale?|derni[eè]re?|cta|checklist)\b/i.test(revisionBrief);
+        const directive =
+          targetsEveryTitle || targetsFinalSlide ? 'Modifie' : 'Préserve intégralement';
+        return {
+          blockType: slide.blockType,
+          title: slide.title,
+          intent:
+            `${directive} cette diapositive uniquement selon la demande de révision. Préserve tous ses autres éléments. Contenu existant : ${JSON.stringify(slide)}`.slice(
+              0,
+              INTENT_MAX,
+            ),
+        };
+      }),
     }).slides;
   } catch {
     return null;
@@ -195,7 +206,7 @@ export async function structureWithProvenance(
   revisionContext?: string,
 ): Promise<StructureResult> {
   if (revisionContext) {
-    const preserved = parseRevisionContext(revisionContext);
+    const preserved = parseRevisionContext(revisionContext, dossier.rawBrief);
     if (preserved) return { stubs: preserved, evidence: [], sourceFailures: [] };
   }
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
