@@ -128,6 +128,7 @@ const gatherStep = createStep({
     brief: z.string(),
     language: z.enum(['fr', 'en']),
     sourcePolicy: SourcePolicySchema.default({ mode: 'none', sourceIds: [] }),
+    groundingFacts: z.array(z.string()).optional(),
   }),
   outputSchema: z.object({
     dossier: dossierT,
@@ -142,7 +143,12 @@ const gatherStep = createStep({
       inputData.language,
       abortSignal,
     );
-    const groundedDossier = await groundDossier(dossier, evidence, abortSignal);
+    const groundedDossier = await groundDossier(
+      dossier,
+      evidence,
+      abortSignal,
+      inputData.groundingFacts ?? [],
+    );
     return {
       dossier: groundedDossier,
       evidence: validateGrounding(groundedDossier, evidence),
@@ -378,6 +384,7 @@ const InputSchema = z.object({
   sourcePolicy: SourcePolicySchema.default({ mode: 'none', sourceIds: [] }),
   revisionContext: z.string().max(100_000).optional(),
   approvalRequired: z.boolean().default(false),
+  groundingFacts: z.array(z.string()).optional(),
 });
 type DeckWorkflowInput = z.infer<typeof InputSchema>;
 

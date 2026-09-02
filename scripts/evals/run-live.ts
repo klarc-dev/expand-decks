@@ -13,7 +13,7 @@ const itemDiagnostics: Array<Record<string, unknown>> = [];
 const result = await runEvals<typeof deckWorkflow>({
   target: deckWorkflow,
   data: workflowDatasetV1.map((item) => ({
-    input: item.input,
+    input: { ...item.input, groundingFacts: item.groundTruth.allowedFacts },
     groundTruth: item.groundTruth,
   })),
   gates: [deckContractGate],

@@ -24,6 +24,7 @@ Reconstruis le dossier uniquement à partir du brief brut et des extraits de pre
 - Préserve la demande, le public, la langue et tous les détails explicitement fournis.
 - Retire ou généralise chaque affirmation signalée comme non étayée.
 - data doit contenir seulement des faits ou exemples explicitement présents dans les éléments autorisés.
+- references doit contenir seulement des citations lisibles explicitement présentes dans le brief ou les preuves capturées ; conserve les articles, dates, auteurs, organismes et URLs disponibles.
 - sources doit contenir seulement les identifiants de sources présents dans les preuves capturées.`;
 
 function evidenceText(evidence: readonly Evidence[]): string {
@@ -36,8 +37,9 @@ export async function groundDossier(
   dossier: DeckDossier,
   evidence: readonly Evidence[],
   abortSignal?: AbortSignal,
+  additionalFacts: readonly string[] = [],
 ): Promise<DeckDossier> {
-  const authorized = `BRIEF BRUT :\n${dossier.rawBrief}\n\nPREUVES CAPTURÉES :\n${evidenceText(evidence)}`;
+  const authorized = `BRIEF BRUT :\n${dossier.rawBrief}\n\nFAITS AUTORISÉS SUPPLÉMENTAIRES :\n${additionalFacts.length ? additionalFacts.map((fact) => `- ${fact}`).join('\n') : '(aucun)'}\n\nPREUVES CAPTURÉES :\n${evidenceText(evidence)}`;
   const verdict = await generateStructured({
     name: 'gather:grounding-audit',
     instructions: DOSSIER_GROUNDING_INSTRUCTIONS,
