@@ -15,6 +15,7 @@ export async function runDeckFromBrief(
     inputData: {
       brief,
       language: resolveTargetLanguage(opts.language, brief),
+      sourcePolicy: 'none',
       sourceIds: opts.sourceIds ?? [],
       visual: opts.visual === true,
       approvalRequired: false,

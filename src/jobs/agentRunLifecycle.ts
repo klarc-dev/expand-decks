@@ -5,13 +5,16 @@ export function agentRunFingerprint(input: {
   brief: string;
   mode: string;
   visual: boolean;
+  sourcePolicy?: string;
   sourceIds: readonly string[];
   approvalRequired: boolean;
 }): string {
+  const sourcePolicy = input.sourcePolicy ?? (input.sourceIds.length === 0 ? 'none' : 'multiple');
   return createHash('sha256')
     .update(
       JSON.stringify({
         ...input,
+        sourcePolicy,
         sourceIds: [...input.sourceIds].sort(),
       }),
     )

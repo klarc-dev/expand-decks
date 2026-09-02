@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { __resetSourceRegistryForTests, SOURCE_REGISTRY_ENV } from '../registry';
-import { normalizeSourceIds, resolveSources } from '../resolve';
-import { MAX_SELECTED_SOURCES, TooManySourcesError, UnknownSourceError } from '../types';
+import { normalizeSourceIds, resolveSourcePolicy, resolveSources } from '../resolve';
+import {
+  MAX_SELECTED_SOURCES,
+  SourcePolicyError,
+  TooManySourcesError,
+  UnknownSourceError,
+} from '../types';
 
 const previous = process.env[SOURCE_REGISTRY_ENV];
 
@@ -51,6 +56,35 @@ describe('normalizeSourceIds', () => {
   it('rejects more ids than the cap', () => {
     const tooMany = Array.from({ length: MAX_SELECTED_SOURCES + 1 }, (_, i) => `s${i}`);
     expect(() => normalizeSourceIds(tooMany)).toThrow(TooManySourcesError);
+  });
+});
+
+describe('resolveSourcePolicy', () => {
+  it('normalizes and resolves an exclusive source', () => {
+    setRegistry(twoSources);
+    expect(resolveSourcePolicy({ mode: 'exclusive', sourceIds: [' web-docs '] })).toEqual({
+      policy: { mode: 'exclusive', sourceIds: ['web-docs'] },
+      sources: [expect.objectContaining({ id: 'web-docs' })],
+    });
+  });
+
+  it('rejects empty and broadened exclusive selections', () => {
+    setRegistry(twoSources);
+    expect(() => resolveSourcePolicy({ mode: 'exclusive', sourceIds: [] })).toThrow(
+      SourcePolicyError,
+    );
+    expect(() =>
+      resolveSourcePolicy({ mode: 'exclusive', sourceIds: ['fiscal-kb', 'web-docs'] }),
+    ).toThrow(SourcePolicyError);
+  });
+
+  it('preserves none and multiple behavior', () => {
+    setRegistry(twoSources);
+    expect(resolveSourcePolicy({ mode: 'none', sourceIds: [] }).sources).toEqual([]);
+    expect(
+      resolveSourcePolicy({ mode: 'multiple', sourceIds: ['web-docs', 'fiscal-kb', 'web-docs'] })
+        .policy.sourceIds,
+    ).toEqual(['web-docs', 'fiscal-kb']);
   });
 });
 

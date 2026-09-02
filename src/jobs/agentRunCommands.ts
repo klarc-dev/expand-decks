@@ -246,6 +246,7 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
           language: ledger.language,
           title: presentation.title ?? undefined,
           visual: ledger.visual !== false,
+          sourcePolicy: ledger.sourcePolicy ?? 'none',
           sourceIds: Array.isArray(ledger.sourceIds) ? (ledger.sourceIds as string[]) : [],
           revisionContext,
           approvalRequired: ledger.approvalRequired === true,

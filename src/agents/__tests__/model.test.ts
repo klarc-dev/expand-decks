@@ -167,6 +167,6 @@ describe('researchWithSources', () => {
         maxSteps: 4,
       }),
     );
-    expect(generateMock.mock.calls[0]![1]).not.toHaveProperty('toolChoice');
+    expect(generateMock.mock.calls[0]![1]).toHaveProperty('toolChoice', 'required');
   });
 });

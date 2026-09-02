@@ -42,7 +42,13 @@ import { scoreVisual } from './scorers/visual';
 import { validateGrounding } from './grounding';
 import { exportSlidePngs } from './tools/exportSlidePngs';
 import { DeckDossierSchema, type DeckDossier, type DeckEvidence } from './schemas';
-import { EvidenceSchema, SourceFailureSchema, type SourceFailure } from '../lib/sources/types';
+import {
+  EvidenceSchema,
+  SourceFailureSchema,
+  SourcePolicyModeSchema,
+  type SourceFailure,
+  type SourcePolicyMode,
+} from '../lib/sources/types';
 
 // ── shared shapes ───────────────────────────────────────────────────────────
 
@@ -51,6 +57,7 @@ type DeckBundle = {
   dossier: DeckDossier;
   evidence: DeckEvidence[];
   sourceFailures: SourceFailure[];
+  sourcePolicy: SourcePolicyMode;
   sourceIds: string[];
   stubs: OutlineStub[];
   slides: SlideBlock[];
@@ -71,6 +78,7 @@ const bundle = z.object({
   dossier: dossierT,
   evidence: z.array(evidenceT),
   sourceFailures: z.array(sourceFailureT),
+  sourcePolicy: SourcePolicyModeSchema,
   sourceIds: z.array(z.string()),
   stubs: z.array(stubT),
   slides: z.array(slideT),
@@ -101,12 +109,14 @@ const gatherStep = createStep({
   inputSchema: z.object({
     brief: z.string(),
     language: z.enum(['fr', 'en']),
+    sourcePolicy: SourcePolicyModeSchema.default('none'),
     sourceIds: z.array(z.string()).default([]),
   }),
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
+    sourcePolicy: SourcePolicyModeSchema,
     sourceIds: z.array(z.string()),
   }),
   execute: async ({ inputData, abortSignal }) => {
@@ -115,11 +125,13 @@ const gatherStep = createStep({
       inputData.sourceIds,
       inputData.language,
       abortSignal,
+      { mode: inputData.sourcePolicy, sourceIds: inputData.sourceIds },
     );
     return {
       dossier,
       evidence: validateGrounding(dossier, evidence),
       sourceFailures,
+      sourcePolicy: inputData.sourcePolicy,
       sourceIds: inputData.sourceIds,
     };
   },
@@ -131,12 +143,14 @@ const structureStep = createStep({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
+    sourcePolicy: SourcePolicyModeSchema,
     sourceIds: z.array(z.string()),
   }),
   outputSchema: z.object({
     dossier: dossierT,
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
+    sourcePolicy: SourcePolicyModeSchema,
     sourceIds: z.array(z.string()),
     stubs: z.array(stubT),
   }),
@@ -144,8 +158,12 @@ const structureStep = createStep({
     dossier: inputData.dossier,
     evidence: inputData.evidence,
     sourceFailures: inputData.sourceFailures,
+    sourcePolicy: inputData.sourcePolicy,
     sourceIds: inputData.sourceIds,
-    stubs: await structure(inputData.dossier, inputData.sourceIds, abortSignal),
+    stubs: await structure(inputData.dossier, inputData.sourceIds, abortSignal, {
+      mode: inputData.sourcePolicy,
+      sourceIds: inputData.sourceIds,
+    }),
   }),
 });
 
@@ -310,6 +328,7 @@ const assembleStep = createStep({
     md: z.string(),
     evidence: z.array(evidenceT),
     sourceFailures: z.array(sourceFailureT),
+    sourcePolicy: SourcePolicyModeSchema,
     sourceIds: z.array(z.string()),
   }),
   execute: async ({ inputData, getInitData }) => {
@@ -320,6 +339,7 @@ const assembleStep = createStep({
       md: buildSlidesMd({ title, slides: inputData.slides as SlideBlock[] }),
       evidence: inputData.evidence,
       sourceFailures: inputData.sourceFailures,
+      sourcePolicy: inputData.sourcePolicy,
       sourceIds: inputData.sourceIds,
     };
   },
@@ -332,6 +352,7 @@ const InputSchema = z.object({
   language: z.enum(['fr', 'en']),
   title: z.string().optional(),
   visual: z.boolean().default(false),
+  sourcePolicy: SourcePolicyModeSchema.default('none'),
   sourceIds: z.array(z.string()).default([]),
   revisionContext: z.string().max(100_000).optional(),
   approvalRequired: z.boolean().default(false),
@@ -344,6 +365,7 @@ const OutputSchema = z.object({
   md: z.string(),
   evidence: z.array(evidenceT),
   sourceFailures: z.array(sourceFailureT),
+  sourcePolicy: SourcePolicyModeSchema,
   sourceIds: z.array(z.string()),
 });
 export type DeckWorkflowOutput = z.infer<typeof OutputSchema>;
@@ -378,6 +400,7 @@ export const deckWorkflow = createWorkflow({
       dossier: structured.dossier,
       evidence: structured.evidence,
       sourceFailures: structured.sourceFailures,
+      sourcePolicy: structured.sourcePolicy,
       sourceIds: structured.sourceIds,
       stubs: structured.stubs,
       slides,

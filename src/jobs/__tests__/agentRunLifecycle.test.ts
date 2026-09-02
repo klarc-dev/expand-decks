@@ -35,6 +35,20 @@ describe('agent run lifecycle', () => {
     );
   });
 
+  it('changes the fingerprint when the source policy changes', () => {
+    const base = {
+      presentationId: '42',
+      brief: 'A sufficiently detailed deck brief',
+      mode: 'replace',
+      visual: true,
+      sourceIds: ['a'],
+      approvalRequired: false,
+    };
+    expect(agentRunFingerprint({ ...base, sourcePolicy: 'exclusive' })).not.toBe(
+      agentRunFingerprint({ ...base, sourcePolicy: 'multiple' }),
+    );
+  });
+
   it('allows time travel only from stable post-draft checkpoints', () => {
     expect(AGENT_TIME_TRAVEL_STEPS).toEqual(['validate', 'visual']);
     expect(AGENT_RUN_STALE_MS).toBeGreaterThanOrEqual(60_000);

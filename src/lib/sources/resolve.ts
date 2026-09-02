@@ -1,10 +1,12 @@
 import { listSourceDescriptors } from './registry';
+import { normalizeSourcePolicy } from './policy';
 import {
   MAX_SELECTED_SOURCES,
   SourceIdSchema,
   TooManySourcesError,
   UnknownSourceError,
   type ResolvedSource,
+  type SourcePolicy,
 } from './types';
 
 export function normalizeSourceIds(ids: readonly string[] | undefined): string[] {
@@ -22,6 +24,14 @@ export function normalizeSourceIds(ids: readonly string[] | undefined): string[]
     throw new TooManySourcesError(MAX_SELECTED_SOURCES, normalized.length);
   }
   return normalized;
+}
+
+export function resolveSourcePolicy(input: unknown): {
+  policy: SourcePolicy;
+  sources: ResolvedSource[];
+} {
+  const policy = normalizeSourcePolicy(input);
+  return { policy, sources: resolveSources(policy.sourceIds) };
 }
 
 export function resolveSources(ids: readonly string[] | undefined): ResolvedSource[] {

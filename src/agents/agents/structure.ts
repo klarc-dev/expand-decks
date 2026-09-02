@@ -14,6 +14,7 @@
 import { OUTLINE_SCHEMA } from '../../blocks/spec';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import { INTENT_MAX } from '../../lib/draftConfig';
+import type { SourcePolicy } from '../../lib/sources/types';
 import { languageInstruction } from '../language';
 import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
@@ -131,6 +132,7 @@ export async function structure(
   dossier: DeckDossier,
   sourceIds?: readonly string[],
   abortSignal?: AbortSignal,
+  sourcePolicy?: SourcePolicy,
 ): Promise<OutlineStub[]> {
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
@@ -165,6 +167,7 @@ export async function structure(
         instructions: STRUCTURE_RESEARCH_INSTRUCTIONS,
         prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
         abortSignal,
+        sourcePolicy,
       });
       sourceNotes = notes;
     }

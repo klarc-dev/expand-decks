@@ -22,6 +22,7 @@ describe('runDeckFromBrief workflow input', () => {
       inputData: {
         brief: 'A sufficiently detailed English presentation brief.',
         language: 'en',
+        sourcePolicy: 'none',
         sourceIds: [],
         visual: true,
         approvalRequired: false,

@@ -22,6 +22,7 @@ live('Phase 2 live (deckWorkflow)', () => {
       inputData: {
         brief: BRIEF,
         language: 'en',
+        sourcePolicy: 'none',
         sourceIds: [],
         visual: false,
         approvalRequired: false,

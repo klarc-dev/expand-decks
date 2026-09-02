@@ -15,6 +15,7 @@ live('phase2 timing', () => {
       inputData: {
         brief: BRIEF,
         language: 'en',
+        sourcePolicy: 'none',
         sourceIds: [],
         visual: false,
         approvalRequired: false,

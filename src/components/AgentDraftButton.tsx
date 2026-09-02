@@ -19,6 +19,8 @@ import {
 } from '@/components/agentDraftJournal';
 import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
+import { canStartWithSourcePolicy, sourceIdsForPolicy } from '@/lib/adminSourcePolicy';
+import type { SourcePolicyMode } from '@/lib/sources/types';
 
 import './AgentDraftButton.scss';
 
@@ -85,6 +87,87 @@ function DraftModeSelector({ readOnly, value, onChange }: DraftModeSelectorProps
           </label>
         );
       })}
+    </DraftFieldGroup>
+  );
+}
+
+type SourcePolicySelectorProps = {
+  readOnly: boolean;
+  sourcesAvailable: boolean;
+  value: SourcePolicyMode;
+  maxSources: number;
+  onChange: (value: SourcePolicyMode) => void;
+};
+
+function SourcePolicySelector({
+  readOnly,
+  sourcesAvailable,
+  value,
+  maxSources,
+  onChange,
+}: SourcePolicySelectorProps) {
+  const options: ReadonlyArray<{ label: string; value: SourcePolicyMode }> = [
+    { value: 'none', label: 'Aucune source externe' },
+    { value: 'exclusive', label: 'Une source exclusive' },
+    {
+      value: 'multiple',
+      label: `Plusieurs sources${maxSources > 0 ? ` (max ${maxSources})` : ''}`,
+    },
+  ];
+  return (
+    <DraftFieldGroup label="Politique des sources externes">
+      {options.map((option) => (
+        <label
+          className="agent-draft__choice"
+          htmlFor={`agent-source-policy-${option.value}`}
+          key={option.value}
+        >
+          <input
+            checked={value === option.value}
+            disabled={readOnly || (option.value !== 'none' && !sourcesAvailable)}
+            id={`agent-source-policy-${option.value}`}
+            name="agent-source-policy"
+            onChange={() => onChange(option.value)}
+            type="radio"
+            value={option.value}
+          />
+          {option.label}
+        </label>
+      ))}
+    </DraftFieldGroup>
+  );
+}
+
+function ExclusiveSourceSelector({
+  readOnly,
+  selected,
+  sources,
+  onChange,
+}: {
+  readOnly: boolean;
+  selected: string[];
+  sources: SourceOption[];
+  onChange: (id: string) => void;
+}) {
+  return (
+    <DraftFieldGroup label="Source exclusive">
+      {sources.map((source) => (
+        <label
+          className="agent-draft__choice"
+          htmlFor={`agent-source-${source.id}`}
+          key={source.id}
+        >
+          <input
+            checked={selected.includes(source.id)}
+            disabled={readOnly}
+            id={`agent-source-${source.id}`}
+            name="agent-exclusive-source"
+            onChange={() => onChange(source.id)}
+            type="radio"
+          />
+          {source.label}
+        </label>
+      ))}
     </DraftFieldGroup>
   );
 }
@@ -327,6 +410,7 @@ const AgentDraftButton: React.FC = () => {
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [runId, setRunId] = useState<string>('');
   const [sources, setSources] = useState<SourceOption[]>([]);
+  const [sourcePolicy, setSourcePolicy] = useState<SourcePolicyMode>('none');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [maxSources, setMaxSources] = useState<number>(0);
   const [sourcesLoaded, setSourcesLoaded] = useState(false);
@@ -493,7 +577,10 @@ const AgentDraftButton: React.FC = () => {
         brief,
         mode,
         visual,
-        sourceIds: selectedSources,
+        sourcePolicy: {
+          mode: sourcePolicy,
+          sourceIds: sourceIdsForPolicy(sourcePolicy, selectedSources),
+        },
         approvalRequired,
       });
       if (!ok) {
@@ -509,7 +596,7 @@ const AgentDraftButton: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Erreur réseau');
       setRunning(false);
     }
-  }, [approvalRequired, brief, id, mode, selectedSources, visual, startPolling]);
+  }, [approvalRequired, brief, id, mode, selectedSources, sourcePolicy, visual, startPolling]);
 
   const handleRunAction = useCallback(
     async (action: 'cancel' | 'restart' | 'resume', approved?: boolean) => {
@@ -598,10 +685,30 @@ const AgentDraftButton: React.FC = () => {
         />
       </DraftFieldGroup>
 
-      {sourcesLoaded && sources.length > 0 && (
-        <DraftFieldGroup
-          label={<>Sources externes{maxSources > 0 ? ` (max ${maxSources})` : ''}</>}
-        >
+      {sourcesLoaded && (
+        <SourcePolicySelector
+          maxSources={maxSources}
+          onChange={(value) => {
+            setSourcePolicy(value);
+            setSelectedSources([]);
+          }}
+          readOnly={running}
+          sourcesAvailable={sources.length > 0}
+          value={sourcePolicy}
+        />
+      )}
+
+      {sourcePolicy === 'exclusive' && (
+        <ExclusiveSourceSelector
+          onChange={(sourceId) => setSelectedSources([sourceId])}
+          readOnly={running}
+          selected={selectedSources}
+          sources={sources}
+        />
+      )}
+
+      {sourcePolicy === 'multiple' && sources.length > 0 && (
+        <DraftFieldGroup label={`Sources externes${maxSources > 0 ? ` (max ${maxSources})` : ''}`}>
           {sources.map((source) => {
             const checked = selectedSources.includes(source.id);
             const atCap = maxSources > 0 && selectedSources.length >= maxSources;
@@ -621,9 +728,17 @@ const AgentDraftButton: React.FC = () => {
         </DraftFieldGroup>
       )}
 
+      {sourcePolicy === 'exclusive' && selectedSources.length !== 1 && (
+        <AdminNotice variant="hint">Sélectionnez exactement une source exclusive.</AdminNotice>
+      )}
+
       <DraftRunActions
         approvalRequired={approvalRequired}
-        canStart={!running && Boolean(brief.trim())}
+        canStart={
+          !running &&
+          Boolean(brief.trim()) &&
+          canStartWithSourcePolicy(sourcePolicy, selectedSources)
+        }
         durableStatus={durableStatus}
         event={statusEvent}
         hasRun={Boolean(runId)}
