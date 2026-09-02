@@ -170,6 +170,24 @@ jobs:
         run: pnpm eval:seed
       - name: Run persistent experiment
         run: pnpm eval:experiment
+      - name: Set release revision in Coolify
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APPLICATION_UUID: ${{ vars.COOLIFY_APPLICATION_UUID }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          data=$(jq -n --arg value "$SOURCE_COMMIT" \
+            '[{key: "SOURCE_COMMIT", value: $value, is_runtime: true, is_buildtime: true}]')
+          curl --fail-with-body --silent --show-error \
+            --request PATCH \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --argjson data "$data" '{data: $data}')" \
+            "$COOLIFY_URL/api/v1/applications/$COOLIFY_APPLICATION_UUID/envs/bulk" \
+            >/dev/null
       - name: Deploy verified revision to Coolify
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
@@ -186,7 +204,8 @@ jobs:
             --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
             --header 'Content-Type: application/json' \
-            --data "$(jq -n --arg uuid "$COOLIFY_APPLICATION_UUID" '{uuid: $uuid, force: true}')" \
+            --data "$(jq -n --arg uuid "$COOLIFY_APPLICATION_UUID" \
+              '{uuid: $uuid, force: true}')" \
             "$COOLIFY_URL/api/v1/deploy")
           deployment_uuid=$(jq -r '.deployments[0].deployment_uuid // empty' <<<"$response")
           test -n "$deployment_uuid"
