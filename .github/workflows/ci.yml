@@ -198,12 +198,15 @@ jobs:
               jq -r '.status // empty')
             case "$status" in
               finished)
-                deployed_commit=$(curl --retry 6 --retry-delay 5 --retry-all-errors \
+                health=$(curl --retry 6 --retry-delay 5 --retry-all-errors \
                   --silent --show-error \
-                  "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt" | \
-                  jq -r '.commit // empty')
-                test "$deployed_commit" = "${{ github.sha }}"
-                exit 0
+                  "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt")
+                deployed_commit=$(jq -r '.commit // empty' <<<"$health" 2>/dev/null || true)
+                if [[ "$deployed_commit" == "${{ github.sha }}" ]]; then
+                  exit 0
+                fi
+                echo "::error::Coolify finished but production reports commit ${deployed_commit:-unavailable}"
+                exit 1
                 ;;
               failed|cancelled)
                 echo "::error::Coolify deployment $deployment_uuid ended with status $status"
