@@ -125,8 +125,10 @@ describe('writeSlide invariants', () => {
     await writeSlide(stub, dossier, [], '[{"slide":1,"title":"Existing title"}]');
 
     const prompt = mocked.mock.calls[0]![0].prompt;
+    expect(prompt).toContain('DEMANDE DE RÉVISION');
+    expect(prompt).toContain(dossier.rawBrief);
     expect(prompt).toContain('DECK EXISTANT À RÉVISER');
     expect(prompt).toContain('Existing title');
-    expect(prompt).toContain('Préserve les formulations, faits et éléments non concernés');
+    expect(prompt).toContain('Préserve mot pour mot');
   });
 });
