@@ -25,7 +25,10 @@ services:
           - expand-decks-postgres
 
   payload:
-    build: .
+    build:
+      context: .
+      args:
+        APP_COMMIT: ${SOURCE_COMMIT:-unknown}
     pull_policy: always
     restart: always
     mem_limit: 1g
@@ -48,6 +51,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
+      APP_COMMIT: ${SOURCE_COMMIT:-unknown}
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
@@ -70,7 +74,10 @@ services:
           - payload
 
   payload-worker-1: &payload-worker
-    build: .
+    build:
+      context: .
+      args:
+        APP_COMMIT: ${SOURCE_COMMIT:-unknown}
     pull_policy: always
     restart: always
     mem_limit: 2g
@@ -88,6 +95,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
+      APP_COMMIT: ${SOURCE_COMMIT:-unknown}
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media

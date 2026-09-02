@@ -1,7 +1,9 @@
 # -- Stage: base --
 FROM node:22.13-bookworm-slim AS base
+ARG APP_COMMIT=unknown
+ENV APP_COMMIT=$APP_COMMIT
 # Pin pnpm to the lockfile's version for deterministic installs.
-RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+RUN npm install --global pnpm@10.33.2
 WORKDIR /app
 
 # -- Stage: deps --
@@ -32,6 +34,8 @@ RUN pnpm generate:types \
 
 # -- Stage: production --
 FROM node:22.13-bookworm-slim AS production
+ARG APP_COMMIT=unknown
+ENV APP_COMMIT=$APP_COMMIT
 
 # Install Playwright Chromium system dependencies + fonts
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -42,7 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Pin pnpm to the lockfile's version for deterministic installs.
-RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+RUN npm install --global pnpm@10.33.2
 WORKDIR /app
 
 # Copy built Next.js app
