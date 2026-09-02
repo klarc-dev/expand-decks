@@ -152,7 +152,7 @@ jobs:
     steps:
       - name: Clean self-hosted workspace
         run: |
-          sudo find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
