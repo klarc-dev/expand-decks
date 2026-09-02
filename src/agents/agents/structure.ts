@@ -137,8 +137,10 @@ function parseRevisionContext(
         const targetsFinalSlide =
           index === slides.length - 1 &&
           /\b(?:final|finale?|derni[eè]re?|cta|checklist)\b/i.test(revisionBrief);
-        const directive =
-          targetsEveryTitle || targetsFinalSlide ? 'Modifie' : 'Préserve intégralement';
+        const titleDirective = targetsEveryTitle
+          ? 'Réécris uniquement le titre afin de satisfaire la demande de révision, même si le titre existant paraît déjà acceptable. Préserve le blockType et tous les autres champs exactement.'
+          : 'Préserve intégralement';
+        const directive = targetsFinalSlide ? 'Modifie' : titleDirective;
         return {
           blockType: slide.blockType,
           title: slide.title,
