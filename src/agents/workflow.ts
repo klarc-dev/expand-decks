@@ -40,6 +40,7 @@ import { writeSlide } from './agents/writer';
 import { scoreSlide } from './scorers/rubric';
 import { scoreVisual } from './scorers/visual';
 import { validateGrounding } from './grounding';
+import { groundDossier } from './dossierGrounding';
 import { prepareSlidesForRender } from './renderSlides';
 import { exportSlidePngs } from './tools/exportSlidePngs';
 import { DeckDossierSchema, type DeckDossier, type DeckEvidence } from './schemas';
@@ -117,9 +118,10 @@ const gatherStep = createStep({
       inputData.language,
       abortSignal,
     );
+    const groundedDossier = await groundDossier(dossier, evidence, abortSignal);
     return {
-      dossier,
-      evidence: validateGrounding(dossier, evidence),
+      dossier: groundedDossier,
+      evidence: validateGrounding(groundedDossier, evidence),
       sourceFailures,
       sourceIds: inputData.sourceIds,
     };
