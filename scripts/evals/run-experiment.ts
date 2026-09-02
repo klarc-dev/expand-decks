@@ -23,7 +23,7 @@ const path = `artifacts/evals/experiment-${DATASET_IDS.workflow}-${process.env.G
 await writeFile(path, `${JSON.stringify(serialized, null, 2)}\n`);
 console.log(JSON.stringify(serialized, null, 2));
 
-const text = JSON.stringify(serialized);
 const failed = Number(serialized.failedCount ?? 0);
-if (failed > 0 || text.includes('"error":')) process.exitCode = 1;
+const completedWithErrors = serialized.completedWithErrors === true;
+if (failed > 0 || completedWithErrors) process.exitCode = 1;
 void EVAL_THRESHOLDS;

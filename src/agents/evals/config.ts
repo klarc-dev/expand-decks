@@ -27,6 +27,7 @@ export const DeckEvalInputSchema = z.object({
   sourceIds: z.array(z.string()).default([]),
   visual: z.boolean().default(false),
   approvalRequired: z.boolean().default(false),
+  groundingFacts: z.array(z.string()).optional(),
 });
 
 export const DeckGroundTruthSchema = z.object({
