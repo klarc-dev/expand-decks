@@ -136,19 +136,17 @@ const gatherStep = createStep({
     sourceFailures: z.array(sourceFailureT),
     sourcePolicy: SourcePolicySchema,
   }),
-  execute: async ({ inputData, abortSignal }) => {
+  execute: async ({ inputData, getInitData, abortSignal }) => {
     const { dossier, evidence, sourceFailures } = await gather(
       inputData.brief,
       inputData.sourcePolicy,
       inputData.language,
       abortSignal,
     );
-    const groundedDossier = await groundDossier(
-      dossier,
-      evidence,
-      abortSignal,
-      inputData.groundingFacts ?? [],
-    );
+    const init = getInitData() as DeckWorkflowInput;
+    const groundedDossier = init.revisionContext
+      ? dossier
+      : await groundDossier(dossier, evidence, abortSignal, inputData.groundingFacts ?? []);
     return {
       dossier: groundedDossier,
       evidence: validateGrounding(groundedDossier, evidence),
