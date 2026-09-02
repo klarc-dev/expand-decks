@@ -124,6 +124,26 @@ function parseSlideBySlideBrief(brief: string): OutlineStub[] | null {
   });
 }
 
+function parseRevisionContext(revisionContext: string): OutlineStub[] | null {
+  try {
+    const slides = JSON.parse(revisionContext);
+    if (!Array.isArray(slides) || slides.length < 3) return null;
+    return OUTLINE_SCHEMA.parse({
+      slides: slides.map((slide) => ({
+        blockType: slide.blockType,
+        title: slide.title,
+        intent:
+          `Préserve intégralement cette diapositive existante et modifie uniquement ce que demande explicitement la révision. Contenu existant : ${JSON.stringify(slide)}`.slice(
+            0,
+            INTENT_MAX,
+          ),
+      })),
+    }).slides;
+  } catch {
+    return null;
+  }
+}
+
 function titleForExplicitSlide(heading: string, chunk: string): string {
   if (!/^titre$/i.test(heading.trim())) return heading;
   return chunk.match(/[«"]([^»"]+)[»"]/)?.[1]?.trim() ?? heading;
@@ -167,7 +187,12 @@ export async function structureWithProvenance(
   dossier: DeckDossier,
   sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   abortSignal?: AbortSignal,
+  revisionContext?: string,
 ): Promise<StructureResult> {
+  if (revisionContext) {
+    const preserved = parseRevisionContext(revisionContext);
+    if (preserved) return { stubs: preserved, evidence: [], sourceFailures: [] };
+  }
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
     return {
