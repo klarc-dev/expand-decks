@@ -34,7 +34,9 @@ describe('afterKnowledgeDocumentChange', () => {
     const state = args();
     await afterKnowledgeDocumentChange(state.value as never);
     expect(state.update).toHaveBeenCalledWith(
-      expect.objectContaining({ context: { skipIngestQueue: true } }),
+      expect.objectContaining({
+        context: { skipIngestQueue: true, trustedKnowledgeLifecycle: true },
+      }),
     );
     expect(state.queue).toHaveBeenCalledWith(
       expect.objectContaining({ task: 'knowledgeIngest', input: { documentId: 12 } }),

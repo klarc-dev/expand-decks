@@ -168,7 +168,11 @@ async function patchDocument(
     id: documentId,
     data,
     overrideAccess: true,
-    context: { ...(req?.context ?? {}), [CTX.skipIngestQueue]: true },
+    context: {
+      ...(req?.context ?? {}),
+      [CTX.skipIngestQueue]: true,
+      [CTX.trustedKnowledgeLifecycle]: true,
+    },
   });
 }
 

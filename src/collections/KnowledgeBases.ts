@@ -1,11 +1,15 @@
-import type { CollectionConfig, FieldHook } from 'payload';
+import type { CollectionConfig, FieldAccess, FieldHook } from 'payload';
 
 import { isAdminOrAuthor, isAdminOrCreator } from '../access/roles';
-import { COLLECTIONS } from '../lib/collections';
 import { beforeKnowledgeBaseDelete, afterKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
+import { COLLECTIONS } from '../lib/collections';
+import { CTX } from '../lib/context';
 
-const stampCreator: FieldHook = ({ req, operation }) =>
-  operation === 'create' ? req.user?.id : undefined;
+const stampCreator: FieldHook = ({ req, operation, value }) =>
+  operation === 'create' ? req.user?.id : value;
+
+const trustedLifecycleWrite: FieldAccess = ({ req }) =>
+  req.context?.[CTX.trustedKnowledgeLifecycle] === true;
 
 export const KnowledgeBases: CollectionConfig = {
   slug: COLLECTIONS.knowledgeBases,
@@ -59,6 +63,7 @@ export const KnowledgeBases: CollectionConfig = {
             readOnly: true,
             description: 'Nombre de documents déposés dans cette base',
           },
+          access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
         },
         {
           name: 'chunkCount',
@@ -70,6 +75,7 @@ export const KnowledgeBases: CollectionConfig = {
             readOnly: true,
             description: 'Nombre total de fragments indexés (rempli automatiquement)',
           },
+          access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
         },
       ],
     },
@@ -81,6 +87,7 @@ export const KnowledgeBases: CollectionConfig = {
         readOnly: true,
         description: 'Date de la dernière indexation réussie (remplie automatiquement)',
       },
+      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
     },
     {
       name: 'createdBy',
@@ -94,6 +101,7 @@ export const KnowledgeBases: CollectionConfig = {
         description: 'Auteur de la base de connaissances',
       },
       hooks: { beforeChange: [stampCreator] },
+      access: { create: () => false, update: () => false },
     },
   ],
 };

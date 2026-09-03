@@ -6,6 +6,8 @@ import {
   canAccessKnowledgeDocuments,
   enforceKnowledgeMimeType,
   isAcceptedKnowledgeMimeType,
+  validateKnowledgeBaseRelationship,
+  validateKnowledgeFileContent,
   titleFromFilename,
 } from '../KnowledgeDocuments';
 
@@ -37,7 +39,25 @@ describe('KnowledgeBases', () => {
       .beforeChange[0];
 
     expect(hook({ req: { user: { id: 42 } }, operation: 'create' })).toBe(42);
-    expect(hook({ req: { user: { id: 42 } }, operation: 'update' })).toBeUndefined();
+    expect(hook({ req: { user: { id: 42 } }, operation: 'update', value: 17 })).toBe(17);
+  });
+
+  it('makes ownership and synthesis fields server-only', () => {
+    for (const name of ['documentCount', 'chunkCount', 'lastIndexedAt']) {
+      const field = findNamedField(KnowledgeBases.fields, name);
+      const access = field.access as {
+        create: (args: unknown) => boolean;
+        update: (args: unknown) => boolean;
+      };
+      expect(access.update({ req: { context: {} } })).toBe(false);
+      expect(access.update({ req: { context: { trustedKnowledgeLifecycle: true } } })).toBe(true);
+    }
+    const ownerAccess = findNamedField(KnowledgeBases.fields, 'createdBy').access as {
+      create: (args: unknown) => boolean;
+      update: (args: unknown) => boolean;
+    };
+    expect(ownerAccess.create({})).toBe(false);
+    expect(ownerAccess.update({})).toBe(false);
   });
 
   it('exposes the ingestion summary as read-only fields', () => {
@@ -102,6 +122,17 @@ describe('KnowledgeDocuments', () => {
     expect(findNamedField(KnowledgeDocuments.fields, 'sourceHash').type).toBe('text');
   });
 
+  it('keeps lifecycle metadata writable only by trusted server context', () => {
+    for (const name of ['indexingStatus', 'chunkCount', 'errorMessage', 'sourceHash']) {
+      const access = findNamedField(KnowledgeDocuments.fields, name).access as {
+        create: (args: unknown) => boolean;
+        update: (args: unknown) => boolean;
+      };
+      expect(access.update({ req: { context: {} } })).toBe(false);
+      expect(access.update({ req: { context: { trustedKnowledgeLifecycle: true } } })).toBe(true);
+    }
+  });
+
   describe('title prefill', () => {
     const hook = (
       findNamedField(KnowledgeDocuments.fields, 'title').hooks as {
@@ -140,6 +171,25 @@ describe('KnowledgeDocuments', () => {
       ).toThrowError(/Formats acceptés/);
     });
 
+    it('validates bytes instead of trusting the filename or MIME metadata', () => {
+      expect(() =>
+        validateKnowledgeFileContent('fake.pdf', 'application/pdf', Buffer.from('not a pdf')),
+      ).toThrow(/PDF est invalide/);
+      expect(() =>
+        validateKnowledgeFileContent(
+          'fake.docx',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          Buffer.from('PK\u0003\u0004not ooxml'),
+        ),
+      ).toThrow(/DOCX est invalide/);
+      expect(() =>
+        validateKnowledgeFileContent('notes.txt', 'text/plain', Buffer.from([0x61, 0, 0x62])),
+      ).toThrow(/données binaires/);
+      expect(() =>
+        validateKnowledgeFileContent('notes.md', 'text/markdown', Buffer.from('# valide', 'utf8')),
+      ).not.toThrow();
+    });
+
     it('leaves a file-less patch untouched', () => {
       const data = { title: 'Nouveau titre' };
       expect(enforceKnowledgeMimeType({ data } as never)).toBe(data);
@@ -163,8 +213,37 @@ describe('KnowledgeDocuments', () => {
       ).resolves.toBe(false);
     });
 
+    it('rejects create or move into an inaccessible base', async () => {
+      const findByID = vi.fn().mockRejectedValue(new Error('not found'));
+      await expect(
+        validateKnowledgeBaseRelationship({
+          value: 99,
+          req: { user: { id: 7 }, payload: { findByID } },
+        } as never),
+      ).rejects.toThrow(/inaccessible/);
+      expect(findByID).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 99, overrideAccess: false, user: { id: 7 } }),
+      );
+    });
+
+    it('paginates all readable bases with a stable sort', async () => {
+      const find = vi
+        .fn()
+        .mockResolvedValueOnce({ docs: [{ id: 3 }], hasNextPage: true })
+        .mockResolvedValueOnce({ docs: [{ id: 1003 }], hasNextPage: false });
+      await expect(
+        canAccessKnowledgeDocuments({
+          req: { user: { id: 7, role: 'author' }, payload: { find } },
+        } as never),
+      ).resolves.toEqual({ knowledgeBase: { in: [3, 1003] } });
+      expect(find).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ page: 2, limit: 1000, sort: 'id' }),
+      );
+    });
+
     it('scopes an author to documents in bases they can read', async () => {
-      const find = vi.fn().mockResolvedValue({ docs: [{ id: 3 }, { id: 9 }] });
+      const find = vi.fn().mockResolvedValue({ docs: [{ id: 3 }, { id: 9 }], hasNextPage: false });
       await expect(
         canAccessKnowledgeDocuments({
           req: { user: { id: 7, role: 'author' }, payload: { find } },
