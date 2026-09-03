@@ -4,38 +4,37 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_knowledge_documents_indexing_status" AS ENUM('pending', 'indexing', 'indexed', 'failed');
   CREATE TABLE "knowledge_bases" (
-  	"id" serial PRIMARY KEY NOT NULL,
-  	"name" varchar NOT NULL,
-  	"description" varchar,
-  	"document_count" numeric DEFAULT 0,
-  	"chunk_count" numeric DEFAULT 0,
-  	"last_indexed_at" timestamp(3) with time zone,
-  	"created_by_id" integer,
-  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+    "id" serial PRIMARY KEY NOT NULL,
+    "name" varchar NOT NULL,
+    "description" varchar,
+    "document_count" numeric DEFAULT 0,
+    "chunk_count" numeric DEFAULT 0,
+    "last_indexed_at" timestamp(3) with time zone,
+    "created_by_id" integer,
+    "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+    "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
-  
+
   CREATE TABLE "knowledge_documents" (
-  	"id" serial PRIMARY KEY NOT NULL,
-  	"knowledge_base_id" integer NOT NULL,
-  	"title" varchar NOT NULL,
-  	"indexing_status" "enum_knowledge_documents_indexing_status" DEFAULT 'pending' NOT NULL,
-  	"chunk_count" numeric DEFAULT 0,
-  	"error_message" varchar,
-  	"source_hash" varchar,
-  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
-  	"url" varchar,
-  	"thumbnail_u_r_l" varchar,
-  	"filename" varchar,
-  	"mime_type" varchar,
-  	"filesize" numeric,
-  	"width" numeric,
-  	"height" numeric,
-  	"focal_x" numeric,
-  	"focal_y" numeric
+    "id" serial PRIMARY KEY NOT NULL,
+    "knowledge_base_id" integer NOT NULL,
+    "title" varchar NOT NULL,
+    "indexing_status" "enum_knowledge_documents_indexing_status" DEFAULT 'pending' NOT NULL,
+    "chunk_count" numeric DEFAULT 0,
+    "error_message" varchar,
+    "source_hash" varchar,
+    "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+    "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+    "url" varchar,
+    "thumbnail_u_r_l" varchar,
+    "filename" varchar,
+    "mime_type" varchar,
+    "filesize" numeric,
+    "width" numeric,
+    "height" numeric,
+    "focal_x" numeric,
+    "focal_y" numeric
   );
-  
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "knowledge_bases_id" integer;
   ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "knowledge_documents_id" integer;
   ALTER TABLE "knowledge_bases" ADD CONSTRAINT "knowledge_bases_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
