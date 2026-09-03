@@ -35,8 +35,8 @@ while IFS= read -r key; do
   [[ -n "$key" ]] && optional_keys+=("$key")
 done < <(grep -oE '\$\{[A-Z0-9_]+:-' "$compose_file" | sed 's/^\${//; s/:-$//' | sort -u)
 
-# SOURCE_COMMIT is supplied by Coolify for each deployment. Managing it as an
-# application env creates a stale override that masks the current revision.
+# DEPLOY_COMMIT is supplied explicitly by CI for revision verification. Coolify's
+# predefined SOURCE_COMMIT is not reliably interpolated by Docker Compose.
 managed_keys=()
 while IFS= read -r key; do
   [[ -n "$key" ]] && managed_keys+=("$key")
@@ -49,9 +49,9 @@ if [[ ${#keys[@]} -eq 0 ]]; then
   exit 1
 fi
 
-# Remove a legacy application-level SOURCE_COMMIT override. Coolify injects
-# this predefined variable per deployment; keeping a managed copy makes every
-# later container report an old revision even when the image is current.
+# Remove a legacy application-level SOURCE_COMMIT override left by older CI.
+# The app now uses DEPLOY_COMMIT, while Coolify remains free to own its predefined
+# SOURCE_COMMIT variable.
 legacy_source_commit_uuid=$(curl --fail-with-body --silent --show-error \
   --header "Authorization: Bearer $COOLIFY_TOKEN" \
   "$COOLIFY_URL/api/v1/applications/$COOLIFY_APPLICATION_UUID/envs" | \

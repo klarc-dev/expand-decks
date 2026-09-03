@@ -41,7 +41,7 @@ services:
     build:
       context: .
       args:
-        APP_COMMIT: ${SOURCE_COMMIT:-unknown}
+        APP_COMMIT: ${DEPLOY_COMMIT:-unknown}
     pull_policy: always
     restart: always
     mem_limit: 1g
@@ -65,7 +65,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_FONTS_API_KEY: ${GOOGLE_FONTS_API_KEY}
       NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
-      APP_COMMIT: ${SOURCE_COMMIT:-unknown}
+      APP_COMMIT: ${DEPLOY_COMMIT:-unknown}
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
@@ -91,7 +91,7 @@ services:
     build:
       context: .
       args:
-        APP_COMMIT: ${SOURCE_COMMIT:-unknown}
+        APP_COMMIT: ${DEPLOY_COMMIT:-unknown}
     pull_policy: always
     restart: always
     mem_limit: 2g
@@ -110,7 +110,7 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_FONTS_API_KEY: ${GOOGLE_FONTS_API_KEY}
       NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
-      APP_COMMIT: ${SOURCE_COMMIT:-unknown}
+      APP_COMMIT: ${DEPLOY_COMMIT:-unknown}
       NEXT_TELEMETRY_DISABLED: "1"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
