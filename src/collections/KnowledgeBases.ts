@@ -1,7 +1,7 @@
 import type { CollectionConfig, FieldAccess, FieldHook } from 'payload';
 
 import { isAdminOrAuthor, isAdminOrCreator } from '../access/roles';
-import { beforeKnowledgeBaseDelete, afterKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
+import { beforeKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 
@@ -28,7 +28,6 @@ export const KnowledgeBases: CollectionConfig = {
   },
   hooks: {
     beforeDelete: [beforeKnowledgeBaseDelete],
-    afterDelete: [afterKnowledgeBaseDelete],
   },
   fields: [
     {

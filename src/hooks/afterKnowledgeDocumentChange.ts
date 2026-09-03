@@ -50,15 +50,5 @@ export const afterKnowledgeDocumentChange: CollectionAfterChangeHook = async ({
     req,
   });
 
-  // fallow-ignore-next-line code-duplication -- established fire-and-forget Payload jobs pattern
-  void Promise.resolve()
-    .then(() => (req.payload.jobs.run as Function)())
-    .catch((err: unknown) => {
-      req.payload.logger?.warn?.(
-        { err, documentId: doc.id },
-        'on-demand jobs.run after knowledge document change failed; autoRun will retry',
-      );
-    });
-
   return doc;
 };

@@ -10,7 +10,10 @@ import { APIError } from 'payload';
 
 import { isAdminOrAuthor, userIsAdmin } from '../access/roles';
 import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
-import { afterKnowledgeDocumentDelete } from '../hooks/knowledgeLifecycle';
+import {
+  afterKnowledgeDocumentDelete,
+  beforeKnowledgeDocumentDelete,
+} from '../hooks/knowledgeLifecycle';
 import { KNOWLEDGE_INGEST_TASK } from '../jobs/knowledgeIngest';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
@@ -219,6 +222,7 @@ export const KnowledgeDocuments: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [enforceKnowledgeMimeType],
+    beforeDelete: [beforeKnowledgeDocumentDelete],
     afterChange: [afterKnowledgeDocumentChange],
     afterDelete: [afterKnowledgeDocumentDelete],
   },
@@ -268,12 +272,6 @@ export const KnowledgeDocuments: CollectionConfig = {
           input: { documentId: id },
           req,
         });
-        // fallow-ignore-next-line code-duplication -- queue kick mirrors the collection hook intentionally
-        void Promise.resolve()
-          .then(() => (req.payload.jobs.run as Function)())
-          .catch((err: unknown) =>
-            req.payload.logger.warn({ err, documentId: id }, 'knowledge retry jobs.run failed'),
-          );
         return Response.json({ queued: true, indexingStatus: INDEXING_STATUS.pending });
       },
     },

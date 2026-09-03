@@ -4,11 +4,9 @@ import { afterKnowledgeDocumentChange } from '../afterKnowledgeDocumentChange';
 
 function args(overrides: Record<string, unknown> = {}) {
   const queue = vi.fn().mockResolvedValue({});
-  const run = vi.fn().mockResolvedValue({});
   const update = vi.fn().mockResolvedValue({});
   return {
     queue,
-    run,
     update,
     value: {
       doc: { id: 12, filename: 'new.txt', mimeType: 'text/plain' },
@@ -17,7 +15,7 @@ function args(overrides: Record<string, unknown> = {}) {
       req: {
         context: {},
         payload: {
-          jobs: { queue, run },
+          jobs: { queue },
           update,
           find: vi.fn().mockResolvedValue({ docs: [] }),
           db: { updateOne: vi.fn().mockResolvedValue({}) },
