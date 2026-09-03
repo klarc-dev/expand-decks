@@ -60,6 +60,7 @@ export async function gather(
   sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   requestedLanguage?: DeckLanguage,
   abortSignal?: AbortSignal,
+  userId?: string,
 ): Promise<GatherResult> {
   const language = resolveTargetLanguage(requestedLanguage, brief);
   const localePolicy = languageInstruction(language);
@@ -68,6 +69,7 @@ export async function gather(
     instructions: `${RESEARCH_INSTRUCTIONS}\n\n${localePolicy}`,
     prompt: brief,
     abortSignal,
+    userId,
   });
 
   const prompt = notes

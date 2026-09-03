@@ -1,6 +1,19 @@
 services:
+  # Single Postgres instance shared by the web service and both workers, so one
+  # image swap covers every service that talks to the database.
+  #
+  # pgvector/pgvector bundles the `vector` extension, which stock `postgres:*`
+  # does not. It is required because MASTRA_DISABLE_INIT is set in production —
+  # @mastra/pg never gets to auto-install the extension at runtime, so it has to
+  # already exist for the Payload migration to enable it.
+  #
+  # Stay on **pg16**: the upstream tags share Postgres' on-disk format only
+  # within a major version, so pg17+ would refuse to start on the existing data
+  # directory. Note this also moves the base image from Alpine (musl) to Debian
+  # (glibc); text collation ordering can differ between the two libcs, so run
+  # `REINDEX DATABASE` once after the first boot if index-order anomalies show up.
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:0.8.6-pg16-bookworm
     pull_policy: always
     restart: always
     mem_limit: 512m

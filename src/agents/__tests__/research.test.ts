@@ -13,6 +13,7 @@ vi.mock('../../lib/sources/resolve', () => ({
   resolveSourcePolicy: mocks.resolveSourcePolicy,
 }));
 vi.mock('../model', () => ({ researchWithSources: mocks.researchWithSources }));
+vi.mock('../../lib/sources/serverContext', () => ({ sourceResolutionContextForUser: vi.fn() }));
 
 import { researchSources } from '../agents/research';
 
@@ -29,7 +30,7 @@ describe('researchSources provenance', () => {
 
   it('uses recorder evidence instead of inferring evidence from notes', async () => {
     const evidence = [{ id: 'ev_000000000000000000000000', sourceId: 'docs' }];
-    mocks.resolveSourcePolicy.mockReturnValue({
+    mocks.resolveSourcePolicy.mockResolvedValue({
       policy: { mode: 'multiple', sourceIds: ['docs'] },
       sources: [source],
     });
@@ -54,7 +55,7 @@ describe('researchSources provenance', () => {
   });
 
   it('fails when selected sources produce no successful tool evidence', async () => {
-    mocks.resolveSourcePolicy.mockReturnValue({
+    mocks.resolveSourcePolicy.mockResolvedValue({
       policy: { mode: 'multiple', sourceIds: ['docs'] },
       sources: [source],
     });
@@ -89,7 +90,7 @@ describe('researchSources provenance', () => {
       code: 'unavailable',
       message: 'connection refused',
     };
-    mocks.resolveSourcePolicy.mockReturnValue({
+    mocks.resolveSourcePolicy.mockResolvedValue({
       policy: { mode: 'exclusive', sourceIds: ['docs'] },
       sources: [{ ...source, failureMode: 'best-effort' }],
     });
@@ -116,7 +117,7 @@ describe('researchSources provenance', () => {
   });
 
   it('rejects evidence from another source in exclusive mode', async () => {
-    mocks.resolveSourcePolicy.mockReturnValue({
+    mocks.resolveSourcePolicy.mockResolvedValue({
       policy: { mode: 'exclusive', sourceIds: ['docs'] },
       sources: [source],
     });

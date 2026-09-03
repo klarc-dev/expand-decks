@@ -10,6 +10,7 @@ import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
+import { configureSourceResolutionPayload } from '../lib/sources/serverContext';
 import { SourceResearchError, type SourceFailure } from '../lib/sources/types';
 import { sanitizeRunError } from './agentRunLifecycle';
 
@@ -178,6 +179,7 @@ async function executeWorkflow(
   mirror: (phase: string, detail?: unknown) => Promise<void>,
 ): Promise<unknown> {
   const workflow = mastra.getWorkflow('deckWorkflow');
+  configureSourceResolutionPayload(payload);
   const run = await workflow.createRun({
     runId: ledger.mastraRunId,
     resourceId: String(presentationId),

@@ -3,6 +3,7 @@
  * Raw descriptors and tool output remain process-local. Evidence is recorded by
  * the wrapped MCP tool at the exact result boundary before the model sees it.
  */
+import { sourceResolutionContextForUser } from '../../lib/sources/serverContext';
 import { openSourceToolsets } from '../../lib/sources/mcpConnector';
 import { resolveSourcePolicy } from '../../lib/sources/resolve';
 import {
@@ -48,6 +49,20 @@ function asResearchError(error: unknown): SourceResearchError | undefined {
   return undefined;
 }
 
+async function resolveResearchPolicy(sourcePolicy: SourcePolicy, userId?: string) {
+  const knowledgeId = sourcePolicy.sourceIds.find((id) => id.startsWith('knowledge_'));
+  if (!knowledgeId) return resolveSourcePolicy(sourcePolicy);
+  if (!userId) {
+    throw researchFailure(
+      knowledgeId,
+      'connect',
+      'unavailable',
+      'Knowledge source resolution requires an authenticated user id',
+    );
+  }
+  return resolveSourcePolicy(sourcePolicy, await sourceResolutionContextForUser(userId));
+}
+
 export async function researchSources(
   sourcePolicy: SourcePolicy,
   opts: {
@@ -55,9 +70,10 @@ export async function researchSources(
     instructions: string;
     prompt: string;
     abortSignal?: AbortSignal;
+    userId?: string;
   },
 ): Promise<ResearchResult> {
-  const { policy, sources } = resolveSourcePolicy(sourcePolicy);
+  const { policy, sources } = await resolveResearchPolicy(sourcePolicy, opts.userId);
   if (sources.length === 0) return { notes: '', evidence: [], failures: [] };
 
   let opened: Awaited<ReturnType<typeof openSourceToolsets>>;

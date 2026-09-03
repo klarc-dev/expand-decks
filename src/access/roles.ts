@@ -75,6 +75,18 @@ export const isOwnOrganisation: Access = ({ req: { user } }) => {
   return { id: { in: ids } } satisfies Where;
 };
 
+/**
+ * Creator-scoped read/write for documents carrying a `createdBy` relationship
+ * but no `organisation` of their own. Admins are unrestricted; everyone else is
+ * narrowed by a query constraint, so list views, REST, GraphQL and the admin
+ * panel are filtered from one place — same shape as `isOrganisationMember`.
+ */
+export const isAdminOrCreator: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (userIsAdmin(user)) return true;
+  return { createdBy: { equals: user.id } } satisfies Where;
+};
+
 // Users have no `organisation`; self-scoping matches on `id`.
 export const isAdminOrSelfUser: Access = ({ req: { user } }) => {
   if (!user) return false;

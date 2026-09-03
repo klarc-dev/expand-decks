@@ -16,9 +16,12 @@ import { Organisations } from './collections/Organisations';
 import { Media } from './collections/Media';
 import { Accounts } from './collections/Accounts';
 import { AgentRuns } from './collections/AgentRuns';
+import { KnowledgeBases } from './collections/KnowledgeBases';
+import { KnowledgeDocuments } from './collections/KnowledgeDocuments';
 import { buildSlidesTask } from './jobs/buildSlides';
 import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
+import { knowledgeIngestTask } from './jobs/knowledgeIngest';
 import { COLLECTIONS } from './lib/collections';
 import {
   SERVER_URL,
@@ -65,7 +68,16 @@ export default buildConfig({
     },
   },
   serverURL: SERVER_URL,
-  collections: [Users, Organisations, Presentations, Media, Accounts, AgentRuns],
+  collections: [
+    Users,
+    Organisations,
+    Presentations,
+    Media,
+    Accounts,
+    AgentRuns,
+    KnowledgeBases,
+    KnowledgeDocuments,
+  ],
   plugins: [
     withoutPluginAPIKeys(
       authPlugin({
@@ -132,7 +144,7 @@ export default buildConfig({
     fallbackLanguage: 'fr',
   },
   jobs: {
-    tasks: [buildSlidesTask, agentDraftTask, agentRetentionTask],
+    tasks: [buildSlidesTask, agentDraftTask, agentRetentionTask, knowledgeIngestTask],
     autoRun: [
       { cron: '*/1 * * * *', limit: 5 },
       { cron: '0 3 * * *', queue: 'maintenance', limit: 1 },

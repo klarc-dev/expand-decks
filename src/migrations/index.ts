@@ -14,6 +14,8 @@ import * as migration_20260821_192342_add_agent_brief from './20260821_192342_ad
 import * as migration_20260825_194323_agent_runs_durable_execution from './20260825_194323_agent_runs_durable_execution';
 import * as migration_20260902_102706_exclusive_source_policy from './20260902_102706_exclusive_source_policy';
 import * as migration_20260903_062510_org_membership from './20260903_062510_org_membership';
+import * as migration_20260903_092420_knowledge_collections from './20260903_092420_knowledge_collections';
+import * as migration_20260903_092452_pgvector_knowledge_schema from './20260903_092452_pgvector_knowledge_schema';
 
 export const migrations = [
   {
@@ -95,5 +97,15 @@ export const migrations = [
     up: migration_20260903_062510_org_membership.up,
     down: migration_20260903_062510_org_membership.down,
     name: '20260903_062510_org_membership',
+  },
+  {
+    up: migration_20260903_092420_knowledge_collections.up,
+    down: migration_20260903_092420_knowledge_collections.down,
+    name: '20260903_092420_knowledge_collections',
+  },
+  {
+    up: migration_20260903_092452_pgvector_knowledge_schema.up,
+    down: migration_20260903_092452_pgvector_knowledge_schema.down,
+    name: '20260903_092452_pgvector_knowledge_schema',
   },
 ];

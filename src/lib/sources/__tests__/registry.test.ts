@@ -22,13 +22,13 @@ function setRegistry(value: unknown) {
 }
 
 describe('source registry', () => {
-  it('returns an empty registry when no env config is present', () => {
+  it('returns an empty registry when no env config is present', async () => {
     delete process.env[SOURCE_REGISTRY_ENV];
-    expect(listSourceDescriptors()).toEqual([]);
-    expect(listSourceOptions()).toEqual([]);
+    await expect(listSourceDescriptors()).resolves.toEqual([]);
+    await expect(listSourceOptions()).resolves.toEqual([]);
   });
 
-  it('projects only client-safe id and label fields', () => {
+  it('projects only client-safe id and label fields', async () => {
     setRegistry([
       {
         id: 'fiscal-kb',
@@ -48,27 +48,27 @@ describe('source registry', () => {
       },
     ]);
 
-    expect(listSourceOptions()).toEqual([
-      { id: 'fiscal-kb', label: 'Fiscal KB' },
-      { id: 'web-docs', label: 'Web Docs' },
+    await expect(listSourceOptions()).resolves.toEqual([
+      { id: 'fiscal-kb', label: 'Fiscal KB', kind: 'external' },
+      { id: 'web-docs', label: 'Web Docs', kind: 'external' },
     ]);
-    expect(JSON.stringify(listSourceOptions())).not.toContain('secret');
-    expect(JSON.stringify(listSourceOptions())).not.toContain('command');
-    expect(listSourceDescriptors()[0]).toMatchObject({ timeoutMs: 30_000 });
+    expect(JSON.stringify(await listSourceOptions())).not.toContain('secret');
+    expect(JSON.stringify(await listSourceOptions())).not.toContain('command');
+    expect((await listSourceDescriptors())[0]).toMatchObject({ timeoutMs: 30_000 });
   });
 
-  it('throws for malformed json and invalid descriptors', () => {
+  it('throws for malformed json and invalid descriptors', async () => {
     process.env[SOURCE_REGISTRY_ENV] = '{nope';
     __resetSourceRegistryForTests();
-    expect(() => listSourceDescriptors()).toThrow(SourceConfigError);
+    await expect(listSourceDescriptors()).rejects.toThrow(SourceConfigError);
 
     setRegistry([
       { id: 'bad', label: '', allowedTools: ['search'], transport: 'http', url: 'not-a-url' },
     ]);
-    expect(() => listSourceDescriptors()).toThrow(SourceConfigError);
+    await expect(listSourceDescriptors()).rejects.toThrow(SourceConfigError);
   });
 
-  it('throws for duplicate source ids', () => {
+  it('throws for duplicate source ids', async () => {
     setRegistry([
       {
         id: 'same',
@@ -86,6 +86,6 @@ describe('source registry', () => {
       },
     ]);
 
-    expect(() => listSourceDescriptors()).toThrow(/duplicate source id/);
+    await expect(listSourceDescriptors()).rejects.toThrow(/duplicate source id/);
   });
 });

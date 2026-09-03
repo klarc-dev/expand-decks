@@ -136,12 +136,13 @@ const gatherStep = createStep({
     sourceFailures: z.array(sourceFailureT),
     sourcePolicy: SourcePolicySchema,
   }),
-  execute: async ({ inputData, getInitData, abortSignal }) => {
+  execute: async ({ inputData, getInitData, abortSignal, requestContext }) => {
     const { dossier, evidence, sourceFailures } = await gather(
       inputData.brief,
       inputData.sourcePolicy,
       inputData.language,
       abortSignal,
+      requestContext?.get('userId'),
     );
     const init = getInitData() as DeckWorkflowInput;
     const groundedDossier = init.revisionContext
@@ -171,13 +172,14 @@ const structureStep = createStep({
     sourcePolicy: SourcePolicySchema,
     stubs: z.array(stubT),
   }),
-  execute: async ({ inputData, getInitData, abortSignal }) => {
+  execute: async ({ inputData, getInitData, abortSignal, requestContext }) => {
     const init = getInitData() as DeckWorkflowInput;
     const structured = await structureWithProvenance(
       inputData.dossier,
       inputData.sourcePolicy,
       abortSignal,
       init.revisionContext,
+      requestContext?.get('userId'),
     );
     return {
       dossier: inputData.dossier,

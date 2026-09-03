@@ -215,6 +215,7 @@ export async function structureWithProvenance(
   sourcePolicy: SourcePolicy = { mode: 'none', sourceIds: [] },
   abortSignal?: AbortSignal,
   revisionContext?: string,
+  userId?: string,
 ): Promise<StructureResult> {
   if (revisionContext) {
     const preserved = parseRevisionContext(revisionContext, dossier.rawBrief);
@@ -260,6 +261,7 @@ export async function structureWithProvenance(
         instructions: STRUCTURE_RESEARCH_INSTRUCTIONS,
         prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
         abortSignal,
+        userId,
       });
       sourceNotes = research.notes;
       evidence.push(...research.evidence);
