@@ -49,8 +49,8 @@ describe('source registry', () => {
     ]);
 
     await expect(listSourceOptions()).resolves.toEqual([
-      { id: 'fiscal-kb', label: 'Fiscal KB', transport: 'stdio' },
-      { id: 'web-docs', label: 'Web Docs', transport: 'http' },
+      { id: 'fiscal-kb', label: 'Fiscal KB', kind: 'external' },
+      { id: 'web-docs', label: 'Web Docs', kind: 'external' },
     ]);
     expect(JSON.stringify(await listSourceOptions())).not.toContain('secret');
     expect(JSON.stringify(await listSourceOptions())).not.toContain('command');

@@ -88,7 +88,14 @@ export type StdioSourceDescriptor = z.infer<typeof StdioSourceDescriptorSchema>;
 export type HttpSourceDescriptor = z.infer<typeof HttpSourceDescriptorSchema>;
 export type KnowledgeSourceDescriptor = z.infer<typeof KnowledgeSourceDescriptorSchema>;
 export type SourceDescriptor = z.infer<typeof SourceDescriptorSchema>;
-export type SourceOption = Pick<SourceDescriptor, 'id' | 'label' | 'transport'>;
+export type SourceKind = 'knowledge' | 'external';
+export type KnowledgeSourceReadiness = 'ready' | 'empty' | 'failed' | 'unavailable';
+export type SourceOption = {
+  id: SourceId;
+  label: string;
+  kind: SourceKind;
+  readiness?: KnowledgeSourceReadiness;
+};
 export type ResolvedSource = SourceDescriptor;
 export type SourceResolutionContext = {
   payload: Pick<Payload, 'find'>;

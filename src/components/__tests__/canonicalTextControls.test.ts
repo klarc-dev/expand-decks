@@ -315,6 +315,15 @@ describe('canonical custom admin controls', () => {
     );
   });
 
+  it('keeps AgentDraftButton source kinds and readiness in one accessible grouped owner', () => {
+    const path = 'src/components/AgentDraftButton.tsx';
+    expect(sourceContains(path, 'function SourceOptionGroups')).toBe(true);
+    expect(sourceContains(path, 'Bases de connaissances')).toBe(false);
+    expect(sourceContains(path, 'data-kind={group.kind}')).toBe(true);
+    expect(sourceContains(path, 'role="status"')).toBe(true);
+    expect(sourceContains(path, 'data-unready={isSourceUnready(source) || undefined}')).toBe(true);
+  });
+
   it('keeps shared panel and notice chrome in AdminSurface', () => {
     expect(sourceContains('src/components/AgentDraftButton.tsx', 'panelStyle')).toBe(false);
     expect(sourceContains('src/components/AgentDraftButton.tsx', 'errorBoxStyle')).toBe(false);

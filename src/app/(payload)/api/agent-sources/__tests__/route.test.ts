@@ -28,8 +28,21 @@ function setRegistry(value: unknown) {
   __resetSourceRegistryForTests();
 }
 
-function knowledgeBase(id: number, name: string) {
-  return { id, name, documentCount: 0, chunkCount: 0, lastIndexedAt: null };
+function knowledgeBase(
+  id: number,
+  name: string,
+  state: {
+    chunkCount?: number;
+    documentCount?: number;
+  } = {},
+) {
+  return {
+    id,
+    name,
+    documentCount: state.documentCount ?? 0,
+    chunkCount: state.chunkCount ?? 0,
+    lastIndexedAt: null,
+  };
 }
 
 describe('GET /api/agent-sources', () => {
@@ -58,7 +71,14 @@ describe('GET /api/agent-sources', () => {
 
   it('returns accessible knowledge bases beside MCP options without secrets', async () => {
     auth.mockResolvedValue({ user });
-    find.mockResolvedValue({ docs: [knowledgeBase(42, 'Contrats')] });
+    find.mockResolvedValue({
+      docs: [
+        knowledgeBase(42, 'Contrats', {
+          chunkCount: 12,
+          documentCount: 2,
+        }),
+      ],
+    });
     setRegistry([
       {
         id: 'private-mcp',
@@ -77,8 +97,8 @@ describe('GET /api/agent-sources', () => {
     expect(res.status).toBe(200);
     expect(body).toEqual({
       sources: [
-        { id: 'private-mcp', label: 'Private MCP', transport: 'stdio' },
-        { id: 'knowledge_42', label: 'Contrats', transport: 'knowledge' },
+        { id: 'private-mcp', label: 'Private MCP', kind: 'external' },
+        { id: 'knowledge_42', label: 'Contrats', kind: 'knowledge', readiness: 'ready' },
       ],
       maxSelected: 8,
     });
@@ -104,10 +124,42 @@ describe('GET /api/agent-sources', () => {
 
     expect(res.status).toBe(200);
     expect(body.sources).toEqual([
-      { id: 'knowledge_9', label: 'Procédures', transport: 'knowledge' },
+      { id: 'knowledge_9', label: 'Procédures', kind: 'knowledge', readiness: 'empty' },
     ]);
     expect(body.maxSelected).toBe(8);
     expect(body.error).toContain('AGENT_SOURCE_REGISTRY_JSON must be a JSON array');
+  });
+
+  it('derives empty, failed, and unavailable readiness only from document/index state', async () => {
+    auth.mockResolvedValue({ user });
+    setRegistry([]);
+    find
+      .mockResolvedValueOnce({
+        docs: [
+          knowledgeBase(1, 'Vide'),
+          knowledgeBase(2, 'Échecs', { documentCount: 2 }),
+          knowledgeBase(3, 'En cours', { documentCount: 2 }),
+        ],
+      })
+      .mockResolvedValueOnce({
+        docs: [
+          { knowledgeBase: 2, indexingStatus: 'failed' },
+          { knowledgeBase: 2, indexingStatus: 'failed' },
+          { knowledgeBase: 3, indexingStatus: 'pending' },
+          { knowledgeBase: 3, indexingStatus: 'indexing' },
+        ],
+      });
+
+    const body = await (await GET(request())).json();
+
+    expect(body.sources).toEqual([
+      { id: 'knowledge_1', label: 'Vide', kind: 'knowledge', readiness: 'empty' },
+      { id: 'knowledge_2', label: 'Échecs', kind: 'knowledge', readiness: 'failed' },
+      { id: 'knowledge_3', label: 'En cours', kind: 'knowledge', readiness: 'unavailable' },
+    ]);
+    expect(JSON.stringify(body)).not.toContain('documents');
+    expect(JSON.stringify(body)).not.toContain('indexingStatus');
+    expect(JSON.stringify(body)).not.toContain('indexName');
   });
 
   it('does not memoize knowledge bases', async () => {
@@ -119,8 +171,8 @@ describe('GET /api/agent-sources', () => {
 
     expect((await (await GET(request())).json()).sources).toHaveLength(1);
     expect((await (await GET(request())).json()).sources).toEqual([
-      { id: 'knowledge_1', label: 'Initiale', transport: 'knowledge' },
-      { id: 'knowledge_2', label: 'Nouvelle', transport: 'knowledge' },
+      { id: 'knowledge_1', label: 'Initiale', kind: 'knowledge', readiness: 'empty' },
+      { id: 'knowledge_2', label: 'Nouvelle', kind: 'knowledge', readiness: 'empty' },
     ]);
     expect(find).toHaveBeenCalledTimes(2);
   });

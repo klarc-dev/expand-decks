@@ -20,13 +20,19 @@ import {
 import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
 import { canStartWithSourcePolicy, sourceIdsForPolicy } from '@/lib/adminSourcePolicy';
+import {
+  getSourceReadinessLabel,
+  groupSourceOptions,
+  isSourceUnready,
+  type BrowserSourceOption,
+} from '@/lib/adminSourceOptions';
 import type { SourcePolicyMode } from '@/lib/sources/types';
 
 import './AgentDraftButton.scss';
 
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
 type DraftMode = 'replace' | 'augment' | 'revise';
-type SourceOption = { id: string; label: string };
+type SourceOption = BrowserSourceOption;
 
 const DRAFT_MODE_OPTIONS: ReadonlyArray<{ label: string; value: DraftMode }> = [
   { value: 'revise', label: 'Réviser les diapositives existantes' },
@@ -138,6 +144,35 @@ function SourcePolicySelector({
   );
 }
 
+function SourceChoiceLabel({ source }: { source: SourceOption }) {
+  const readiness = getSourceReadinessLabel(source);
+  return (
+    <span className="agent-draft__source-label">
+      <span>{source.label}</span>
+      {readiness && (
+        <span className="agent-draft__source-readiness" role="status">
+          {readiness}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function SourceOptionGroups({
+  sources,
+  renderSource,
+}: {
+  sources: SourceOption[];
+  renderSource: (source: SourceOption) => React.ReactNode;
+}) {
+  return groupSourceOptions(sources).map((group) => (
+    <div className="agent-draft__source-group" data-kind={group.kind} key={group.kind}>
+      <div className="agent-draft__source-group-label">{group.label}</div>
+      {group.sources.map(renderSource)}
+    </div>
+  ));
+}
+
 function ExclusiveSourceSelector({
   readOnly,
   selected,
@@ -151,23 +186,27 @@ function ExclusiveSourceSelector({
 }) {
   return (
     <DraftFieldGroup label="Source exclusive">
-      {sources.map((source) => (
-        <label
-          className="agent-draft__choice"
-          htmlFor={`agent-source-${source.id}`}
-          key={source.id}
-        >
-          <input
-            checked={selected.includes(source.id)}
-            disabled={readOnly}
-            id={`agent-source-${source.id}`}
-            name="agent-exclusive-source"
-            onChange={() => onChange(source.id)}
-            type="radio"
-          />
-          {source.label}
-        </label>
-      ))}
+      <SourceOptionGroups
+        sources={sources}
+        renderSource={(source) => (
+          <label
+            className="agent-draft__choice"
+            data-unready={isSourceUnready(source) || undefined}
+            htmlFor={`agent-source-${source.id}`}
+            key={source.id}
+          >
+            <input
+              checked={selected.includes(source.id)}
+              disabled={readOnly}
+              id={`agent-source-${source.id}`}
+              name="agent-exclusive-source"
+              onChange={() => onChange(source.id)}
+              type="radio"
+            />
+            <SourceChoiceLabel source={source} />
+          </label>
+        )}
+      />
     </DraftFieldGroup>
   );
 }
@@ -187,23 +226,36 @@ function MultipleSourceSelector({
 }) {
   if (sources.length === 0) return null;
   return (
-    <DraftFieldGroup label={`Sources externes${maxSources > 0 ? ` (max ${maxSources})` : ''}`}>
-      {sources.map((source) => {
-        const checked = selected.includes(source.id);
-        const atCap = maxSources > 0 && selected.length >= maxSources;
-        return (
-          <CheckboxInput
-            checked={checked}
-            className="agent-draft__checkbox"
-            id={`agent-source-${source.id}`}
-            key={source.id}
-            label={source.label}
-            name={`agent-source-${source.id}`}
-            onToggle={() => onToggle(source.id)}
-            readOnly={readOnly || (!checked && atCap)}
-          />
-        );
-      })}
+    <DraftFieldGroup label={`Sources${maxSources > 0 ? ` (max ${maxSources})` : ''}`}>
+      <SourceOptionGroups
+        sources={sources}
+        renderSource={(source) => {
+          const checked = selected.includes(source.id);
+          const atCap = maxSources > 0 && selected.length >= maxSources;
+          return (
+            <div
+              className="agent-draft__source-option"
+              data-unready={isSourceUnready(source) || undefined}
+              key={source.id}
+            >
+              <CheckboxInput
+                checked={checked}
+                className="agent-draft__checkbox"
+                id={`agent-source-${source.id}`}
+                label={source.label}
+                name={`agent-source-${source.id}`}
+                onToggle={() => onToggle(source.id)}
+                readOnly={readOnly || (!checked && atCap)}
+              />
+              {getSourceReadinessLabel(source) && (
+                <span className="agent-draft__source-readiness" role="status">
+                  {getSourceReadinessLabel(source)}
+                </span>
+              )}
+            </div>
+          );
+        }}
+      />
     </DraftFieldGroup>
   );
 }

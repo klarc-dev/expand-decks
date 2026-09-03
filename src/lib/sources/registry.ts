@@ -4,6 +4,7 @@ import {
   SourceConfigError,
   SourceRegistrySchema,
   type KnowledgeSourceDescriptor,
+  type KnowledgeSourceReadiness,
   type SourceDescriptor,
   type SourceOption,
   type SourceResolutionContext,
@@ -70,9 +71,44 @@ function knowledgeIndexName(knowledgeBaseId: string | number): string {
   return knowledgeSourceId(knowledgeBaseId).replace(/[^a-zA-Z0-9_]/g, '_');
 }
 
-async function listKnowledgeSourceDescriptors(
+type KnowledgeBaseSourceRecord = {
+  id: string | number;
+  name: string;
+  documentCount?: number | null;
+  chunkCount?: number | null;
+};
+
+type KnowledgeDocumentState = {
+  knowledgeBase?: string | number | { id: string | number } | null;
+  indexingStatus?: string | null;
+};
+
+function relatedKnowledgeBaseId(document: KnowledgeDocumentState): string | number | undefined {
+  if (document.knowledgeBase && typeof document.knowledgeBase === 'object') {
+    return document.knowledgeBase.id;
+  }
+  return document.knowledgeBase ?? undefined;
+}
+
+function knowledgeReadiness(
+  base: KnowledgeBaseSourceRecord,
+  documents: KnowledgeDocumentState[],
+): KnowledgeSourceReadiness {
+  const documentCount = base.documentCount ?? documents.length;
+  if (documentCount === 0) return 'empty';
+  if ((base.chunkCount ?? 0) > 0) return 'ready';
+  if (
+    documents.length === documentCount &&
+    documents.every((document) => document.indexingStatus === 'failed')
+  ) {
+    return 'failed';
+  }
+  return 'unavailable';
+}
+
+async function listAccessibleKnowledgeBases(
   context?: SourceResolutionContext,
-): Promise<KnowledgeSourceDescriptor[]> {
+): Promise<KnowledgeBaseSourceRecord[]> {
   if (!context?.user) return [];
   const result = await context.payload.find({
     collection: COLLECTIONS.knowledgeBases,
@@ -83,18 +119,56 @@ async function listKnowledgeSourceDescriptors(
     user: context.user,
     overrideAccess: false,
   });
-  return result.docs.map((doc) => ({
-    id: knowledgeSourceId(doc.id),
-    label: doc.name,
+  return result.docs as unknown as KnowledgeBaseSourceRecord[];
+}
+
+async function listKnowledgeSourceState(context: SourceResolutionContext): Promise<{
+  bases: KnowledgeBaseSourceRecord[];
+  documentsByBase: Map<string, KnowledgeDocumentState[]>;
+}> {
+  const bases = await listAccessibleKnowledgeBases(context);
+  const documentsByBase = new Map<string, KnowledgeDocumentState[]>();
+  const unresolvedBases = bases.filter(
+    (base) => (base.documentCount ?? 0) > 0 && (base.chunkCount ?? 0) === 0,
+  );
+  if (unresolvedBases.length === 0) return { bases, documentsByBase };
+  const result = await context.payload.find({
+    collection: COLLECTIONS.knowledgeDocuments,
+    depth: 0,
+    limit: 10_000,
+    pagination: false,
+    user: context.user,
+    overrideAccess: false,
+    where: { knowledgeBase: { in: unresolvedBases.map((base) => base.id) } },
+  });
+  for (const document of result.docs as unknown as KnowledgeDocumentState[]) {
+    const baseId = relatedKnowledgeBaseId(document);
+    if (baseId === undefined) continue;
+    const key = String(baseId);
+    documentsByBase.set(key, [...(documentsByBase.get(key) ?? []), document]);
+  }
+  return { bases, documentsByBase };
+}
+
+function knowledgeDescriptor(base: KnowledgeBaseSourceRecord): KnowledgeSourceDescriptor {
+  return {
+    id: knowledgeSourceId(base.id),
+    label: base.name,
     transport: 'knowledge' as const,
-    knowledgeBaseId: doc.id,
-    indexName: knowledgeIndexName(doc.id),
+    knowledgeBaseId: base.id,
+    indexName: knowledgeIndexName(base.id),
     allowedTools: ['search'],
     timeoutMs: DEFAULT_SOURCE_TIMEOUT_MS,
     failureMode: 'strict' as const,
     toolCallConcurrency: 2,
     maxResultBytes: 100_000,
-  }));
+  };
+}
+
+async function listKnowledgeSourceDescriptors(
+  context?: SourceResolutionContext,
+): Promise<KnowledgeSourceDescriptor[]> {
+  return (await listAccessibleKnowledgeBases(context)).map(knowledgeDescriptor);
 }
 
 export async function listSourceDescriptors(
@@ -113,25 +187,30 @@ export async function listSourceDescriptors(
 export async function listSourceOptions(
   context?: SourceResolutionContext,
 ): Promise<SourceOption[]> {
-  const descriptors = await listSourceDescriptors(context);
-  return descriptors.map(({ id, label, transport }) => ({ id, label, transport }));
+  const [external, knowledge] = await Promise.all([
+    listMcpSourceOptions(),
+    context ? listKnowledgeSourceOptions(context) : Promise.resolve([]),
+  ]);
+  return [...external, ...knowledge];
 }
 
 export async function listKnowledgeSourceOptions(
   context: SourceResolutionContext,
 ): Promise<SourceOption[]> {
-  return (await listKnowledgeSourceDescriptors(context)).map(({ id, label, transport }) => ({
-    id,
-    label,
-    transport,
+  const { bases, documentsByBase } = await listKnowledgeSourceState(context);
+  return bases.map((base) => ({
+    id: knowledgeSourceId(base.id),
+    label: base.name,
+    kind: 'knowledge' as const,
+    readiness: knowledgeReadiness(base, documentsByBase.get(String(base.id)) ?? []),
   }));
 }
 
 export async function listMcpSourceOptions(): Promise<SourceOption[]> {
-  return (await listMcpSourceDescriptors()).map(({ id, label, transport }) => ({
+  return (await listMcpSourceDescriptors()).map(({ id, label }) => ({
     id,
     label,
-    transport,
+    kind: 'external' as const,
   }));
 }
 
