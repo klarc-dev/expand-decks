@@ -193,7 +193,6 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_FONTS_API_KEY: ${{ secrets.GOOGLE_FONTS_API_KEY }}
           NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
-          SOURCE_COMMIT: ${{ github.sha }}
         run: bash scripts/sync-coolify-env.sh
 
       - name: Deploy verified revision to Coolify

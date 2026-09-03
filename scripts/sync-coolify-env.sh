@@ -35,14 +35,35 @@ while IFS= read -r key; do
   [[ -n "$key" ]] && optional_keys+=("$key")
 done < <(grep -oE '\$\{[A-Z0-9_]+:-' "$compose_file" | sed 's/^\${//; s/:-$//' | sort -u)
 
-keys=()
+# SOURCE_COMMIT is supplied by Coolify for each deployment. Managing it as an
+# application env creates a stale override that masks the current revision.
+managed_keys=()
 while IFS= read -r key; do
-  [[ -n "$key" ]] && keys+=("$key")
-done < <(grep -oE '\$\{[A-Z0-9_]+' "$compose_file" | cut -c3- | sort -u)
+  [[ -n "$key" ]] && managed_keys+=("$key")
+done < <(grep -oE '\$\{[A-Z0-9_]+' "$compose_file" | cut -c3- | sort -u | grep -v '^SOURCE_COMMIT$')
+
+keys=("${managed_keys[@]}")
 
 if [[ ${#keys[@]} -eq 0 ]]; then
-  echo "::error::No \${VAR} references found in $compose_file — refusing to sync an empty set."
+  echo "::error::No managed \${VAR} references found in $compose_file — refusing to sync an empty set."
   exit 1
+fi
+
+# Remove a legacy application-level SOURCE_COMMIT override. Coolify injects
+# this predefined variable per deployment; keeping a managed copy makes every
+# later container report an old revision even when the image is current.
+legacy_source_commit_uuid=$(curl --fail-with-body --silent --show-error \
+  --header "Authorization: Bearer $COOLIFY_TOKEN" \
+  "$COOLIFY_URL/api/v1/applications/$COOLIFY_APPLICATION_UUID/envs" | \
+  jq -r '.[] | select(.key == "SOURCE_COMMIT" and (.is_preview | not)) | .uuid' | \
+  head -n 1)
+if [[ -n "$legacy_source_commit_uuid" ]]; then
+  curl --fail-with-body --silent --show-error \
+    --request DELETE \
+    --header "Authorization: Bearer $COOLIFY_TOKEN" \
+    "$COOLIFY_URL/api/v1/applications/$COOLIFY_APPLICATION_UUID/envs/$legacy_source_commit_uuid" \
+    >/dev/null
+  echo "Removed stale managed SOURCE_COMMIT; Coolify will inject the deployed revision."
 fi
 
 is_optional() {
