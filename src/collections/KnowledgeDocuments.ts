@@ -5,6 +5,7 @@ import { isAdminOrAuthor, userIsAdmin } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 import { KNOWLEDGE_DIR } from '../lib/paths';
 import { INDEXING_STATUS } from '../lib/status';
+import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
 
 /**
  * Document formats we can extract text from. DOCX is the OOXML word type only —
@@ -121,7 +122,10 @@ export const KnowledgeDocuments: CollectionConfig = {
     staticDir: KNOWLEDGE_DIR,
     mimeTypes: [...KNOWLEDGE_MIME_TYPES],
   },
-  hooks: { beforeValidate: [enforceKnowledgeMimeType] },
+  hooks: {
+    beforeValidate: [enforceKnowledgeMimeType],
+    afterChange: [afterKnowledgeDocumentChange],
+  },
   fields: [
     {
       name: 'knowledgeBase',
