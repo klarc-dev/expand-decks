@@ -12,6 +12,7 @@ function args(overrides: Record<string, unknown> = {}) {
       doc: { id: 12, filename: 'new.txt', mimeType: 'text/plain' },
       previousDoc: { id: 12, filename: 'old.txt', mimeType: 'text/plain' },
       operation: 'update',
+      data: { filename: 'new.txt' },
       req: {
         context: {},
         payload: {
@@ -41,10 +42,25 @@ describe('afterKnowledgeDocumentChange', () => {
     );
   });
 
+  it('queues when upload data signals a replacement with unchanged persisted metadata', async () => {
+    const state = args({
+      doc: { id: 12, filename: 'same.txt', mimeType: 'text/plain' },
+      previousDoc: { id: 12, filename: 'same.txt', mimeType: 'text/plain' },
+      data: { filename: 'same.txt' },
+    });
+
+    await afterKnowledgeDocumentChange(state.value as never);
+
+    expect(state.queue).toHaveBeenCalledWith(
+      expect.objectContaining({ task: 'knowledgeIngest', input: { documentId: 12 } }),
+    );
+  });
+
   it('purges the previous base when a document moves and queues its new index', async () => {
     const state = args({
       doc: { id: 12, filename: 'same.txt', mimeType: 'text/plain', knowledgeBase: 9 },
       previousDoc: { id: 12, filename: 'same.txt', mimeType: 'text/plain', knowledgeBase: 7 },
+      data: { knowledgeBase: 9 },
     });
     const deleteVectors = vi.fn().mockResolvedValue(undefined);
     const deleteIndex = vi.fn().mockResolvedValue(undefined);
@@ -64,6 +80,7 @@ describe('afterKnowledgeDocumentChange', () => {
     const titleOnly = args({
       doc: { id: 12, filename: 'same.txt', mimeType: 'text/plain', title: 'new' },
       previousDoc: { id: 12, filename: 'same.txt', mimeType: 'text/plain', title: 'old' },
+      data: { title: 'new' },
     });
     await afterKnowledgeDocumentChange(titleOnly.value as never);
     expect(titleOnly.queue).not.toHaveBeenCalled();

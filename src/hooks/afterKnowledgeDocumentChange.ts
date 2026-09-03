@@ -6,9 +6,15 @@ import { purgeDocumentFromPreviousBase } from './knowledgeLifecycle';
 import { CTX } from '../lib/context';
 import { INDEXING_STATUS } from '../lib/status';
 
-function fileChanged(doc: Record<string, unknown>, previousDoc?: Record<string, unknown>): boolean {
+function fileChanged(
+  doc: Record<string, unknown>,
+  previousDoc: Record<string, unknown> | undefined,
+  data: Record<string, unknown>,
+): boolean {
+  const uploadFieldChanged = Object.hasOwn(data, 'filename');
   return (
     !previousDoc ||
+    uploadFieldChanged ||
     doc.filename !== previousDoc.filename ||
     doc.mimeType !== previousDoc.mimeType ||
     relationId(doc.knowledgeBase as never) !== relationId(previousDoc.knowledgeBase as never)
@@ -18,12 +24,14 @@ function fileChanged(doc: Record<string, unknown>, previousDoc?: Record<string, 
 export const afterKnowledgeDocumentChange: CollectionAfterChangeHook = async ({
   doc,
   previousDoc,
+  data,
   req,
   operation,
 }) => {
   if (req.context?.[CTX.skipIngestQueue]) return doc;
   if (operation !== 'create' && operation !== 'update') return doc;
-  if (operation === 'update' && !fileChanged(doc, previousDoc)) return doc;
+  if (operation === 'update' && !fileChanged(doc, previousDoc, data as Record<string, unknown>))
+    return doc;
 
   if (operation === 'update' && previousDoc) {
     const oldBaseId = relationId(previousDoc.knowledgeBase as never);

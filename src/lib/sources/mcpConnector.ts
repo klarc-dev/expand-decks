@@ -94,6 +94,57 @@ function knowledgeEvidenceItem(hit: KnowledgeQueryResult) {
   };
 }
 
+type KnowledgeEvidenceItem = NonNullable<ReturnType<typeof knowledgeEvidenceItem>>;
+
+function utf8Prefix(value: string, maxBytes: number): string {
+  const bytes = Buffer.from(value, 'utf8');
+  if (bytes.length <= maxBytes) return value;
+  let end = Math.max(0, maxBytes);
+  while (end > 0 && (bytes[end] & 0xc0) === 0x80) end--;
+  return bytes.subarray(0, end).toString('utf8');
+}
+
+function truncateKnowledgeItem(
+  item: KnowledgeEvidenceItem,
+  maxBytes: number,
+): KnowledgeEvidenceItem | undefined {
+  let low = 0;
+  let high = Buffer.byteLength(item.text, 'utf8');
+  let best: KnowledgeEvidenceItem | undefined;
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2);
+    const candidate = { ...item, text: utf8Prefix(item.text, middle) };
+    if (Buffer.byteLength(JSON.stringify(candidate), 'utf8') <= maxBytes) {
+      if (candidate.text) best = candidate;
+      low = middle + 1;
+    } else {
+      high = middle - 1;
+    }
+  }
+  return best;
+}
+
+function boundKnowledgeEvidenceItems(
+  items: readonly KnowledgeEvidenceItem[],
+  maxBytes: number,
+): KnowledgeEvidenceItem[] {
+  const bounded: KnowledgeEvidenceItem[] = [];
+  let remaining = maxBytes;
+  for (const item of items) {
+    const serializedBytes = Buffer.byteLength(JSON.stringify(item), 'utf8');
+    if (serializedBytes <= remaining) {
+      bounded.push(item);
+      remaining -= serializedBytes;
+      continue;
+    }
+
+    const truncated = truncateKnowledgeItem(item, remaining);
+    if (truncated) bounded.push(truncated);
+    break;
+  }
+  return bounded;
+}
+
 function knowledgeTool(
   source: Extract<ResolvedSource, { transport: 'knowledge' }>,
   deps: SourceConnectorDependencies,
@@ -118,9 +169,10 @@ function knowledgeTool(
         // Defense in depth: neither index nor metadata filter comes from model input.
         filter: { knowledgeBaseId: String(source.knowledgeBaseId) },
       });
-      return rerankKnowledgeHits(query, hits, topK)
+      const items = rerankKnowledgeHits(query, hits, topK)
         .map(knowledgeEvidenceItem)
-        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+        .filter((item): item is KnowledgeEvidenceItem => Boolean(item));
+      return boundKnowledgeEvidenceItems(items, source.maxResultBytes);
     },
   });
 }
