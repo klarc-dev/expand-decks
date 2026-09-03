@@ -66,29 +66,112 @@ describe('openSourceToolsets', () => {
     expect(ctor).not.toHaveBeenCalled();
   });
 
-  it('rejects knowledge descriptors explicitly instead of falling through to MCP HTTP', async () => {
-    const opened = await openSourceToolsets([
-      source({
-        id: 'knowledge_42',
-        label: 'Contrats',
-        transport: 'knowledge',
-        knowledgeBaseId: 42,
-        indexName: 'knowledge_42',
-      } as Partial<ResolvedSource>),
-    ]).catch((error) => error);
+  it('searches a knowledge base with a server-enforced index/filter and captures verbatim provenance', async () => {
+    const query = vi.fn().mockResolvedValue([
+      {
+        id: 'chunk-1',
+        score: 0.82,
+        metadata: {
+          knowledgeBaseId: '42',
+          documentId: '9',
+          title: 'Contrat cadre',
+          chunkIndex: 3,
+          text: '  Clause résolutoire verbatim.  ',
+        },
+      },
+    ]);
+    const opened = await openSourceToolsets(
+      [
+        source({
+          id: 'knowledge_42',
+          label: 'Contrats',
+          transport: 'knowledge',
+          knowledgeBaseId: 42,
+          indexName: 'knowledge_42',
+        } as Partial<ResolvedSource>),
+      ],
+      { vectorStore: { query }, embedQuery: vi.fn().mockResolvedValue(Array(384).fill(0.1)) },
+    );
 
-    expect(opened).toBeInstanceOf(SourceConnectorError);
-    expect(opened).toMatchObject({
+    const result = await opened.toolsets.knowledge_42!.search!.execute?.(
+      {
+        query: 'clause résolutoire',
+        topK: 10,
+        indexName: 'evil',
+        filter: { knowledgeBaseId: '7' },
+      },
+      { toolCallId: 'kb-call' } as never,
+    );
+
+    expect(query).toHaveBeenCalledWith({
+      indexName: 'knowledge_42',
+      queryVector: Array(384).fill(0.1),
+      topK: 30,
+      minScore: 0.35,
+      filter: { knowledgeBaseId: '42' },
+    });
+    expect(result).toMatchObject({
+      sourceId: 'knowledge_42',
+      data: [expect.objectContaining({ text: '  Clause résolutoire verbatim.  ' })],
+    });
+    expect(opened.recorder.snapshot()).toEqual([
+      expect.objectContaining({
+        sourceId: 'knowledge_42',
+        excerpt: '  Clause résolutoire verbatim.  ',
+        documentId: '9',
+        documentTitle: 'Contrat cadre',
+        chunkIndex: 3,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    ]);
+    expect(ctor).not.toHaveBeenCalled();
+  });
+
+  it('captures no evidence when a knowledge search returns no excerpts', async () => {
+    const opened = await openSourceToolsets(
+      [
+        source({
+          id: 'knowledge_42',
+          transport: 'knowledge',
+          knowledgeBaseId: 42,
+          indexName: 'knowledge_42',
+        } as Partial<ResolvedSource>),
+      ],
+      {
+        vectorStore: { query: vi.fn().mockResolvedValue([]) },
+        embedQuery: vi.fn().mockResolvedValue(Array(384).fill(0.1)),
+      },
+    );
+    const result = await opened.toolsets.knowledge_42!.search!.execute?.(
+      { query: 'absent' },
+      {} as never,
+    );
+    expect(result).toMatchObject({ data: [], evidenceIds: [] });
+    expect(opened.recorder.snapshot()).toEqual([]);
+  });
+
+  it('wraps knowledge vector failures as unavailable source failures', async () => {
+    const opened = await openSourceToolsets(
+      [
+        source({
+          id: 'knowledge_42',
+          transport: 'knowledge',
+          knowledgeBaseId: 42,
+          indexName: 'knowledge_42',
+        } as Partial<ResolvedSource>),
+      ],
+      {
+        vectorStore: { query: vi.fn().mockRejectedValue(new Error('pgvector offline')) },
+        embedQuery: vi.fn().mockResolvedValue(Array(384).fill(0.1)),
+      },
+    );
+    await expect(
+      opened.toolsets.knowledge_42!.search!.execute?.({ query: 'x' }, {} as never),
+    ).rejects.toMatchObject({
       failures: [
-        expect.objectContaining({
-          sourceId: 'knowledge_42',
-          stage: 'connect',
-          code: 'unavailable',
-          message: expect.stringContaining('ticket #17'),
-        }),
+        expect.objectContaining({ sourceId: 'knowledge_42', stage: 'tool', code: 'unavailable' }),
       ],
     });
-    expect(ctor).not.toHaveBeenCalled();
   });
 
   it('constructs one isolated client per source with per-source security policy', async () => {

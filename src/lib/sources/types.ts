@@ -106,6 +106,9 @@ export const EvidenceSchema = z.object({
   retrievedAt: z.string().datetime(),
   contentSha256: z.string().regex(/^[a-f0-9]{64}$/),
   url: z.string().url().optional(),
+  documentId: z.string().min(1).max(256).optional(),
+  documentTitle: z.string().min(1).max(500).optional(),
+  chunkIndex: z.number().int().min(0).optional(),
 });
 export type Evidence = z.infer<typeof EvidenceSchema>;
 

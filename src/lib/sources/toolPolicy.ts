@@ -99,7 +99,7 @@ function excerptFrom(value: unknown): string {
   if (value && typeof value === 'object') {
     const record = value as Record<string, unknown>;
     for (const key of ['text', 'content', 'excerpt', 'summary', 'title']) {
-      if (typeof record[key] === 'string' && record[key].trim()) return record[key].trim();
+      if (typeof record[key] === 'string' && record[key].trim()) return record[key];
     }
   }
   return JSON.stringify(value);

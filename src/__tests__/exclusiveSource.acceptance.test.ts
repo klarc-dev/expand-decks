@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   forceStructureResearch: false,
   structureCalls: 0,
   sourceFailures: [] as Record<string, unknown>[],
+  knowledgeHits: [] as Record<string, unknown>[],
+  knowledgeQuery: vi.fn(),
   modelCalls: [] as string[],
   persistSlides: vi.fn(),
   workflowRuns: new Map<string, any>(),
@@ -18,7 +20,12 @@ const state = vi.hoisted(() => ({
 const payload = vi.hoisted(() => ({
   auth: vi.fn(async () => ({ user: { id: 2, role: 'admin' } })),
   find: vi.fn(async ({ collection }: { collection?: string }) => ({
-    docs: collection === 'agent-runs' && state.ledger ? [state.ledger] : [],
+    docs:
+      collection === 'agent-runs' && state.ledger
+        ? [state.ledger]
+        : collection === 'knowledge-bases'
+          ? [{ id: 42, name: 'Contrats' }]
+          : [],
   })),
   findByID: vi.fn(async ({ collection }: { collection: string }) =>
     collection === 'agent-runs' ? state.ledger : state.presentation,
@@ -64,32 +71,60 @@ vi.mock('../agents/tools/persist', () => ({
   persistSlides: state.persistSlides,
 }));
 vi.mock('../agents/fonts', () => ({ chooseFontPairForBrief: vi.fn() }));
-vi.mock('../lib/sources/mcpConnector', async () => {
+vi.mock('../lib/sources/mcpConnector', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/sources/mcpConnector')>();
   const { SourceConnectorError } = await import('../lib/sources/types');
   return {
-    openSourceToolsets: vi.fn(async (sources: Array<{ id: string; failureMode: string }>) => {
-      state.openedSourceIds.push(...sources.map((source) => source.id));
-      if (
-        state.sourceFailures.length > 0 &&
-        sources.some((source) => source.failureMode === 'strict')
-      ) {
-        throw new SourceConnectorError('Strict source unavailable', state.sourceFailures as never);
-      }
-      const capturedEvidence = state.evidenceByOpen.shift() ?? state.evidence;
-      return {
-        toolsets: Object.fromEntries(sources.map((source) => [source.id, { search: {} }])),
-        failures: state.sourceFailures,
-        recorder: { snapshot: () => capturedEvidence },
-        disconnect: vi.fn(),
-      };
-    }),
+    ...actual,
+    openSourceToolsets: vi.fn(
+      async (sources: Array<{ id: string; failureMode: string; transport: string }>) => {
+        state.openedSourceIds.push(...sources.map((source) => source.id));
+        if (sources.every((source) => source.transport === 'knowledge')) {
+          return actual.openSourceToolsets(sources as never, {
+            vectorStore: { query: state.knowledgeQuery },
+            embedQuery: vi.fn().mockResolvedValue(Array(384).fill(0.1)),
+          });
+        }
+        if (
+          state.sourceFailures.length > 0 &&
+          sources.some((source) => source.failureMode === 'strict')
+        ) {
+          throw new SourceConnectorError(
+            'Strict source unavailable',
+            state.sourceFailures as never,
+          );
+        }
+        const capturedEvidence = state.evidenceByOpen.shift() ?? state.evidence;
+        return {
+          toolsets: Object.fromEntries(sources.map((source) => [source.id, { search: {} }])),
+          failures: state.sourceFailures,
+          recorder: { snapshot: () => capturedEvidence },
+          disconnect: vi.fn(),
+        };
+      },
+    ),
   };
 });
 vi.mock('../agents/model', () => ({
-  researchWithSources: vi.fn(async ({ name }: { name: string }) => {
-    state.modelCalls.push(name);
-    return 'Grounded research notes';
-  }),
+  researchWithSources: vi.fn(
+    async ({
+      name,
+      toolsets,
+    }: {
+      name: string;
+      toolsets?: Record<string, Record<string, { execute?: Function }>>;
+    }) => {
+      state.modelCalls.push(name);
+      const knowledgeSearch = toolsets?.knowledge_42?.search;
+      if (knowledgeSearch?.execute) {
+        await knowledgeSearch.execute(
+          { query: 'clause résolutoire', topK: 5 },
+          { toolCallId: `${name}-kb` },
+        );
+      }
+      return 'Grounded research notes';
+    },
+  ),
   generateStructured: vi.fn(async ({ name }: { name: string }) => {
     state.modelCalls.push(name);
     if (name === 'gather') {
@@ -99,7 +134,9 @@ vi.mock('../agents/model', () => ({
         soWhat: 'The decision affects risk',
         keyPoints: ['Grounded decision'],
         data: ['Fact'],
-        sources: ['docs'],
+        sources: state.openedSourceIds.filter((id) => id.startsWith('knowledge_')).length
+          ? ['knowledge_42']
+          : ['docs'],
       };
     }
     if (name === 'structure') {
@@ -203,7 +240,23 @@ const structureEvidence = {
   contentSha256: '1'.repeat(64),
 };
 
-async function queueExclusiveRun(approvalRequired = false) {
+const knowledgeEvidence = {
+  ...evidence,
+  id: 'ev_222222222222222222222222',
+  sourceId: 'knowledge_42',
+  sourceLabel: 'Contrats',
+  excerpt: 'Clause résolutoire verbatim.',
+  claim: 'Clause résolutoire verbatim.',
+  documentId: '9',
+  documentTitle: 'Contrat cadre',
+  chunkIndex: 3,
+  contentSha256: '2'.repeat(64),
+};
+
+async function queueRun(
+  sourcePolicy: { mode: 'exclusive' | 'multiple'; sourceIds: string[] },
+  approvalRequired = false,
+) {
   return POST(
     new Request('http://local/api/agent-draft', {
       method: 'POST',
@@ -213,10 +266,14 @@ async function queueExclusiveRun(approvalRequired = false) {
         brief: 'A sufficiently detailed exclusive-source brief',
         visual: false,
         approvalRequired,
-        sourcePolicy: { mode: 'exclusive', sourceIds: ['docs'] },
+        sourcePolicy,
       }),
     }) as never,
   );
+}
+
+async function queueExclusiveRun(approvalRequired = false) {
+  return queueRun({ mode: 'exclusive', sourceIds: ['docs'] }, approvalRequired);
 }
 
 describe('exclusive source admin-to-worker acceptance', () => {
@@ -230,6 +287,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
     state.forceStructureResearch = false;
     state.structureCalls = 0;
     state.sourceFailures = [];
+    state.knowledgeHits = [];
+    state.knowledgeQuery.mockReset().mockImplementation(async () => state.knowledgeHits);
     state.modelCalls = [];
     state.workflowRuns.clear();
     state.presentation = {
@@ -307,6 +366,83 @@ describe('exclusive source admin-to-worker acceptance', () => {
     expect(state.presentation).toMatchObject({
       draftSources: ['docs'],
       draftEvidence: [evidence, structureEvidence],
+    });
+  });
+
+  it('runs exclusive knowledge search through the real connector and persists verbatim provenance', async () => {
+    state.knowledgeHits = [
+      {
+        id: 'chunk-9',
+        score: 0.91,
+        metadata: {
+          knowledgeBaseId: '42',
+          documentId: '9',
+          title: 'Contrat cadre',
+          chunkIndex: 3,
+          text: 'Clause résolutoire verbatim.',
+        },
+      },
+    ];
+    await queueRun({ mode: 'exclusive', sourceIds: ['knowledge_42'] });
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.knowledgeQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        indexName: 'knowledge_42',
+        filter: { knowledgeBaseId: '42' },
+        minScore: 0.35,
+      }),
+    );
+    expect(state.presentation).toMatchObject({
+      draftStatus: 'done',
+      draftSources: ['knowledge_42'],
+      draftEvidence: [
+        expect.objectContaining({
+          sourceId: 'knowledge_42',
+          excerpt: 'Clause résolutoire verbatim.',
+          documentId: '9',
+          documentTitle: 'Contrat cadre',
+          chunkIndex: 3,
+        }),
+      ],
+    });
+  });
+
+  it('fails exclusive knowledge mode when vector search returns zero excerpts', async () => {
+    await queueRun({ mode: 'exclusive', sourceIds: ['knowledge_42'] });
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.knowledgeQuery).toHaveBeenCalled();
+    expect(state.ledger).toMatchObject({
+      status: 'failed',
+      errorCode: 'source-unavailable',
+      sourceFailures: [
+        expect.objectContaining({
+          sourceId: 'knowledge_42',
+          stage: 'tool',
+          code: 'invalid-result',
+        }),
+      ],
+    });
+    expect(state.presentation.draftStatus).toBe('failed');
+    expect(state.persistSlides).not.toHaveBeenCalled();
+  });
+
+  it('persists mixed MCP and knowledge-base evidence with document provenance', async () => {
+    state.evidence = [evidence, knowledgeEvidence];
+    await queueRun({ mode: 'multiple', sourceIds: ['docs', 'knowledge_42'] });
+
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+
+    expect(state.openedSourceIds).toEqual(['docs', 'knowledge_42']);
+    expect(state.ledger).toMatchObject({
+      status: 'succeeded',
+      sourceIds: ['docs', 'knowledge_42'],
+      evidence: [evidence, knowledgeEvidence],
+    });
+    expect(state.presentation).toMatchObject({
+      draftSources: ['docs', 'knowledge_42'],
+      draftEvidence: [evidence, knowledgeEvidence],
     });
   });
 
