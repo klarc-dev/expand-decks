@@ -2,8 +2,6 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { fastembed } from '@mastra/fastembed';
-import { PgVector } from '@mastra/pg';
 import { MDocument } from '@mastra/rag';
 import mammoth from 'mammoth';
 import type { Payload, PayloadRequest, TaskHandlerArgs } from 'payload';
@@ -11,11 +9,13 @@ import { extractText as extractPdfText } from 'unpdf';
 
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
-import { DATABASE_URL } from '../lib/env';
 import { KNOWLEDGE_DIR } from '../lib/paths';
 import { INDEXING_STATUS } from '../lib/status';
-
-const KNOWLEDGE_EMBEDDING_DIMENSION = 384;
+import {
+  embedKnowledgeValues,
+  KNOWLEDGE_EMBEDDING_DIMENSION,
+  knowledgeVectorStore,
+} from '../lib/sources/knowledgeVector';
 const EMBEDDING_BATCH_SIZE = 256;
 const CHUNK_MAX_SIZE = 1_200;
 const CHUNK_OVERLAP = 150;
@@ -132,29 +132,14 @@ async function chunkKnowledgeText(text: string, mimeType: string): Promise<strin
 async function embedLocally(values: string[]): Promise<number[][]> {
   const vectors: number[][] = [];
   for (let offset = 0; offset < values.length; offset += EMBEDDING_BATCH_SIZE) {
-    const result = await fastembed.doEmbed({
-      values: values.slice(offset, offset + EMBEDDING_BATCH_SIZE),
-    });
-    vectors.push(...result.embeddings);
+    const result = await embedKnowledgeValues(values.slice(offset, offset + EMBEDDING_BATCH_SIZE));
+    vectors.push(...result);
   }
   return vectors;
 }
 
-const g = globalThis as typeof globalThis & { __knowledgePgVector?: PgVector };
 export function getKnowledgeVectorStore(): VectorStore {
-  if (!g.__knowledgePgVector) {
-    g.__knowledgePgVector = new PgVector({
-      id: 'knowledge-pg-vector',
-      connectionString: DATABASE_URL,
-      schemaName: 'mastra_vectors',
-      max: 5,
-      // Payload migrations own CREATE EXTENSION + CREATE SCHEMA. Per-base tables
-      // are dynamic, however, and PgVector.createIndex is a silent no-op with
-      // disableInit=true; this DDL-only vector instance therefore keeps init on.
-      disableInit: false,
-    });
-  }
-  return g.__knowledgePgVector;
+  return knowledgeVectorStore();
 }
 
 async function patchDocument(
