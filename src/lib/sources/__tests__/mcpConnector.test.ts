@@ -169,7 +169,7 @@ describe('openSourceToolsets', () => {
     expect(result.data[1]!.text.length).toBeLessThan(`beta ${'é'.repeat(100)}`.length);
     expect(result.data.map((item) => item.text)).toEqual(evidence.map((item) => item.excerpt));
     expect(Buffer.byteLength(JSON.stringify(result.data), 'utf8')).toBeLessThanOrEqual(
-      maxResultBytes + 3,
+      maxResultBytes,
     );
     expect(Buffer.from(result.data[1]!.text, 'utf8').toString('utf8')).toBe(result.data[1]!.text);
     expect(result.data.some((item) => item.text.startsWith('gamma '))).toBe(false);

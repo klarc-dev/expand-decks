@@ -129,16 +129,21 @@ function boundKnowledgeEvidenceItems(
   maxBytes: number,
 ): KnowledgeEvidenceItem[] {
   const bounded: KnowledgeEvidenceItem[] = [];
-  let remaining = maxBytes;
+  // Account for the JSON array delimiters and commas so the complete model data stays within budget.
+  let remaining = maxBytes - Buffer.byteLength('[]', 'utf8');
+  if (remaining <= 0) return bounded;
   for (const item of items) {
+    const separatorBytes = bounded.length === 0 ? 0 : Buffer.byteLength(',', 'utf8');
+    const itemBudget = remaining - separatorBytes;
+    if (itemBudget <= 0) break;
     const serializedBytes = Buffer.byteLength(JSON.stringify(item), 'utf8');
-    if (serializedBytes <= remaining) {
+    if (serializedBytes <= itemBudget) {
       bounded.push(item);
-      remaining -= serializedBytes;
+      remaining -= separatorBytes + serializedBytes;
       continue;
     }
 
-    const truncated = truncateKnowledgeItem(item, remaining);
+    const truncated = truncateKnowledgeItem(item, itemBudget);
     if (truncated) bounded.push(truncated);
     break;
   }
