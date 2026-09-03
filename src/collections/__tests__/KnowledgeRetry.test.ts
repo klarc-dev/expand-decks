@@ -37,7 +37,7 @@ describe('knowledge document retry endpoint', () => {
       expect.objectContaining({
         id: '12',
         data: { indexingStatus: 'pending', errorMessage: '', chunkCount: 0 },
-        context: { skipIngestQueue: true },
+        context: { skipIngestQueue: true, trustedKnowledgeLifecycle: true },
       }),
     );
     expect(state.queue).toHaveBeenCalledWith(
