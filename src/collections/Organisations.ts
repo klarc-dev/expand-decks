@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload';
 
-import { isAdmin, isAdminOrSelf, isLoggedIn } from '../access/roles';
+import { isAdmin, isOwnOrganisation } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 import { afterOrganisationChange } from '../hooks/afterOrganisationChange';
 
@@ -30,9 +30,12 @@ export const Organisations: CollectionConfig = {
       'Charte graphique réutilisable : couleurs, logo et polices appliqués aux présentations qui la référencent.',
   },
   access: {
-    create: isLoggedIn,
-    read: isLoggedIn,
-    update: isAdminOrSelf,
+    // Creating an organisation implies granting membership, which only an
+    // admin can do (the `organisations` field on Users is admin-write) —
+    // otherwise an author would strand an org nobody belongs to.
+    create: isAdmin,
+    read: isOwnOrganisation,
+    update: isOwnOrganisation,
     delete: isAdmin,
   },
   hooks: {

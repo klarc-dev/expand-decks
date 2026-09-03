@@ -11,11 +11,11 @@ describe('Accounts collection hardening', () => {
     expect(Accounts.admin?.hidden).toBe(true);
   });
 
-  it('allows all authenticated users under the temporary admin policy', () => {
+  it('restricts reads to admins — rows carry OAuth access/refresh tokens', () => {
     const read = Accounts.access?.read;
     expect(read).toBeTypeOf('function');
     expect(read!(access({ id: 'a', role: ROLES.admin }))).toBe(true);
-    expect(read!(access({ id: 'u', role: ROLES.author }))).toBe(true);
+    expect(read!(access({ id: 'u', role: ROLES.author }))).toBe(false);
     expect(read!(access(null))).toBe(false);
   });
 });

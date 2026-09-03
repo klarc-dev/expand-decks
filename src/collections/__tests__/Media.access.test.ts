@@ -22,8 +22,20 @@ describe('Media access', () => {
     await expect(canReadMedia(accessArgs(null))).resolves.toBe(false);
   });
 
-  it('lets logged-in authors read any media under the temporary admin policy', async () => {
-    await expect(canReadMedia(accessArgs({ id: 'author', role: 'author' }))).resolves.toBe(true);
-    expect(find).not.toHaveBeenCalled();
+  it('scopes a non-admin to media attached to presentations they can read', async () => {
+    find.mockResolvedValue({ docs: [{ id: 1 }, { id: 4 }] });
+
+    await expect(canReadMedia(accessArgs({ id: 'author', role: 'author' }))).resolves.toEqual({
+      or: [
+        { presentation: { exists: false } },
+        { presentation: { equals: null } },
+        { presentation: { in: [1, 4] } },
+      ],
+    });
+    // Delegates to the Presentations read policy rather than re-deriving org
+    // membership, so media scoping follows deck scoping automatically.
+    expect(find).toHaveBeenCalledWith(
+      expect.objectContaining({ collection: 'presentations', overrideAccess: false }),
+    );
   });
 });

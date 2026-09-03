@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
-import { ROLES } from '@/access/roles';
+import { userIsOrganisationMember } from '@/access/roles';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
@@ -61,11 +61,7 @@ export async function POST(req: NextRequest) {
   });
   if (!presentation)
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
-  const ownerId =
-    typeof presentation.createdBy === 'object'
-      ? presentation.createdBy?.id
-      : presentation.createdBy;
-  if (user.role !== ROLES.admin && ownerId !== user.id) {
+  if (!userIsOrganisationMember(user, presentation.organisation)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
   const existing = await payload.find({

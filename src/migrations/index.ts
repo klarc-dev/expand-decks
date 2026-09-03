@@ -13,6 +13,7 @@ import * as migration_20260820_092404_native_user_api_keys from './20260820_0924
 import * as migration_20260821_192342_add_agent_brief from './20260821_192342_add_agent_brief';
 import * as migration_20260825_194323_agent_runs_durable_execution from './20260825_194323_agent_runs_durable_execution';
 import * as migration_20260902_102706_exclusive_source_policy from './20260902_102706_exclusive_source_policy';
+import * as migration_20260903_062510_org_membership from './20260903_062510_org_membership';
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20260902_102706_exclusive_source_policy.up,
     down: migration_20260902_102706_exclusive_source_policy.down,
     name: '20260902_102706_exclusive_source_policy',
+  },
+  {
+    up: migration_20260903_062510_org_membership.up,
+    down: migration_20260903_062510_org_membership.down,
+    name: '20260903_062510_org_membership',
   },
 ];

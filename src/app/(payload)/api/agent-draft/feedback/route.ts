@@ -3,7 +3,7 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 import { z } from 'zod';
 
-import { ROLES } from '@/access/roles';
+import { userIsOrganisationMember } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { COLLECTIONS } from '@/lib/collections';
 
@@ -44,11 +44,7 @@ export async function POST(req: NextRequest) {
   if (!presentation) {
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
   }
-  const ownerId =
-    typeof presentation.createdBy === 'object'
-      ? presentation.createdBy?.id
-      : presentation.createdBy;
-  if (user.role !== ROLES.admin && ownerId !== user.id) {
+  if (!userIsOrganisationMember(user, presentation.organisation)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
   if (!presentation.draftTraceId) {

@@ -1,22 +1,22 @@
 import type { Access, CollectionConfig, FieldHook } from 'payload';
 
-import { ROLES } from '../access/roles';
+import { ROLES, userIsAdmin, userOrganisationIds } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 import { preserveAgentRunInputs } from './agentRunImmutability';
 
-const runOwnerAccess: Access = async ({ req, id }) => {
+/**
+ * Runs are scoped to the user's organisations. `organisation` is optional on
+ * this collection, so creator-owned runs stay reachable as a fallback — that
+ * also covers rows written before org scoping existed.
+ */
+const runOrgAccess: Access = ({ req }) => {
   const user = req.user;
   if (!user) return false;
-  if (user.role === ROLES.admin) return true;
-  if (!id) return { createdBy: { equals: user.id } };
-  const run = await req.payload.findByID({
-    collection: COLLECTIONS.agentRuns,
-    id,
-    depth: 0,
-    disableErrors: true,
-  });
-  const creator = typeof run?.createdBy === 'object' ? run.createdBy?.id : run?.createdBy;
-  return creator === user.id;
+  if (userIsAdmin(user)) return true;
+  const ids = userOrganisationIds(user);
+  const own = { createdBy: { equals: user.id } };
+  if (ids.length === 0) return own;
+  return { or: [{ organisation: { in: ids } }, own] };
 };
 
 const stampCreator: FieldHook = ({ req, operation }) =>
@@ -32,8 +32,8 @@ export const AgentRuns: CollectionConfig = {
   },
   access: {
     create: ({ req }) => Boolean(req.user),
-    read: runOwnerAccess,
-    update: runOwnerAccess,
+    read: runOrgAccess,
+    update: runOrgAccess,
     delete: ({ req }) => req.user?.role === ROLES.admin,
   },
   hooks: { beforeChange: [preserveAgentRunInputs] },

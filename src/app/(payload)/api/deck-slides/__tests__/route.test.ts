@@ -7,7 +7,7 @@ const update = vi.fn();
 vi.mock('@/lib/authenticateRequest', () => ({
   authenticateRequest: vi.fn(async () => ({
     payload: { findByID, update },
-    user: { id: 7, role: 'author' },
+    user: { id: 7, role: 'author', organisations: [3] },
   })),
 }));
 
@@ -33,6 +33,7 @@ describe('POST /api/deck-slides', () => {
     findByID.mockResolvedValue({
       id: 42,
       createdBy: 7,
+      organisation: 3,
       slides: [slide('One', 'row-1'), slide('Two', 'row-2')],
     });
     update.mockImplementation(async ({ data }: { data: { slides: unknown[] } }) => ({
@@ -90,6 +91,20 @@ describe('POST /api/deck-slides', () => {
       request({ action: 'create', deckId: 42, slide: { blockType: 'statement' } }),
     );
     expect(response.status).toBe(400);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('refuses a writer who is not a member of the deck organisation', async () => {
+    findByID.mockResolvedValue({
+      id: 42,
+      createdBy: 7,
+      organisation: 99,
+      slides: [slide('One', 'row-1')],
+    });
+    const response = await POST(
+      request({ action: 'update', deckId: 42, slideIndex: 0, slide: slide('Updated') }),
+    );
+    expect(response.status).toBe(403);
     expect(update).not.toHaveBeenCalled();
   });
 });

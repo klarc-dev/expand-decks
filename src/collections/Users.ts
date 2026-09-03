@@ -144,6 +144,23 @@ export const Users: CollectionConfig = {
       admin: { description: 'Image affichée sur les cartes intervenants' },
     },
     {
+      name: 'organisations',
+      type: 'relationship',
+      relationTo: COLLECTIONS.organisations,
+      hasMany: true,
+      label: 'Organisations',
+      index: true,
+      access: {
+        create: isAdminField,
+        update: isAdminField,
+      },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Organisations dont ce membre fait partie. Il voit toutes les présentations de ces organisations.',
+      },
+    },
+    {
       name: 'defaultOrganisation',
       type: 'relationship',
       relationTo: COLLECTIONS.organisations,
@@ -152,6 +169,18 @@ export const Users: CollectionConfig = {
         position: 'sidebar',
         description:
           'Charte graphique pré-sélectionnée sur les nouvelles présentations de cet utilisateur.',
+      },
+      validate: (value: unknown, { data }: { data?: Partial<{ organisations: unknown }> }) => {
+        if (!value) return true;
+        const memberships = Array.isArray(data?.organisations) ? data.organisations : [];
+        if (memberships.length === 0) return true;
+        const id = (candidate: unknown) =>
+          candidate && typeof candidate === 'object'
+            ? String((candidate as { id?: unknown }).id)
+            : String(candidate);
+        return memberships.some((membership) => id(membership) === id(value))
+          ? true
+          : 'L’organisation par défaut doit faire partie des organisations du membre.';
       },
     },
     {

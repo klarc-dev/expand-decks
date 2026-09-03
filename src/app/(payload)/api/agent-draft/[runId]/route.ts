@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
-import { ROLES } from '@/access/roles';
+import { ROLES, userIsOrganisationMember } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { agentDraftCommandSchema } from '@/lib/agentDraftContract';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
@@ -38,11 +38,7 @@ async function authorize(req: NextRequest, runId: string) {
     disableErrors: true,
     depth: 0,
   });
-  const ownerId =
-    typeof presentation?.createdBy === 'object'
-      ? presentation.createdBy?.id
-      : presentation?.createdBy;
-  if (!presentation || (user.role !== ROLES.admin && ownerId !== user.id)) {
+  if (!presentation || !userIsOrganisationMember(user, presentation.organisation)) {
     return { response: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) };
   }
   const workflow = mastra.getWorkflow('deckWorkflow');

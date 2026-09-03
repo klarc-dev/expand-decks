@@ -60,6 +60,45 @@ describe('Users profile defaults', () => {
   });
 });
 
+describe('Users organisation membership', () => {
+  const field = Users.fields.find(
+    (candidate) => 'name' in candidate && candidate.name === 'organisations',
+  );
+
+  it('is a many-to-many relationship only admins may write', () => {
+    expect(field).toMatchObject({
+      type: 'relationship',
+      relationTo: 'organisations',
+      hasMany: true,
+    });
+    if (!field || !('access' in field) || !field.access) {
+      throw new Error('organisations field has no field-level access');
+    }
+    const asAdmin = { req: { user: { id: 1, role: 'admin' } } } as never;
+    const asAuthor = { req: { user: { id: 2, role: 'author' } } } as never;
+    expect(field.access.update?.(asAdmin)).toBe(true);
+    // Self-service membership would let any author read every organisation.
+    expect(field.access.update?.(asAuthor)).toBe(false);
+    expect(field.access.create?.(asAuthor)).toBe(false);
+  });
+
+  it('rejects a defaultOrganisation outside the membership list', () => {
+    const defaultOrg = Users.fields.find(
+      (candidate) => 'name' in candidate && candidate.name === 'defaultOrganisation',
+    );
+    if (!defaultOrg || !('validate' in defaultOrg) || typeof defaultOrg.validate !== 'function') {
+      throw new Error('defaultOrganisation has no validate');
+    }
+    const validate = defaultOrg.validate as (value: unknown, args: unknown) => unknown;
+    expect(validate(7, { data: { organisations: [7, 9] } })).toBe(true);
+    expect(validate({ id: 9 }, { data: { organisations: [{ id: 9 }] } })).toBe(true);
+    expect(validate(42, { data: { organisations: [7, 9] } })).toBeTypeOf('string');
+    // No memberships recorded yet (e.g. pre-migration user): stay permissive.
+    expect(validate(42, { data: {} })).toBe(true);
+    expect(validate(null, { data: { organisations: [7] } })).toBe(true);
+  });
+});
+
 describe('Users Google avatar synchronization', () => {
   it('retrieves the linked Google picture and assigns the uploaded media on login', async () => {
     if (!afterLogin) throw new Error('Users.afterLogin is not configured');

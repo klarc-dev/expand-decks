@@ -2,7 +2,12 @@ import { createHash, randomUUID } from 'node:crypto';
 
 import type { CollectionConfig, PayloadRequest } from 'payload';
 
-import { isAdmin, isAdminOrAuthor, isAdminOrSelf, userIsAdmin } from '../access/roles';
+import {
+  isAdmin,
+  isAdminOrAuthor,
+  isOrganisationMember,
+  userIsOrganisationMember,
+} from '../access/roles';
 import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMetadata';
@@ -76,8 +81,8 @@ export const Presentations: CollectionConfig = {
   },
   access: {
     create: isAdminOrAuthor,
-    read: isAdminOrSelf,
-    update: isAdminOrSelf,
+    read: isOrganisationMember,
+    update: isOrganisationMember,
     delete: isAdmin,
   },
   endpoints: [
@@ -114,11 +119,7 @@ export const Presentations: CollectionConfig = {
         }
 
         // Authorize the write before spending a Chromium process.
-        const createdById =
-          typeof presentation.createdBy === 'object'
-            ? presentation.createdBy?.id
-            : presentation.createdBy;
-        if (!userIsAdmin(user) && createdById !== user.id) {
+        if (!userIsOrganisationMember(user, presentation.organisation)) {
           return Response.json({ error: 'Accès refusé' }, { status: 403 });
         }
 
@@ -283,10 +284,18 @@ export const Presentations: CollectionConfig = {
           type: 'relationship',
           relationTo: COLLECTIONS.organisations,
           required: true,
+          index: true,
           label: 'Organisation',
           // Pre-select the author's default organisation so a new deck opens
           // with its charte graphique already applied.
           defaultValue: ({ user }) => defaultOrganisationId(user),
+          // The read/update policy keys off this field, so a non-admin must not
+          // be able to move a deck into — or out of — an organisation they are
+          // not a member of.
+          validate: (value: unknown, { req }: { req?: PayloadRequest }) =>
+            !req?.user || userIsOrganisationMember(req.user, value)
+              ? true
+              : 'Vous n’êtes pas membre de cette organisation.',
           admin: {
             width: '30%',
             description:
