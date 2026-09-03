@@ -61,7 +61,6 @@
     "@payloadcms/richtext-lexical": "3.88.0",
     "@payloadcms/translations": "3.88.0",
     "@payloadcms/ui": "3.88.0",
-    "ai": "6.0.182",
     "gray-matter": "^4.0.3",
     "mammoth": "1.12.2",
     "mermaid": "11.17.2",

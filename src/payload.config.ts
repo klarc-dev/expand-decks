@@ -16,6 +16,8 @@ import { Organisations } from './collections/Organisations';
 import { Media } from './collections/Media';
 import { Accounts } from './collections/Accounts';
 import { AgentRuns } from './collections/AgentRuns';
+import { KnowledgeBases } from './collections/KnowledgeBases';
+import { KnowledgeDocuments } from './collections/KnowledgeDocuments';
 import { buildSlidesTask } from './jobs/buildSlides';
 import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
@@ -65,7 +67,16 @@ export default buildConfig({
     },
   },
   serverURL: SERVER_URL,
-  collections: [Users, Organisations, Presentations, Media, Accounts, AgentRuns],
+  collections: [
+    Users,
+    Organisations,
+    Presentations,
+    Media,
+    Accounts,
+    AgentRuns,
+    KnowledgeBases,
+    KnowledgeDocuments,
+  ],
   plugins: [
     withoutPluginAPIKeys(
       authPlugin({

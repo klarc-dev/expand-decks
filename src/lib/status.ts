@@ -24,3 +24,14 @@ export const DRAFT_STATUS = {
   failed: 'failed',
 } as const;
 export type DraftStatus = (typeof DRAFT_STATUS)[keyof typeof DRAFT_STATUS];
+
+/**
+ * Indexing state of a knowledge document. Documents land on `pending` at
+ * upload; the ingestion job (separate ticket) drives the remaining states.
+ */
+export const INDEXING_STATUS = {
+  pending: 'pending',
+  indexing: 'indexing',
+  indexed: 'indexed',
+  failed: 'failed',
+} as const;

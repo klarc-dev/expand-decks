@@ -5,4 +5,6 @@ export const COLLECTIONS = {
   users: 'users',
   accounts: 'accounts',
   agentRuns: 'agent-runs',
+  knowledgeBases: 'knowledge-bases',
+  knowledgeDocuments: 'knowledge-documents',
 } as const;

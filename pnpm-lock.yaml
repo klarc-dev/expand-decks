@@ -66,9 +66,6 @@ importers:
       '@payloadcms/ui':
         specifier: 3.88.0
         version: 3.88.0(@types/react@19.2.18)(monaco-editor@0.56.0)(next@16.3.3(@opentelemetry/api@1.9.0)(@playwright/test@1.62.1)(@types/node@26.3.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(sass@1.103.1))(payload@3.88.0(graphql@16.13.2)(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
-      ai:
-        specifier: 6.0.182
-        version: 6.0.182(zod@4.4.3)
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -5124,6 +5121,7 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)
       '@vercel/oidc': 3.2.0
       zod: 4.4.3
+    optional: true
 
   '@ai-sdk/openai-compatible@3.0.37(zod@4.4.3)':
     dependencies:
@@ -5144,6 +5142,7 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.1
       zod: 4.4.3
+    optional: true
 
   '@ai-sdk/provider-utils@4.0.40(zod@4.4.3)':
     dependencies:
@@ -5176,6 +5175,7 @@ snapshots:
   '@ai-sdk/provider@3.0.10':
     dependencies:
       json-schema: 0.4.0
+    optional: true
 
   '@ai-sdk/provider@3.0.14':
     dependencies:
@@ -6383,7 +6383,8 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
-  '@opentelemetry/api@1.9.0': {}
+  '@opentelemetry/api@1.9.0':
+    optional: true
 
   '@oxc-project/types@0.146.0': {}
 
@@ -7248,7 +7249,8 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
-  '@vercel/oidc@3.2.0': {}
+  '@vercel/oidc@3.2.0':
+    optional: true
 
   '@vitest/expect@4.1.11':
     dependencies:
@@ -7333,6 +7335,7 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.27(zod@4.4.3)
       '@opentelemetry/api': 1.9.0
       zod: 4.4.3
+    optional: true
 
   ajv-formats@3.0.1(ajv@8.20.0):
     optionalDependencies:
