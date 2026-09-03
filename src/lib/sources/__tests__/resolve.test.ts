@@ -60,46 +60,52 @@ describe('normalizeSourceIds', () => {
 });
 
 describe('resolveSourcePolicy', () => {
-  it('normalizes and resolves an exclusive source', () => {
+  it('normalizes and resolves an exclusive source', async () => {
     setRegistry(twoSources);
-    expect(resolveSourcePolicy({ mode: 'exclusive', sourceIds: [' web-docs '] })).toEqual({
+    await expect(
+      resolveSourcePolicy({ mode: 'exclusive', sourceIds: [' web-docs '] }),
+    ).resolves.toEqual({
       policy: { mode: 'exclusive', sourceIds: ['web-docs'] },
       sources: [expect.objectContaining({ id: 'web-docs' })],
     });
   });
 
-  it('rejects empty and broadened exclusive selections', () => {
+  it('rejects empty and broadened exclusive selections', async () => {
     setRegistry(twoSources);
-    expect(() => resolveSourcePolicy({ mode: 'exclusive', sourceIds: [] })).toThrow(
+    await expect(resolveSourcePolicy({ mode: 'exclusive', sourceIds: [] })).rejects.toThrow(
       SourcePolicyError,
     );
-    expect(() =>
+    await expect(
       resolveSourcePolicy({ mode: 'exclusive', sourceIds: ['fiscal-kb', 'web-docs'] }),
-    ).toThrow(SourcePolicyError);
+    ).rejects.toThrow(SourcePolicyError);
   });
 
-  it('preserves none and multiple behavior', () => {
+  it('preserves none and multiple behavior', async () => {
     setRegistry(twoSources);
-    expect(resolveSourcePolicy({ mode: 'none', sourceIds: [] }).sources).toEqual([]);
+    expect((await resolveSourcePolicy({ mode: 'none', sourceIds: [] })).sources).toEqual([]);
     expect(
-      resolveSourcePolicy({ mode: 'multiple', sourceIds: ['web-docs', 'fiscal-kb', 'web-docs'] })
-        .policy.sourceIds,
+      (
+        await resolveSourcePolicy({
+          mode: 'multiple',
+          sourceIds: ['web-docs', 'fiscal-kb', 'web-docs'],
+        })
+      ).policy.sourceIds,
     ).toEqual(['web-docs', 'fiscal-kb']);
   });
 });
 
 describe('resolveSources', () => {
-  it('resolves known ids to descriptors', () => {
+  it('resolves known ids to descriptors', async () => {
     setRegistry(twoSources);
-    const resolved = resolveSources(['web-docs']);
+    const resolved = await resolveSources(['web-docs']);
     expect(resolved).toHaveLength(1);
     expect(resolved[0]!.id).toBe('web-docs');
   });
 
-  it('rejects unknown ids with UnknownSourceError listing the unknowns', () => {
+  it('rejects unknown ids with UnknownSourceError listing the unknowns', async () => {
     setRegistry(twoSources);
     try {
-      resolveSources(['fiscal-kb', 'ghost']);
+      await resolveSources(['fiscal-kb', 'ghost']);
       throw new Error('expected throw');
     } catch (error) {
       expect(error).toBeInstanceOf(UnknownSourceError);
@@ -107,8 +113,8 @@ describe('resolveSources', () => {
     }
   });
 
-  it('resolves to empty for empty selection', () => {
+  it('resolves to empty for empty selection', async () => {
     setRegistry(twoSources);
-    expect(resolveSources([])).toEqual([]);
+    await expect(resolveSources([])).resolves.toEqual([]);
   });
 });

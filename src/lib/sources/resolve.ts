@@ -26,19 +26,22 @@ export function normalizeSourceIds(ids: readonly string[] | undefined): string[]
   return normalized;
 }
 
-export function resolveSourcePolicy(input: unknown): {
+export async function resolveSourcePolicy(input: unknown): Promise<{
   policy: SourcePolicy;
   sources: ResolvedSource[];
-} {
+}> {
   const policy = normalizeSourcePolicy(input);
-  return { policy, sources: resolveSources(policy.sourceIds) };
+  return { policy, sources: await resolveSources(policy.sourceIds) };
 }
 
-export function resolveSources(ids: readonly string[] | undefined): ResolvedSource[] {
+export async function resolveSources(
+  ids: readonly string[] | undefined,
+): Promise<ResolvedSource[]> {
   const selected = normalizeSourceIds(ids);
   if (selected.length === 0) return [];
 
-  const byId = new Map(listSourceDescriptors().map((source) => [source.id, source]));
+  const descriptors = await listSourceDescriptors();
+  const byId = new Map(descriptors.map((source) => [source.id, source]));
   const unknown = selected.filter((id) => !byId.has(id));
   if (unknown.length > 0) throw new UnknownSourceError(unknown);
 

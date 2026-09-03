@@ -50,7 +50,11 @@ function parseRegistry(raw: string | undefined): SourceDescriptor[] {
   return parsed.data.map(withDefaults);
 }
 
-export function listSourceDescriptors(): SourceDescriptor[] {
+// Async by contract, not by need: the env-backed MCP registry resolves
+// synchronously, but source listing is the seam a database-backed source kind
+// will plug into later. The env memoisation below is unchanged — the cache is
+// still keyed on the raw env string and populated without an intervening await.
+export async function listSourceDescriptors(): Promise<SourceDescriptor[]> {
   const raw = process.env[REGISTRY_ENV];
   if (cachedRegistry && cachedRaw === raw) return cachedRegistry;
   cachedRaw = raw;
@@ -58,8 +62,9 @@ export function listSourceDescriptors(): SourceDescriptor[] {
   return cachedRegistry;
 }
 
-export function listSourceOptions(): SourceOption[] {
-  return listSourceDescriptors().map(({ id, label }) => ({ id, label }));
+export async function listSourceOptions(): Promise<SourceOption[]> {
+  const descriptors = await listSourceDescriptors();
+  return descriptors.map(({ id, label }) => ({ id, label }));
 }
 
 export function __resetSourceRegistryForTests(): void {
