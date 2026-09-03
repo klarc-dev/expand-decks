@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { listGoogleFonts } from '@/lib/googleFonts';
+import { GoogleFontsUnavailableError, LOCAL_FONTS, listGoogleFonts } from '@/lib/googleFonts';
 
 import { generateStructured } from './model';
 
@@ -11,15 +11,22 @@ const FontPairSchema = z.object({
   bodyFont: z.string(),
 });
 
-const FALLBACK_PAIR: FontPair = { headingFont: 'Gilroy', bodyFont: 'Roboto' };
-
+/**
+ * Picks the deck's typography. Throws {@link GoogleFontsUnavailableError} when
+ * the catalog cannot be loaded — a deck built with stub typography is a silent
+ * regression, so the build fails visibly instead.
+ */
 export async function chooseFontPairForBrief(brief: string): Promise<FontPair> {
   const catalog = await listGoogleFonts({ sort: 'popularity' });
-  const families = catalog.fonts
+  const families = [...LOCAL_FONTS, ...catalog]
     .map((f) => f.family)
     .filter(Boolean)
     .slice(0, 80);
-  if (families.length < 2) return FALLBACK_PAIR;
+  if (families.length < 2) {
+    throw new GoogleFontsUnavailableError(
+      `Google Fonts catalog returned ${families.length} usable families; need at least 2 to choose a pair.`,
+    );
+  }
 
   const result = await generateStructured({
     name: 'font-pair',

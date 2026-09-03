@@ -5,12 +5,16 @@ const { auth, getPayload } = vi.hoisted(() => {
   return { auth: authMock, getPayload: vi.fn(async () => ({ auth: authMock })) };
 });
 
-const { listGoogleFonts } = vi.hoisted(() => ({ listGoogleFonts: vi.fn() }));
+const { listGoogleFonts, TestUnavailableError } = vi.hoisted(() => ({
+  listGoogleFonts: vi.fn(),
+  TestUnavailableError: class TestUnavailableError extends Error {},
+}));
 
 vi.mock('payload', () => ({ getPayload }));
 vi.mock('@payload-config', () => ({ default: {} }));
 vi.mock('@/lib/googleFonts', () => ({
-  FALLBACK_FONTS: [{ family: 'Roboto', category: 'sans-serif' }],
+  LOCAL_FONTS: [{ family: 'Gilroy', category: 'sans-serif' }],
+  GoogleFontsUnavailableError: TestUnavailableError,
   listGoogleFonts,
 }));
 
@@ -36,27 +40,36 @@ describe('GET /api/google-fonts', () => {
     expect(listGoogleFonts).not.toHaveBeenCalled();
   });
 
-  it('returns safe font options without API secrets', async () => {
+  it('returns local plus live font options without API secrets', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
-    listGoogleFonts.mockResolvedValue({
-      live: true,
-      fonts: [
-        {
-          family: 'Noto Sans Display',
-          category: 'sans-serif',
-          variants: ['regular'],
-          subsets: ['latin'],
-        },
-      ],
-    });
+    listGoogleFonts.mockResolvedValue([
+      {
+        family: 'Noto Sans Display',
+        category: 'sans-serif',
+        variants: ['regular'],
+        subsets: ['latin'],
+      },
+    ]);
 
     const res = await GET(request());
 
     expect(res.status).toBe(200);
     expect(res.headers.get('Cache-Control')).toBe('private, max-age=300');
     await expect(res.json()).resolves.toEqual({
-      live: true,
-      fonts: [{ family: 'Noto Sans Display', category: 'sans-serif' }],
+      fonts: [
+        { family: 'Gilroy', category: 'sans-serif' },
+        { family: 'Noto Sans Display', category: 'sans-serif' },
+      ],
     });
+  });
+
+  it('answers 503 when the catalog is unavailable', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    listGoogleFonts.mockRejectedValue(new TestUnavailableError('GOOGLE_FONTS_API_KEY is not set'));
+
+    const res = await GET(request());
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toEqual({ error: 'GOOGLE_FONTS_API_KEY is not set' });
   });
 });

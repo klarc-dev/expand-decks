@@ -20,8 +20,18 @@ import { buildSlidesTask } from './jobs/buildSlides';
 import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
 import { COLLECTIONS } from './lib/collections';
-import { SERVER_URL, PAYLOAD_SECRET, DATABASE_URL, PAYLOAD_DB_PUSH } from './lib/env';
+import {
+  SERVER_URL,
+  PAYLOAD_SECRET,
+  DATABASE_URL,
+  PAYLOAD_DB_PUSH,
+  assertGoogleFontsKey,
+} from './lib/env';
 import { ROLES } from './access/roles';
+
+// Fail fast in production if the font catalog key is missing: decks would
+// otherwise build with unresolved typography.
+assertGoogleFontsKey();
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);

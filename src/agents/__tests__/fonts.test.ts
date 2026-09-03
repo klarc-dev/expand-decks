@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { listGoogleFonts } = vi.hoisted(() => ({ listGoogleFonts: vi.fn() }));
+const { listGoogleFonts, TestUnavailableError } = vi.hoisted(() => ({
+  listGoogleFonts: vi.fn(),
+  TestUnavailableError: class TestUnavailableError extends Error {},
+}));
 const { generateStructured } = vi.hoisted(() => ({ generateStructured: vi.fn() }));
 
-vi.mock('@/lib/googleFonts', () => ({ listGoogleFonts }));
+vi.mock('@/lib/googleFonts', () => ({
+  listGoogleFonts,
+  LOCAL_FONTS: [{ family: 'Gilroy', category: 'sans-serif' }],
+  GoogleFontsUnavailableError: TestUnavailableError,
+}));
 vi.mock('../model', () => ({ generateStructured }));
 
 import { chooseFontPairForBrief } from '../fonts';
@@ -14,11 +21,12 @@ describe('chooseFontPairForBrief', () => {
     generateStructured.mockReset();
   });
 
-  it('chooses a pair through the structured model using catalog families', async () => {
-    listGoogleFonts.mockResolvedValue({
-      live: true,
-      fonts: [{ family: 'Inter' }, { family: 'Noto Sans Display' }, { family: 'Roboto Slab' }],
-    });
+  it('chooses a pair through the structured model using local + catalog families', async () => {
+    listGoogleFonts.mockResolvedValue([
+      { family: 'Inter' },
+      { family: 'Noto Sans Display' },
+      { family: 'Roboto Slab' },
+    ]);
     generateStructured.mockResolvedValue({ headingFont: 'Noto Sans Display', bodyFont: 'Inter' });
 
     await expect(chooseFontPairForBrief('Expert deck about tax strategy')).resolves.toEqual({
@@ -29,18 +37,24 @@ describe('chooseFontPairForBrief', () => {
     expect(generateStructured).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'font-pair',
-        prompt: expect.stringContaining('Inter, Noto Sans Display, Roboto Slab'),
+        prompt: expect.stringContaining('Gilroy, Inter, Noto Sans Display, Roboto Slab'),
       }),
     );
   });
 
-  it('falls back when fewer than two catalog families are available', async () => {
-    listGoogleFonts.mockResolvedValue({ live: false, fonts: [{ family: 'Roboto' }] });
+  it('propagates catalog unavailability instead of substituting a stub pair', async () => {
+    listGoogleFonts.mockRejectedValue(new TestUnavailableError('GOOGLE_FONTS_API_KEY is not set'));
 
-    await expect(chooseFontPairForBrief('Brief')).resolves.toEqual({
-      headingFont: 'Gilroy',
-      bodyFont: 'Roboto',
-    });
+    await expect(chooseFontPairForBrief('Brief')).rejects.toThrow(
+      'GOOGLE_FONTS_API_KEY is not set',
+    );
+    expect(generateStructured).not.toHaveBeenCalled();
+  });
+
+  it('throws when the catalog is too small to form a pair', async () => {
+    listGoogleFonts.mockResolvedValue([]);
+
+    await expect(chooseFontPairForBrief('Brief')).rejects.toThrow(/at least 2/);
     expect(generateStructured).not.toHaveBeenCalled();
   });
 });

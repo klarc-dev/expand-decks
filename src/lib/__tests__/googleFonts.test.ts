@@ -4,8 +4,8 @@ import {
   __resetGoogleFontsCacheForTests,
   __setGoogleFontsNowForTests,
   buildWebfontsUrl,
-  FALLBACK_FONTS,
   GOOGLE_FONTS_API_KEY_ENV,
+  GoogleFontsUnavailableError,
   listGoogleFonts,
 } from '../googleFonts';
 
@@ -29,10 +29,39 @@ describe('googleFonts', () => {
     );
   });
 
-  it('returns fallback fonts when the API key is missing', async () => {
+  it('throws when the API key is missing instead of degrading silently', async () => {
     delete process.env[GOOGLE_FONTS_API_KEY_ENV];
 
-    await expect(listGoogleFonts()).resolves.toMatchObject({ fonts: FALLBACK_FONTS, live: false });
+    await expect(listGoogleFonts()).rejects.toThrow(GoogleFontsUnavailableError);
+    await expect(listGoogleFonts()).rejects.toThrow(GOOGLE_FONTS_API_KEY_ENV);
+  });
+
+  it('throws when the upstream API returns a non-ok status', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 403,
+      json: async () => ({}),
+    }));
+
+    await expect(listGoogleFonts({ fetchImpl })).rejects.toThrow(/responded 403/);
+  });
+
+  it('throws when the upstream fetch rejects', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error('ECONNREFUSED');
+    });
+
+    await expect(listGoogleFonts({ fetchImpl })).rejects.toThrow(/ECONNREFUSED/);
+  });
+
+  it('throws when the response carries no usable family', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ items: [] }),
+    }));
+
+    await expect(listGoogleFonts({ fetchImpl })).rejects.toThrow(/no usable font family/);
   });
 
   it('parses live font metadata including variable axes', async () => {
@@ -52,18 +81,15 @@ describe('googleFonts', () => {
       }),
     }));
 
-    await expect(listGoogleFonts({ fetchImpl })).resolves.toEqual({
-      live: true,
-      fonts: [
-        {
-          family: 'Noto Sans Display',
-          category: 'sans-serif',
-          variants: ['regular', 'italic'],
-          subsets: ['latin', 'latin-ext'],
-          axes: [{ tag: 'wght', start: 100, end: 900 }],
-        },
-      ],
-    });
+    await expect(listGoogleFonts({ fetchImpl })).resolves.toEqual([
+      {
+        family: 'Noto Sans Display',
+        category: 'sans-serif',
+        variants: ['regular', 'italic'],
+        subsets: ['latin', 'latin-ext'],
+        axes: [{ tag: 'wght', start: 100, end: 900 }],
+      },
+    ]);
   });
 
   it('caches live results until TTL expiry', async () => {
@@ -81,6 +107,14 @@ describe('googleFonts', () => {
 
     clock = 1_501;
     await listGoogleFonts({ fetchImpl, ttlMs: 500 });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not cache failures', async () => {
+    const fetchImpl = vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) }));
+
+    await expect(listGoogleFonts({ fetchImpl })).rejects.toThrow();
+    await expect(listGoogleFonts({ fetchImpl })).rejects.toThrow();
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

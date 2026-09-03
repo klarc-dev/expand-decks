@@ -8,15 +8,12 @@ import { AdminTextField } from '@/components/adminUi/AdminTextField';
 
 type FontOption = { family: string; category?: string };
 
-type FontResponse = { fonts?: FontOption[]; live?: boolean; error?: string };
-
-const FALLBACK_OPTIONS: FontOption[] = [{ family: 'Gilroy' }, { family: 'Roboto' }];
+type FontResponse = { fonts?: FontOption[]; error?: string };
 
 const GoogleFontField: TextFieldClientComponent = ({ field, path }) => {
   const { label, required } = field;
   const { value, setValue, showError, errorMessage } = useField<string>({ path });
-  const [options, setOptions] = useState<FontOption[]>(FALLBACK_OPTIONS);
-  const [loadedLive, setLoadedLive] = useState(false);
+  const [options, setOptions] = useState<FontOption[]>([]);
   const [error, setError] = useState('');
   const current = typeof value === 'string' ? value : '';
   const datalistId = useMemo(() => `${path.replace(/[^a-zA-Z0-9_-]/g, '-')}-google-fonts`, [path]);
@@ -26,14 +23,20 @@ const GoogleFontField: TextFieldClientComponent = ({ field, path }) => {
     void (async () => {
       try {
         const res = await fetch('/api/google-fonts', { credentials: 'include' });
-        if (!res.ok) return;
         const body = (await res.json()) as FontResponse;
         if (!alive) return;
-        if (Array.isArray(body.fonts) && body.fonts.length > 0) setOptions(body.fonts);
-        setLoadedLive(Boolean(body.live));
-        setError(body.error ?? '');
+        if (!res.ok || !Array.isArray(body.fonts) || body.fonts.length === 0) {
+          setOptions([]);
+          setError(body.error ?? `Catalogue Google Fonts indisponible (HTTP ${res.status}).`);
+          return;
+        }
+        setOptions(body.fonts);
+        setError('');
       } catch (err) {
-        if (alive) setError(err instanceof Error ? err.message : 'Google Fonts indisponible');
+        if (alive) {
+          setOptions([]);
+          setError(err instanceof Error ? err.message : 'Catalogue Google Fonts indisponible.');
+        }
       }
     })();
     return () => {
@@ -44,9 +47,9 @@ const GoogleFontField: TextFieldClientComponent = ({ field, path }) => {
   return (
     <AdminTextField
       description={
-        loadedLive
-          ? 'Catalogue Google Fonts chargé.'
-          : `Saisie libre avec suggestions locales${error ? ` (${error})` : ''}.`
+        error
+          ? `Catalogue indisponible : ${error} Corrigez GOOGLE_FONTS_API_KEY.`
+          : `Catalogue Google Fonts chargé (${options.length} familles).`
       }
       errorMessage={errorMessage}
       fontFamilyPreview={current ? `${current}, ui-sans-serif, system-ui, sans-serif` : undefined}

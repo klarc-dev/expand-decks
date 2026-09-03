@@ -30,6 +30,17 @@ export const DATABASE_URL = requiredInProd(
 );
 
 /**
+ * Google Fonts Webfonts API key. The value is deliberately NOT exported: this
+ * module is imported by client components, so only the server-only
+ * `src/lib/googleFonts.ts` reads the key. This assertion runs at boot
+ * (`payload.config.ts`) so a missing key fails immediately in production rather
+ * than at the first deck build — the font catalog has no offline substitute.
+ */
+export function assertGoogleFontsKey(): void {
+  requiredInProd('GOOGLE_FONTS_API_KEY', 'unset-in-dev');
+}
+
+/**
  * Payload's Postgres adapter auto-pushes schema in non-production by default.
  * Keep it opt-in: one-off scripts should never block on destructive schema
  * prompts or hold DB sessions while waiting for terminal input.
