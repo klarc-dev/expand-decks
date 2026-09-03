@@ -53,7 +53,10 @@ type VectorStore = {
     vectors: number[][];
     metadata: ChunkMetadata[];
     ids: string[];
+    deleteFilter?: { documentId: string };
   }): Promise<string[]>;
+  deleteVectors(args: { indexName: string; filter: { documentId: string } }): Promise<void>;
+  deleteIndex(args: { indexName: string }): Promise<void>;
 };
 
 type RunnerPayload = Pick<Payload, 'db' | 'find' | 'findByID' | 'logger' | 'update'>;
@@ -70,7 +73,7 @@ export type KnowledgeIngestTaskArgs = {
   req: { payload: RunnerPayload };
 };
 
-function relationId(value: DocumentRecord['knowledgeBase']): number | string | undefined {
+export function relationId(value: DocumentRecord['knowledgeBase']): number | string | undefined {
   if (value && typeof value === 'object') return value.id;
   return value ?? undefined;
 }
@@ -138,7 +141,7 @@ async function embedLocally(values: string[]): Promise<number[][]> {
 }
 
 const g = globalThis as typeof globalThis & { __knowledgePgVector?: PgVector };
-function defaultVectorStore(): PgVector {
+export function getKnowledgeVectorStore(): VectorStore {
   if (!g.__knowledgePgVector) {
     g.__knowledgePgVector = new PgVector({
       id: 'knowledge-pg-vector',
@@ -169,7 +172,7 @@ async function patchDocument(
   });
 }
 
-async function updateBaseSummary(
+export async function updateKnowledgeBaseSummary(
   payload: RunnerPayload,
   knowledgeBaseId: number | string,
   lastIndexedAt?: string,
@@ -197,6 +200,7 @@ async function updateBaseSummary(
   });
 }
 
+// fallow-ignore-next-line complexity -- task runner owns one linear transactional lifecycle
 export async function runKnowledgeIngestTask(
   { input, req }: KnowledgeIngestTaskArgs,
   dependencies: Partial<KnowledgeIngestDependencies> = {},
@@ -208,7 +212,7 @@ export async function runKnowledgeIngestTask(
   const deps: KnowledgeIngestDependencies = {
     extractText: dependencies.extractText ?? extractKnowledgeText,
     embed: dependencies.embed ?? embedLocally,
-    vectorStore: dependencies.vectorStore ?? defaultVectorStore(),
+    vectorStore: dependencies.vectorStore ?? getKnowledgeVectorStore(),
     now: dependencies.now ?? (() => new Date()),
   };
   let knowledgeBaseId: number | string | undefined;
@@ -230,6 +234,19 @@ export async function runKnowledgeIngestTask(
       errorMessage: '',
       chunkCount: 0,
     });
+
+    const indexName = knowledgeIndexName(knowledgeBaseId);
+    await deps.vectorStore.createIndex({
+      indexName,
+      dimension: KNOWLEDGE_EMBEDDING_DIMENSION,
+      metric: 'cosine',
+      metadataIndexes: ['knowledgeBaseId', 'documentId'],
+    });
+    await deps.vectorStore.deleteVectors({
+      indexName,
+      filter: { documentId: String(documentId) },
+    });
+    await updateKnowledgeBaseSummary(req.payload, knowledgeBaseId);
 
     const filePath = join(KNOWLEDGE_DIR, document.filename);
     const source = await readFile(filePath);
@@ -255,27 +272,26 @@ export async function runKnowledgeIngestTask(
       depth: 0,
       overrideAccess: true,
     })) as unknown as DocumentRecord;
+    const latestKnowledgeBaseId = relationId(latest.knowledgeBase);
     const latestSourceHash = createHash('sha256')
       .update(await readFile(filePath))
       .digest('hex');
-    if (latest.filename !== document.filename || latestSourceHash !== sourceHash) {
-      req.payload.logger.info({ documentId }, 'knowledge ingest skipped stale replaced file');
+    if (
+      latest.filename !== document.filename ||
+      latestSourceHash !== sourceHash ||
+      latestKnowledgeBaseId !== knowledgeBaseId
+    ) {
+      req.payload.logger.info({ documentId }, 'knowledge ingest skipped stale document change');
       return { output: { success: false, chunkCount: 0 } };
     }
 
-    const indexName = knowledgeIndexName(knowledgeBaseId);
-    await deps.vectorStore.createIndex({
-      indexName,
-      dimension: KNOWLEDGE_EMBEDDING_DIMENSION,
-      metric: 'cosine',
-      metadataIndexes: ['knowledgeBaseId', 'documentId'],
-    });
     const metadata = buildChunkMetadata(document, knowledgeBaseId, chunks);
     await deps.vectorStore.upsert({
       indexName,
       vectors,
       metadata,
       ids: chunks.map((_, index) => `${documentId}:${sourceHash}:${index}`),
+      deleteFilter: { documentId: String(documentId) },
     });
 
     const now = deps.now();
@@ -285,7 +301,7 @@ export async function runKnowledgeIngestTask(
       chunkCount: chunks.length,
       sourceHash,
     });
-    await updateBaseSummary(req.payload, knowledgeBaseId, now.toISOString());
+    await updateKnowledgeBaseSummary(req.payload, knowledgeBaseId, now.toISOString());
     req.payload.logger.info(
       { documentId, knowledgeBaseId, chunkCount: chunks.length },
       'knowledge document indexed',
@@ -299,7 +315,7 @@ export async function runKnowledgeIngestTask(
       chunkCount: 0,
     });
     if (knowledgeBaseId !== undefined) {
-      await updateBaseSummary(req.payload, knowledgeBaseId).catch((summaryError) =>
+      await updateKnowledgeBaseSummary(req.payload, knowledgeBaseId).catch((summaryError) =>
         req.payload.logger.warn(
           { err: summaryError, knowledgeBaseId },
           'knowledge base summary update failed',

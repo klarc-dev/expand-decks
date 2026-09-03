@@ -1,4 +1,10 @@
-import type { Access, CollectionBeforeValidateHook, CollectionConfig, FieldHook } from 'payload';
+import type {
+  Access,
+  CollectionBeforeValidateHook,
+  CollectionConfig,
+  FieldHook,
+  PayloadRequest,
+} from 'payload';
 import { APIError } from 'payload';
 
 import { isAdminOrAuthor, userIsAdmin } from '../access/roles';
@@ -6,6 +12,9 @@ import { COLLECTIONS } from '../lib/collections';
 import { KNOWLEDGE_DIR } from '../lib/paths';
 import { INDEXING_STATUS } from '../lib/status';
 import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
+import { afterKnowledgeDocumentDelete } from '../hooks/knowledgeLifecycle';
+import { KNOWLEDGE_INGEST_TASK } from '../jobs/knowledgeIngest';
+import { CTX } from '../lib/context';
 
 /**
  * Document formats we can extract text from. DOCX is the OOXML word type only —
@@ -125,7 +134,60 @@ export const KnowledgeDocuments: CollectionConfig = {
   hooks: {
     beforeValidate: [enforceKnowledgeMimeType],
     afterChange: [afterKnowledgeDocumentChange],
+    afterDelete: [afterKnowledgeDocumentDelete],
   },
+  endpoints: [
+    {
+      path: '/:id/retry',
+      method: 'post',
+      handler: async (req: PayloadRequest) => {
+        // fallow-ignore-next-line code-duplication -- Payload endpoint auth/route guard convention
+        if (!req.user) return Response.json({ error: 'Non authentifié' }, { status: 401 });
+        const id = req.routeParams?.id as string | undefined;
+        if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
+
+        let document;
+        try {
+          document = await req.payload.findByID({
+            collection: COLLECTIONS.knowledgeDocuments,
+            id,
+            depth: 0,
+            user: req.user,
+            overrideAccess: false,
+          });
+        } catch {
+          return Response.json({ error: 'Document introuvable' }, { status: 404 });
+        }
+        if (document.indexingStatus !== INDEXING_STATUS.failed) {
+          return Response.json(
+            { error: 'Seul un document en échec peut être relancé.' },
+            { status: 409 },
+          );
+        }
+
+        await req.payload.update({
+          collection: COLLECTIONS.knowledgeDocuments,
+          id,
+          data: { indexingStatus: INDEXING_STATUS.pending, errorMessage: '', chunkCount: 0 },
+          user: req.user,
+          overrideAccess: false,
+          context: { ...(req.context ?? {}), [CTX.skipIngestQueue]: true },
+        });
+        await (req.payload.jobs.queue as Function)({
+          task: KNOWLEDGE_INGEST_TASK,
+          input: { documentId: id },
+          req,
+        });
+        // fallow-ignore-next-line code-duplication -- queue kick mirrors the collection hook intentionally
+        void Promise.resolve()
+          .then(() => (req.payload.jobs.run as Function)())
+          .catch((err: unknown) =>
+            req.payload.logger.warn({ err, documentId: id }, 'knowledge retry jobs.run failed'),
+          );
+        return Response.json({ queued: true, indexingStatus: INDEXING_STATUS.pending });
+      },
+    },
+  ],
   fields: [
     {
       name: 'knowledgeBase',
@@ -186,6 +248,15 @@ export const KnowledgeDocuments: CollectionConfig = {
         rows: 3,
         description: 'Raison du dernier échec d’indexation',
         condition: (data) => data?.indexingStatus === INDEXING_STATUS.failed,
+      },
+    },
+    {
+      name: 'retryIndexing',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.indexingStatus === INDEXING_STATUS.failed,
+        components: { Field: '/components/KnowledgeRetryButton#default' },
       },
     },
     {

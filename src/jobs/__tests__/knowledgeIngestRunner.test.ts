@@ -51,6 +51,8 @@ function makePayload(options?: { extractEmpty?: boolean; vectorFailure?: boolean
   });
   const dbUpdate = vi.fn().mockResolvedValue({});
   const createIndex = vi.fn().mockResolvedValue(undefined);
+  const deleteVectors = vi.fn().mockResolvedValue(undefined);
+  const deleteIndex = vi.fn().mockResolvedValue(undefined);
   const upsert = options?.vectorFailure
     ? vi.fn().mockRejectedValue(new Error('vector unavailable'))
     : vi.fn().mockResolvedValue(['one']);
@@ -66,7 +68,7 @@ function makePayload(options?: { extractEmpty?: boolean; vectorFailure?: boolean
     embed: vi
       .fn()
       .mockImplementation(async (values: string[]) => values.map(() => Array(384).fill(0.1))),
-    vectorStore: { createIndex, upsert },
+    vectorStore: { createIndex, upsert, deleteVectors, deleteIndex },
     now: () => new Date('2026-09-03T10:00:00.000Z'),
   };
   return { payload, dependencies, updates, createIndex, upsert, dbUpdate };
@@ -95,6 +97,7 @@ describe('knowledge ingestion runner', () => {
     expect(state.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         indexName: 'knowledge_7',
+        deleteFilter: { documentId: '12' },
         metadata: [
           {
             knowledgeBaseId: '7',
@@ -134,6 +137,10 @@ describe('knowledge ingestion runner', () => {
       ),
     ).rejects.toThrow(/Aucun texte exploitable/);
     expect(state.updates.at(-1)).toMatchObject({ indexingStatus: 'failed', chunkCount: 0 });
+    expect(state.dependencies.vectorStore.deleteVectors).toHaveBeenCalledWith({
+      indexName: 'knowledge_7',
+      filter: { documentId: '12' },
+    });
   });
 
   it('marks vector-store failures as failed', async () => {

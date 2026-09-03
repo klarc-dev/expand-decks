@@ -2,6 +2,7 @@ import type { CollectionConfig, FieldHook } from 'payload';
 
 import { isAdminOrAuthor, isAdminOrCreator } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+import { beforeKnowledgeBaseDelete, afterKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
 
 const stampCreator: FieldHook = ({ req, operation }) =>
   operation === 'create' ? req.user?.id : undefined;
@@ -20,6 +21,10 @@ export const KnowledgeBases: CollectionConfig = {
     read: isAdminOrCreator,
     update: isAdminOrCreator,
     delete: isAdminOrCreator,
+  },
+  hooks: {
+    beforeDelete: [beforeKnowledgeBaseDelete],
+    afterDelete: [afterKnowledgeBaseDelete],
   },
   fields: [
     {

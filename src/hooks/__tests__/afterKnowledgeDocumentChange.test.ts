@@ -16,7 +16,13 @@ function args(overrides: Record<string, unknown> = {}) {
       operation: 'update',
       req: {
         context: {},
-        payload: { jobs: { queue, run }, update, logger: { warn: vi.fn() } },
+        payload: {
+          jobs: { queue, run },
+          update,
+          find: vi.fn().mockResolvedValue({ docs: [] }),
+          db: { updateOne: vi.fn().mockResolvedValue({}) },
+          logger: { warn: vi.fn(), info: vi.fn() },
+        },
       },
       ...overrides,
     },
@@ -33,6 +39,25 @@ describe('afterKnowledgeDocumentChange', () => {
     expect(state.queue).toHaveBeenCalledWith(
       expect.objectContaining({ task: 'knowledgeIngest', input: { documentId: 12 } }),
     );
+  });
+
+  it('purges the previous base when a document moves and queues its new index', async () => {
+    const state = args({
+      doc: { id: 12, filename: 'same.txt', mimeType: 'text/plain', knowledgeBase: 9 },
+      previousDoc: { id: 12, filename: 'same.txt', mimeType: 'text/plain', knowledgeBase: 7 },
+    });
+    const deleteVectors = vi.fn().mockResolvedValue(undefined);
+    const deleteIndex = vi.fn().mockResolvedValue(undefined);
+    (globalThis as any).__knowledgePgVector = { deleteVectors, deleteIndex };
+
+    await afterKnowledgeDocumentChange(state.value as never);
+
+    expect(deleteVectors).toHaveBeenCalledWith({
+      indexName: 'knowledge_7',
+      filter: { documentId: '12' },
+    });
+    expect(state.queue).toHaveBeenCalled();
+    delete (globalThis as any).__knowledgePgVector;
   });
 
   it('does not queue title-only or internal status updates', async () => {
