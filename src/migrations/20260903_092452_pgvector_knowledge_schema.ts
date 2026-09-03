@@ -3,11 +3,10 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres';
 /**
  * Vector storage groundwork for knowledge bases.
  *
- * There are no Payload collection changes here — this migration exists purely
- * because the runtime cannot do this work itself. `@mastra/pg` normally issues
- * `CREATE EXTENSION`/`CREATE SCHEMA` lazily inside `PgVector.createIndex`, but
- * production boots with `MASTRA_DISABLE_INIT` (see `src/agents/mastra.ts`), so
- * that path never runs and every DDL statement has to be explicit and versioned.
+ * Payload migrations own the shared extension and namespace only. Ticket #14's
+ * ingestion runner deliberately uses one narrowly scoped PgVector instance with
+ * `disableInit: false` to provision dynamic per-base tables; this is not general
+ * application-schema initialization.
  *
  * Both DDL statements are `IF NOT EXISTS`, so replaying this migration against
  * an already-migrated database is a no-op rather than an error.
@@ -36,9 +35,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
-  // Schema first: it owns the vector-typed tables that would otherwise block
-  // dropping the extension.
+  // The vector extension is shared, monotonic infrastructure: never remove it
+  // from a feature rollback. RESTRICT also refuses to delete a namespace that
+  // still contains per-base or foreign objects.
   await db.execute(sql`
-   DROP SCHEMA IF EXISTS "mastra_vectors" CASCADE;
-   DROP EXTENSION IF EXISTS vector;`);
+   DROP SCHEMA IF EXISTS "mastra_vectors" RESTRICT;`);
 }

@@ -25,7 +25,10 @@ export const afterKnowledgeDocumentChange: CollectionAfterChangeHook = async ({
     id: doc.id,
     data: { indexingStatus: INDEXING_STATUS.pending, errorMessage: '', chunkCount: 0 },
     overrideAccess: true,
-    context: { [CTX.skipIngestQueue]: true },
+    context: {
+      [CTX.skipIngestQueue]: true,
+      [CTX.trustedKnowledgeLifecycle]: true,
+    },
   });
 
   await (req.payload.jobs.queue as Function)({

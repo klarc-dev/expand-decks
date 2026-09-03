@@ -57,17 +57,13 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
-   ALTER TABLE "knowledge_bases" DISABLE ROW LEVEL SECURITY;
-  ALTER TABLE "knowledge_documents" DISABLE ROW LEVEL SECURITY;
-  DROP TABLE "knowledge_bases" CASCADE;
-  DROP TABLE "knowledge_documents" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_knowledge_bases_fk";
-  
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_knowledge_documents_fk";
-  
-  DROP INDEX "payload_locked_documents_rels_knowledge_bases_id_idx";
-  DROP INDEX "payload_locked_documents_rels_knowledge_documents_id_idx";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "knowledge_bases_id";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "knowledge_documents_id";
-  DROP TYPE "public"."enum_knowledge_documents_indexing_status";`);
+   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_knowledge_bases_fk";
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_knowledge_documents_fk";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_knowledge_bases_id_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_knowledge_documents_id_idx";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "knowledge_bases_id";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "knowledge_documents_id";
+  DROP TABLE IF EXISTS "knowledge_documents";
+  DROP TABLE IF EXISTS "knowledge_bases";
+  DROP TYPE IF EXISTS "public"."enum_knowledge_documents_indexing_status";`);
 }

@@ -113,7 +113,9 @@ describe('knowledge ingestion runner', () => {
       sourceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
     expect(state.payload.update).toHaveBeenCalledWith(
-      expect.objectContaining({ context: { skipIngestQueue: true } }),
+      expect.objectContaining({
+        context: { skipIngestQueue: true, trustedKnowledgeLifecycle: true },
+      }),
     );
     expect(state.dbUpdate).toHaveBeenCalledWith(
       expect.objectContaining({

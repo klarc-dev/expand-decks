@@ -1,11 +1,19 @@
-import type { Access, CollectionBeforeValidateHook, CollectionConfig, FieldHook } from 'payload';
+import type {
+  Access,
+  CollectionBeforeValidateHook,
+  CollectionConfig,
+  FieldAccess,
+  FieldHook,
+  PayloadRequest,
+} from 'payload';
 import { APIError } from 'payload';
 
 import { isAdminOrAuthor, userIsAdmin } from '../access/roles';
+import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
 import { COLLECTIONS } from '../lib/collections';
+import { CTX } from '../lib/context';
 import { KNOWLEDGE_DIR } from '../lib/paths';
 import { INDEXING_STATUS } from '../lib/status';
-import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
 
 /**
  * Document formats we can extract text from. DOCX is the OOXML word type only —
@@ -29,6 +37,78 @@ export const isAcceptedKnowledgeMimeType = (mimeType: unknown): boolean =>
   typeof mimeType === 'string' &&
   KNOWLEDGE_MIME_TYPES.some((accepted) => mimeType.split(';')[0].trim() === accepted);
 
+const MAX_KNOWLEDGE_FILE_BYTES = 25 * 1024 * 1024;
+const PDF_MAGIC = Buffer.from('%PDF-');
+const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+
+const trustedLifecycleWrite: FieldAccess = ({ req }) =>
+  req.context?.[CTX.trustedKnowledgeLifecycle] === true;
+
+function uploadedBytes(req: PayloadRequest | undefined): Buffer | undefined {
+  const data = req?.file?.data;
+  return Buffer.isBuffer(data) ? data : undefined;
+}
+
+export function validateKnowledgeFileContent(
+  filename: string,
+  mimeType: string,
+  bytes: Buffer,
+): void {
+  if (bytes.length > MAX_KNOWLEDGE_FILE_BYTES) {
+    throw new APIError('Le fichier dépasse la limite de 25 Mo.', 400);
+  }
+  const normalizedMime = mimeType.split(';')[0].trim();
+  if (normalizedMime === 'application/pdf') {
+    if (!bytes.subarray(0, PDF_MAGIC.length).equals(PDF_MAGIC)) {
+      throw new APIError('Le fichier PDF est invalide.', 400);
+    }
+    return;
+  }
+  if (normalizedMime === KNOWLEDGE_MIME_TYPES[1]) {
+    const zipDirectory = bytes.toString('utf8');
+    if (
+      !bytes.subarray(0, ZIP_MAGIC.length).equals(ZIP_MAGIC) ||
+      !zipDirectory.includes('[Content_Types].xml') ||
+      !zipDirectory.includes('word/document.xml')
+    ) {
+      throw new APIError('Le fichier DOCX est invalide.', 400);
+    }
+    return;
+  }
+  if (normalizedMime === 'text/plain' || normalizedMime === 'text/markdown') {
+    if (bytes.includes(0))
+      throw new APIError('Le fichier texte contient des données binaires.', 400);
+    try {
+      new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch {
+      throw new APIError('Le fichier texte doit être encodé en UTF-8.', 400);
+    }
+    return;
+  }
+  throw new APIError(`Format non pris en charge pour ${filename}.`, 400);
+}
+
+async function assertReadableKnowledgeBase(req: PayloadRequest, value: unknown): Promise<void> {
+  const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : value;
+  if (id === undefined || id === null || id === '') return;
+  try {
+    await req.payload.findByID({
+      collection: COLLECTIONS.knowledgeBases,
+      id: id as number | string,
+      depth: 0,
+      user: req.user ?? undefined,
+      overrideAccess: false,
+    });
+  } catch {
+    throw new APIError('Base de connaissances inaccessible.', 403);
+  }
+}
+
+export const validateKnowledgeBaseRelationship: FieldHook = async ({ value, req }) => {
+  await assertReadableKnowledgeBase(req, value);
+  return value;
+};
+
 /** `Rapport annuel 2026.pdf` → `Rapport annuel 2026`. */
 export const titleFromFilename = (filename: unknown): string | undefined => {
   if (typeof filename !== 'string') return undefined;
@@ -48,15 +128,25 @@ export const canAccessKnowledgeDocuments: Access = async ({ req }) => {
   if (!user) return false;
   if (userIsAdmin(user)) return true;
 
-  const readable = await payload.find({
-    collection: COLLECTIONS.knowledgeBases,
-    depth: 0,
-    limit: 1000,
-    user,
-    overrideAccess: false,
-  });
+  const ids: (number | string)[] = [];
+  let page = 1;
+  let hasNextPage = true;
+  while (hasNextPage) {
+    const readable = await payload.find({
+      collection: COLLECTIONS.knowledgeBases,
+      depth: 0,
+      limit: 1000,
+      page,
+      sort: 'id',
+      user,
+      overrideAccess: false,
+    });
+    ids.push(...readable.docs.map((doc) => doc.id));
+    hasNextPage = readable.hasNextPage;
+    page += 1;
+  }
 
-  return { knowledgeBase: { in: readable.docs.map((doc) => doc.id) } };
+  return { knowledgeBase: { in: ids } };
 };
 
 /**
@@ -66,7 +156,7 @@ export const canAccessKnowledgeDocuments: Access = async ({ req }) => {
  * already been checked by Payload's own file restrictions — then refuse
  * anything still outside the accepted list with a French message.
  */
-export const enforceKnowledgeMimeType: CollectionBeforeValidateHook = ({ data }) => {
+export const enforceKnowledgeMimeType: CollectionBeforeValidateHook = ({ data, req }) => {
   if (!data || typeof data !== 'object') return data;
   const record = data as { filename?: unknown; mimeType?: unknown };
   // No filename in the payload means no file changed hands (e.g. a title-only
@@ -88,6 +178,9 @@ export const enforceKnowledgeMimeType: CollectionBeforeValidateHook = ({ data })
       400,
     );
   }
+
+  const bytes = uploadedBytes(req);
+  if (bytes) validateKnowledgeFileContent(record.filename, String(record.mimeType), bytes);
 
   return data;
 };
@@ -135,6 +228,7 @@ export const KnowledgeDocuments: CollectionConfig = {
       index: true,
       label: 'Base de connaissances',
       admin: { description: 'Base à laquelle ce document appartient' },
+      hooks: { beforeChange: [validateKnowledgeBaseRelationship] },
     },
     {
       name: 'title',
@@ -158,6 +252,7 @@ export const KnowledgeDocuments: CollectionConfig = {
         position: 'sidebar',
         description: 'État du traitement de ce document',
       },
+      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
       options: [
         { label: 'En attente', value: INDEXING_STATUS.pending },
         { label: 'En cours', value: INDEXING_STATUS.indexing },
@@ -176,6 +271,7 @@ export const KnowledgeDocuments: CollectionConfig = {
         position: 'sidebar',
         description: 'Nombre de fragments produits par l’extraction',
       },
+      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
     },
     {
       name: 'errorMessage',
@@ -187,6 +283,7 @@ export const KnowledgeDocuments: CollectionConfig = {
         description: 'Raison du dernier échec d’indexation',
         condition: (data) => data?.indexingStatus === INDEXING_STATUS.failed,
       },
+      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
     },
     {
       name: 'sourceHash',
@@ -198,6 +295,7 @@ export const KnowledgeDocuments: CollectionConfig = {
         hidden: true,
         description: 'Empreinte SHA-256 du contenu source indexé',
       },
+      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
     },
   ],
 };
