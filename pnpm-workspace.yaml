@@ -1,6 +1,7 @@
 onlyBuiltDependencies:
   - sharp
   - esbuild
+  - onnxruntime-node
   - lefthook
   - '@biomejs/biome'
 
