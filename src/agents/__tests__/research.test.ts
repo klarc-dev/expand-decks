@@ -13,6 +13,7 @@ vi.mock('../../lib/sources/resolve', () => ({
   resolveSourcePolicy: mocks.resolveSourcePolicy,
 }));
 vi.mock('../model', () => ({ researchWithSources: mocks.researchWithSources }));
+vi.mock('../../lib/sources/serverContext', () => ({ sourceResolutionContextForUser: vi.fn() }));
 
 import { researchSources } from '../agents/research';
 

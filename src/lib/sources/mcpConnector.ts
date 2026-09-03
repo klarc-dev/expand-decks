@@ -36,7 +36,9 @@ type OpenedSourceToolsets = {
   disconnect: () => Promise<void>;
 };
 
-function serverConfig(source: ResolvedSource): MastraMCPServerDefinition {
+function serverConfig(
+  source: Exclude<ResolvedSource, { transport: 'knowledge' }>,
+): MastraMCPServerDefinition {
   const policy = {
     timeout: source.timeoutMs,
     forwardInstructions: false,
@@ -159,6 +161,17 @@ async function openOneSource(
   failure?: SourceFailure;
   disconnect: () => Promise<void>;
 }> {
+  if (source.transport === 'knowledge') {
+    return {
+      failure: sourceFailure(
+        source,
+        'connect',
+        'Knowledge source search is not available until ticket #17',
+        'unavailable',
+      ),
+      disconnect: async () => {},
+    };
+  }
   const client = new MCPClient({
     id: `agent-source-${source.id}-${randomUUID()}`,
     servers: { [source.id]: serverConfig(source) },

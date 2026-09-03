@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
   try {
     const requestedPolicy = parsed.data.sourcePolicy ?? legacySourcePolicy(parsed.data.sourceIds);
-    const resolved = await resolveSourcePolicy(requestedPolicy);
+    const resolved = await resolveSourcePolicy(requestedPolicy, { payload, user });
     sourcePolicy = resolved.policy.mode;
     sourceIds = resolved.sources.map((source) => source.id);
   } catch (error) {

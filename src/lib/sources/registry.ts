@@ -1,12 +1,16 @@
+import { COLLECTIONS } from '../collections';
 import {
   DEFAULT_SOURCE_TIMEOUT_MS,
   SourceConfigError,
   SourceRegistrySchema,
+  type KnowledgeSourceDescriptor,
   type SourceDescriptor,
   type SourceOption,
+  type SourceResolutionContext,
 } from './types';
 
 const REGISTRY_ENV = 'AGENT_SOURCE_REGISTRY_JSON';
+const KNOWLEDGE_PREFIX = 'knowledge_';
 
 let cachedRaw: string | undefined;
 let cachedRegistry: SourceDescriptor[] | undefined;
@@ -50,11 +54,7 @@ function parseRegistry(raw: string | undefined): SourceDescriptor[] {
   return parsed.data.map(withDefaults);
 }
 
-// Async by contract, not by need: the env-backed MCP registry resolves
-// synchronously, but source listing is the seam a database-backed source kind
-// will plug into later. The env memoisation below is unchanged — the cache is
-// still keyed on the raw env string and populated without an intervening await.
-export async function listSourceDescriptors(): Promise<SourceDescriptor[]> {
+async function listMcpSourceDescriptors(): Promise<SourceDescriptor[]> {
   const raw = process.env[REGISTRY_ENV];
   if (cachedRegistry && cachedRaw === raw) return cachedRegistry;
   cachedRaw = raw;
@@ -62,9 +62,77 @@ export async function listSourceDescriptors(): Promise<SourceDescriptor[]> {
   return cachedRegistry;
 }
 
-export async function listSourceOptions(): Promise<SourceOption[]> {
-  const descriptors = await listSourceDescriptors();
-  return descriptors.map(({ id, label }) => ({ id, label }));
+function knowledgeSourceId(knowledgeBaseId: string | number): string {
+  return `${KNOWLEDGE_PREFIX}${knowledgeBaseId}`;
+}
+
+function knowledgeIndexName(knowledgeBaseId: string | number): string {
+  return knowledgeSourceId(knowledgeBaseId).replace(/[^a-zA-Z0-9_]/g, '_');
+}
+
+async function listKnowledgeSourceDescriptors(
+  context?: SourceResolutionContext,
+): Promise<KnowledgeSourceDescriptor[]> {
+  if (!context?.user) return [];
+  const result = await context.payload.find({
+    collection: COLLECTIONS.knowledgeBases,
+    depth: 0,
+    limit: 1_000,
+    pagination: false,
+    sort: 'name',
+    user: context.user,
+    overrideAccess: false,
+  });
+  return result.docs.map((doc) => ({
+    id: knowledgeSourceId(doc.id),
+    label: doc.name,
+    transport: 'knowledge' as const,
+    knowledgeBaseId: doc.id,
+    indexName: knowledgeIndexName(doc.id),
+    allowedTools: ['search'],
+    timeoutMs: DEFAULT_SOURCE_TIMEOUT_MS,
+    failureMode: 'strict' as const,
+    toolCallConcurrency: 2,
+    maxResultBytes: 100_000,
+  }));
+}
+
+export async function listSourceDescriptors(
+  context?: SourceResolutionContext,
+): Promise<SourceDescriptor[]> {
+  const [mcpSources, knowledgeSources] = await Promise.all([
+    listMcpSourceDescriptors(),
+    listKnowledgeSourceDescriptors(context),
+  ]);
+  const ids = new Set(mcpSources.map((source) => source.id));
+  const collision = knowledgeSources.find((source) => ids.has(source.id));
+  if (collision) throw new SourceConfigError(`Duplicate source id: ${collision.id}`);
+  return [...mcpSources, ...knowledgeSources];
+}
+
+export async function listSourceOptions(
+  context?: SourceResolutionContext,
+): Promise<SourceOption[]> {
+  const descriptors = await listSourceDescriptors(context);
+  return descriptors.map(({ id, label, transport }) => ({ id, label, transport }));
+}
+
+export async function listKnowledgeSourceOptions(
+  context: SourceResolutionContext,
+): Promise<SourceOption[]> {
+  return (await listKnowledgeSourceDescriptors(context)).map(({ id, label, transport }) => ({
+    id,
+    label,
+    transport,
+  }));
+}
+
+export async function listMcpSourceOptions(): Promise<SourceOption[]> {
+  return (await listMcpSourceDescriptors()).map(({ id, label, transport }) => ({
+    id,
+    label,
+    transport,
+  }));
 }
 
 export function __resetSourceRegistryForTests(): void {

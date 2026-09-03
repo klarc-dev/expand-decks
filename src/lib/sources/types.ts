@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import type { Payload, PayloadRequest } from 'payload';
 import { z } from 'zod';
 
 export const SOURCE_ID_MAX = 80;
@@ -67,18 +68,32 @@ export const HttpSourceDescriptorSchema = baseSource.extend({
     ),
 });
 
+const KnowledgeSourceDescriptorSchema = baseSource.extend({
+  transport: z.literal('knowledge'),
+  knowledgeBaseId: z.union([z.string().min(1), z.number().int().positive()]),
+  indexName: z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
+});
+
 export const SourceDescriptorSchema = z.discriminatedUnion('transport', [
   StdioSourceDescriptorSchema,
   HttpSourceDescriptorSchema,
+  KnowledgeSourceDescriptorSchema,
 ]);
-export const SourceRegistrySchema = z.array(SourceDescriptorSchema);
+export const SourceRegistrySchema = z.array(
+  z.discriminatedUnion('transport', [StdioSourceDescriptorSchema, HttpSourceDescriptorSchema]),
+);
 
 export type SourceId = z.infer<typeof SourceIdSchema>;
 export type StdioSourceDescriptor = z.infer<typeof StdioSourceDescriptorSchema>;
 export type HttpSourceDescriptor = z.infer<typeof HttpSourceDescriptorSchema>;
+export type KnowledgeSourceDescriptor = z.infer<typeof KnowledgeSourceDescriptorSchema>;
 export type SourceDescriptor = z.infer<typeof SourceDescriptorSchema>;
-export type SourceOption = Pick<SourceDescriptor, 'id' | 'label'>;
+export type SourceOption = Pick<SourceDescriptor, 'id' | 'label' | 'transport'>;
 export type ResolvedSource = SourceDescriptor;
+export type SourceResolutionContext = {
+  payload: Pick<Payload, 'find'>;
+  user: PayloadRequest['user'];
+};
 
 export const EvidenceSchema = z.object({
   id: z.string().regex(/^ev_[a-f0-9]{24}$/),

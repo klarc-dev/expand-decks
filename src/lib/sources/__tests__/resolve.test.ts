@@ -95,6 +95,50 @@ describe('resolveSourcePolicy', () => {
 });
 
 describe('resolveSources', () => {
+  it('resolves mixed MCP and accessible knowledge sources', async () => {
+    setRegistry(twoSources);
+    const context = {
+      user: { id: 7, role: 'author' },
+      payload: {
+        find: async () => ({ docs: [{ id: 42, name: 'Contrats' }] }),
+      },
+    } as never;
+
+    const resolved = await resolveSources(['web-docs', 'knowledge_42'], context);
+    expect(resolved.map(({ id, transport }) => ({ id, transport }))).toEqual([
+      { id: 'web-docs', transport: 'http' },
+      { id: 'knowledge_42', transport: 'knowledge' },
+    ]);
+  });
+
+  it('applies the global cap before resolving a mixed selection', async () => {
+    const mixed = [
+      'knowledge_1',
+      ...Array.from({ length: MAX_SELECTED_SOURCES }, (_, i) => `s${i}`),
+    ];
+    await expect(resolveSources(mixed, {} as never)).rejects.toThrow(TooManySourcesError);
+  });
+
+  it('rejects two knowledge bases in exclusive mode', async () => {
+    await expect(
+      resolveSourcePolicy(
+        { mode: 'exclusive', sourceIds: ['knowledge_1', 'knowledge_2'] },
+        {} as never,
+      ),
+    ).rejects.toThrow(SourcePolicyError);
+  });
+
+  it('treats inaccessible knowledge ids as unknown', async () => {
+    setRegistry([]);
+    const context = {
+      user: { id: 7, role: 'author' },
+      payload: { find: async () => ({ docs: [] }) },
+    } as never;
+    await expect(resolveSources(['knowledge_99'], context)).rejects.toMatchObject({
+      unknownIds: ['knowledge_99'],
+    });
+  });
+
   it('resolves known ids to descriptors', async () => {
     setRegistry(twoSources);
     const resolved = await resolveSources(['web-docs']);

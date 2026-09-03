@@ -66,6 +66,31 @@ describe('openSourceToolsets', () => {
     expect(ctor).not.toHaveBeenCalled();
   });
 
+  it('rejects knowledge descriptors explicitly instead of falling through to MCP HTTP', async () => {
+    const opened = await openSourceToolsets([
+      source({
+        id: 'knowledge_42',
+        label: 'Contrats',
+        transport: 'knowledge',
+        knowledgeBaseId: 42,
+        indexName: 'knowledge_42',
+      } as Partial<ResolvedSource>),
+    ]).catch((error) => error);
+
+    expect(opened).toBeInstanceOf(SourceConnectorError);
+    expect(opened).toMatchObject({
+      failures: [
+        expect.objectContaining({
+          sourceId: 'knowledge_42',
+          stage: 'connect',
+          code: 'unavailable',
+          message: expect.stringContaining('ticket #17'),
+        }),
+      ],
+    });
+    expect(ctor).not.toHaveBeenCalled();
+  });
+
   it('constructs one isolated client per source with per-source security policy', async () => {
     discovery.push(
       { toolsets: { docs: { search: rawTool('a') } }, errors: {} },

@@ -78,6 +78,19 @@ describe('agent draft source policy API', () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
+  it('rejects an inaccessible knowledge base as an unknown source with HTTP 400', async () => {
+    mocks.auth.mockResolvedValue({ user: { id: 2, role: 'author' } });
+    mocks.find.mockResolvedValue({ docs: [] });
+
+    const response = await POST(
+      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_99'] } }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Unknown source id(s): knowledge_99' });
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
   it('normalizes and persists a valid exclusive policy', async () => {
     const response = await POST(
       request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: [' docs '] } }),
