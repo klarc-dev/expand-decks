@@ -8,7 +8,6 @@ const retryEndpoint = endpoints.find((endpoint) => endpoint.path === '/:id/retry
 function request(status: string = 'failed') {
   const update = vi.fn().mockResolvedValue({});
   const queue = vi.fn().mockResolvedValue({});
-  const run = vi.fn().mockResolvedValue({});
   return {
     update,
     queue,
@@ -19,7 +18,7 @@ function request(status: string = 'failed') {
       payload: {
         findByID: vi.fn().mockResolvedValue({ id: 12, indexingStatus: status }),
         update,
-        jobs: { queue, run },
+        jobs: { queue },
         logger: { warn: vi.fn() },
       },
     },
