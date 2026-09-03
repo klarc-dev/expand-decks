@@ -47,6 +47,7 @@ jobs:
       OPENAI_API_KEY: ci-placeholder
       GOOGLE_CLIENT_ID: ci-placeholder
       GOOGLE_CLIENT_SECRET: ci-placeholder
+      GOOGLE_FONTS_API_KEY: ci-placeholder
 
     steps:
       - name: Checkout
@@ -78,6 +79,9 @@ jobs:
         run: |
           pnpm generate:types
           pnpm generate:importmap
+
+      - name: Deploy env drift gate
+        run: python3 scripts/check-coolify-env-sync.py
 
       - name: Typecheck
         run: pnpm typecheck
@@ -170,24 +174,28 @@ jobs:
         run: pnpm eval:seed
       - name: Run persistent experiment
         run: pnpm eval:experiment
-      - name: Set release revision in Coolify
+      - name: Sync environment to Coolify
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
           COOLIFY_APPLICATION_UUID: ${{ vars.COOLIFY_APPLICATION_UUID }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+          CLIPROXYAPI_BASE_URL: ${{ secrets.CLIPROXYAPI_BASE_URL }}
+          CLIPROXYAPI_KEY: ${{ secrets.CLIPROXYAPI_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          AGENT_SOURCE_REGISTRY_JSON: ${{ secrets.AGENT_SOURCE_REGISTRY_JSON }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_FONTS_API_KEY: ${{ secrets.GOOGLE_FONTS_API_KEY }}
+          NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
           SOURCE_COMMIT: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          data=$(jq -n --arg value "$SOURCE_COMMIT" \
-            '[{key: "SOURCE_COMMIT", value: $value, is_runtime: true, is_buildtime: true}]')
-          curl --fail-with-body --silent --show-error \
-            --request PATCH \
-            --header "Authorization: Bearer $COOLIFY_TOKEN" \
-            --header 'Content-Type: application/json' \
-            --data "$(jq -n --argjson data "$data" '{data: $data}')" \
-            "$COOLIFY_URL/api/v1/applications/$COOLIFY_APPLICATION_UUID/envs/bulk" \
-            >/dev/null
+        run: bash scripts/sync-coolify-env.sh
+
       - name: Deploy verified revision to Coolify
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
