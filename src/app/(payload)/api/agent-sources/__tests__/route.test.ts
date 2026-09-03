@@ -113,11 +113,9 @@ describe('GET /api/agent-sources', () => {
   it('does not memoize knowledge bases', async () => {
     auth.mockResolvedValue({ user });
     setRegistry([]);
-    find
-      .mockResolvedValueOnce({ docs: [knowledgeBase(1, 'Initiale')] })
-      .mockResolvedValueOnce({
-        docs: [knowledgeBase(1, 'Initiale'), knowledgeBase(2, 'Nouvelle')],
-      });
+    find.mockResolvedValueOnce({ docs: [knowledgeBase(1, 'Initiale')] }).mockResolvedValueOnce({
+      docs: [knowledgeBase(1, 'Initiale'), knowledgeBase(2, 'Nouvelle')],
+    });
 
     expect((await (await GET(request())).json()).sources).toHaveLength(1);
     expect((await (await GET(request())).json()).sources).toEqual([
