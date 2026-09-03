@@ -225,14 +225,16 @@ jobs:
               jq -r '.status // empty')
             case "$status" in
               finished)
-                health=$(curl --retry 6 --retry-delay 5 --retry-all-errors \
-                  --silent --show-error \
-                  "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt")
-                deployed_commit=$(jq -r '.commit // empty' <<<"$health" 2>/dev/null || true)
-                if [[ "$deployed_commit" == "${{ github.sha }}" ]]; then
-                  exit 0
-                fi
-                echo "::error::Coolify finished but production reports commit ${deployed_commit:-unavailable}"
+                for health_attempt in $(seq 1 24); do
+                  health=$(curl --max-time 15 --silent --show-error \
+                    "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt-$health_attempt" || true)
+                  deployed_commit=$(jq -r '.commit // empty' <<<"$health" 2>/dev/null || true)
+                  if [[ "$deployed_commit" == "${{ github.sha }}" ]]; then
+                    exit 0
+                  fi
+                  sleep 5
+                done
+                echo "::error::Coolify finished but production did not report the expected commit within 2 minutes"
                 exit 1
                 ;;
               failed|cancelled)
