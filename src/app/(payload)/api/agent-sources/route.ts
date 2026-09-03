@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
   try {
-    return NextResponse.json({ sources: listSourceOptions(), maxSelected: MAX_SELECTED_SOURCES });
+    // Awaited inside the try so a rejected registry lands in the soft-fail
+    // branch below rather than escaping as an unhandled rejection.
+    const sources = await listSourceOptions();
+    return NextResponse.json({ sources, maxSelected: MAX_SELECTED_SOURCES });
   } catch (err) {
     if (err instanceof SourceConfigError) {
       // Misconfigured env shouldn't 500 the panel — report empty + a reason so

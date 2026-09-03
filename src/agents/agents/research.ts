@@ -57,7 +57,7 @@ export async function researchSources(
     abortSignal?: AbortSignal;
   },
 ): Promise<ResearchResult> {
-  const { policy, sources } = resolveSourcePolicy(sourcePolicy);
+  const { policy, sources } = await resolveSourcePolicy(sourcePolicy);
   if (sources.length === 0) return { notes: '', evidence: [], failures: [] };
 
   let opened: Awaited<ReturnType<typeof openSourceToolsets>>;
