@@ -49,7 +49,6 @@ function makePayload(options?: { extractEmpty?: boolean; vectorFailure?: boolean
     updates.push(data);
     return { ...document, ...data };
   });
-  const dbUpdate = vi.fn().mockResolvedValue({});
   const createIndex = vi.fn().mockResolvedValue(undefined);
   const deleteVectors = vi.fn().mockResolvedValue(undefined);
   const deleteIndex = vi.fn().mockResolvedValue(undefined);
@@ -58,9 +57,7 @@ function makePayload(options?: { extractEmpty?: boolean; vectorFailure?: boolean
     : vi.fn().mockResolvedValue(['one']);
   const payload = {
     findByID: vi.fn().mockResolvedValue(document),
-    find: vi.fn().mockResolvedValue({ docs: [{ indexingStatus: 'indexed', chunkCount: 1 }] }),
     update,
-    db: { updateOne: dbUpdate },
     logger: { info: vi.fn(), warn: vi.fn() },
   };
   const dependencies = {
@@ -69,9 +66,8 @@ function makePayload(options?: { extractEmpty?: boolean; vectorFailure?: boolean
       .fn()
       .mockImplementation(async (values: string[]) => values.map(() => Array(384).fill(0.1))),
     vectorStore: { createIndex, upsert, deleteVectors, deleteIndex },
-    now: () => new Date('2026-09-03T10:00:00.000Z'),
   };
-  return { payload, dependencies, updates, createIndex, upsert, dbUpdate };
+  return { payload, dependencies, updates, createIndex, upsert };
 }
 
 beforeEach(() => mkdirSync(KNOWLEDGE_DIR, { recursive: true }));
@@ -111,20 +107,11 @@ describe('knowledge ingestion runner', () => {
     );
     expect(state.updates.at(-1)).toMatchObject({
       indexingStatus: 'indexed',
-      chunkCount: 1,
       errorMessage: '',
-      sourceHash: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
     expect(state.payload.update).toHaveBeenCalledWith(
       expect.objectContaining({
         context: { skipIngestQueue: true, trustedKnowledgeLifecycle: true },
-      }),
-    );
-    expect(state.dbUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'knowledge-bases',
-        id: 7,
-        data: expect.objectContaining({ documentCount: 1, chunkCount: 1 }),
       }),
     );
   });
@@ -138,7 +125,7 @@ describe('knowledge ingestion runner', () => {
         state.dependencies,
       ),
     ).rejects.toThrow(/Aucun texte exploitable/);
-    expect(state.updates.at(-1)).toMatchObject({ indexingStatus: 'failed', chunkCount: 0 });
+    expect(state.updates.at(-1)).toMatchObject({ indexingStatus: 'failed' });
     expect(state.dependencies.vectorStore.deleteVectors).toHaveBeenCalledWith({
       indexName: 'knowledge_7',
       filter: { documentId: '12' },
@@ -167,10 +154,10 @@ describe('knowledge ingestion helpers', () => {
     expect(() => knowledgeIndexName('bad-id')).toThrow(/numeric/);
   });
 
-  it('builds ordered verbatim chunk metadata', () => {
-    expect(buildChunkMetadata({ id: '9', title: 'Notes' }, 3, ['one', 'two'])).toEqual([
-      { knowledgeBaseId: '3', documentId: '9', title: 'Notes', chunkIndex: 0, text: 'one' },
-      { knowledgeBaseId: '3', documentId: '9', title: 'Notes', chunkIndex: 1, text: 'two' },
+  it('uses the filename when no separate title exists', () => {
+    expect(buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, ['one', 'two'])).toEqual([
+      { knowledgeBaseId: '3', documentId: '9', title: 'notes.md', chunkIndex: 0, text: 'one' },
+      { knowledgeBaseId: '3', documentId: '9', title: 'notes.md', chunkIndex: 1, text: 'two' },
     ]);
   });
 

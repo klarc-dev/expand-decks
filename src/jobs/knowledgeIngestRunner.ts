@@ -27,7 +27,6 @@ type DocumentRecord = {
   filename?: string | null;
   mimeType?: string | null;
   title?: string | null;
-  sourceHash?: string | null;
   knowledgeBase?: number | string | { id: number | string } | null;
 };
 
@@ -59,13 +58,12 @@ type VectorStore = {
   deleteIndex(args: { indexName: string }): Promise<void>;
 };
 
-type RunnerPayload = Pick<Payload, 'db' | 'find' | 'findByID' | 'logger' | 'update'>;
+type RunnerPayload = Pick<Payload, 'findByID' | 'logger' | 'update'>;
 
 export type KnowledgeIngestDependencies = {
   extractText: Extractor;
   embed: Embedder;
   vectorStore: VectorStore;
-  now: () => Date;
 };
 
 export type KnowledgeIngestTaskArgs = {
@@ -87,14 +85,14 @@ export function knowledgeIndexName(knowledgeBaseId: number | string): string {
 }
 
 export function buildChunkMetadata(
-  document: Pick<DocumentRecord, 'id' | 'title'>,
+  document: Pick<DocumentRecord, 'id' | 'filename' | 'title'>,
   knowledgeBaseId: number | string,
   chunks: string[],
 ): ChunkMetadata[] {
   return chunks.map((text, chunkIndex) => ({
     knowledgeBaseId: String(knowledgeBaseId),
     documentId: String(document.id),
-    title: document.title?.trim() || 'Document sans titre',
+    title: document.title?.trim() || document.filename?.trim() || 'Document',
     chunkIndex,
     text,
   }));
@@ -161,34 +159,6 @@ async function patchDocument(
   });
 }
 
-export async function updateKnowledgeBaseSummary(
-  payload: RunnerPayload,
-  knowledgeBaseId: number | string,
-  lastIndexedAt?: string,
-): Promise<void> {
-  const result = await payload.find({
-    collection: COLLECTIONS.knowledgeDocuments,
-    depth: 0,
-    limit: 1000,
-    pagination: false,
-    overrideAccess: true,
-    where: { knowledgeBase: { equals: knowledgeBaseId } },
-  });
-  const docs = result.docs as unknown as { chunkCount?: number | null; indexingStatus?: string }[];
-  const indexed = docs.filter((doc) => doc.indexingStatus === INDEXING_STATUS.indexed);
-  await payload.db.updateOne({
-    collection: COLLECTIONS.knowledgeBases,
-    id: knowledgeBaseId,
-    data: {
-      documentCount: docs.length,
-      chunkCount: indexed.reduce((sum, doc) => sum + (doc.chunkCount ?? 0), 0),
-      ...(lastIndexedAt ? { lastIndexedAt } : {}),
-      updatedAt: null,
-    },
-    req: undefined,
-  });
-}
-
 // fallow-ignore-next-line complexity -- task runner owns one linear transactional lifecycle
 export async function runKnowledgeIngestTask(
   { input, req }: KnowledgeIngestTaskArgs,
@@ -202,7 +172,6 @@ export async function runKnowledgeIngestTask(
     extractText: dependencies.extractText ?? extractKnowledgeText,
     embed: dependencies.embed ?? embedLocally,
     vectorStore: dependencies.vectorStore ?? getKnowledgeVectorStore(),
-    now: dependencies.now ?? (() => new Date()),
   };
   let knowledgeBaseId: number | string | undefined;
 
@@ -221,7 +190,6 @@ export async function runKnowledgeIngestTask(
     await patchDocument(req.payload, documentId, {
       indexingStatus: INDEXING_STATUS.indexing,
       errorMessage: '',
-      chunkCount: 0,
     });
 
     const indexName = knowledgeIndexName(knowledgeBaseId);
@@ -235,8 +203,6 @@ export async function runKnowledgeIngestTask(
       indexName,
       filter: { documentId: String(documentId) },
     });
-    await updateKnowledgeBaseSummary(req.payload, knowledgeBaseId);
-
     const filePath = join(KNOWLEDGE_DIR, document.filename);
     const source = await readFile(filePath);
     const sourceHash = createHash('sha256').update(source).digest('hex');
@@ -283,14 +249,10 @@ export async function runKnowledgeIngestTask(
       deleteFilter: { documentId: String(documentId) },
     });
 
-    const now = deps.now();
     await patchDocument(req.payload, documentId, {
       indexingStatus: INDEXING_STATUS.indexed,
       errorMessage: '',
-      chunkCount: chunks.length,
-      sourceHash,
     });
-    await updateKnowledgeBaseSummary(req.payload, knowledgeBaseId, now.toISOString());
     req.payload.logger.info(
       { documentId, knowledgeBaseId, chunkCount: chunks.length },
       'knowledge document indexed',
@@ -301,16 +263,7 @@ export async function runKnowledgeIngestTask(
     await patchDocument(req.payload, documentId, {
       indexingStatus: INDEXING_STATUS.failed,
       errorMessage: message.slice(0, ERROR_LIMIT),
-      chunkCount: 0,
     });
-    if (knowledgeBaseId !== undefined) {
-      await updateKnowledgeBaseSummary(req.payload, knowledgeBaseId).catch((summaryError) =>
-        req.payload.logger.warn(
-          { err: summaryError, knowledgeBaseId },
-          'knowledge base summary update failed',
-        ),
-      );
-    }
     throw error;
   }
 }

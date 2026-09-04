@@ -74,8 +74,6 @@ function knowledgeIndexName(knowledgeBaseId: string | number): string {
 type KnowledgeBaseSourceRecord = {
   id: string | number;
   name: string;
-  documentCount?: number | null;
-  chunkCount?: number | null;
 };
 
 type KnowledgeDocumentState = {
@@ -90,19 +88,10 @@ function relatedKnowledgeBaseId(document: KnowledgeDocumentState): string | numb
   return document.knowledgeBase ?? undefined;
 }
 
-function knowledgeReadiness(
-  base: KnowledgeBaseSourceRecord,
-  documents: KnowledgeDocumentState[],
-): KnowledgeSourceReadiness {
-  const documentCount = base.documentCount ?? documents.length;
-  if (documentCount === 0) return 'empty';
-  if ((base.chunkCount ?? 0) > 0) return 'ready';
-  if (
-    documents.length === documentCount &&
-    documents.every((document) => document.indexingStatus === 'failed')
-  ) {
-    return 'failed';
-  }
+function knowledgeReadiness(documents: KnowledgeDocumentState[]): KnowledgeSourceReadiness {
+  if (documents.length === 0) return 'empty';
+  if (documents.some((document) => document.indexingStatus === 'indexed')) return 'ready';
+  if (documents.every((document) => document.indexingStatus === 'failed')) return 'failed';
   return 'unavailable';
 }
 
@@ -128,9 +117,7 @@ async function listKnowledgeSourceState(context: SourceResolutionContext): Promi
 }> {
   const bases = await listAccessibleKnowledgeBases(context);
   const documentsByBase = new Map<string, KnowledgeDocumentState[]>();
-  const unresolvedBases = bases.filter(
-    (base) => (base.documentCount ?? 0) > 0 && (base.chunkCount ?? 0) === 0,
-  );
+  const unresolvedBases = bases;
   if (unresolvedBases.length === 0) return { bases, documentsByBase };
   const result = await context.payload.find({
     collection: COLLECTIONS.knowledgeDocuments,
@@ -202,7 +189,7 @@ export async function listKnowledgeSourceOptions(
     id: knowledgeSourceId(base.id),
     label: base.name,
     kind: 'knowledge' as const,
-    readiness: knowledgeReadiness(base, documentsByBase.get(String(base.id)) ?? []),
+    readiness: knowledgeReadiness(documentsByBase.get(String(base.id)) ?? []),
   }));
 }
 

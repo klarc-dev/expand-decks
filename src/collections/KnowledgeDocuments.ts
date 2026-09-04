@@ -10,10 +10,7 @@ import { APIError } from 'payload';
 
 import { isAdminOrAuthor, userIsAdmin } from '../access/roles';
 import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
-import {
-  afterKnowledgeDocumentDelete,
-  beforeKnowledgeDocumentDelete,
-} from '../hooks/knowledgeLifecycle';
+import { beforeKnowledgeDocumentDelete } from '../hooks/knowledgeLifecycle';
 import { KNOWLEDGE_INGEST_TASK } from '../jobs/knowledgeIngest';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
@@ -114,15 +111,6 @@ export const validateKnowledgeBaseRelationship: FieldHook = async ({ value, req 
   return value;
 };
 
-/** `Rapport annuel 2026.pdf` → `Rapport annuel 2026`. */
-export const titleFromFilename = (filename: unknown): string | undefined => {
-  if (typeof filename !== 'string') return undefined;
-  const base = filename.split('/').pop() ?? filename;
-  const dot = base.lastIndexOf('.');
-  const stem = (dot > 0 ? base.slice(0, dot) : base).trim();
-  return stem || undefined;
-};
-
 /**
  * Documents inherit the visibility of their knowledge base rather than
  * re-deriving ownership, so the two collections can never drift apart — same
@@ -190,22 +178,14 @@ export const enforceKnowledgeMimeType: CollectionBeforeValidateHook = ({ data, r
   return data;
 };
 
-const prefillTitleFromFilename: FieldHook = ({ value, data, originalDoc }) => {
-  if (typeof value === 'string' && value.trim()) return value;
-  const filename =
-    (data as { filename?: unknown } | undefined)?.filename ??
-    (originalDoc as { filename?: unknown } | undefined)?.filename;
-  return titleFromFilename(filename) ?? value;
-};
-
 export const KnowledgeDocuments: CollectionConfig = {
   slug: COLLECTIONS.knowledgeDocuments,
   labels: { singular: 'Document de connaissance', plural: 'Documents de connaissance' },
   admin: {
-    useAsTitle: 'title',
-    defaultColumns: ['title', 'knowledgeBase', 'indexingStatus', 'chunkCount', 'updatedAt'],
-    description:
-      'Documents source d’une base de connaissances : PDF, DOCX, Markdown ou texte brut.',
+    hidden: true,
+    useAsTitle: 'filename',
+    defaultColumns: ['filename', 'knowledgeBase', 'indexingStatus', 'updatedAt'],
+    description: 'Ajoutez un fichier : il sera indexé automatiquement.',
   },
   access: {
     create: isAdminOrAuthor,
@@ -224,7 +204,6 @@ export const KnowledgeDocuments: CollectionConfig = {
     beforeValidate: [enforceKnowledgeMimeType],
     beforeDelete: [beforeKnowledgeDocumentDelete],
     afterChange: [afterKnowledgeDocumentChange],
-    afterDelete: [afterKnowledgeDocumentDelete],
   },
   endpoints: [
     {
@@ -258,7 +237,7 @@ export const KnowledgeDocuments: CollectionConfig = {
         await req.payload.update({
           collection: COLLECTIONS.knowledgeDocuments,
           id,
-          data: { indexingStatus: INDEXING_STATUS.pending, errorMessage: '', chunkCount: 0 },
+          data: { indexingStatus: INDEXING_STATUS.pending, errorMessage: '' },
           user: req.user,
           overrideAccess: false,
           context: {
@@ -283,19 +262,8 @@ export const KnowledgeDocuments: CollectionConfig = {
       relationTo: COLLECTIONS.knowledgeBases,
       required: true,
       index: true,
-      label: 'Base de connaissances',
-      admin: { description: 'Base à laquelle ce document appartient' },
+      label: 'Base',
       hooks: { beforeChange: [validateKnowledgeBaseRelationship] },
-    },
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
-      label: 'Titre',
-      admin: {
-        description: 'Pré-rempli à partir du nom du fichier, modifiable à tout moment.',
-      },
-      hooks: { beforeValidate: [prefillTitleFromFilename] },
     },
     {
       name: 'indexingStatus',
@@ -303,12 +271,8 @@ export const KnowledgeDocuments: CollectionConfig = {
       required: true,
       defaultValue: INDEXING_STATUS.pending,
       index: true,
-      label: 'Statut d’indexation',
-      admin: {
-        readOnly: true,
-        position: 'sidebar',
-        description: 'État du traitement de ce document',
-      },
+      label: 'État',
+      admin: { readOnly: true },
       access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
       options: [
         { label: 'En attente', value: INDEXING_STATUS.pending },
@@ -318,26 +282,12 @@ export const KnowledgeDocuments: CollectionConfig = {
       ],
     },
     {
-      name: 'chunkCount',
-      type: 'number',
-      defaultValue: 0,
-      min: 0,
-      label: 'Fragments',
-      admin: {
-        readOnly: true,
-        position: 'sidebar',
-        description: 'Nombre de fragments produits par l’extraction',
-      },
-      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
-    },
-    {
       name: 'errorMessage',
       type: 'textarea',
       label: 'Motif de l’échec',
       admin: {
         readOnly: true,
         rows: 3,
-        description: 'Raison du dernier échec d’indexation',
         condition: (data) => data?.indexingStatus === INDEXING_STATUS.failed,
       },
       access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
@@ -350,18 +300,6 @@ export const KnowledgeDocuments: CollectionConfig = {
         condition: (data) => data?.indexingStatus === INDEXING_STATUS.failed,
         components: { Field: '/components/KnowledgeRetryButton#default' },
       },
-    },
-    {
-      name: 'sourceHash',
-      type: 'text',
-      index: true,
-      label: 'Empreinte du contenu',
-      admin: {
-        readOnly: true,
-        hidden: true,
-        description: 'Empreinte SHA-256 du contenu source indexé',
-      },
-      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
     },
   ],
 };

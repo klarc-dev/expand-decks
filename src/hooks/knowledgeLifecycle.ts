@@ -1,10 +1,9 @@
-import type { CollectionAfterDeleteHook, CollectionBeforeDeleteHook, Payload } from 'payload';
+import type { CollectionBeforeDeleteHook } from 'payload';
 
 import {
   getKnowledgeVectorStore,
   knowledgeIndexName,
   relationId,
-  updateKnowledgeBaseSummary,
 } from '../jobs/knowledgeIngestRunner';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
@@ -56,24 +55,7 @@ export async function beforeKnowledgeDocumentDelete(
   });
 }
 
-export async function afterKnowledgeDocumentDelete({
-  doc,
-  req,
-}: Parameters<CollectionAfterDeleteHook>[0]) {
-  if (req.context?.[CTX.skipDocumentVectorPurge]) return doc;
-
-  const knowledgeBaseId = relationId(doc.knowledgeBase);
-  if (knowledgeBaseId === undefined) return doc;
-
-  await updateKnowledgeBaseSummary(
-    req.payload as Pick<Payload, 'db' | 'find' | 'findByID' | 'logger' | 'update'>,
-    knowledgeBaseId,
-  );
-  return doc;
-}
-
 export async function purgeDocumentFromPreviousBase(
-  req: Parameters<CollectionAfterDeleteHook>[0]['req'],
   documentId: number | string,
   previousKnowledgeBaseId: number | string,
   vectorStore: LifecycleVectorStore = getKnowledgeVectorStore(),
@@ -82,8 +64,4 @@ export async function purgeDocumentFromPreviousBase(
     indexName: knowledgeIndexName(previousKnowledgeBaseId),
     filter: { documentId: String(documentId) },
   });
-  await updateKnowledgeBaseSummary(
-    req.payload as Pick<Payload, 'db' | 'find' | 'findByID' | 'logger' | 'update'>,
-    previousKnowledgeBaseId,
-  );
 }

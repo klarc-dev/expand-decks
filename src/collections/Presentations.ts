@@ -347,9 +347,7 @@ export const Presentations: CollectionConfig = {
               type: 'textarea',
               label: 'Brief de la présentation',
               admin: {
-                description:
-                  'Brief conservé après génération pour pouvoir le relire, le corriger et relancer l’agent.',
-                rows: 6,
+                hidden: true,
               },
             },
             {

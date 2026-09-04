@@ -299,8 +299,8 @@ describe('canonical custom admin controls', () => {
     expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'checkbox')).toEqual([]);
   });
 
-  it('keeps generation and source-policy radio semantics in one typed feature-local owner', () => {
-    expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'radio')).toHaveLength(3);
+  it('keeps generation mode as the only radio-controlled choice', () => {
+    expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'radio')).toHaveLength(1);
   });
 
   it('keeps AgentDraftButton semantic groups in one feature-local owner', () => {
@@ -321,7 +321,10 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'Bases de connaissances')).toBe(false);
     expect(sourceContains(path, 'data-kind={group.kind}')).toBe(true);
     expect(sourceContains(path, 'role="status"')).toBe(true);
-    expect(sourceContains(path, 'data-unready={isSourceUnready(source) || undefined}')).toBe(true);
+    expect(sourceContains(path, 'data-unready={unavailable || undefined}')).toBe(true);
+    expect(sourceContains(path, 'readOnly={readOnly || unavailable || (!checked && atCap)}')).toBe(
+      true,
+    );
   });
 
   it('keeps shared panel and notice chrome in AdminSurface', () => {

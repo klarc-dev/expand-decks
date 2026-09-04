@@ -37,14 +37,14 @@ export const afterKnowledgeDocumentChange: CollectionAfterChangeHook = async ({
     const oldBaseId = relationId(previousDoc.knowledgeBase as never);
     const newBaseId = relationId(doc.knowledgeBase as never);
     if (oldBaseId !== undefined && newBaseId !== oldBaseId) {
-      await purgeDocumentFromPreviousBase(req, doc.id, oldBaseId);
+      await purgeDocumentFromPreviousBase(doc.id, oldBaseId);
     }
   }
 
   await req.payload.update({
     collection: 'knowledge-documents',
     id: doc.id,
-    data: { indexingStatus: INDEXING_STATUS.pending, errorMessage: '', chunkCount: 0 },
+    data: { indexingStatus: INDEXING_STATUS.pending, errorMessage: '' },
     overrideAccess: true,
     context: {
       [CTX.skipIngestQueue]: true,

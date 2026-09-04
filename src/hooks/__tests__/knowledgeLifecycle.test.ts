@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  afterKnowledgeDocumentDelete,
-  beforeKnowledgeBaseDelete,
-  beforeKnowledgeDocumentDelete,
-} from '../knowledgeLifecycle';
+import { beforeKnowledgeBaseDelete, beforeKnowledgeDocumentDelete } from '../knowledgeLifecycle';
 
 function vectorStore() {
   return {
@@ -14,14 +10,12 @@ function vectorStore() {
 }
 
 describe('knowledge lifecycle deletion', () => {
-  it('purges a standalone document before deletion and refreshes its base afterwards', async () => {
+  it('purges a standalone document before deletion', async () => {
     const store = vectorStore();
     const findByID = vi.fn().mockResolvedValue({ id: 12, knowledgeBase: 7 });
-    const find = vi.fn().mockResolvedValue({ docs: [] });
-    const updateOne = vi.fn().mockResolvedValue({});
     const req = {
       context: {},
-      payload: { findByID, find, db: { updateOne }, logger: { warn: vi.fn() } },
+      payload: { findByID },
     };
 
     await beforeKnowledgeDocumentDelete({ id: 12, req } as never, store);
@@ -29,15 +23,6 @@ describe('knowledge lifecycle deletion', () => {
       indexName: 'knowledge_7',
       filter: { documentId: '12' },
     });
-
-    await afterKnowledgeDocumentDelete({ doc: { id: 12, knowledgeBase: 7 }, req } as never);
-    expect(updateOne).toHaveBeenCalledWith(
-      expect.objectContaining({
-        collection: 'knowledge-bases',
-        id: 7,
-        data: expect.objectContaining({ documentCount: 0, chunkCount: 0 }),
-      }),
-    );
   });
 
   it('aborts a document delete while its Payload record still exists when vector purge fails', async () => {
@@ -94,22 +79,17 @@ describe('knowledge lifecycle deletion', () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
-  it('skips vector and summary work for documents deleted by a base cascade', async () => {
+  it('skips vector work for documents deleted by a base cascade', async () => {
     const store = vectorStore();
     const findByID = vi.fn();
-    const find = vi.fn();
-    const updateOne = vi.fn();
     const req = {
       context: { skipDocumentVectorPurge: true },
-      payload: { findByID, find, db: { updateOne }, logger: { warn: vi.fn() } },
+      payload: { findByID },
     };
 
     await beforeKnowledgeDocumentDelete({ id: 12, req } as never, store);
-    await afterKnowledgeDocumentDelete({ doc: { id: 12, knowledgeBase: 7 }, req } as never);
 
     expect(findByID).not.toHaveBeenCalled();
     expect(store.deleteVectors).not.toHaveBeenCalled();
-    expect(find).not.toHaveBeenCalled();
-    expect(updateOne).not.toHaveBeenCalled();
   });
 });

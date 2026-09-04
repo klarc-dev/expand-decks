@@ -39,6 +39,7 @@ describe('Presentations AI brief persistence', () => {
     expect(findField('agentBrief')).toMatchObject({
       type: 'textarea',
       label: 'Brief de la présentation',
+      admin: { hidden: true },
     });
   });
 });

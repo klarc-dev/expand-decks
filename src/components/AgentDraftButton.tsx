@@ -19,14 +19,13 @@ import {
 } from '@/components/agentDraftJournal';
 import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
-import { canStartWithSourcePolicy, sourceIdsForPolicy } from '@/lib/adminSourcePolicy';
+import { sourcePolicyForSelection } from '@/lib/adminSourcePolicy';
 import {
   getSourceReadinessLabel,
   groupSourceOptions,
   isSourceUnready,
   type BrowserSourceOption,
 } from '@/lib/adminSourceOptions';
-import type { SourcePolicyMode } from '@/lib/sources/types';
 
 import './AgentDraftButton.scss';
 
@@ -97,67 +96,6 @@ function DraftModeSelector({ readOnly, value, onChange }: DraftModeSelectorProps
   );
 }
 
-type SourcePolicySelectorProps = {
-  readOnly: boolean;
-  sourcesAvailable: boolean;
-  value: SourcePolicyMode;
-  maxSources: number;
-  onChange: (value: SourcePolicyMode) => void;
-};
-
-function SourcePolicySelector({
-  readOnly,
-  sourcesAvailable,
-  value,
-  maxSources,
-  onChange,
-}: SourcePolicySelectorProps) {
-  const options: ReadonlyArray<{ label: string; value: SourcePolicyMode }> = [
-    { value: 'none', label: 'Aucune source externe' },
-    { value: 'exclusive', label: 'Une source exclusive' },
-    {
-      value: 'multiple',
-      label: `Plusieurs sources${maxSources > 0 ? ` (max ${maxSources})` : ''}`,
-    },
-  ];
-  return (
-    <DraftFieldGroup label="Politique des sources externes">
-      {options.map((option) => (
-        <label
-          className="agent-draft__choice"
-          htmlFor={`agent-source-policy-${option.value}`}
-          key={option.value}
-        >
-          <input
-            checked={value === option.value}
-            disabled={readOnly || (option.value !== 'none' && !sourcesAvailable)}
-            id={`agent-source-policy-${option.value}`}
-            name="agent-source-policy"
-            onChange={() => onChange(option.value)}
-            type="radio"
-            value={option.value}
-          />
-          {option.label}
-        </label>
-      ))}
-    </DraftFieldGroup>
-  );
-}
-
-function SourceChoiceLabel({ source }: { source: SourceOption }) {
-  const readiness = getSourceReadinessLabel(source);
-  return (
-    <span className="agent-draft__source-label">
-      <span>{source.label}</span>
-      {readiness && (
-        <span className="agent-draft__source-readiness" role="status">
-          {readiness}
-        </span>
-      )}
-    </span>
-  );
-}
-
 function SourceOptionGroups({
   sources,
   renderSource,
@@ -173,45 +111,7 @@ function SourceOptionGroups({
   ));
 }
 
-function ExclusiveSourceSelector({
-  readOnly,
-  selected,
-  sources,
-  onChange,
-}: {
-  readOnly: boolean;
-  selected: string[];
-  sources: SourceOption[];
-  onChange: (id: string) => void;
-}) {
-  return (
-    <DraftFieldGroup label="Source exclusive">
-      <SourceOptionGroups
-        sources={sources}
-        renderSource={(source) => (
-          <label
-            className="agent-draft__choice"
-            data-unready={isSourceUnready(source) || undefined}
-            htmlFor={`agent-source-${source.id}`}
-            key={source.id}
-          >
-            <input
-              checked={selected.includes(source.id)}
-              disabled={readOnly}
-              id={`agent-source-${source.id}`}
-              name="agent-exclusive-source"
-              onChange={() => onChange(source.id)}
-              type="radio"
-            />
-            <SourceChoiceLabel source={source} />
-          </label>
-        )}
-      />
-    </DraftFieldGroup>
-  );
-}
-
-function MultipleSourceSelector({
+function SourceControls({
   maxSources,
   readOnly,
   selected,
@@ -225,17 +125,19 @@ function MultipleSourceSelector({
   onToggle: (id: string) => void;
 }) {
   if (sources.length === 0) return null;
+
   return (
-    <DraftFieldGroup label={`Sources${maxSources > 0 ? ` (max ${maxSources})` : ''}`}>
+    <DraftFieldGroup label="Sources">
       <SourceOptionGroups
         sources={sources}
         renderSource={(source) => {
           const checked = selected.includes(source.id);
           const atCap = maxSources > 0 && selected.length >= maxSources;
+          const unavailable = isSourceUnready(source);
           return (
             <div
               className="agent-draft__source-option"
-              data-unready={isSourceUnready(source) || undefined}
+              data-unready={unavailable || undefined}
               key={source.id}
             >
               <CheckboxInput
@@ -245,7 +147,7 @@ function MultipleSourceSelector({
                 label={source.label}
                 name={`agent-source-${source.id}`}
                 onToggle={() => onToggle(source.id)}
-                readOnly={readOnly || (!checked && atCap)}
+                readOnly={readOnly || unavailable || (!checked && atCap)}
               />
               {getSourceReadinessLabel(source) && (
                 <span className="agent-draft__source-readiness" role="status">
@@ -257,62 +159,6 @@ function MultipleSourceSelector({
         }}
       />
     </DraftFieldGroup>
-  );
-}
-
-function SourceControls({
-  loaded,
-  maxSources,
-  policy,
-  readOnly,
-  selected,
-  sources,
-  onPolicyChange,
-  onExclusiveChange,
-  onMultipleToggle,
-}: {
-  loaded: boolean;
-  maxSources: number;
-  policy: SourcePolicyMode;
-  readOnly: boolean;
-  selected: string[];
-  sources: SourceOption[];
-  onPolicyChange: (value: SourcePolicyMode) => void;
-  onExclusiveChange: (id: string) => void;
-  onMultipleToggle: (id: string) => void;
-}) {
-  return (
-    <>
-      {loaded && (
-        <SourcePolicySelector
-          maxSources={maxSources}
-          onChange={onPolicyChange}
-          readOnly={readOnly}
-          sourcesAvailable={sources.length > 0}
-          value={policy}
-        />
-      )}
-      {policy === 'exclusive' && (
-        <ExclusiveSourceSelector
-          onChange={onExclusiveChange}
-          readOnly={readOnly}
-          selected={selected}
-          sources={sources}
-        />
-      )}
-      {policy === 'multiple' && (
-        <MultipleSourceSelector
-          maxSources={maxSources}
-          onToggle={onMultipleToggle}
-          readOnly={readOnly}
-          selected={selected}
-          sources={sources}
-        />
-      )}
-      {policy === 'exclusive' && selected.length !== 1 && (
-        <AdminNotice variant="hint">Sélectionnez exactement une source exclusive.</AdminNotice>
-      )}
-    </>
   );
 }
 
@@ -554,10 +400,8 @@ const AgentDraftButton: React.FC = () => {
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [runId, setRunId] = useState<string>('');
   const [sources, setSources] = useState<SourceOption[]>([]);
-  const [sourcePolicy, setSourcePolicy] = useState<SourcePolicyMode>('none');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [maxSources, setMaxSources] = useState<number>(0);
-  const [sourcesLoaded, setSourcesLoaded] = useState(false);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState<string>('idle');
   const [durableStatus, setDurableStatus] = useState<string>('');
@@ -636,11 +480,9 @@ const AgentDraftButton: React.FC = () => {
       } else {
         setError(data.error || 'Impossible de charger les sources externes.');
       }
-      setSourcesLoaded(true);
     })().catch((err) => {
       if (cancelled) return;
       setError(err instanceof Error ? err.message : 'Impossible de charger les sources externes.');
-      setSourcesLoaded(true);
     });
     return () => {
       cancelled = true;
@@ -721,10 +563,7 @@ const AgentDraftButton: React.FC = () => {
         brief,
         mode,
         visual,
-        sourcePolicy: {
-          mode: sourcePolicy,
-          sourceIds: sourceIdsForPolicy(sourcePolicy, selectedSources),
-        },
+        sourcePolicy: sourcePolicyForSelection(selectedSources),
         approvalRequired,
       });
       if (!ok) {
@@ -740,7 +579,7 @@ const AgentDraftButton: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Erreur réseau');
       setRunning(false);
     }
-  }, [approvalRequired, brief, id, mode, selectedSources, sourcePolicy, visual, startPolling]);
+  }, [approvalRequired, brief, id, mode, selectedSources, visual, startPolling]);
 
   const handleRunAction = useCallback(
     async (action: 'cancel' | 'restart' | 'resume', approved?: boolean) => {
@@ -830,15 +669,8 @@ const AgentDraftButton: React.FC = () => {
       </DraftFieldGroup>
 
       <SourceControls
-        loaded={sourcesLoaded}
         maxSources={maxSources}
-        onExclusiveChange={(sourceId) => setSelectedSources([sourceId])}
-        onMultipleToggle={toggleSource}
-        onPolicyChange={(value) => {
-          setSourcePolicy(value);
-          setSelectedSources([]);
-        }}
-        policy={sourcePolicy}
+        onToggle={toggleSource}
         readOnly={running}
         selected={selectedSources}
         sources={sources}
@@ -846,11 +678,7 @@ const AgentDraftButton: React.FC = () => {
 
       <DraftRunActions
         approvalRequired={approvalRequired}
-        canStart={
-          !running &&
-          Boolean(brief.trim()) &&
-          canStartWithSourcePolicy(sourcePolicy, selectedSources)
-        }
+        canStart={!running && Boolean(brief.trim())}
         durableStatus={durableStatus}
         event={statusEvent}
         hasRun={Boolean(runId)}

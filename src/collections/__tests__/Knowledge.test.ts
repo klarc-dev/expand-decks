@@ -8,7 +8,6 @@ import {
   isAcceptedKnowledgeMimeType,
   validateKnowledgeBaseRelationship,
   validateKnowledgeFileContent,
-  titleFromFilename,
 } from '../KnowledgeDocuments';
 
 type NamedField = { name?: unknown; fields?: unknown };
@@ -42,29 +41,26 @@ describe('KnowledgeBases', () => {
     expect(hook({ req: { user: { id: 42 } }, operation: 'update', value: 17 })).toBe(17);
   });
 
-  it('makes ownership and synthesis fields server-only', () => {
-    for (const name of ['documentCount', 'chunkCount', 'lastIndexedAt']) {
-      const field = findNamedField(KnowledgeBases.fields, name);
-      const access = field.access as {
-        create: (args: unknown) => boolean;
-        update: (args: unknown) => boolean;
-      };
-      expect(access.update({ req: { context: {} } })).toBe(false);
-      expect(access.update({ req: { context: { trustedKnowledgeLifecycle: true } } })).toBe(true);
-    }
+  it('keeps the author surface to a name and its documents', () => {
+    expect(KnowledgeBases.admin?.defaultColumns).toEqual(['name', 'updatedAt']);
+    expect(() => findNamedField(KnowledgeBases.fields, 'description')).toThrow();
+    expect(() => findNamedField(KnowledgeBases.fields, 'documentCount')).toThrow();
+    expect(() => findNamedField(KnowledgeBases.fields, 'chunkCount')).toThrow();
+    expect(() => findNamedField(KnowledgeBases.fields, 'lastIndexedAt')).toThrow();
+    expect(findNamedField(KnowledgeBases.fields, 'documents')).toMatchObject({
+      type: 'join',
+      collection: 'knowledge-documents',
+      on: 'knowledgeBase',
+    });
+  });
+
+  it('keeps ownership server-managed', () => {
     const ownerAccess = findNamedField(KnowledgeBases.fields, 'createdBy').access as {
       create: (args: unknown) => boolean;
       update: (args: unknown) => boolean;
     };
     expect(ownerAccess.create({})).toBe(false);
     expect(ownerAccess.update({})).toBe(false);
-  });
-
-  it('exposes the ingestion summary as read-only fields', () => {
-    for (const name of ['documentCount', 'chunkCount', 'lastIndexedAt']) {
-      const field = findNamedField(KnowledgeBases.fields, name);
-      expect((field.admin as { readOnly?: boolean }).readOnly).toBe(true);
-    }
   });
 
   it('scopes non-admin reads to their own bases', () => {
@@ -116,14 +112,23 @@ describe('KnowledgeDocuments', () => {
     ]);
   });
 
-  it('carries an error message, chunk count and source hash', () => {
+  it('uses the uploaded filename as the document name without an extra title field', () => {
+    expect(KnowledgeDocuments.admin?.hidden).toBe(true);
+    expect(KnowledgeDocuments.admin?.useAsTitle).toBe('filename');
+    expect(KnowledgeDocuments.admin?.defaultColumns).toEqual([
+      'filename',
+      'knowledgeBase',
+      'indexingStatus',
+      'updatedAt',
+    ]);
+    expect(() => findNamedField(KnowledgeDocuments.fields, 'title')).toThrow();
+    expect(() => findNamedField(KnowledgeDocuments.fields, 'chunkCount')).toThrow();
+    expect(() => findNamedField(KnowledgeDocuments.fields, 'sourceHash')).toThrow();
     expect(findNamedField(KnowledgeDocuments.fields, 'errorMessage').type).toBe('textarea');
-    expect(findNamedField(KnowledgeDocuments.fields, 'chunkCount').type).toBe('number');
-    expect(findNamedField(KnowledgeDocuments.fields, 'sourceHash').type).toBe('text');
   });
 
   it('keeps lifecycle metadata writable only by trusted server context', () => {
-    for (const name of ['indexingStatus', 'chunkCount', 'errorMessage', 'sourceHash']) {
+    for (const name of ['indexingStatus', 'errorMessage']) {
       const access = findNamedField(KnowledgeDocuments.fields, name).access as {
         create: (args: unknown) => boolean;
         update: (args: unknown) => boolean;
@@ -131,29 +136,6 @@ describe('KnowledgeDocuments', () => {
       expect(access.update({ req: { context: {} } })).toBe(false);
       expect(access.update({ req: { context: { trustedKnowledgeLifecycle: true } } })).toBe(true);
     }
-  });
-
-  describe('title prefill', () => {
-    const hook = (
-      findNamedField(KnowledgeDocuments.fields, 'title').hooks as {
-        beforeValidate: ((args: unknown) => unknown)[];
-      }
-    ).beforeValidate[0];
-
-    it('derives the title from the uploaded filename', () => {
-      expect(titleFromFilename('Rapport annuel 2026.pdf')).toBe('Rapport annuel 2026');
-      expect(titleFromFilename('notes')).toBe('notes');
-      expect(titleFromFilename(undefined)).toBeUndefined();
-      expect(hook({ value: undefined, data: { filename: 'Contrat cadre.docx' } })).toBe(
-        'Contrat cadre',
-      );
-    });
-
-    it('never overwrites a title the author has edited', () => {
-      expect(hook({ value: 'Titre choisi', data: { filename: 'Contrat cadre.docx' } })).toBe(
-        'Titre choisi',
-      );
-    });
   });
 
   describe('mime type enforcement', () => {

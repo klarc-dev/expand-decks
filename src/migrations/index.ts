@@ -16,6 +16,7 @@ import * as migration_20260902_102706_exclusive_source_policy from './20260902_1
 import * as migration_20260903_062510_org_membership from './20260903_062510_org_membership';
 import * as migration_20260903_092420_knowledge_collections from './20260903_092420_knowledge_collections';
 import * as migration_20260903_092452_pgvector_knowledge_schema from './20260903_092452_pgvector_knowledge_schema';
+import * as migration_20260904_134932_simplify_knowledge_experience from './20260904_134932_simplify_knowledge_experience';
 
 export const migrations = [
   {
@@ -107,5 +108,10 @@ export const migrations = [
     up: migration_20260903_092452_pgvector_knowledge_schema.up,
     down: migration_20260903_092452_pgvector_knowledge_schema.down,
     name: '20260903_092452_pgvector_knowledge_schema',
+  },
+  {
+    up: migration_20260904_134932_simplify_knowledge_experience.up,
+    down: migration_20260904_134932_simplify_knowledge_experience.down,
+    name: '20260904_134932_simplify_knowledge_experience',
   },
 ];
