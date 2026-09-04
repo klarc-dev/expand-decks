@@ -67,6 +67,10 @@ services:
       NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
       APP_COMMIT: ${DEPLOY_COMMIT:-unknown}
       NEXT_TELEMETRY_DISABLED: "1"
+      # Authenticated Payload admin rendering loads the full server-side admin
+      # graph. V8 otherwise derives a ~1 GiB heap ceiling from the container and
+      # aborts before Docker's 4 GiB service limit is reached.
+      NODE_OPTIONS: "--max-old-space-size=3072"
     volumes:
       - /home/joachim/docker/expand-decks/media:/app/media
     healthcheck:
