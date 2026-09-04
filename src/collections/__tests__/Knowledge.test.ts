@@ -112,8 +112,11 @@ describe('KnowledgeDocuments', () => {
     ]);
   });
 
-  it('uses the uploaded filename as the document name without an extra title field', () => {
-    expect(KnowledgeDocuments.admin?.hidden).toBe(true);
+  it('keeps document create/edit routes available for uploads', () => {
+    // Payload treats an admin-hidden collection as an inaccessible entity and
+    // returns `not-found` for its create/edit views. The parent join can remain
+    // the primary workflow, but the upload collection itself must stay routable.
+    expect(KnowledgeDocuments.admin?.hidden).not.toBe(true);
     expect(KnowledgeDocuments.admin?.useAsTitle).toBe('filename');
     expect(KnowledgeDocuments.admin?.defaultColumns).toEqual([
       'filename',
