@@ -46,6 +46,10 @@ const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 const trustedLifecycleWrite: FieldAccess = ({ req }) =>
   req.context?.[CTX.trustedKnowledgeLifecycle] === true;
 
+function isTrustedLifecycle(req: PayloadRequest): boolean {
+  return req.context?.[CTX.trustedKnowledgeLifecycle] === true;
+}
+
 function uploadedBytes(req: PayloadRequest | undefined): Buffer | undefined {
   const data = req?.file?.data;
   return Buffer.isBuffer(data) ? data : undefined;
@@ -91,6 +95,8 @@ export function validateKnowledgeFileContent(
 }
 
 async function assertReadableKnowledgeBase(req: PayloadRequest, value: unknown): Promise<void> {
+  if (isTrustedLifecycle(req)) return;
+
   const id = value && typeof value === 'object' ? (value as { id?: unknown }).id : value;
   if (id === undefined || id === null || id === '') return;
   try {

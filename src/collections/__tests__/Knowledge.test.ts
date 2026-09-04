@@ -211,6 +211,21 @@ describe('KnowledgeDocuments', () => {
       );
     });
 
+    it('allows trusted lifecycle updates to preserve an existing base relationship', async () => {
+      const findByID = vi.fn();
+      await expect(
+        validateKnowledgeBaseRelationship({
+          value: 4,
+          req: {
+            user: null,
+            context: { trustedKnowledgeLifecycle: true },
+            payload: { findByID },
+          },
+        } as never),
+      ).resolves.toBe(4);
+      expect(findByID).not.toHaveBeenCalled();
+    });
+
     it('returns a relationship constraint without recursively querying bases', async () => {
       const find = vi.fn();
       await expect(
