@@ -86,6 +86,7 @@ const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
 export const Users: CollectionConfig = {
   slug: COLLECTIONS.users,
   auth: {
+    depth: 0,
     useAPIKey: true,
   },
   admin: {

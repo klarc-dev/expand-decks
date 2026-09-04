@@ -17,6 +17,10 @@ async function runBeforeLogin(membershipStatus?: MembershipStatus) {
 }
 
 describe('Users membership approval', () => {
+  it('keeps auth population at depth zero to avoid recursively expanding user relationships', () => {
+    expect(Users.auth).toMatchObject({ depth: 0 });
+  });
+
   it('allows active and pre-migration users to authenticate', async () => {
     await expect(runBeforeLogin('active')).resolves.toMatchObject({ membershipStatus: 'active' });
     await expect(runBeforeLogin()).resolves.toMatchObject({ email: 'member@example.com' });
