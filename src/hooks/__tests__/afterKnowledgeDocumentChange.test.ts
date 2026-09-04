@@ -34,6 +34,7 @@ describe('afterKnowledgeDocumentChange', () => {
     await afterKnowledgeDocumentChange(state.value as never);
     expect(state.update).toHaveBeenCalledWith(
       expect.objectContaining({
+        req: state.value.req,
         context: { skipIngestQueue: true, trustedKnowledgeLifecycle: true },
       }),
     );
