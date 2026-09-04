@@ -78,8 +78,9 @@ describe('knowledge ingestion runner', () => {
     writeFileSync(join(KNOWLEDGE_DIR, 'guide.txt'), 'source bytes');
     const state = makePayload();
 
+    const request = { payload: state.payload as never };
     const result = await runKnowledgeIngestTask(
-      { input: { documentId: 12 }, req: { payload: state.payload as never } },
+      { input: { documentId: 12 }, req: request },
       state.dependencies,
     );
 
@@ -109,8 +110,10 @@ describe('knowledge ingestion runner', () => {
       indexingStatus: 'indexed',
       errorMessage: '',
     });
+    expect(state.payload.findByID).toHaveBeenCalledWith(expect.objectContaining({ req: request }));
     expect(state.payload.update).toHaveBeenCalledWith(
       expect.objectContaining({
+        req: request,
         context: { skipIngestQueue: true, trustedKnowledgeLifecycle: true },
       }),
     );

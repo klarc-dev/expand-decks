@@ -151,6 +151,7 @@ async function patchDocument(
     id: documentId,
     data,
     overrideAccess: true,
+    req: req as PayloadRequest,
     context: {
       ...(req?.context ?? {}),
       [CTX.skipIngestQueue]: true,
@@ -181,16 +182,22 @@ export async function runKnowledgeIngestTask(
       id: documentId,
       depth: 0,
       overrideAccess: true,
+      req: req as PayloadRequest,
     })) as unknown as DocumentRecord;
     knowledgeBaseId = relationId(document.knowledgeBase);
     if (knowledgeBaseId === undefined) throw new Error('Document has no knowledge base');
     if (!document.filename) throw new Error('Document has no uploaded file');
     if (!document.mimeType) throw new Error('Document has no MIME type');
 
-    await patchDocument(req.payload, documentId, {
-      indexingStatus: INDEXING_STATUS.indexing,
-      errorMessage: '',
-    });
+    await patchDocument(
+      req.payload,
+      documentId,
+      {
+        indexingStatus: INDEXING_STATUS.indexing,
+        errorMessage: '',
+      },
+      req as PayloadRequest,
+    );
 
     const indexName = knowledgeIndexName(knowledgeBaseId);
     await deps.vectorStore.createIndex({
@@ -226,6 +233,7 @@ export async function runKnowledgeIngestTask(
       id: documentId,
       depth: 0,
       overrideAccess: true,
+      req: req as PayloadRequest,
     })) as unknown as DocumentRecord;
     const latestKnowledgeBaseId = relationId(latest.knowledgeBase);
     const latestSourceHash = createHash('sha256')
@@ -249,10 +257,15 @@ export async function runKnowledgeIngestTask(
       deleteFilter: { documentId: String(documentId) },
     });
 
-    await patchDocument(req.payload, documentId, {
-      indexingStatus: INDEXING_STATUS.indexed,
-      errorMessage: '',
-    });
+    await patchDocument(
+      req.payload,
+      documentId,
+      {
+        indexingStatus: INDEXING_STATUS.indexed,
+        errorMessage: '',
+      },
+      req as PayloadRequest,
+    );
     req.payload.logger.info(
       { documentId, knowledgeBaseId, chunkCount: chunks.length },
       'knowledge document indexed',
@@ -260,10 +273,15 @@ export async function runKnowledgeIngestTask(
     return { output: { success: true, chunkCount: chunks.length } };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await patchDocument(req.payload, documentId, {
-      indexingStatus: INDEXING_STATUS.failed,
-      errorMessage: message.slice(0, ERROR_LIMIT),
-    });
+    await patchDocument(
+      req.payload,
+      documentId,
+      {
+        indexingStatus: INDEXING_STATUS.failed,
+        errorMessage: message.slice(0, ERROR_LIMIT),
+      },
+      req as PayloadRequest,
+    );
     throw error;
   }
 }
