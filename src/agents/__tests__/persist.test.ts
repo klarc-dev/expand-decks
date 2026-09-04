@@ -24,6 +24,7 @@ describe('persistSlides', () => {
     });
 
     expect(update.mock.calls[0]![0].data.slides).toEqual(revised);
+    expect(update.mock.calls[0]![0]).not.toHaveProperty('context');
   });
 
   it('rejects malformed slides before conversion or persistence', async () => {
