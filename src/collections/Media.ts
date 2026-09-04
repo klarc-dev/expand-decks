@@ -1,29 +1,21 @@
-import type { Access, CollectionConfig } from 'payload';
+import type { Access, CollectionConfig, Where } from 'payload';
 
-import { isAdmin, isLoggedIn, userIsAdmin } from '../access/roles';
+import { isAdmin, isLoggedIn, userIsAdmin, userOrganisationIds } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 
 export const canReadMedia: Access = async ({ req }) => {
-  const { user, payload } = req;
+  const { user } = req;
   if (!user) return false;
   if (userIsAdmin(user)) return true;
 
-  const readable = await payload.find({
-    collection: COLLECTIONS.presentations,
-    depth: 0,
-    limit: 1000,
-    user,
-    overrideAccess: false,
-  });
-  const readableIds = readable.docs.map((doc) => doc.id);
-
-  return {
+  const scoped: Where = {
     or: [
       { presentation: { exists: false } },
       { presentation: { equals: null } },
-      { presentation: { in: readableIds } },
+      { 'presentation.organisation': { in: userOrganisationIds(user) } },
     ],
   };
+  return scoped;
 };
 
 export const Media: CollectionConfig = {

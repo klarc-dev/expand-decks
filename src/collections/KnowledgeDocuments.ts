@@ -117,29 +117,10 @@ export const validateKnowledgeBaseRelationship: FieldHook = async ({ value, req 
  * delegation Media uses against Presentations.
  */
 export const canAccessKnowledgeDocuments: Access = async ({ req }) => {
-  const { user, payload } = req;
+  const { user } = req;
   if (!user) return false;
   if (userIsAdmin(user)) return true;
-
-  const ids: (number | string)[] = [];
-  let page = 1;
-  let hasNextPage = true;
-  while (hasNextPage) {
-    const readable = await payload.find({
-      collection: COLLECTIONS.knowledgeBases,
-      depth: 0,
-      limit: 1000,
-      page,
-      sort: 'id',
-      user,
-      overrideAccess: false,
-    });
-    ids.push(...readable.docs.map((doc) => doc.id));
-    hasNextPage = readable.hasNextPage;
-    page += 1;
-  }
-
-  return { knowledgeBase: { in: ids } };
+  return { 'knowledgeBase.createdBy': { equals: user.id } };
 };
 
 /**

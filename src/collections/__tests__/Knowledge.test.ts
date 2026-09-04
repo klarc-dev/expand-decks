@@ -211,34 +211,14 @@ describe('KnowledgeDocuments', () => {
       );
     });
 
-    it('paginates all readable bases with a stable sort', async () => {
-      const find = vi
-        .fn()
-        .mockResolvedValueOnce({ docs: [{ id: 3 }], hasNextPage: true })
-        .mockResolvedValueOnce({ docs: [{ id: 1003 }], hasNextPage: false });
+    it('returns a relationship constraint without recursively querying bases', async () => {
+      const find = vi.fn();
       await expect(
         canAccessKnowledgeDocuments({
           req: { user: { id: 7, role: 'author' }, payload: { find } },
         } as never),
-      ).resolves.toEqual({ knowledgeBase: { in: [3, 1003] } });
-      expect(find).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ page: 2, limit: 1000, sort: 'id' }),
-      );
-    });
-
-    it('scopes an author to documents in bases they can read', async () => {
-      const find = vi.fn().mockResolvedValue({ docs: [{ id: 3 }, { id: 9 }], hasNextPage: false });
-      await expect(
-        canAccessKnowledgeDocuments({
-          req: { user: { id: 7, role: 'author' }, payload: { find } },
-        } as never),
-      ).resolves.toEqual({ knowledgeBase: { in: [3, 9] } });
-      // Delegates to the KnowledgeBases read policy rather than re-deriving
-      // ownership, so document scoping follows base scoping automatically.
-      expect(find).toHaveBeenCalledWith(
-        expect.objectContaining({ collection: 'knowledge-bases', overrideAccess: false }),
-      );
+      ).resolves.toEqual({ 'knowledgeBase.createdBy': { equals: 7 } });
+      expect(find).not.toHaveBeenCalled();
     });
   });
 });
