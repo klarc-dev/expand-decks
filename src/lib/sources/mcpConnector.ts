@@ -7,9 +7,14 @@ import { z } from 'zod';
 import {
   embedKnowledgeQuery,
   knowledgeVectorStore,
-  type KnowledgeQueryResult,
   type KnowledgeVectorStore,
 } from './knowledgeVector';
+import {
+  KNOWLEDGE_DEFAULT_TOP_K,
+  KNOWLEDGE_MAX_TOP_K,
+  retrieveKnowledgeEvidence,
+  type KnowledgeEvidenceItem,
+} from './knowledgeRetrieval';
 import { sanitizeToolResult } from './toolPolicy';
 import {
   evidenceId,
@@ -47,54 +52,6 @@ export type SourceConnectorDependencies = {
   vectorStore: KnowledgeVectorStore;
   embedQuery: (query: string) => Promise<number[]>;
 };
-
-const KNOWLEDGE_MIN_SCORE = 0.35;
-const KNOWLEDGE_DEFAULT_TOP_K = 5;
-const KNOWLEDGE_MAX_TOP_K = 10;
-const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;
-
-function words(value: string): Set<string> {
-  return new Set(value.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []);
-}
-
-/** Deterministic local rerank: vector relevance plus query-token coverage. */
-function rerankKnowledgeHits(query: string, hits: KnowledgeQueryResult[], topK: number) {
-  const queryWords = words(query);
-  return hits
-    .map((hit, position) => {
-      const text = typeof hit.metadata?.text === 'string' ? hit.metadata.text : '';
-      const textWords = words(text);
-      const overlap = queryWords.size
-        ? [...queryWords].filter((word) => textWords.has(word)).length / queryWords.size
-        : 0;
-      return { hit, rank: hit.score * 0.8 + overlap * 0.15 + (1 / (position + 1)) * 0.05 };
-    })
-    .sort(
-      (a, b) => b.rank - a.rank || b.hit.score - a.hit.score || a.hit.id.localeCompare(b.hit.id),
-    )
-    .slice(0, topK)
-    .map(({ hit }) => hit);
-}
-
-function knowledgeEvidenceItem(hit: KnowledgeQueryResult) {
-  const metadata = hit.metadata ?? {};
-  if (
-    typeof metadata.text !== 'string' ||
-    typeof metadata.documentId !== 'string' ||
-    typeof metadata.title !== 'string' ||
-    typeof metadata.chunkIndex !== 'number'
-  )
-    return undefined;
-  return {
-    text: metadata.text,
-    documentId: metadata.documentId,
-    documentTitle: metadata.title,
-    chunkIndex: metadata.chunkIndex,
-    score: hit.score,
-  };
-}
-
-type KnowledgeEvidenceItem = NonNullable<ReturnType<typeof knowledgeEvidenceItem>>;
 
 function utf8Prefix(value: string, maxBytes: number): string {
   const bytes = Buffer.from(value, 'utf8');
@@ -162,21 +119,13 @@ function knowledgeTool(
       topK: z.number().int().min(1).max(KNOWLEDGE_MAX_TOP_K).default(KNOWLEDGE_DEFAULT_TOP_K),
     }),
     execute: async ({ query, topK = KNOWLEDGE_DEFAULT_TOP_K }) => {
-      const queryVector = await deps.embedQuery(query);
-      const hits = await deps.vectorStore.query({
-        indexName: source.indexName,
-        queryVector,
-        topK: Math.min(
-          KNOWLEDGE_MAX_TOP_K * KNOWLEDGE_CANDIDATE_MULTIPLIER,
-          topK * KNOWLEDGE_CANDIDATE_MULTIPLIER,
-        ),
-        minScore: KNOWLEDGE_MIN_SCORE,
-        // Defense in depth: neither index nor metadata filter comes from model input.
-        filter: { knowledgeBaseId: String(source.knowledgeBaseId) },
+      // Index name and knowledge-base filter are server-owned, never model input.
+      const items = await retrieveKnowledgeEvidence({
+        source: { knowledgeBaseId: source.knowledgeBaseId, indexName: source.indexName },
+        query,
+        topK,
+        deps,
       });
-      const items = rerankKnowledgeHits(query, hits, topK)
-        .map(knowledgeEvidenceItem)
-        .filter((item): item is KnowledgeEvidenceItem => Boolean(item));
       return boundKnowledgeEvidenceItems(items, source.maxResultBytes);
     },
   });

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KNOWLEDGE_DIR } from '../../lib/paths';
 import {
   buildChunkMetadata,
+  chunkKnowledgeText,
   extractKnowledgeText,
   knowledgeIndexName,
   runKnowledgeIngestTask,
@@ -89,7 +90,7 @@ describe('knowledge ingestion runner', () => {
       indexName: 'knowledge_7',
       dimension: 384,
       metric: 'cosine',
-      metadataIndexes: ['knowledgeBaseId', 'documentId'],
+      metadataIndexes: ['knowledgeBaseId', 'documentId', 'chunkId'],
     });
     expect(state.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -102,6 +103,7 @@ describe('knowledge ingestion runner', () => {
             title: 'Guide produit',
             chunkIndex: 0,
             text: 'Alpha\n\nBeta',
+            chunkId: '12:0',
           },
         ],
       }),
@@ -159,9 +161,51 @@ describe('knowledge ingestion helpers', () => {
 
   it('uses the filename when no separate title exists', () => {
     expect(buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, ['one', 'two'])).toEqual([
-      { knowledgeBaseId: '3', documentId: '9', title: 'notes.md', chunkIndex: 0, text: 'one' },
-      { knowledgeBaseId: '3', documentId: '9', title: 'notes.md', chunkIndex: 1, text: 'two' },
+      {
+        knowledgeBaseId: '3',
+        documentId: '9',
+        title: 'notes.md',
+        chunkIndex: 0,
+        text: 'one',
+        chunkId: '9:0',
+        nextChunkId: '9:1',
+      },
+      {
+        knowledgeBaseId: '3',
+        documentId: '9',
+        title: 'notes.md',
+        chunkIndex: 1,
+        text: 'two',
+        chunkId: '9:1',
+        previousChunkId: '9:0',
+      },
     ]);
+  });
+
+  it('records heading path, stable chunk ids and neighbours for markdown sections', async () => {
+    const chunks = await chunkKnowledgeText(
+      [
+        '# Pilote',
+        '',
+        'Le pilote dure six semaines.',
+        '',
+        '## Budget',
+        '',
+        'Budget 90 000 EUR.',
+      ].join('\n'),
+      'text/markdown',
+    );
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.map((chunk) => chunk.headingPath)).toEqual(
+      expect.arrayContaining([expect.stringContaining('Pilote')]),
+    );
+
+    const metadata = buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, chunks);
+    expect(metadata[0]!.chunkId).toBe('9:0');
+    expect(metadata[0]!.previousChunkId).toBeUndefined();
+    expect(metadata[0]!.nextChunkId).toBe('9:1');
+    expect(metadata.at(-1)!.nextChunkId).toBeUndefined();
   });
 
   it.each([

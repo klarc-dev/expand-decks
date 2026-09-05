@@ -30,12 +30,21 @@ type DocumentRecord = {
   knowledgeBase?: number | string | { id: number | string } | null;
 };
 
+type KnowledgeChunk = {
+  text: string;
+  headingPath?: string;
+};
+
 type ChunkMetadata = {
   knowledgeBaseId: string;
   documentId: string;
   title: string;
   chunkIndex: number;
   text: string;
+  chunkId?: string;
+  headingPath?: string;
+  previousChunkId?: string;
+  nextChunkId?: string;
 };
 
 type Extractor = (filePath: string, mimeType: string) => Promise<string>;
@@ -87,14 +96,20 @@ export function knowledgeIndexName(knowledgeBaseId: number | string): string {
 export function buildChunkMetadata(
   document: Pick<DocumentRecord, 'id' | 'filename' | 'title'>,
   knowledgeBaseId: number | string,
-  chunks: string[],
+  chunks: readonly (KnowledgeChunk | string)[],
 ): ChunkMetadata[] {
-  return chunks.map((text, chunkIndex) => ({
+  const normalized = chunks.map((chunk) => (typeof chunk === 'string' ? { text: chunk } : chunk));
+  const chunkId = (index: number) => `${document.id}:${index}`;
+  return normalized.map((chunk, chunkIndex) => ({
     knowledgeBaseId: String(knowledgeBaseId),
     documentId: String(document.id),
     title: document.title?.trim() || document.filename?.trim() || 'Document',
     chunkIndex,
-    text,
+    text: chunk.text,
+    chunkId: chunkId(chunkIndex),
+    ...(chunk.headingPath ? { headingPath: chunk.headingPath } : {}),
+    ...(chunkIndex > 0 ? { previousChunkId: chunkId(chunkIndex - 1) } : {}),
+    ...(chunkIndex < normalized.length - 1 ? { nextChunkId: chunkId(chunkIndex + 1) } : {}),
   }));
 }
 
@@ -116,15 +131,76 @@ export async function extractKnowledgeText(filePath: string, mimeType: string): 
   throw new Error(`Unsupported knowledge document MIME type: ${mimeType}`);
 }
 
-async function chunkKnowledgeText(text: string, mimeType: string): Promise<string[]> {
-  const isMarkdown = mimeType.split(';')[0].trim() === 'text/markdown';
-  const document = isMarkdown ? MDocument.fromMarkdown(text) : MDocument.fromText(text);
+/** Splits markdown into heading-bounded sections so retrieval keeps section context. */
+function markdownSections(text: string): { heading?: string; level: number; body: string }[] {
+  const sections: { heading?: string; level: number; body: string }[] = [];
+  let current: { heading?: string; level: number; body: string } = { level: 0, body: '' };
+  for (const line of text.split('\n')) {
+    const heading = /^(#{1,6})\s+(.*\S)\s*$/.exec(line);
+    if (heading) {
+      if (current.body.trim() || current.heading) sections.push(current);
+      current = { heading: heading[2], level: heading[1]!.length, body: '' };
+      continue;
+    }
+    current.body += `${line}\n`;
+  }
+  if (current.body.trim() || current.heading) sections.push(current);
+  return sections;
+}
+
+function headingPathFor(stack: readonly string[]): string | undefined {
+  return stack.length ? stack.join(' > ') : undefined;
+}
+
+async function splitText(text: string, strategy: 'markdown' | 'recursive'): Promise<string[]> {
+  const document =
+    strategy === 'markdown' ? MDocument.fromMarkdown(text) : MDocument.fromText(text);
   const chunks = await document.chunk({
-    strategy: isMarkdown ? 'markdown' : 'recursive',
+    strategy,
     maxSize: CHUNK_MAX_SIZE,
     overlap: CHUNK_OVERLAP,
   });
   return chunks.map((chunk) => chunk.text).filter((chunk) => chunk.trim().length > 0);
+}
+
+/**
+ * Structure-aware chunking. Markdown is split on heading boundaries first so a
+ * chunk never spans unrelated sections, and every chunk carries the heading path
+ * it belongs to. Other formats fall back to paragraph-aware recursive chunking.
+ */
+export async function chunkKnowledgeText(
+  text: string,
+  mimeType: string,
+): Promise<KnowledgeChunk[]> {
+  const isMarkdown = mimeType.split(';')[0].trim() === 'text/markdown';
+  if (!isMarkdown) {
+    return (await splitText(text, 'recursive')).map((chunk) => ({ text: chunk }));
+  }
+
+  const stack: string[] = [];
+  const levels: number[] = [];
+  const chunks: KnowledgeChunk[] = [];
+  for (const section of markdownSections(text)) {
+    if (section.heading) {
+      while (levels.length && levels[levels.length - 1]! >= section.level) {
+        levels.pop();
+        stack.pop();
+      }
+      levels.push(section.level);
+      stack.push(section.heading);
+    }
+    const headingPath = headingPathFor(stack);
+    const body = section.heading
+      ? `${'#'.repeat(section.level)} ${section.heading}\n${section.body}`
+      : section.body;
+    if (!body.trim()) continue;
+    for (const piece of await splitText(body, 'markdown')) {
+      chunks.push({ text: piece, ...(headingPath ? { headingPath } : {}) });
+    }
+  }
+  return chunks.length
+    ? chunks
+    : (await splitText(text, 'markdown')).map((chunk) => ({ text: chunk }));
 }
 
 async function embedLocally(values: string[]): Promise<number[][]> {
@@ -204,7 +280,7 @@ export async function runKnowledgeIngestTask(
       indexName,
       dimension: KNOWLEDGE_EMBEDDING_DIMENSION,
       metric: 'cosine',
-      metadataIndexes: ['knowledgeBaseId', 'documentId'],
+      metadataIndexes: ['knowledgeBaseId', 'documentId', 'chunkId'],
     });
     await deps.vectorStore.deleteVectors({
       indexName,
@@ -218,7 +294,11 @@ export async function runKnowledgeIngestTask(
 
     const chunks = await chunkKnowledgeText(text, document.mimeType);
     if (chunks.length === 0) throw new Error('Le document n’a produit aucun fragment exploitable.');
-    const vectors = await deps.embed(chunks);
+    const vectors = await deps.embed(
+      chunks.map((chunk) =>
+        chunk.headingPath ? `${chunk.headingPath}\n${chunk.text}` : chunk.text,
+      ),
+    );
     if (vectors.length !== chunks.length) {
       throw new Error(
         `Embedding count mismatch: expected ${chunks.length}, received ${vectors.length}`,
