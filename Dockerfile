@@ -64,7 +64,7 @@ COPY --from=builder /app/scripts ./scripts
 
 # Copy Slidev workspace with its own node_modules
 COPY --from=slidev-deps /app/slidev-workspace/node_modules ./slidev-workspace/node_modules
-COPY slidev-workspace/package.json ./slidev-workspace/
+COPY slidev-workspace/package.json slidev-workspace/validate-layout.mjs ./slidev-workspace/
 
 # Install the exact Playwright Chromium revision required by the isolated
 # Slidev workspace. Running `npx playwright-chromium` from /app can resolve the
