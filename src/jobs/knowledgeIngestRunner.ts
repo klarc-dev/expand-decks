@@ -30,6 +30,13 @@ type DocumentRecord = {
   knowledgeBase?: number | string | { id: number | string } | null;
 };
 
+/**
+ * Version of the indexed retrieval representation (chunking + embedding input).
+ * Bump whenever chunk boundaries or embedded text change so previously indexed
+ * documents are recognisably stale and can be reindexed.
+ */
+export const KNOWLEDGE_RETRIEVAL_VERSION = 2;
+
 type KnowledgeChunk = {
   text: string;
   headingPath?: string;
@@ -41,6 +48,7 @@ type ChunkMetadata = {
   title: string;
   chunkIndex: number;
   text: string;
+  retrievalVersion: number;
   chunkId?: string;
   headingPath?: string;
   previousChunkId?: string;
@@ -96,20 +104,20 @@ export function knowledgeIndexName(knowledgeBaseId: number | string): string {
 export function buildChunkMetadata(
   document: Pick<DocumentRecord, 'id' | 'filename' | 'title'>,
   knowledgeBaseId: number | string,
-  chunks: readonly (KnowledgeChunk | string)[],
+  chunks: readonly KnowledgeChunk[],
 ): ChunkMetadata[] {
-  const normalized = chunks.map((chunk) => (typeof chunk === 'string' ? { text: chunk } : chunk));
   const chunkId = (index: number) => `${document.id}:${index}`;
-  return normalized.map((chunk, chunkIndex) => ({
+  return chunks.map((chunk, chunkIndex) => ({
     knowledgeBaseId: String(knowledgeBaseId),
     documentId: String(document.id),
     title: document.title?.trim() || document.filename?.trim() || 'Document',
     chunkIndex,
     text: chunk.text,
+    retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
     chunkId: chunkId(chunkIndex),
     ...(chunk.headingPath ? { headingPath: chunk.headingPath } : {}),
     ...(chunkIndex > 0 ? { previousChunkId: chunkId(chunkIndex - 1) } : {}),
-    ...(chunkIndex < normalized.length - 1 ? { nextChunkId: chunkId(chunkIndex + 1) } : {}),
+    ...(chunkIndex < chunks.length - 1 ? { nextChunkId: chunkId(chunkIndex + 1) } : {}),
   }));
 }
 

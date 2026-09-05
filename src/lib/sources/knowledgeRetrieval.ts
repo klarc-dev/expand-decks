@@ -8,6 +8,12 @@ export const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;
 export const KNOWLEDGE_MAX_PER_DOCUMENT = 2;
 /** Jaccard token overlap above which two passages count as near-duplicates. */
 export const KNOWLEDGE_DUPLICATE_OVERLAP = 0.9;
+/** Weight of vector similarity in the fused ranking score. */
+export const KNOWLEDGE_SEMANTIC_WEIGHT = 0.6;
+/** Weight of exact-term (lexical) coverage in the fused ranking score. */
+export const KNOWLEDGE_LEXICAL_WEIGHT = 0.35;
+/** Weight of the original vector-store rank, breaking ties deterministically. */
+export const KNOWLEDGE_POSITION_WEIGHT = 0.05;
 
 export type KnowledgeRetrievalSource = {
   knowledgeBaseId: number | string;
@@ -104,7 +110,10 @@ export async function retrieveKnowledgeEvidence(args: {
       const lexical = lexicalScore(queryTerms, item.text);
       return {
         item,
-        rank: hit.score * 0.6 + lexical * 0.35 + (1 / (position + 1)) * 0.05,
+        rank:
+          hit.score * KNOWLEDGE_SEMANTIC_WEIGHT +
+          lexical * KNOWLEDGE_LEXICAL_WEIGHT +
+          (1 / (position + 1)) * KNOWLEDGE_POSITION_WEIGHT,
       };
     })
     .filter((entry): entry is { item: KnowledgeEvidenceItem; rank: number } => Boolean(entry))
@@ -119,46 +128,51 @@ export async function retrieveKnowledgeEvidence(args: {
   return selectDiverseEvidence(ranked, topK);
 }
 
-/** Jaccard overlap between two passages' token sets. */
-function overlapRatio(left: string, right: string): number {
-  const leftTerms = new Set(tokens(left));
-  const rightTerms = new Set(tokens(right));
-  if (leftTerms.size === 0 || rightTerms.size === 0) return 0;
+/** Jaccard overlap between two pre-computed token sets. */
+function overlapRatio(left: ReadonlySet<string>, right: ReadonlySet<string>): number {
+  if (left.size === 0 || right.size === 0) return 0;
   let shared = 0;
-  for (const term of leftTerms) if (rightTerms.has(term)) shared += 1;
-  return shared / (leftTerms.size + rightTerms.size - shared);
+  for (const term of left) if (right.has(term)) shared += 1;
+  return shared / (left.size + right.size - shared);
 }
 
 /**
- * Relevance-ordered selection that suppresses near-duplicates and prevents a
- * single document from monopolising the bounded evidence budget. Skipped
- * candidates are reconsidered only if the budget would otherwise go unused.
+ * Relevance-ordered selection that drops near-duplicates outright and prevents a
+ * single document from monopolising the bounded evidence budget. Passages held
+ * back only by the per-document cap may backfill unused budget; near-duplicates
+ * never can, since they add no information.
  */
 export function selectDiverseEvidence(
   ranked: readonly KnowledgeEvidenceItem[],
   topK: number,
 ): KnowledgeEvidenceItem[] {
-  const selected: KnowledgeEvidenceItem[] = [];
-  const deferred: KnowledgeEvidenceItem[] = [];
+  // Tokenize once per candidate; duplicate detection then compares prepared sets.
+  const candidates = ranked.map((item) => ({ item, terms: new Set(tokens(item.text)) }));
+  const selected: typeof candidates = [];
+  const overflow: typeof candidates = [];
   const perDocument = new Map<string, number>();
 
-  for (const item of ranked) {
-    if (selected.length >= topK) break;
-    const used = perDocument.get(item.documentId) ?? 0;
-    const duplicate = selected.some(
-      (chosen) => overlapRatio(chosen.text, item.text) >= KNOWLEDGE_DUPLICATE_OVERLAP,
+  const isDuplicate = (candidate: (typeof candidates)[number]) =>
+    selected.some(
+      (chosen) => overlapRatio(chosen.terms, candidate.terms) >= KNOWLEDGE_DUPLICATE_OVERLAP,
     );
-    if (duplicate || used >= KNOWLEDGE_MAX_PER_DOCUMENT) {
-      deferred.push(item);
+
+  for (const candidate of candidates) {
+    if (selected.length >= topK) break;
+    if (isDuplicate(candidate)) continue;
+    const used = perDocument.get(candidate.item.documentId) ?? 0;
+    if (used >= KNOWLEDGE_MAX_PER_DOCUMENT) {
+      overflow.push(candidate);
       continue;
     }
-    selected.push(item);
-    perDocument.set(item.documentId, used + 1);
+    selected.push(candidate);
+    perDocument.set(candidate.item.documentId, used + 1);
   }
 
-  for (const item of deferred) {
+  for (const candidate of overflow) {
     if (selected.length >= topK) break;
-    selected.push(item);
+    if (isDuplicate(candidate)) continue;
+    selected.push(candidate);
   }
-  return selected;
+  return selected.map((candidate) => candidate.item);
 }

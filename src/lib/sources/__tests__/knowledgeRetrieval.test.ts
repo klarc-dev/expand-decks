@@ -100,6 +100,24 @@ describe('knowledge retrieval contract', () => {
     expect(items.map((item) => item.chunkId)).toEqual(['d-1', 'd-3']);
   });
 
+  it('never re-admits a near-duplicate passage to fill the budget', async () => {
+    const { deps: dependencies } = deps([
+      [
+        hit('e-1', 0.9, { documentId: '1', chunkIndex: 0, text: 'Le pilote dure six semaines.' }),
+        hit('e-2', 0.89, { documentId: '2', chunkIndex: 0, text: 'Le pilote dure six semaines.' }),
+      ],
+    ]);
+
+    const items = await retrieveKnowledgeEvidence({
+      source,
+      query: 'pilote',
+      topK: 5,
+      deps: dependencies,
+    });
+
+    expect(items.map((item) => item.chunkId)).toEqual(['e-1']);
+  });
+
   it('returns the section heading path so passages keep their context', async () => {
     const { deps: dependencies } = deps([
       [hit('h-1', 0.8, { headingPath: 'Pilote > Budget', text: 'Budget 90 000 EUR.' })],

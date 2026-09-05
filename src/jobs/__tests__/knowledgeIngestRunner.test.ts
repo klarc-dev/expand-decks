@@ -7,6 +7,7 @@ import {
   buildChunkMetadata,
   chunkKnowledgeText,
   extractKnowledgeText,
+  KNOWLEDGE_RETRIEVAL_VERSION,
   knowledgeIndexName,
   runKnowledgeIngestTask,
 } from '../knowledgeIngestRunner';
@@ -103,6 +104,7 @@ describe('knowledge ingestion runner', () => {
             title: 'Guide produit',
             chunkIndex: 0,
             text: 'Alpha\n\nBeta',
+            retrievalVersion: 2,
             chunkId: '12:0',
           },
         ],
@@ -160,13 +162,16 @@ describe('knowledge ingestion helpers', () => {
   });
 
   it('uses the filename when no separate title exists', () => {
-    expect(buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, ['one', 'two'])).toEqual([
+    expect(
+      buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, [{ text: 'one' }, { text: 'two' }]),
+    ).toEqual([
       {
         knowledgeBaseId: '3',
         documentId: '9',
         title: 'notes.md',
         chunkIndex: 0,
         text: 'one',
+        retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
         chunkId: '9:0',
         nextChunkId: '9:1',
       },
@@ -176,10 +181,17 @@ describe('knowledge ingestion helpers', () => {
         title: 'notes.md',
         chunkIndex: 1,
         text: 'two',
+        retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
         chunkId: '9:1',
         previousChunkId: '9:0',
       },
     ]);
+  });
+
+  it('stamps the retrieval version so stale representations can be reindexed', async () => {
+    const metadata = buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, [{ text: 'one' }]);
+    expect(KNOWLEDGE_RETRIEVAL_VERSION).toEqual(expect.any(Number));
+    expect(metadata[0]!.retrievalVersion).toBe(KNOWLEDGE_RETRIEVAL_VERSION);
   });
 
   it('records heading path, stable chunk ids and neighbours for markdown sections', async () => {
