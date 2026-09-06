@@ -27,6 +27,23 @@ describe('prepareSlidesForRender', () => {
     expect(textNodes(slide.footer)).toContain('Supporting note');
   });
 
+  it('converts generated rich text nested in array items', async () => {
+    const [slide] = await prepareSlidesForRender([
+      {
+        blockType: 'twoCols',
+        title: 'Before and after',
+        rightCards: [
+          { title: 'Before', description: 'Premises **before** the recommendation.' },
+          { title: 'After', description: 'Recommendation before premises.' },
+        ],
+      },
+    ]);
+
+    expect(textNodes(slide.rightCards[0]!.description)).toContain(
+      'Premises before the recommendation.',
+    );
+  });
+
   it('does not mutate the AI-facing slide objects', async () => {
     const source = {
       blockType: 'cover',

@@ -53,6 +53,9 @@ function richTextPaths(blockType: string): string[][] {
       if (field.payload?.type === 'array' && field.payload.fields) {
         visit(field.payload.fields, [...prefix, field.name]);
       }
+      if (field.factory === 'cardTitleDesc') {
+        paths.push([...prefix, 'description']);
+      }
     }
   };
   visit(spec.fields, []);
