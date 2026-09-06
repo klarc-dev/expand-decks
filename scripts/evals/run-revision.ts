@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { generateStructured } from '../../src/agents/model';
 import { revisionDatasetV1 } from '../../src/agents/evals/datasets/revision.v1';
 import { EVAL_THRESHOLDS } from '../../src/agents/evals/config';
+import { buildRevisionJudgePrompt } from '../../src/agents/evals/revisionJudge';
 import { deckWorkflow } from '../../src/agents/workflow';
 
 const Verdict = z.object({
@@ -45,7 +46,11 @@ for (const fixture of revisionDatasetV1) {
     instructions:
       'Judge whether the final deck performs the requested revision while preserving unrelated facts, examples, and structure. Score both dimensions independently from 0 to 1.',
     schema: Verdict,
-    prompt: `EXPECTATIONS:\n${JSON.stringify(fixture.groundTruth, null, 2)}\n\nINITIAL:\n${JSON.stringify(initial, null, 2)}\n\nFINAL:\n${JSON.stringify(previous, null, 2)}`,
+    prompt: buildRevisionJudgePrompt({
+      expectations: fixture.groundTruth,
+      initial,
+      final: previous,
+    }),
     modelTier: 'judge',
   });
   itemResults.push({ externalId: fixture.externalId, verdict });
