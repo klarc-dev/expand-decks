@@ -51,7 +51,8 @@ function selectThreshold(rows: CalibrationRow[]): CalibrationRow {
     const rowAbstention = row.noAnswerPrecision ?? -1;
     const bestAbstention = best.noAnswerPrecision ?? -1;
     if (rowAbstention > bestAbstention) return row;
-    if (rowAbstention === bestAbstention && row.contextPrecision > best.contextPrecision) return row;
+    if (rowAbstention === bestAbstention && row.contextPrecision > best.contextPrecision)
+      return row;
     if (
       rowAbstention === bestAbstention &&
       row.contextPrecision === best.contextPrecision &&
