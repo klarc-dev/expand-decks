@@ -3,7 +3,9 @@ import { PgVector } from '@mastra/pg';
 
 import { DATABASE_URL } from '../env';
 
-export const KNOWLEDGE_EMBEDDING_DIMENSION = 384;
+export const KNOWLEDGE_EMBEDDING_QUERY_MODEL_ID = 'multilingual-e5-large-query';
+export const KNOWLEDGE_EMBEDDING_PASSAGE_MODEL_ID = 'multilingual-e5-large-passage';
+export const KNOWLEDGE_EMBEDDING_DIMENSION = 1024;
 const KNOWLEDGE_VECTOR_SCHEMA = 'mastra_vectors';
 
 export type KnowledgeQueryResult = {
@@ -40,12 +42,13 @@ export function knowledgeVectorStore(): PgVector {
 }
 
 export async function embedKnowledgeValues(values: string[]): Promise<number[][]> {
-  const result = await fastembed.doEmbed({ values });
+  const result = await fastembed.multilingualE5LargePassage.doEmbed({ values });
   return result.embeddings;
 }
 
 export async function embedKnowledgeQuery(query: string): Promise<number[]> {
-  const vector = (await embedKnowledgeValues([query]))[0];
+  const result = await fastembed.multilingualE5LargeQuery.doEmbed({ values: [query] });
+  const vector = result.embeddings[0];
   if (!vector || vector.length !== KNOWLEDGE_EMBEDDING_DIMENSION) {
     throw new Error(`Knowledge query embedding dimension must be ${KNOWLEDGE_EMBEDDING_DIMENSION}`);
   }

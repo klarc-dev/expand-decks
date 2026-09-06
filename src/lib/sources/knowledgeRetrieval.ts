@@ -5,19 +5,19 @@ import type { KnowledgeQueryResult, KnowledgeVectorStore } from './knowledgeVect
  * pipeline's only abstention mechanism: on a question the corpus cannot answer,
  * it is what stops the nearest topical passage being handed over as evidence.
  *
- * Calibrated against the actual production embedding model (`@mastra/fastembed`)
- * on the versioned retrieval dataset by
- * `scripts/evals/retrieval-embedding-threshold.mts`. At 0.72:
- * - no-answer precision reaches 1.00 (both unsupported questions abstain),
- * - answerable-case recall is 0.8125 (0.65 when averaged with no-answer cases),
- * - nDCG remains 0.90.
+ * The floor is calibrated against the shipped multilingual query/passage model
+ * pair and exact retrieval pipeline by
+ * `scripts/evals/retrieval-embedding-threshold.mts`. The selected 0.86 floor:
+ * - preserves every labelled supporting passage in the answerable fixtures,
+ * - abstains on one of two unsupported questions,
+ * - improves context precision to 0.65 while nDCG remains 0.96.
  *
- * 0.68 preserves the best observed answerable recall (0.875) but answers one
- * of two unsupported questions; 0.74 gains no abstention and cuts answerable recall to 0.646. Thus
- * 0.72 is the first floor with complete abstention and the best recall at that
- * precision. Re-run the script whenever the embedding model or dataset changes.
+ * The next tested floor, 0.87, abstains on both unsupported questions but drops
+ * answerable recall to 0.6875. Retrieval quality takes priority over fitting two
+ * negative fixtures, so 0.86 is the highest recall-safe floor. Re-run the script
+ * whenever the embedding model or dataset changes.
  */
-export const KNOWLEDGE_MIN_SCORE = 0.72;
+export const KNOWLEDGE_MIN_SCORE = 0.86;
 export const KNOWLEDGE_DEFAULT_TOP_K = 5;
 export const KNOWLEDGE_MAX_TOP_K = 10;
 export const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;

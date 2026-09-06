@@ -1,5 +1,9 @@
-import { fastembed } from '@mastra/fastembed';
-
+import {
+  KNOWLEDGE_EMBEDDING_PASSAGE_MODEL_ID,
+  KNOWLEDGE_EMBEDDING_QUERY_MODEL_ID,
+  embedKnowledgeQuery,
+  embedKnowledgeValues,
+} from '../../src/lib/sources/knowledgeVector';
 import {
   DATASET_CASES,
   DATASET_CHUNKS,
@@ -11,7 +15,7 @@ import {
 } from '../../src/lib/sources/knowledgeRetrieval';
 import { evaluateRetrieval } from '../../src/lib/sources/retrievalEval';
 
-const thresholds = Array.from({ length: 31 }, (_, index) => 0.4 + index * 0.02);
+const thresholds = Array.from({ length: 41 }, (_, index) => 0.6 + index * 0.01);
 const answerableCases = DATASET_CASES.filter((testCase) => testCase.expectedChunkIds.length > 0);
 
 type CalibrationRow = {
@@ -39,13 +43,21 @@ function cosine(left: number[], right: number[]): number {
 }
 
 function selectThreshold(rows: CalibrationRow[]): CalibrationRow {
-  const completeAbstention = rows.filter((row) => row.noAnswerPrecision === 1);
-  if (completeAbstention.length === 0) {
-    throw new Error('Calibration found no threshold with complete no-answer abstention.');
+  const recallSafe = rows.filter((row) => row.answerableRecall >= 0.9);
+  if (recallSafe.length === 0) {
+    throw new Error('Calibration found no threshold preserving at least 90% answerable recall.');
   }
-  return completeAbstention.reduce((best, row) => {
-    if (row.answerableRecall > best.answerableRecall) return row;
-    if (row.answerableRecall === best.answerableRecall && row.minScore < best.minScore) return row;
+  return recallSafe.reduce((best, row) => {
+    const rowAbstention = row.noAnswerPrecision ?? -1;
+    const bestAbstention = best.noAnswerPrecision ?? -1;
+    if (rowAbstention > bestAbstention) return row;
+    if (rowAbstention === bestAbstention && row.contextPrecision > best.contextPrecision) return row;
+    if (
+      rowAbstention === bestAbstention &&
+      row.contextPrecision === best.contextPrecision &&
+      row.minScore < best.minScore
+    )
+      return row;
     return best;
   });
 }
@@ -53,10 +65,10 @@ function selectThreshold(rows: CalibrationRow[]): CalibrationRow {
 const chunkInputs = DATASET_CHUNKS.map((chunk) =>
   chunk.headingPath ? `${chunk.headingPath}\n${chunk.text}` : chunk.text,
 );
-const values = [...chunkInputs, ...DATASET_CASES.map((testCase) => testCase.query)];
-const { embeddings } = await fastembed.doEmbed({ values });
-const chunkVectors = embeddings.slice(0, DATASET_CHUNKS.length);
-const queryVectors = embeddings.slice(DATASET_CHUNKS.length);
+const chunkVectors = await embedKnowledgeValues(chunkInputs);
+const queryVectors = await Promise.all(
+  DATASET_CASES.map((testCase) => embedKnowledgeQuery(testCase.query)),
+);
 
 const retrieve = async (testCase: (typeof DATASET_CASES)[number], minScore: number) => {
   const queryIndex = DATASET_CASES.findIndex((candidate) => candidate.id === testCase.id);
@@ -121,7 +133,12 @@ for (const minScore of thresholds) {
 
 const selected = selectThreshold(rows);
 console.log(
-  JSON.stringify({ selectedMinScore: selected.minScore, shippedMinScore: KNOWLEDGE_MIN_SCORE }),
+  JSON.stringify({
+    queryModel: KNOWLEDGE_EMBEDDING_QUERY_MODEL_ID,
+    passageModel: KNOWLEDGE_EMBEDDING_PASSAGE_MODEL_ID,
+    selectedMinScore: selected.minScore,
+    shippedMinScore: KNOWLEDGE_MIN_SCORE,
+  }),
 );
 if (Math.abs(selected.minScore - KNOWLEDGE_MIN_SCORE) > Number.EPSILON) {
   throw new Error(

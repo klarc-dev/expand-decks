@@ -35,7 +35,7 @@ type DocumentRecord = {
  * Bump whenever chunk boundaries or embedded text change so previously indexed
  * documents are recognisably stale and can be reindexed.
  */
-export const KNOWLEDGE_RETRIEVAL_VERSION = 2;
+export const KNOWLEDGE_RETRIEVAL_VERSION = 3;
 
 /**
  * A document indexed under an older representation cannot be compared against

@@ -4,6 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { KNOWLEDGE_DIR } from '../../lib/paths';
 import {
+  KNOWLEDGE_EMBEDDING_DIMENSION,
+  KNOWLEDGE_EMBEDDING_PASSAGE_MODEL_ID,
+  KNOWLEDGE_EMBEDDING_QUERY_MODEL_ID,
+} from '../../lib/sources/knowledgeVector';
+import {
   buildChunkMetadata,
   chunkKnowledgeText,
   extractKnowledgeText,
@@ -67,7 +72,9 @@ function makePayload(options?: { extractEmpty?: boolean; vectorFailure?: boolean
     extractText: vi.fn().mockResolvedValue(options?.extractEmpty ? '   ' : 'Alpha\n\nBeta'),
     embed: vi
       .fn()
-      .mockImplementation(async (values: string[]) => values.map(() => Array(384).fill(0.1))),
+      .mockImplementation(async (values: string[]) =>
+        values.map(() => Array(KNOWLEDGE_EMBEDDING_DIMENSION).fill(0.1)),
+      ),
     vectorStore: { createIndex, upsert, deleteVectors, deleteIndex },
   };
   return { payload, dependencies, updates, createIndex, upsert };
@@ -77,6 +84,12 @@ beforeEach(() => mkdirSync(KNOWLEDGE_DIR, { recursive: true }));
 afterEach(() => rmSync(KNOWLEDGE_DIR, { recursive: true, force: true }));
 
 describe('knowledge ingestion runner', () => {
+  it('uses the multilingual query/passage embedding pair', () => {
+    expect(KNOWLEDGE_EMBEDDING_QUERY_MODEL_ID).toBe('multilingual-e5-large-query');
+    expect(KNOWLEDGE_EMBEDDING_PASSAGE_MODEL_ID).toBe('multilingual-e5-large-passage');
+    expect(KNOWLEDGE_EMBEDDING_DIMENSION).toBe(1024);
+  });
+
   it('indexes chunks with verbatim metadata and persists document/base summaries', async () => {
     writeFileSync(join(KNOWLEDGE_DIR, 'guide.txt'), 'source bytes');
     const state = makePayload();
@@ -90,7 +103,7 @@ describe('knowledge ingestion runner', () => {
     expect(result.output).toEqual({ success: true, chunkCount: 1 });
     expect(state.createIndex).toHaveBeenCalledWith({
       indexName: 'knowledge_7',
-      dimension: 384,
+      dimension: KNOWLEDGE_EMBEDDING_DIMENSION,
       metric: 'cosine',
       metadataIndexes: ['knowledgeBaseId', 'documentId', 'chunkId'],
     });
@@ -105,7 +118,7 @@ describe('knowledge ingestion runner', () => {
             title: 'Guide produit',
             chunkIndex: 0,
             text: 'Alpha\n\nBeta',
-            retrievalVersion: 2,
+            retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
             chunkId: expect.stringMatching(/^12:[0-9a-f]{16}$/),
             contentHash: expect.stringMatching(/^[0-9a-f]{64}$/),
           }),
