@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:agent-evals": "tsx --env-file-if-exists=.env scripts/evals/run-live.ts && tsx --env-file-if-exists=.env scripts/evals/run-revision.ts",
     "eval:ci": "tsx scripts/evals/run-ci.ts",
+    "eval:retrieval-embedding-threshold": "tsx scripts/evals/retrieval-embedding-threshold.mts",
     "eval:live": "tsx --env-file-if-exists=.env scripts/evals/run-live.ts",
     "eval:revision": "tsx --env-file-if-exists=.env scripts/evals/run-revision.ts",
     "eval:seed": "tsx --env-file-if-exists=.env scripts/evals/seed-datasets.ts",

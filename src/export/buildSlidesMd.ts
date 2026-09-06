@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { ARTIFACTS } from '../lib/paths';
 import { parseRenderSlides } from '../blocks/spec';
 
+import { buildHeadmatter } from './theme';
 import { buildDeckRenderContexts } from './renderContext';
 import { getRenderer, type SlideBlock } from './renderers';
 import { resetDefs, seedFootnotes, yamlQuoted } from './utils';
@@ -34,9 +35,12 @@ function loadHeadmatter(): string {
  */
 export function buildSlidesMd(
   presentation: Presentation,
-  options?: { headmatter?: string; vars?: Record<string, unknown> },
+  options?: { headmatter?: string; vars?: Record<string, unknown>; language?: string | null },
 ): string {
-  const headmatter = options?.headmatter ?? loadHeadmatter();
+  const baseHeadmatter = options?.headmatter ?? loadHeadmatter();
+  const headmatter = options?.language
+    ? buildHeadmatter(baseHeadmatter, null, options.language)
+    : baseHeadmatter;
 
   // Dynamic {path} variables (e.g. {org.name}, {title}) resolve against this
   // context inside md()/applyDefs(). Set once; always cleared in finally so the

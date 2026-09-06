@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  KNOWLEDGE_MIN_SCORE,
   KNOWLEDGE_RANKING,
   retrieveKnowledgeEvidence,
   type KnowledgeRankingConfig,
@@ -57,6 +58,10 @@ const evaluate = (ranking: KnowledgeRankingConfig, cases = ANSWERABLE_CASES, top
   });
 
 describe('shipped retrieval configuration', () => {
+  it('uses the real-embedding abstention floor measured by the committed calibration', async () => {
+    expect(KNOWLEDGE_MIN_SCORE).toBe(0.72);
+  });
+
   it('returns no duplicate passages on any dataset question', async () => {
     const report = await evaluate(KNOWLEDGE_RANKING);
     expect(report.duplicateRate).toBe(0);

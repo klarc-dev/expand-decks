@@ -100,6 +100,30 @@ describe('writeSlide invariants', () => {
     expect(instructions).toContain('Required output language: English');
   });
 
+  it('assigns cover and CTA distinct roles instead of repeating the thesis across the deck', async () => {
+    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+
+    await writeSlide(stub, dossier, []);
+
+    const instructions = mocked.mock.calls[0]![0].instructions;
+    expect(instructions).toContain('cover');
+    expect(instructions).toContain('orientation');
+    expect(instructions).toContain('cta');
+    expect(instructions).toContain('action');
+    expect(instructions).toContain('ne résume pas');
+  });
+
+  it('requires each slide to use only the facts needed for its own intent', async () => {
+    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+
+    await writeSlide(stub, dossier, []);
+
+    const instructions = mocked.mock.calls[0]![0].instructions;
+    expect(instructions).toContain("strictement nécessaires à l'intention");
+    expect(instructions).toContain('n’utilise pas tous les points du dossier');
+    expect(instructions).toContain('corps et footer');
+  });
+
   it('passes source references and requires claim-level footnotes when sources are available', async () => {
     mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
 

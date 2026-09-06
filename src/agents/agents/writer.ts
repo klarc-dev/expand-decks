@@ -32,7 +32,10 @@ ${languageInstruction(dossier.language)}
 
 Règles de rédaction :
 - Conserve EXACTEMENT le blockType et le title imposés.
-- Remplis tous les champs pertinents du layout à partir du dossier et de l'intention.
+- Sélectionne seulement les faits strictement nécessaires à l'intention de CETTE diapositive ; n’utilise pas tous les points du dossier par réflexe.
+- Donne à chaque champ une fonction distincte : le corps développe le titre ; un footer ajoute une réserve, une source ou une conséquence pratique, sinon laisse-le vide. Ne reformule pas la même idée dans le titre, le corps et footer.
+- Rôles des extrémités : une cover donne l’orientation (sujet, public, portée) sans résumer toute la démonstration ; une cta convertit le deck en action, livrable ou prochaine étape et ne résume pas les diapositives précédentes.
+- Remplis seulement les champs utiles du layout à partir du dossier et de l'intention ; un champ optionnel inutile reste vide.
 - N’ajoute aucun fait, chiffre, attribution, cas, effet causal, critère ou recommandation qui ne découle pas directement du dossier. Si le dossier n’autorise pas un détail concret, reste général au lieu de l’inventer.
 - Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
 - Utilise le champ footnotes pour rattacher les affirmations vérifiables aux références disponibles. Cite la norme, l’article, l’auteur ou l’organisme de façon courte ; n’invente jamais une référence. Les footnotes sont des sources de la diapositive, pas une bibliographie autonome.

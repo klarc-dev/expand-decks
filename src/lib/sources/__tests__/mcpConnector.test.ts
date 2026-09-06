@@ -21,6 +21,7 @@ vi.mock('@mastra/mcp', () => ({
 }));
 
 import { openSourceToolsets } from '../mcpConnector';
+import { KNOWLEDGE_MIN_SCORE } from '../knowledgeRetrieval';
 import { SourceConnectorError, type ResolvedSource } from '../types';
 
 const source = (overrides: Partial<ResolvedSource> = {}): ResolvedSource =>
@@ -107,7 +108,7 @@ describe('openSourceToolsets', () => {
       indexName: 'knowledge_42',
       queryVector: Array(384).fill(0.1),
       topK: 30,
-      minScore: 0.35,
+      minScore: KNOWLEDGE_MIN_SCORE,
       filter: { knowledgeBaseId: '42' },
     });
     expect(result).toMatchObject({

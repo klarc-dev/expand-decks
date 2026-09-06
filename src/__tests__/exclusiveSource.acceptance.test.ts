@@ -217,6 +217,7 @@ import { POST } from '../app/(payload)/api/agent-draft/route';
 import { POST as POST_RUN_ACTION } from '../app/(payload)/api/agent-draft/[runId]/route';
 import { AgentRuns } from '../collections/AgentRuns';
 import { runAgentDraftTask } from '../jobs/agentDraft';
+import { KNOWLEDGE_MIN_SCORE } from '../lib/sources/knowledgeRetrieval';
 import { __resetSourceRegistryForTests, SOURCE_REGISTRY_ENV } from '../lib/sources/registry';
 
 const evidence = {
@@ -390,7 +391,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
       expect.objectContaining({
         indexName: 'knowledge_42',
         filter: { knowledgeBaseId: '42' },
-        minScore: 0.35,
+        minScore: KNOWLEDGE_MIN_SCORE,
       }),
     );
     expect(state.presentation).toMatchObject({

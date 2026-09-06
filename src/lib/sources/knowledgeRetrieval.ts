@@ -5,15 +5,19 @@ import type { KnowledgeQueryResult, KnowledgeVectorStore } from './knowledgeVect
  * pipeline's only abstention mechanism: on a question the corpus cannot answer,
  * it is what stops the nearest topical passage being handed over as evidence.
  *
- * NOT calibrated by the committed evaluation. The harness there scores with a
- * character-trigram cosine whose scale is not comparable to the real embedding
- * model's, so a threshold tuned against it would not transfer. The sweep in
- * scripts/evals/retrieval-gates.mts does show the shape of the trade-off —
- * raising the floor buys no-answer precision and costs recall, monotonically —
- * so this value should be re-derived against production embeddings before it is
- * treated as tuned.
+ * Calibrated against the actual production embedding model (`@mastra/fastembed`)
+ * on the versioned retrieval dataset by
+ * `scripts/evals/retrieval-embedding-threshold.mts`. At 0.72:
+ * - no-answer precision reaches 1.00 (both unsupported questions abstain),
+ * - answerable-case recall is 0.8125 (0.65 when averaged with no-answer cases),
+ * - nDCG remains 0.90.
+ *
+ * 0.68 preserves full answerable recall but answers one of two unsupported
+ * questions; 0.74 gains no abstention and cuts answerable recall to 0.646. Thus
+ * 0.72 is the first floor with complete abstention and the best recall at that
+ * precision. Re-run the script whenever the embedding model or dataset changes.
  */
-export const KNOWLEDGE_MIN_SCORE = 0.35;
+export const KNOWLEDGE_MIN_SCORE = 0.72;
 export const KNOWLEDGE_DEFAULT_TOP_K = 5;
 export const KNOWLEDGE_MAX_TOP_K = 10;
 export const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;

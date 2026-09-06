@@ -290,7 +290,10 @@ const visualStep = createStep({
     const renderSlides = await prepareSlidesForRender(
       inputData.slides as Array<Record<string, unknown> & { blockType: string }>,
     );
-    const md = buildSlidesMd({ title, slides: renderSlides as SlideBlock[] });
+    const md = buildSlidesMd(
+      { title, slides: renderSlides as SlideBlock[] },
+      { language: inputData.dossier.language },
+    );
     const { pngs, cleanup } = await exportSlidePngs(md, abortSignal);
     try {
       const scored = await mapWithConcurrency(
@@ -368,7 +371,10 @@ const assembleStep = createStep({
     return {
       dossier: inputData.dossier,
       slides: inputData.slides,
-      md: buildSlidesMd({ title, slides: renderSlides as SlideBlock[] }),
+      md: buildSlidesMd(
+        { title, slides: renderSlides as SlideBlock[] },
+        { language: inputData.dossier.language },
+      ),
       evidence: inputData.evidence,
       sourceFailures: inputData.sourceFailures,
       sourcePolicy: inputData.sourcePolicy,

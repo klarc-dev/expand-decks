@@ -51,6 +51,16 @@ function build(slides: Presentation['slides']): string {
 }
 
 describe('buildSlidesMd()', () => {
+  it('rewrites the exported html language when the presentation language is supplied', () => {
+    const result = buildSlidesMd(
+      { title: 'English deck', slides: [{ blockType: 'cover', title: 'Cover' }] as never },
+      { headmatter: `${HEADMATTER}\nhtmlAttrs:\n  lang: fr`, language: 'en' },
+    );
+
+    expect(result).toContain('  lang: en');
+    expect(result).not.toContain('  lang: fr');
+  });
+
   it('produces valid Slidev markdown with headmatter', () => {
     const result = build([{ blockType: 'cover', title: 'Hello' }]);
     expect(result).toMatch(/^---\n/);
