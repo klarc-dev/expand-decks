@@ -170,6 +170,31 @@ export async function researchWithSources({
   return textFromGenerateResult(res).trim();
 }
 
+/**
+ * Sampling settings for tiers that must be reproducible.
+ *
+ * An LLM judge with provider-default sampling re-rolls its verdict on every
+ * run: the same deck scored 0.71 and 0.45 on consecutive CI runs of the SAME
+ * commit, so the eval gate could neither fail a regression nor confirm a fix.
+ * Pinning the JUDGE makes a score a property of the deck rather than of the
+ * draw.
+ *
+ * Generation tiers stay unpinned, deliberately, including under eval. Pinning
+ * the writer was tried and reverted: at temperature 0 a rejected draft is
+ * regenerated near-identically, so a single over-long field (`primaryAction`,
+ * then `subtitle`) exhausted the repair budget and failed the whole workflow —
+ * a failure mode production never exhibits. An eval must measure the system
+ * that ships, so residual score variance from generation is real signal about
+ * production variance, not noise to suppress.
+ */
+const JUDGE_SEED = 1;
+const DETERMINISTIC_TIERS = new Set<AgentModelTier>(['judge', 'visual']);
+
+const samplingFor = (tier: AgentModelTier, attempt: number) =>
+  DETERMINISTIC_TIERS.has(tier)
+    ? ({ modelSettings: { temperature: 0, seed: JUDGE_SEED + attempt } } as const)
+    : undefined;
+
 export async function generateStructured<T>({
   name,
   instructions,
@@ -240,13 +265,14 @@ export async function generateStructured<T>({
   let userPrompt = prompt;
   let schemaRepairs = 0;
   let validationRepairs = 0;
-  for (;;) {
+  for (let attempt = 0; ; attempt++) {
     // maxSteps:1 — we only need the validated args of the forced `emit` call
     // from the first response. Avoid an unnecessary second model round-trip.
     const res = await withTransientRetry(name, abortSignal, () =>
       agent.generate(buildInput(userPrompt) as never, {
         toolChoice: 'required',
         maxSteps: 1,
+        ...samplingFor(modelTier, attempt),
         abortSignal: combineAbortSignals(abortSignal, timeoutMs),
       }),
     );

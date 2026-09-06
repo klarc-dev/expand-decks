@@ -142,6 +142,82 @@ describe('generateStructured emit tool selection', () => {
   });
 });
 
+describe('generateStructured determinism', () => {
+  beforeEach(() => {
+    generateMock.mockReset();
+  });
+
+  it('pins judge sampling so an eval verdict is reproducible', async () => {
+    generateMock.mockResolvedValue({
+      finishReason: 'tool-calls',
+      toolCalls: [{ payload: { toolName: 'emit', args: { ok: true } } }],
+    });
+
+    await generateStructured({
+      name: 'eval:test',
+      instructions: 'Judge it',
+      schema: z.object({ ok: z.boolean() }),
+      prompt: 'go',
+      modelTier: 'judge',
+      maxRepairs: 0,
+    });
+
+    // A judge that resamples cannot gate anything: the same deck must score the
+    // same way twice, so sampling is pinned rather than left provider-default.
+    expect(generateMock.mock.calls[0]![1]).toMatchObject({
+      modelSettings: { temperature: 0, seed: expect.any(Number) },
+    });
+  });
+
+  it('leaves creative tiers unpinned so drafting stays varied', async () => {
+    generateMock.mockResolvedValue({
+      finishReason: 'tool-calls',
+      toolCalls: [{ payload: { toolName: 'emit', args: { ok: true } } }],
+    });
+
+    await generateStructured({
+      name: 'draft:test',
+      instructions: 'Write it',
+      schema: z.object({ ok: z.boolean() }),
+      prompt: 'go',
+      modelTier: 'draft',
+      maxRepairs: 0,
+    });
+
+    expect(generateMock.mock.calls[0]![1]).not.toHaveProperty('modelSettings');
+  });
+
+  it('advances the seed across repairs so a pinned judge can escape a bad draw', async () => {
+    // Even a pinned tier must not re-roll the SAME invalid output forever:
+    // each repair attempt gets its own seed, so the sequence stays
+    // reproducible while still being able to recover.
+    generateMock
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { ok: 'nope' } } }],
+      })
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { ok: true } } }],
+      });
+
+    await expect(
+      generateStructured({
+        name: 'eval:test',
+        instructions: 'Judge it',
+        schema: z.object({ ok: z.boolean() }),
+        prompt: 'go',
+        modelTier: 'judge',
+        maxRepairs: 1,
+      }),
+    ).resolves.toEqual({ ok: true });
+
+    const first = generateMock.mock.calls[0]![1].modelSettings.seed;
+    const second = generateMock.mock.calls[1]![1].modelSettings.seed;
+    expect(second).not.toBe(first);
+  });
+});
+
 describe('researchWithSources', () => {
   beforeEach(() => {
     generateMock.mockReset();
