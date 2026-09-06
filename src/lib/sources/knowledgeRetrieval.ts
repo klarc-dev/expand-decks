@@ -4,16 +4,46 @@ export const KNOWLEDGE_MIN_SCORE = 0.35;
 export const KNOWLEDGE_DEFAULT_TOP_K = 5;
 export const KNOWLEDGE_MAX_TOP_K = 10;
 export const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;
-/** Maximum passages any single document may contribute to the final evidence set. */
-export const KNOWLEDGE_MAX_PER_DOCUMENT = 2;
+/**
+ * Maximum passages any single document may contribute to the final evidence set.
+ *
+ * Measured on the retrieval dataset (scripts/evals/retrieval-sweep.mts): a cap of
+ * 2 costs recall on multi-passage questions, where three parts of one document
+ * are all required. 3 reaches full recall with the best context precision;
+ * raising it to 5 changes nothing, so 3 is the smallest value that wins.
+ */
+export const KNOWLEDGE_MAX_PER_DOCUMENT = 3;
 /** Jaccard token overlap above which two passages count as near-duplicates. */
 export const KNOWLEDGE_DUPLICATE_OVERLAP = 0.9;
-/** Weight of vector similarity in the fused ranking score. */
+/**
+ * Ranking weights.
+ *
+ * Measured across query classes (scripts/evals/retrieval-classes.mts). When the
+ * vector signal already separates chunks sharply, lexical weight is neutral or
+ * mildly harmful. When it does not — a topic-only embedding, which is the
+ * realistic case for rare codes, references and amounts — a lexical weight of
+ * 0.35 is the peak: it lifts exact-term MRR from 0.83 to 1.00 and semantic MRR
+ * from 0.44 to 0.67, while 0.55 starts to over-weight surface tokens and loses
+ * ground again. The position term only breaks ties and stays small.
+ */
 export const KNOWLEDGE_SEMANTIC_WEIGHT = 0.6;
-/** Weight of exact-term (lexical) coverage in the fused ranking score. */
 export const KNOWLEDGE_LEXICAL_WEIGHT = 0.35;
-/** Weight of the original vector-store rank, breaking ties deterministically. */
 export const KNOWLEDGE_POSITION_WEIGHT = 0.05;
+
+/** Tunable ranking configuration, selected by measurement (see retrievalEval). */
+export type KnowledgeRankingConfig = {
+  semanticWeight: number;
+  lexicalWeight: number;
+  positionWeight: number;
+  maxPerDocument: number;
+};
+
+export const KNOWLEDGE_RANKING: KnowledgeRankingConfig = {
+  semanticWeight: KNOWLEDGE_SEMANTIC_WEIGHT,
+  lexicalWeight: KNOWLEDGE_LEXICAL_WEIGHT,
+  positionWeight: KNOWLEDGE_POSITION_WEIGHT,
+  maxPerDocument: KNOWLEDGE_MAX_PER_DOCUMENT,
+};
 
 export type KnowledgeRetrievalSource = {
   knowledgeBaseId: number | string;
@@ -25,6 +55,17 @@ export type KnowledgeRetrievalDependencies = {
   embedQuery: (query: string) => Promise<number[]>;
 };
 
+export type KnowledgeRankingComponents = {
+  /** Vector similarity as returned by the store. */
+  semantic: number;
+  /** Weighted share of query terms found verbatim in the passage. */
+  lexical: number;
+  /** 1-based position among the store's candidates before reranking. */
+  position: number;
+  /** Fused score the passages were ordered by. */
+  score: number;
+};
+
 export type KnowledgeEvidenceItem = {
   text: string;
   documentId: string;
@@ -33,6 +74,7 @@ export type KnowledgeEvidenceItem = {
   chunkId: string;
   headingPath?: string;
   score: number;
+  ranking: KnowledgeRankingComponents;
 };
 
 /** Lexical tokens used for exact-term matching (names, codes, dates, amounts). */
@@ -57,7 +99,9 @@ function lexicalScore(queryTerms: readonly string[], text: string): number {
   return total === 0 ? 0 : matched / total;
 }
 
-function evidenceItem(hit: KnowledgeQueryResult): KnowledgeEvidenceItem | undefined {
+function evidenceItem(
+  hit: KnowledgeQueryResult,
+): Omit<KnowledgeEvidenceItem, 'ranking'> | undefined {
   const metadata = hit.metadata ?? {};
   if (
     typeof metadata.text !== 'string' ||
@@ -88,7 +132,9 @@ export async function retrieveKnowledgeEvidence(args: {
   query: string;
   topK?: number;
   deps: KnowledgeRetrievalDependencies;
+  ranking?: KnowledgeRankingConfig;
 }): Promise<KnowledgeEvidenceItem[]> {
+  const ranking = args.ranking ?? KNOWLEDGE_RANKING;
   const topK = Math.min(args.topK ?? KNOWLEDGE_DEFAULT_TOP_K, KNOWLEDGE_MAX_TOP_K);
   const queryVector = await args.deps.embedQuery(args.query);
   const hits = await args.deps.vectorStore.query({
@@ -108,24 +154,24 @@ export async function retrieveKnowledgeEvidence(args: {
       const item = evidenceItem(hit);
       if (!item) return undefined;
       const lexical = lexicalScore(queryTerms, item.text);
+      const score =
+        hit.score * ranking.semanticWeight +
+        lexical * ranking.lexicalWeight +
+        (1 / (position + 1)) * ranking.positionWeight;
       return {
-        item,
-        rank:
-          hit.score * KNOWLEDGE_SEMANTIC_WEIGHT +
-          lexical * KNOWLEDGE_LEXICAL_WEIGHT +
-          (1 / (position + 1)) * KNOWLEDGE_POSITION_WEIGHT,
-      };
+        ...item,
+        ranking: { semantic: hit.score, lexical, position: position + 1, score },
+      } satisfies KnowledgeEvidenceItem;
     })
-    .filter((entry): entry is { item: KnowledgeEvidenceItem; rank: number } => Boolean(entry))
+    .filter((entry): entry is KnowledgeEvidenceItem => Boolean(entry))
     .sort(
       (a, b) =>
-        b.rank - a.rank ||
-        b.item.score - a.item.score ||
-        a.item.chunkId.localeCompare(b.item.chunkId),
-    )
-    .map((entry) => entry.item);
+        b.ranking.score - a.ranking.score ||
+        b.score - a.score ||
+        a.chunkId.localeCompare(b.chunkId),
+    );
 
-  return selectDiverseEvidence(ranked, topK);
+  return selectDiverseEvidence(ranked, topK, ranking.maxPerDocument);
 }
 
 /** Jaccard overlap between two pre-computed token sets. */
@@ -145,6 +191,7 @@ function overlapRatio(left: ReadonlySet<string>, right: ReadonlySet<string>): nu
 export function selectDiverseEvidence(
   ranked: readonly KnowledgeEvidenceItem[],
   topK: number,
+  maxPerDocument: number = KNOWLEDGE_MAX_PER_DOCUMENT,
 ): KnowledgeEvidenceItem[] {
   // Tokenize once per candidate; duplicate detection then compares prepared sets.
   const candidates = ranked.map((item) => ({ item, terms: new Set(tokens(item.text)) }));
@@ -161,7 +208,7 @@ export function selectDiverseEvidence(
     if (selected.length >= topK) break;
     if (isDuplicate(candidate)) continue;
     const used = perDocument.get(candidate.item.documentId) ?? 0;
-    if (used >= KNOWLEDGE_MAX_PER_DOCUMENT) {
+    if (used >= maxPerDocument) {
       overflow.push(candidate);
       continue;
     }

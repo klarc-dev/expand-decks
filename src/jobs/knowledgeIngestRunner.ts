@@ -37,6 +37,15 @@ type DocumentRecord = {
  */
 export const KNOWLEDGE_RETRIEVAL_VERSION = 2;
 
+/**
+ * A document indexed under an older representation cannot be compared against
+ * one indexed under the current chunking/embedding scheme, so it must be
+ * reindexed before its passages are trustworthy.
+ */
+export function needsReindex(indexedRetrievalVersion: number | null | undefined): boolean {
+  return (indexedRetrievalVersion ?? 0) < KNOWLEDGE_RETRIEVAL_VERSION;
+}
+
 type KnowledgeChunk = {
   text: string;
   headingPath?: string;
@@ -49,7 +58,8 @@ type ChunkMetadata = {
   chunkIndex: number;
   text: string;
   retrievalVersion: number;
-  chunkId?: string;
+  contentHash: string;
+  chunkId: string;
   headingPath?: string;
   previousChunkId?: string;
   nextChunkId?: string;
@@ -101,12 +111,34 @@ export function knowledgeIndexName(knowledgeBaseId: number | string): string {
   return `knowledge_${raw}`;
 }
 
+/**
+ * Content-addressed chunk identity: the id follows the passage text rather than
+ * its position, so inserting or removing earlier content does not renumber the
+ * chunks after it and previously recorded evidence still resolves. A short
+ * occurrence suffix disambiguates a passage repeated verbatim in one document.
+ */
+function chunkIdentities(
+  documentId: string,
+  chunks: readonly KnowledgeChunk[],
+): { chunkId: string; contentHash: string }[] {
+  const seen = new Map<string, number>();
+  return chunks.map((chunk) => {
+    const contentHash = createHash('sha256')
+      .update(chunk.headingPath ? `${chunk.headingPath}\n${chunk.text}` : chunk.text)
+      .digest('hex');
+    const occurrence = seen.get(contentHash) ?? 0;
+    seen.set(contentHash, occurrence + 1);
+    const suffix = occurrence === 0 ? '' : `-${occurrence}`;
+    return { chunkId: `${documentId}:${contentHash.slice(0, 16)}${suffix}`, contentHash };
+  });
+}
+
 export function buildChunkMetadata(
   document: Pick<DocumentRecord, 'id' | 'filename' | 'title'>,
   knowledgeBaseId: number | string,
   chunks: readonly KnowledgeChunk[],
 ): ChunkMetadata[] {
-  const chunkId = (index: number) => `${document.id}:${index}`;
+  const identities = chunkIdentities(String(document.id), chunks);
   return chunks.map((chunk, chunkIndex) => ({
     knowledgeBaseId: String(knowledgeBaseId),
     documentId: String(document.id),
@@ -114,10 +146,11 @@ export function buildChunkMetadata(
     chunkIndex,
     text: chunk.text,
     retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
-    chunkId: chunkId(chunkIndex),
+    chunkId: identities[chunkIndex]!.chunkId,
+    contentHash: identities[chunkIndex]!.contentHash,
     ...(chunk.headingPath ? { headingPath: chunk.headingPath } : {}),
-    ...(chunkIndex > 0 ? { previousChunkId: chunkId(chunkIndex - 1) } : {}),
-    ...(chunkIndex < chunks.length - 1 ? { nextChunkId: chunkId(chunkIndex + 1) } : {}),
+    ...(chunkIndex > 0 ? { previousChunkId: identities[chunkIndex - 1]!.chunkId } : {}),
+    ...(chunkIndex < chunks.length - 1 ? { nextChunkId: identities[chunkIndex + 1]!.chunkId } : {}),
   }));
 }
 
@@ -160,6 +193,54 @@ function headingPathFor(stack: readonly string[]): string | undefined {
   return stack.length ? stack.join(' > ') : undefined;
 }
 
+/** A markdown table row: a line delimited by pipes. */
+const TABLE_ROW = /^\s*\|.*\|\s*$/;
+
+/**
+ * Splits a markdown table into row groups that each repeat the header, so a
+ * table larger than one chunk still yields readable, self-describing pieces
+ * instead of anonymous rows.
+ */
+function splitTable(lines: readonly string[]): string[] {
+  const header = lines.slice(0, 2).join('\n');
+  const rows = lines.slice(2);
+  if (rows.length === 0) return [lines.join('\n')];
+
+  const pieces: string[] = [];
+  let batch: string[] = [];
+  const flush = () => {
+    if (batch.length) pieces.push(`${header}\n${batch.join('\n')}`);
+    batch = [];
+  };
+  for (const row of rows) {
+    // Keep whole rows: a row is never divided across two chunks.
+    if (batch.length && `${header}\n${batch.join('\n')}\n${row}`.length > CHUNK_MAX_SIZE) flush();
+    batch.push(row);
+  }
+  flush();
+  return pieces;
+}
+
+/**
+ * Separates a section body into prose runs and whole tables, so table structure
+ * survives chunking while prose still splits normally.
+ */
+function structuralSegments(text: string): { kind: 'prose' | 'table'; lines: string[] }[] {
+  const segments: { kind: 'prose' | 'table'; lines: string[] }[] = [];
+  for (const line of text.split('\n')) {
+    const kind = TABLE_ROW.test(line) ? 'table' : 'prose';
+    const last = segments.at(-1);
+    if (last && last.kind === kind) last.lines.push(line);
+    else segments.push({ kind, lines: [line] });
+  }
+  // A single pipe line is not a table; it needs a header and a delimiter row.
+  return segments.map((segment) =>
+    segment.kind === 'table' && segment.lines.length < 3
+      ? { kind: 'prose' as const, lines: segment.lines }
+      : segment,
+  );
+}
+
 async function splitText(text: string, strategy: 'markdown' | 'recursive'): Promise<string[]> {
   const document =
     strategy === 'markdown' ? MDocument.fromMarkdown(text) : MDocument.fromText(text);
@@ -169,6 +250,20 @@ async function splitText(text: string, strategy: 'markdown' | 'recursive'): Prom
     overlap: CHUNK_OVERLAP,
   });
   return chunks.map((chunk) => chunk.text).filter((chunk) => chunk.trim().length > 0);
+}
+
+/** Chunks a section body, keeping tables whole and splitting prose normally. */
+async function splitSectionBody(body: string): Promise<string[]> {
+  const pieces: string[] = [];
+  for (const segment of structuralSegments(body)) {
+    if (segment.kind === 'table') {
+      pieces.push(...splitTable(segment.lines));
+      continue;
+    }
+    const prose = segment.lines.join('\n');
+    if (prose.trim()) pieces.push(...(await splitText(prose, 'markdown')));
+  }
+  return pieces;
 }
 
 /**
@@ -202,7 +297,7 @@ export async function chunkKnowledgeText(
       ? `${'#'.repeat(section.level)} ${section.heading}\n${section.body}`
       : section.body;
     if (!body.trim()) continue;
-    for (const piece of await splitText(body, 'markdown')) {
+    for (const piece of await splitSectionBody(body)) {
       chunks.push({ text: piece, ...(headingPath ? { headingPath } : {}) });
     }
   }
@@ -341,7 +436,8 @@ export async function runKnowledgeIngestTask(
       indexName,
       vectors,
       metadata,
-      ids: chunks.map((_, index) => `${documentId}:${sourceHash}:${index}`),
+      // Content-addressed ids keep a reindexed passage on the same vector row.
+      ids: metadata.map((chunk) => chunk.chunkId),
       deleteFilter: { documentId: String(documentId) },
     });
 
@@ -350,6 +446,7 @@ export async function runKnowledgeIngestTask(
       documentId,
       {
         indexingStatus: INDEXING_STATUS.indexed,
+        retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
         errorMessage: '',
       },
       req as PayloadRequest,

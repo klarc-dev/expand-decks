@@ -8,6 +8,7 @@ import {
   chunkKnowledgeText,
   extractKnowledgeText,
   KNOWLEDGE_RETRIEVAL_VERSION,
+  needsReindex,
   knowledgeIndexName,
   runKnowledgeIngestTask,
 } from '../knowledgeIngestRunner';
@@ -98,16 +99,18 @@ describe('knowledge ingestion runner', () => {
         indexName: 'knowledge_7',
         deleteFilter: { documentId: '12' },
         metadata: [
-          {
+          expect.objectContaining({
             knowledgeBaseId: '7',
             documentId: '12',
             title: 'Guide produit',
             chunkIndex: 0,
             text: 'Alpha\n\nBeta',
             retrievalVersion: 2,
-            chunkId: '12:0',
-          },
+            chunkId: expect.stringMatching(/^12:[0-9a-f]{16}$/),
+            contentHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+          }),
         ],
+        ids: [expect.stringMatching(/^12:[0-9a-f]{16}$/)],
       }),
     );
     expect(state.updates.at(-1)).toMatchObject({
@@ -162,30 +165,65 @@ describe('knowledge ingestion helpers', () => {
   });
 
   it('uses the filename when no separate title exists', () => {
-    expect(
-      buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, [{ text: 'one' }, { text: 'two' }]),
-    ).toEqual([
-      {
+    const metadata = buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, [
+      { text: 'one' },
+      { text: 'two' },
+    ]);
+    expect(metadata).toEqual([
+      expect.objectContaining({
         knowledgeBaseId: '3',
         documentId: '9',
         title: 'notes.md',
         chunkIndex: 0,
         text: 'one',
         retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
-        chunkId: '9:0',
-        nextChunkId: '9:1',
-      },
-      {
+        nextChunkId: metadata[1]!.chunkId,
+      }),
+      expect.objectContaining({
         knowledgeBaseId: '3',
         documentId: '9',
         title: 'notes.md',
         chunkIndex: 1,
         text: 'two',
         retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
-        chunkId: '9:1',
-        previousChunkId: '9:0',
-      },
+        previousChunkId: metadata[0]!.chunkId,
+      }),
     ]);
+    expect(metadata[0]).not.toHaveProperty('previousChunkId');
+    expect(metadata[1]).not.toHaveProperty('nextChunkId');
+  });
+
+  it('reindexes documents whose stored retrieval version is stale', () => {
+    expect(needsReindex(undefined)).toBe(true);
+    expect(needsReindex(KNOWLEDGE_RETRIEVAL_VERSION - 1)).toBe(true);
+    expect(needsReindex(KNOWLEDGE_RETRIEVAL_VERSION)).toBe(false);
+  });
+
+  it('derives chunk identity from content so reindexing keeps stable ids', () => {
+    const document = { id: '9', filename: 'notes.md' };
+    const before = buildChunkMetadata(document, 3, [
+      { text: 'alpha' },
+      { text: 'beta' },
+      { text: 'gamma' },
+    ]);
+    // A paragraph inserted at the top must not renumber the identity of the
+    // passages that follow it, or saved evidence would dangle after reindexing.
+    const after = buildChunkMetadata(document, 3, [
+      { text: 'inserted' },
+      { text: 'alpha' },
+      { text: 'beta' },
+      { text: 'gamma' },
+    ]);
+    const idOf = (chunks: ReturnType<typeof buildChunkMetadata>, text: string) =>
+      chunks.find((chunk) => chunk.text === text)?.chunkId;
+    expect(idOf(after, 'gamma')).toBe(idOf(before, 'gamma'));
+    expect(idOf(after, 'alpha')).toBe(idOf(before, 'alpha'));
+    expect(new Set(before.map((chunk) => chunk.chunkId)).size).toBe(3);
+  });
+
+  it('records a content hash so a passage can be verified against its source', () => {
+    const [chunk] = buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, [{ text: 'alpha' }]);
+    expect(chunk!.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it('stamps the retrieval version so stale representations can be reindexed', async () => {
@@ -214,10 +252,27 @@ describe('knowledge ingestion helpers', () => {
     );
 
     const metadata = buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, chunks);
-    expect(metadata[0]!.chunkId).toBe('9:0');
+    expect(metadata[0]!.chunkId).toMatch(/^9:[0-9a-f]{16}$/);
     expect(metadata[0]!.previousChunkId).toBeUndefined();
-    expect(metadata[0]!.nextChunkId).toBe('9:1');
+    expect(metadata[0]!.nextChunkId).toBe(metadata[1]!.chunkId);
     expect(metadata.at(-1)!.nextChunkId).toBeUndefined();
+  });
+
+  it('keeps a markdown table intact rather than splitting its rows', async () => {
+    const table = [
+      '| Poste | Montant |',
+      '| --- | --- |',
+      ...Array.from({ length: 60 }, (_, index) => `| Ligne ${index} | ${index * 1000} EUR |`),
+    ].join('\n');
+    const chunks = await chunkKnowledgeText(`# Budget\n\n${table}\n`, 'text/markdown');
+
+    const rowChunks = chunks.filter((chunk) => chunk.text.includes('| Ligne '));
+    expect(rowChunks.length).toBeGreaterThan(0);
+    // Every chunk carrying table rows must also carry the header, otherwise the
+    // rows lose the column labels that make them readable.
+    for (const chunk of rowChunks) {
+      expect(chunk.text).toContain('| Poste | Montant |');
+    }
   });
 
   it.each([

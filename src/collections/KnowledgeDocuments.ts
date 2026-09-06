@@ -268,6 +268,13 @@ export const KnowledgeDocuments: CollectionConfig = {
       ],
     },
     {
+      name: 'retrievalVersion',
+      type: 'number',
+      label: 'Version d’indexation',
+      admin: { readOnly: true, hidden: true },
+      access: { create: trustedLifecycleWrite, update: trustedLifecycleWrite },
+    },
+    {
       name: 'errorMessage',
       type: 'textarea',
       label: 'Motif de l’échec',

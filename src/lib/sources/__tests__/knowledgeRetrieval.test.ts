@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { retrieveKnowledgeEvidence, type KnowledgeRetrievalSource } from '../knowledgeRetrieval';
+import {
+  KNOWLEDGE_RANKING,
+  retrieveKnowledgeEvidence,
+  type KnowledgeRetrievalSource,
+} from '../knowledgeRetrieval';
 
 const source: KnowledgeRetrievalSource = {
   knowledgeBaseId: 42,
@@ -75,6 +79,7 @@ describe('knowledge retrieval contract', () => {
       source,
       query: 'pilote',
       topK: 3,
+      ranking: { ...KNOWLEDGE_RANKING, maxPerDocument: 2 },
       deps: dependencies,
     });
 
@@ -116,6 +121,26 @@ describe('knowledge retrieval contract', () => {
     });
 
     expect(items.map((item) => item.chunkId)).toEqual(['e-1']);
+  });
+
+  it('exposes the ranking components so scoring is explainable', async () => {
+    const { deps: dependencies } = deps([
+      [hit('g-1', 0.8, { documentId: '1', chunkIndex: 0, text: 'Budget 90 000 EUR' })],
+    ]);
+
+    const [item] = await retrieveKnowledgeEvidence({
+      source,
+      query: 'budget 90000',
+      deps: dependencies,
+    });
+
+    expect(item!.ranking).toEqual({
+      semantic: 0.8,
+      lexical: expect.any(Number),
+      position: 1,
+      score: expect.any(Number),
+    });
+    expect(item!.ranking.score).toBeGreaterThan(0);
   });
 
   it('returns the section heading path so passages keep their context', async () => {

@@ -34,10 +34,10 @@ function mean(values: readonly number[]): number {
   return values.length ? values.reduce((total, value) => total + value, 0) / values.length : 0;
 }
 
-export async function evaluateRetrieval(args: {
+export async function evaluateRetrieval<TCase extends RetrievalCase>(args: {
   strategy: string;
-  cases: readonly RetrievalCase[];
-  retrieve: (testCase: RetrievalCase) => Promise<string[]>;
+  cases: readonly TCase[];
+  retrieve: (testCase: TCase) => Promise<string[]>;
 }): Promise<RetrievalReport> {
   const cases: RetrievalCaseReport[] = [];
   for (const testCase of args.cases) {

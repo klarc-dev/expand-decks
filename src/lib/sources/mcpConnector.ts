@@ -61,13 +61,16 @@ function utf8Prefix(value: string, maxBytes: number): string {
   return bytes.subarray(0, end).toString('utf8');
 }
 
+/** A retrieved excerpt as exposed to the model: evidence without diagnostics. */
+type KnowledgeExcerpt = Omit<KnowledgeEvidenceItem, 'ranking'>;
+
 function truncateKnowledgeItem(
-  item: KnowledgeEvidenceItem,
+  item: KnowledgeExcerpt,
   maxBytes: number,
-): KnowledgeEvidenceItem | undefined {
+): KnowledgeExcerpt | undefined {
   let low = 0;
   let high = Buffer.byteLength(item.text, 'utf8');
-  let best: KnowledgeEvidenceItem | undefined;
+  let best: KnowledgeExcerpt | undefined;
   while (low <= high) {
     const middle = Math.floor((low + high) / 2);
     const candidate = { ...item, text: utf8Prefix(item.text, middle) };
@@ -82,10 +85,10 @@ function truncateKnowledgeItem(
 }
 
 function boundKnowledgeEvidenceItems(
-  items: readonly KnowledgeEvidenceItem[],
+  items: readonly KnowledgeExcerpt[],
   maxBytes: number,
-): KnowledgeEvidenceItem[] {
-  const bounded: KnowledgeEvidenceItem[] = [];
+): KnowledgeExcerpt[] {
+  const bounded: KnowledgeExcerpt[] = [];
   // Account for the JSON array delimiters and commas so the complete model data stays within budget.
   let remaining = maxBytes - Buffer.byteLength('[]', 'utf8');
   if (remaining <= 0) return bounded;
@@ -126,7 +129,10 @@ function knowledgeTool(
         topK,
         deps,
       });
-      return boundKnowledgeEvidenceItems(items, source.maxResultBytes);
+      // Ranking diagnostics are server-side observability, not model context:
+      // they must not consume the excerpt byte budget.
+      const excerpts = items.map(({ ranking: _ranking, ...excerpt }) => excerpt);
+      return boundKnowledgeEvidenceItems(excerpts, source.maxResultBytes);
     },
   });
 }

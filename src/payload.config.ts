@@ -22,6 +22,7 @@ import { buildSlidesTask } from './jobs/buildSlides';
 import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
 import { knowledgeIngestTask } from './jobs/knowledgeIngest';
+import { backfillStaleKnowledgeDocuments } from './jobs/knowledgeReindexBackfill';
 import { COLLECTIONS } from './lib/collections';
 import {
   SERVER_URL,
@@ -100,29 +101,35 @@ export default buildConfig({
   onInit: async (payload) => {
     const email = process.env.SEED_ADMIN_EMAIL;
     const password = process.env.SEED_ADMIN_PASSWORD;
-    if (!email || !password) return;
-    try {
-      const existing = await payload.find({
-        collection: COLLECTIONS.users,
-        where: { email: { equals: email } },
-        limit: 1,
-      });
-      if (existing.docs.length > 0) {
-        await payload.update({
+    if (email && password) {
+      try {
+        const existing = await payload.find({
           collection: COLLECTIONS.users,
-          id: existing.docs[0].id,
-          data: { password, role: ROLES.admin, membershipStatus: 'active' },
+          where: { email: { equals: email } },
+          limit: 1,
         });
-        payload.logger.info(`[seed] Updated admin user ${email}`);
-      } else {
-        await payload.create({
-          collection: COLLECTIONS.users,
-          data: { email, password, role: ROLES.admin, membershipStatus: 'active' },
-        });
-        payload.logger.info(`[seed] Created admin user ${email}`);
+        if (existing.docs.length > 0) {
+          await payload.update({
+            collection: COLLECTIONS.users,
+            id: existing.docs[0].id,
+            data: { password, role: ROLES.admin, membershipStatus: 'active' },
+          });
+          payload.logger.info(`[seed] Updated admin user ${email}`);
+        } else {
+          await payload.create({
+            collection: COLLECTIONS.users,
+            data: { email, password, role: ROLES.admin, membershipStatus: 'active' },
+          });
+          payload.logger.info(`[seed] Created admin user ${email}`);
+        }
+      } catch (err) {
+        payload.logger.error({ err }, '[seed] Failed to upsert admin user');
       }
+    }
+    try {
+      await backfillStaleKnowledgeDocuments(payload as never);
     } catch (err) {
-      payload.logger.error({ err }, '[seed] Failed to upsert admin user');
+      payload.logger.error({ err }, '[knowledge] Failed to backfill stale documents');
     }
   },
   db: postgresAdapter({
