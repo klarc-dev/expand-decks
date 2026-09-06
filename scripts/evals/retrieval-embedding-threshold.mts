@@ -4,10 +4,22 @@ import {
   DATASET_CASES,
   DATASET_CHUNKS,
 } from '../../src/lib/sources/__tests__/fixtures/retrievalDataset';
+import { KNOWLEDGE_MIN_SCORE } from '../../src/lib/sources/knowledgeRetrieval';
 import { evaluateRetrieval } from '../../src/lib/sources/retrievalEval';
 
 const TOP_K = 3;
 const thresholds = Array.from({ length: 31 }, (_, index) => 0.4 + index * 0.02);
+const answerableCases = DATASET_CASES.filter((testCase) => testCase.expectedChunkIds.length > 0);
+
+type CalibrationRow = {
+  minScore: number;
+  recall: number;
+  answerableRecall: number;
+  mrr: number;
+  contextPrecision: number;
+  ndcg: number;
+  noAnswerPrecision: number | null;
+};
 
 function cosine(left: number[], right: number[]): number {
   let dot = 0;
@@ -23,6 +35,18 @@ function cosine(left: number[], right: number[]): number {
   return leftNorm === 0 || rightNorm === 0 ? 0 : dot / Math.sqrt(leftNorm * rightNorm);
 }
 
+function selectThreshold(rows: CalibrationRow[]): CalibrationRow {
+  const completeAbstention = rows.filter((row) => row.noAnswerPrecision === 1);
+  if (completeAbstention.length === 0) {
+    throw new Error('Calibration found no threshold with complete no-answer abstention.');
+  }
+  return completeAbstention.reduce((best, row) => {
+    if (row.answerableRecall > best.answerableRecall) return row;
+    if (row.answerableRecall === best.answerableRecall && row.minScore < best.minScore) return row;
+    return best;
+  });
+}
+
 const chunkInputs = DATASET_CHUNKS.map((chunk) =>
   chunk.headingPath ? `${chunk.headingPath}\n${chunk.text}` : chunk.text,
 );
@@ -31,51 +55,52 @@ const { embeddings } = await fastembed.doEmbed({ values });
 const chunkVectors = embeddings.slice(0, DATASET_CHUNKS.length);
 const queryVectors = embeddings.slice(DATASET_CHUNKS.length);
 
+const retrieve = async (testCase: (typeof DATASET_CASES)[number], minScore: number) => {
+  const queryIndex = DATASET_CASES.findIndex((candidate) => candidate.id === testCase.id);
+  const queryVector = queryVectors[queryIndex]!;
+  return DATASET_CHUNKS.map((chunk, index) => ({
+    chunkId: chunk.chunkId,
+    score: cosine(queryVector, chunkVectors[index]!),
+  }))
+    .filter((hit) => hit.score >= minScore)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, TOP_K)
+    .map((hit) => hit.chunkId);
+};
+
+const rows: CalibrationRow[] = [];
 for (const minScore of thresholds) {
   const report = await evaluateRetrieval({
     strategy: `fastembed-cosine-min-${minScore.toFixed(3)}`,
     cases: DATASET_CASES,
-    retrieve: async (testCase) => {
-      const queryIndex = DATASET_CASES.findIndex((candidate) => candidate.id === testCase.id);
-      const queryVector = queryVectors[queryIndex]!;
-      return DATASET_CHUNKS.map((chunk, index) => ({
-        chunkId: chunk.chunkId,
-        score: cosine(queryVector!, chunkVectors[index]!),
-      }))
-        .filter((hit) => hit.score >= minScore)
-        .sort((left, right) => right.score - left.score)
-        .slice(0, TOP_K)
-        .map((hit) => hit.chunkId);
-    },
+    retrieve: (testCase) => retrieve(testCase, minScore),
     documentOf: (chunkId) =>
       DATASET_CHUNKS.find((chunk) => chunk.chunkId === chunkId)?.documentId ?? chunkId,
   });
-  const answerableCases = DATASET_CASES.filter((testCase) => testCase.expectedChunkIds.length > 0);
   const answerableReport = await evaluateRetrieval({
     strategy: `fastembed-cosine-min-${minScore.toFixed(3)}-answerable`,
     cases: answerableCases,
-    retrieve: async (testCase) => {
-      const queryIndex = DATASET_CASES.findIndex((candidate) => candidate.id === testCase.id);
-      const queryVector = queryVectors[queryIndex]!;
-      return DATASET_CHUNKS.map((chunk, index) => ({
-        chunkId: chunk.chunkId,
-        score: cosine(queryVector!, chunkVectors[index]!),
-      }))
-        .filter((hit) => hit.score >= minScore)
-        .sort((left, right) => right.score - left.score)
-        .slice(0, TOP_K)
-        .map((hit) => hit.chunkId);
-    },
+    retrieve: (testCase) => retrieve(testCase, minScore),
   });
-  console.log(
-    JSON.stringify({
-      minScore,
-      recall: report.recall,
-      answerableRecall: answerableReport.recall,
-      mrr: report.mrr,
-      contextPrecision: report.contextPrecision,
-      ndcg: report.ndcg,
-      noAnswerPrecision: report.noAnswerPrecision,
-    }),
+  const row = {
+    minScore,
+    recall: report.recall,
+    answerableRecall: answerableReport.recall,
+    mrr: report.mrr,
+    contextPrecision: report.contextPrecision,
+    ndcg: report.ndcg,
+    noAnswerPrecision: report.noAnswerPrecision,
+  };
+  rows.push(row);
+  console.log(JSON.stringify(row));
+}
+
+const selected = selectThreshold(rows);
+console.log(
+  JSON.stringify({ selectedMinScore: selected.minScore, shippedMinScore: KNOWLEDGE_MIN_SCORE }),
+);
+if (Math.abs(selected.minScore - KNOWLEDGE_MIN_SCORE) > Number.EPSILON) {
+  throw new Error(
+    `Calibrated threshold ${selected.minScore} differs from KNOWLEDGE_MIN_SCORE ${KNOWLEDGE_MIN_SCORE}.`,
   );
 }

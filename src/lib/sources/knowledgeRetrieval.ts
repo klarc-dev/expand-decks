@@ -12,8 +12,8 @@ import type { KnowledgeQueryResult, KnowledgeVectorStore } from './knowledgeVect
  * - answerable-case recall is 0.8125 (0.65 when averaged with no-answer cases),
  * - nDCG remains 0.90.
  *
- * 0.68 preserves full answerable recall but answers one of two unsupported
- * questions; 0.74 gains no abstention and cuts answerable recall to 0.646. Thus
+ * 0.68 preserves the best observed answerable recall (0.875) but answers one
+ * of two unsupported questions; 0.74 gains no abstention and cuts answerable recall to 0.646. Thus
  * 0.72 is the first floor with complete abstention and the best recall at that
  * precision. Re-run the script whenever the embedding model or dataset changes.
  */

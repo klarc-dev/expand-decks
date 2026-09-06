@@ -269,7 +269,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     const themedHeadmatter = buildHeadmatter(
       baseHeadmatter,
       brand,
-      presentation.language as string | undefined,
+      presentation.language === 'en' ? 'en' : 'fr',
     );
     const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
     const slidesMd = buildSlidesMd(renderPresentation as never, {

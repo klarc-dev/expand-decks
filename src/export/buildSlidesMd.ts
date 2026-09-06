@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { DeckLanguage } from '../agents/language';
 import { ARTIFACTS } from '../lib/paths';
 import { parseRenderSlides } from '../blocks/spec';
 
@@ -35,7 +36,11 @@ function loadHeadmatter(): string {
  */
 export function buildSlidesMd(
   presentation: Presentation,
-  options?: { headmatter?: string; vars?: Record<string, unknown>; language?: string | null },
+  options?: {
+    headmatter?: string;
+    vars?: Record<string, unknown>;
+    language?: DeckLanguage | null;
+  },
 ): string {
   const baseHeadmatter = options?.headmatter ?? loadHeadmatter();
   const headmatter = options?.language

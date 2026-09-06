@@ -11,6 +11,8 @@
  * Pure module: no Payload/Next/fs imports, fully unit-testable.
  */
 
+import type { DeckLanguage } from '../agents/language';
+
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 export interface OrgBrand {
@@ -88,7 +90,7 @@ export function buildThemeCss(brand: Partial<OrgBrand> | null | undefined): stri
 export function buildHeadmatter(
   base: string,
   brand: Partial<OrgBrand> | null | undefined,
-  language?: string | null,
+  language?: DeckLanguage | null,
 ): string {
   // Anchored to the exact 2-space-indented keys under `fonts:` / `htmlAttrs:`
   // in headmatter.yaml so a future top-level key containing "sans"/"local"/
