@@ -13,6 +13,16 @@ function payloadWith(docs: { id: number | string }[]) {
 }
 
 describe('backfillStaleKnowledgeDocuments', () => {
+  it('does nothing in processes that do not own the backfill', async () => {
+    const payload = payloadWith([{ id: 1 }]);
+
+    const queued = await backfillStaleKnowledgeDocuments(payload, { isOwner: false });
+
+    expect(queued).toBe(0);
+    expect(payload.find).not.toHaveBeenCalled();
+    expect(payload.jobs.queue).not.toHaveBeenCalled();
+  });
+
   it('requeues every document indexed under an older retrieval version', async () => {
     const payload = payloadWith([{ id: 1 }, { id: 2 }]);
 
@@ -47,7 +57,7 @@ describe('backfillStaleKnowledgeDocuments', () => {
   it('bounds how many documents one run may requeue', async () => {
     const payload = payloadWith([]);
 
-    await backfillStaleKnowledgeDocuments(payload, 10);
+    await backfillStaleKnowledgeDocuments(payload, { limit: 10 });
 
     expect(payload.find).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
   });

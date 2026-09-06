@@ -31,11 +31,18 @@ const staleWhere = {
  * embedding representations are not comparable, so mixed results rank
  * arbitrarily. Bounded per run so a large backlog drains over several boots
  * instead of saturating the queue at once.
+ *
+ * `onInit` runs in every process that boots Payload — the web container and
+ * each worker replica — so this must run in exactly one of them or the same
+ * documents get requeued once per container.
  */
 export async function backfillStaleKnowledgeDocuments(
   payload: BackfillPayload,
-  limit = 50,
+  options: { limit?: number; isOwner?: boolean } = {},
 ): Promise<number> {
+  const { limit = 50, isOwner = !process.env.PAYLOAD_WORKER } = options;
+  if (!isOwner) return 0;
+
   const stale = await payload.find({
     collection: COLLECTIONS.knowledgeDocuments,
     where: staleWhere,

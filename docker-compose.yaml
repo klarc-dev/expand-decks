@@ -108,6 +108,10 @@ services:
         condition: service_healthy
     environment:
       TZ: Europe/Paris
+      # Marks this process as a worker replica: boot-time maintenance that must
+      # happen exactly once (the knowledge reindex backfill) is owned by the web
+      # container, since onInit runs in every process that boots Payload.
+      PAYLOAD_WORKER: "1"
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
