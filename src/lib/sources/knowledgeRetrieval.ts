@@ -150,6 +150,7 @@ export async function retrieveKnowledgeEvidence(args: {
   topK?: number;
   deps: KnowledgeRetrievalDependencies;
   ranking?: KnowledgeRankingConfig;
+  minScore?: number;
 }): Promise<KnowledgeEvidenceItem[]> {
   const ranking = args.ranking ?? KNOWLEDGE_RANKING;
   const topK = Math.min(args.topK ?? KNOWLEDGE_DEFAULT_TOP_K, KNOWLEDGE_MAX_TOP_K);
@@ -161,7 +162,7 @@ export async function retrieveKnowledgeEvidence(args: {
       KNOWLEDGE_MAX_TOP_K * KNOWLEDGE_CANDIDATE_MULTIPLIER,
       topK * KNOWLEDGE_CANDIDATE_MULTIPLIER,
     ),
-    minScore: KNOWLEDGE_MIN_SCORE,
+    minScore: args.minScore ?? KNOWLEDGE_MIN_SCORE,
     filter: { knowledgeBaseId: String(args.source.knowledgeBaseId) },
   });
 

@@ -44,6 +44,19 @@ function deps(hits: ReturnType<typeof hit>[][]) {
 }
 
 describe('knowledge retrieval contract', () => {
+  it('passes an explicit calibration floor to the vector store without changing production defaults', async () => {
+    const { query, deps: dependencies } = deps([[]]);
+
+    await retrieveKnowledgeEvidence({
+      source,
+      query: 'unsupported question',
+      minScore: 0.72,
+      deps: dependencies,
+    });
+
+    expect(query).toHaveBeenCalledWith(expect.objectContaining({ minScore: 0.72 }));
+  });
+
   it('ranks an exact-term passage above a higher-scoring paraphrase', async () => {
     const { deps: dependencies } = deps([
       [

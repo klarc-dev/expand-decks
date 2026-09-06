@@ -4,10 +4,13 @@ import {
   DATASET_CASES,
   DATASET_CHUNKS,
 } from '../../src/lib/sources/__tests__/fixtures/retrievalDataset';
-import { KNOWLEDGE_MIN_SCORE } from '../../src/lib/sources/knowledgeRetrieval';
+import {
+  KNOWLEDGE_DEFAULT_TOP_K,
+  KNOWLEDGE_MIN_SCORE,
+  retrieveKnowledgeEvidence,
+} from '../../src/lib/sources/knowledgeRetrieval';
 import { evaluateRetrieval } from '../../src/lib/sources/retrievalEval';
 
-const TOP_K = 3;
 const thresholds = Array.from({ length: 31 }, (_, index) => 0.4 + index * 0.02);
 const answerableCases = DATASET_CASES.filter((testCase) => testCase.expectedChunkIds.length > 0);
 
@@ -58,27 +61,48 @@ const queryVectors = embeddings.slice(DATASET_CHUNKS.length);
 const retrieve = async (testCase: (typeof DATASET_CASES)[number], minScore: number) => {
   const queryIndex = DATASET_CASES.findIndex((candidate) => candidate.id === testCase.id);
   const queryVector = queryVectors[queryIndex]!;
-  return DATASET_CHUNKS.map((chunk, index) => ({
-    chunkId: chunk.chunkId,
-    score: cosine(queryVector, chunkVectors[index]!),
-  }))
-    .filter((hit) => hit.score >= minScore)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, TOP_K)
-    .map((hit) => hit.chunkId);
+  const items = await retrieveKnowledgeEvidence({
+    source: { knowledgeBaseId: 'calibration', indexName: 'knowledge_calibration' },
+    query: testCase.query,
+    topK: KNOWLEDGE_DEFAULT_TOP_K,
+    minScore,
+    deps: {
+      embedQuery: async () => queryVector,
+      vectorStore: {
+        query: async ({ topK, minScore: floor, filter }) =>
+          DATASET_CHUNKS.map((chunk, index) => ({
+            id: chunk.chunkId,
+            score: cosine(queryVector, chunkVectors[index]!),
+            metadata: {
+              knowledgeBaseId: filter.knowledgeBaseId,
+              documentId: chunk.documentId,
+              title: chunk.documentTitle,
+              chunkIndex: index,
+              chunkId: chunk.chunkId,
+              text: chunk.text,
+              ...(chunk.headingPath ? { headingPath: chunk.headingPath } : {}),
+            },
+          }))
+            .filter((hit) => hit.score > floor)
+            .sort((left, right) => right.score - left.score)
+            .slice(0, topK),
+      },
+    },
+  });
+  return items.map((item) => item.chunkId);
 };
 
 const rows: CalibrationRow[] = [];
 for (const minScore of thresholds) {
   const report = await evaluateRetrieval({
-    strategy: `fastembed-cosine-min-${minScore.toFixed(3)}`,
+    strategy: `production-pipeline-min-${minScore.toFixed(3)}`,
     cases: DATASET_CASES,
     retrieve: (testCase) => retrieve(testCase, minScore),
     documentOf: (chunkId) =>
       DATASET_CHUNKS.find((chunk) => chunk.chunkId === chunkId)?.documentId ?? chunkId,
   });
   const answerableReport = await evaluateRetrieval({
-    strategy: `fastembed-cosine-min-${minScore.toFixed(3)}-answerable`,
+    strategy: `production-pipeline-min-${minScore.toFixed(3)}-answerable`,
     cases: answerableCases,
     retrieve: (testCase) => retrieve(testCase, minScore),
   });
