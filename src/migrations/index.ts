@@ -18,6 +18,7 @@ import * as migration_20260903_092420_knowledge_collections from './20260903_092
 import * as migration_20260903_092452_pgvector_knowledge_schema from './20260903_092452_pgvector_knowledge_schema';
 import * as migration_20260904_134932_simplify_knowledge_experience from './20260904_134932_simplify_knowledge_experience';
 import * as migration_20260906_061027_add_knowledge_retrieval_version from './20260906_061027_add_knowledge_retrieval_version';
+import * as migration_20260906_151740_knowledge_base_organisation from './20260906_151740_knowledge_base_organisation';
 
 export const migrations = [
   {
@@ -119,5 +120,10 @@ export const migrations = [
     up: migration_20260906_061027_add_knowledge_retrieval_version.up,
     down: migration_20260906_061027_add_knowledge_retrieval_version.down,
     name: '20260906_061027_add_knowledge_retrieval_version',
+  },
+  {
+    up: migration_20260906_151740_knowledge_base_organisation.up,
+    down: migration_20260906_151740_knowledge_base_organisation.down,
+    name: '20260906_151740_knowledge_base_organisation',
   },
 ];

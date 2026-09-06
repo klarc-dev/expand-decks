@@ -1,6 +1,12 @@
-import type { CollectionConfig, FieldHook } from 'payload';
+import { APIError, type CollectionConfig, type FieldHook } from 'payload';
 
-import { isAdminOrAuthor, isAdminOrCreator } from '../access/roles';
+import {
+  isAdminOrAuthor,
+  isOrganisationMember,
+  userOrganisationIds,
+  userIsOrganisationMember,
+  userIsAdmin,
+} from '../access/roles';
 import { beforeKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
 import { COLLECTIONS } from '../lib/collections';
 
@@ -12,14 +18,14 @@ export const KnowledgeBases: CollectionConfig = {
   labels: { singular: 'Base de connaissances', plural: 'Bases de connaissances' },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'updatedAt'],
+    defaultColumns: ['name', 'organisation', 'updatedAt'],
     description: 'Créez une base, puis ajoutez les fichiers que l’agent doit utiliser.',
   },
   access: {
     create: isAdminOrAuthor,
-    read: isAdminOrCreator,
-    update: isAdminOrCreator,
-    delete: isAdminOrCreator,
+    read: isOrganisationMember,
+    update: isOrganisationMember,
+    delete: isOrganisationMember,
   },
   hooks: {
     beforeDelete: [beforeKnowledgeBaseDelete],
@@ -30,6 +36,48 @@ export const KnowledgeBases: CollectionConfig = {
       type: 'text',
       required: true,
       label: 'Nom',
+    },
+    {
+      name: 'organisation',
+      type: 'relationship',
+      relationTo: COLLECTIONS.organisations,
+      required: true,
+      index: true,
+      label: 'Organisation',
+      filterOptions: ({ user }) =>
+        userIsAdmin(user) ? true : { id: { in: userOrganisationIds(user) } },
+      hooks: {
+        beforeValidate: [
+          ({ value, req, operation, originalDoc }) => {
+            let organisation = value;
+            if (organisation === undefined && operation === 'update') {
+              organisation = originalDoc?.organisation;
+            }
+            if (organisation === undefined && operation === 'create') {
+              const ids = userOrganisationIds(req.user);
+              if (ids.length === 1) organisation = ids[0];
+            }
+            if (organisation === undefined || organisation === null || organisation === '') {
+              throw new APIError(
+                'Choisissez une organisation pour cette base de connaissances.',
+                400,
+              );
+            }
+            if (!userIsOrganisationMember(req.user, organisation)) {
+              throw new APIError('Vous ne faites pas partie de cette organisation.', 403);
+            }
+            return organisation;
+          },
+        ],
+      },
+      defaultValue: ({ user }) => {
+        const ids = userOrganisationIds(user);
+        return ids.length === 1 ? ids[0] : undefined;
+      },
+      admin: {
+        description:
+          'Organisation propriétaire de la base. Si vous êtes membre de plusieurs organisations, choisissez laquelle.',
+      },
     },
     {
       name: 'documents',

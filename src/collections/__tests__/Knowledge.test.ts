@@ -41,8 +41,8 @@ describe('KnowledgeBases', () => {
     expect(hook({ req: { user: { id: 42 } }, operation: 'update', value: 17 })).toBe(17);
   });
 
-  it('keeps the author surface to a name and its documents', () => {
-    expect(KnowledgeBases.admin?.defaultColumns).toEqual(['name', 'updatedAt']);
+  it('keeps the author surface to a name, organisation and its documents', () => {
+    expect(KnowledgeBases.admin?.defaultColumns).toEqual(['name', 'organisation', 'updatedAt']);
     expect(() => findNamedField(KnowledgeBases.fields, 'description')).toThrow();
     expect(() => findNamedField(KnowledgeBases.fields, 'documentCount')).toThrow();
     expect(() => findNamedField(KnowledgeBases.fields, 'chunkCount')).toThrow();
@@ -63,10 +63,10 @@ describe('KnowledgeBases', () => {
     expect(ownerAccess.update({})).toBe(false);
   });
 
-  it('scopes non-admin reads to their own bases', () => {
+  it('scopes non-admin reads to their organisations', () => {
     const read = KnowledgeBases.access?.read as (args: unknown) => unknown;
-    expect(read({ req: { user: { id: 7, role: 'author' } } })).toEqual({
-      createdBy: { equals: 7 },
+    expect(read({ req: { user: { id: 7, role: 'author', organisations: [11] } } })).toEqual({
+      organisation: { in: [11] },
     });
     expect(read({ req: { user: { id: 1, role: 'admin' } } })).toBe(true);
     expect(read({ req: { user: null } })).toBe(false);
@@ -230,9 +230,9 @@ describe('KnowledgeDocuments', () => {
       const find = vi.fn();
       await expect(
         canAccessKnowledgeDocuments({
-          req: { user: { id: 7, role: 'author' }, payload: { find } },
+          req: { user: { id: 7, role: 'author', organisations: [11] }, payload: { find } },
         } as never),
-      ).resolves.toEqual({ 'knowledgeBase.createdBy': { equals: 7 } });
+      ).resolves.toEqual({ 'knowledgeBase.organisation': { in: [11] } });
       expect(find).not.toHaveBeenCalled();
     });
   });

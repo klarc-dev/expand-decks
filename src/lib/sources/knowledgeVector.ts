@@ -41,13 +41,35 @@ export function knowledgeVectorStore(): PgVector {
   return g.__knowledgePgVector;
 }
 
+// The provider already caches one MLE5Large session for both prefixes. Bound
+// concurrent native runs as well as batch size; a failed run must not poison it.
+let embeddingQueue: Promise<void> = Promise.resolve();
+function serializeEmbedding<T>(run: () => PromiseLike<T>): Promise<T> {
+  const result = embeddingQueue.then(run);
+  embeddingQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
+}
+
 export async function embedKnowledgeValues(values: string[]): Promise<number[][]> {
-  const result = await fastembed.multilingualE5LargePassage.doEmbed({ values });
-  return result.embeddings;
+  // E5-large's native activation memory scales with batch size. The provider
+  // defaults to 256; use singleton batches without changing model or prefixes.
+  const embeddings: number[][] = [];
+  for (const value of values) {
+    const result = await serializeEmbedding(() =>
+      fastembed.multilingualE5LargePassage.doEmbed({ values: [value] }),
+    );
+    embeddings.push(...result.embeddings);
+  }
+  return embeddings;
 }
 
 export async function embedKnowledgeQuery(query: string): Promise<number[]> {
-  const result = await fastembed.multilingualE5LargeQuery.doEmbed({ values: [query] });
+  const result = await serializeEmbedding(() =>
+    fastembed.multilingualE5LargeQuery.doEmbed({ values: [query] }),
+  );
   const vector = result.embeddings[0];
   if (!vector || vector.length !== KNOWLEDGE_EMBEDDING_DIMENSION) {
     throw new Error(`Knowledge query embedding dimension must be ${KNOWLEDGE_EMBEDDING_DIMENSION}`);

@@ -2,7 +2,7 @@ import type { Access, FieldAccess, PayloadRequest, Where } from 'payload';
 
 export const ROLES = { admin: 'admin', author: 'author', viewer: 'viewer' } as const;
 
-type RoleUser = PayloadRequest['user'];
+type RoleUser = Partial<NonNullable<PayloadRequest['user']>> | null | undefined;
 
 /** Narrow a relationship value (bare id or populated doc) to its id. */
 const relationshipId = (value: unknown): string | number | undefined => {

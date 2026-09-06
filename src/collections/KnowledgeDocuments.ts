@@ -8,7 +8,7 @@ import type {
 } from 'payload';
 import { APIError } from 'payload';
 
-import { isAdminOrAuthor, userIsAdmin } from '../access/roles';
+import { isAdminOrAuthor, userIsAdmin, userOrganisationIds } from '../access/roles';
 import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
 import { beforeKnowledgeDocumentDelete } from '../hooks/knowledgeLifecycle';
 import { KNOWLEDGE_INGEST_TASK } from '../jobs/knowledgeIngest';
@@ -126,7 +126,9 @@ export const canAccessKnowledgeDocuments: Access = async ({ req }) => {
   const { user } = req;
   if (!user) return false;
   if (userIsAdmin(user)) return true;
-  return { 'knowledgeBase.createdBy': { equals: user.id } };
+  const ids = userOrganisationIds(user);
+  if (ids.length === 0) return false;
+  return { 'knowledgeBase.organisation': { in: ids } };
 };
 
 /**
