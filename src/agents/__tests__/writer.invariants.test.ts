@@ -180,24 +180,27 @@ describe('writeSlide invariants', () => {
     expect(mocked).not.toHaveBeenCalled();
   });
 
-  it('returns an unchanged existing slide when the revision does not target it', async () => {
-    const existing = {
-      blockType: 'statement',
-      title: stub.title,
-      eyebrow: 'Existing eyebrow',
-      body: 'Existing body',
-      footer: 'Existing footer',
-      variant: 'big-statement',
-    };
+  it('allows a targeted revision to change the title while preserving the block type', async () => {
+    mocked.mockResolvedValue({
+      blockType: 'cover',
+      title: 'Three questions before deciding',
+      body: 'Updated body',
+    } as never);
 
     const out = await writeSlide(
-      { ...stub, intent: 'Préserve intégralement cette diapositive existante' },
-      dossier,
+      { ...stub, intent: 'Modifie cette diapositive uniquement selon la demande de révision.' },
+      { ...dossier, rawBrief: 'Replace the final CTA with a three-question checklist.' },
       [],
-      JSON.stringify([existing]),
+      JSON.stringify([{ blockType: 'statement', title: stub.title, body: 'Old body' }]),
     );
 
-    expect(out).toEqual(existing);
-    expect(mocked).not.toHaveBeenCalled();
+    expect(out).toMatchObject({
+      blockType: 'statement',
+      title: 'Three questions before deciding',
+      body: 'Updated body',
+    });
+    const call = mocked.mock.calls[0]![0];
+    expect(call.instructions).toContain('titre peut changer');
+    expect(call.prompt).not.toContain('title (imposé)');
   });
 });

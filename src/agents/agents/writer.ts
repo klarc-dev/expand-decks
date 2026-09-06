@@ -101,6 +101,7 @@ export async function writeSlide(
 ): Promise<Record<string, unknown>> {
   const existingSlide = existingSlideForStub(revisionContext, stub);
   if (existingSlide) return existingSlide;
+  const isTargetedRevision = Boolean(revisionContext);
 
   const spec = SPEC_BY_TYPE.get(stub.blockType);
   if (!spec) {
@@ -112,7 +113,7 @@ export async function writeSlide(
 
   const prompt = [
     `DOSSIER :\n${dossierExcerpt(dossier)}`,
-    `\n---\nDIAPOSITIVE À RÉDIGER MAINTENANT :\n- blockType (imposé) : ${stub.blockType}\n- title (imposé) : ${stub.title}\n- intention : ${stub.intent}`,
+    `\n---\nDIAPOSITIVE À RÉDIGER MAINTENANT :\n- blockType (imposé) : ${stub.blockType}\n${isTargetedRevision ? `- title existant (modifiable si la demande le requiert) : ${stub.title}` : `- title (imposé) : ${stub.title}`}\n- intention : ${stub.intent}`,
     otherTitles.length
       ? `\n---\nTITRES DES AUTRES DIAPOSITIVES (ne les redis pas) :\n${otherTitles.map((t) => `- ${t}`).join('\n')}`
       : '',
@@ -125,7 +126,11 @@ export async function writeSlide(
 
   const block = await generateStructured<Record<string, unknown>>({
     name: `writer:${stub.blockType}`,
-    instructions: writerInstructions(stub.blockType, dossier),
+    instructions: `${writerInstructions(stub.blockType, dossier)}${
+      isTargetedRevision
+        ? '\n- Révision ciblée : le blockType reste imposé, mais le titre peut changer lorsque la demande le requiert.'
+        : ''
+    }`,
     schema: aiSchemaOf(spec) as never,
     prompt,
     validate: findInformationalStyleViolations,
@@ -134,5 +139,10 @@ export async function writeSlide(
   });
 
   // alignBatch invariant: force the planned structure back onto the block.
-  return parseAiSlide({ ...block, blockType: stub.blockType, title: stub.title });
+  // A targeted revision may rename the slide, but never change its layout.
+  return parseAiSlide({
+    ...block,
+    blockType: stub.blockType,
+    title: isTargetedRevision ? block.title : stub.title,
+  });
 }
