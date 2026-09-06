@@ -26,6 +26,60 @@ describe('retrieval evaluation runner', () => {
     expect(report.contextPrecision).toBeCloseTo(0.25);
   });
 
+  it('ranks graded relevance with nDCG so ordering quality is measurable', async () => {
+    const graded: RetrievalCase[] = [
+      { id: 'graded', query: 'pilote', expectedChunkIds: ['c-1', 'c-2'] },
+    ];
+
+    const ideal = await evaluateRetrieval({
+      strategy: 'ideal',
+      cases: graded,
+      retrieve: async () => ['c-1', 'c-2', 'c-9'],
+    });
+    const inverted = await evaluateRetrieval({
+      strategy: 'inverted',
+      cases: graded,
+      retrieve: async () => ['c-9', 'c-1', 'c-2'],
+    });
+
+    expect(ideal.ndcg).toBe(1);
+    expect(inverted.ndcg).toBeLessThan(1);
+    expect(inverted.ndcg).toBeGreaterThan(0);
+  });
+
+  it('reports duplicate rate and document diversity of the returned set', async () => {
+    const report = await evaluateRetrieval({
+      strategy: 'diversity',
+      cases: [{ id: 'one', query: 'q', expectedChunkIds: ['a-1'] }],
+      retrieve: async () => ['a-1', 'a-1', 'a-2', 'b-1'],
+      documentOf: (chunkId) => chunkId.split('-')[0]!,
+    });
+
+    // One of four returned chunks is a repeat.
+    expect(report.duplicateRate).toBeCloseTo(0.25);
+    // Two distinct documents across four returned chunks.
+    expect(report.documentDiversity).toBeCloseTo(0.5);
+  });
+
+  it('measures no-answer precision so unanswerable questions stay unanswered', async () => {
+    const report = await evaluateRetrieval({
+      strategy: 'abstain',
+      cases: [
+        { id: 'answerable', query: 'budget', expectedChunkIds: ['c-1'] },
+        { id: 'unanswerable', query: 'météo', expectedChunkIds: [] },
+        { id: 'also-unanswerable', query: 'recette', expectedChunkIds: [] },
+      ],
+      retrieve: async (testCase) => {
+        if (testCase.id === 'answerable') return ['c-1'];
+        // Correctly abstains on one unanswerable question, wrongly answers the other.
+        return testCase.id === 'unanswerable' ? [] : ['c-7'];
+      },
+    });
+
+    // Of the two no-answer cases, only one correctly returned nothing.
+    expect(report.noAnswerPrecision).toBeCloseTo(0.5);
+  });
+
   it('scores the hybrid retrieval strategy above the previous overlap-only ranking', async () => {
     const corpus = [
       { chunkId: 'c-1', score: 0.86, text: 'Le budget global du programme reste stable.' },

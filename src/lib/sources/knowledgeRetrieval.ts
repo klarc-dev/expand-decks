@@ -1,5 +1,18 @@
 import type { KnowledgeQueryResult, KnowledgeVectorStore } from './knowledgeVector';
 
+/**
+ * Similarity floor below which a passage is not returned at all. This is the
+ * pipeline's only abstention mechanism: on a question the corpus cannot answer,
+ * it is what stops the nearest topical passage being handed over as evidence.
+ *
+ * NOT calibrated by the committed evaluation. The harness there scores with a
+ * character-trigram cosine whose scale is not comparable to the real embedding
+ * model's, so a threshold tuned against it would not transfer. The sweep in
+ * scripts/evals/retrieval-gates.mts does show the shape of the trade-off —
+ * raising the floor buys no-answer precision and costs recall, monotonically —
+ * so this value should be re-derived against production embeddings before it is
+ * treated as tuned.
+ */
 export const KNOWLEDGE_MIN_SCORE = 0.35;
 export const KNOWLEDGE_DEFAULT_TOP_K = 5;
 export const KNOWLEDGE_MAX_TOP_K = 10;

@@ -46,10 +46,35 @@ function topicOnlyRetriever(ranking: KnowledgeRankingConfig, topK: number) {
   };
 }
 
-const evaluate = (ranking: KnowledgeRankingConfig, cases = DATASET_CASES, topK = 3) =>
-  evaluateRetrieval({ strategy: 'measured', cases, retrieve: topicOnlyRetriever(ranking, topK) });
+const ANSWERABLE_CASES = DATASET_CASES.filter((testCase) => testCase.queryClass !== 'no-answer');
+
+const evaluate = (ranking: KnowledgeRankingConfig, cases = ANSWERABLE_CASES, topK = 3) =>
+  evaluateRetrieval({
+    strategy: 'measured',
+    cases,
+    documentOf: (chunkId) => chunkId.split(':')[0]!,
+    retrieve: topicOnlyRetriever(ranking, topK),
+  });
 
 describe('shipped retrieval configuration', () => {
+  it('returns no duplicate passages on any dataset question', async () => {
+    const report = await evaluate(KNOWLEDGE_RANKING);
+    expect(report.duplicateRate).toBe(0);
+  });
+
+  it('ranks supporting passages near the top rather than merely finding them', async () => {
+    const report = await evaluate(KNOWLEDGE_RANKING);
+    expect(report.ndcg).toBeGreaterThan(0.85);
+  });
+
+  it('does not collapse onto a single document across the dataset', async () => {
+    const report = await evaluate(KNOWLEDGE_RANKING);
+    // Measured at 0.458. Many dataset questions are answered by one passage in
+    // one document, so perfect diversity is neither achievable nor desirable;
+    // this guards against a regression that funnels every answer to one source.
+    expect(report.documentDiversity).toBeGreaterThan(0.4);
+  });
+
   it('recalls every supporting passage in the dataset', async () => {
     const report = await evaluate(KNOWLEDGE_RANKING);
     expect(report.recall).toBe(1);

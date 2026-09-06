@@ -17,7 +17,7 @@ export type DatasetChunk = {
   text: string;
 };
 
-export type QueryClass = 'exact-term' | 'semantic' | 'multi-document';
+export type QueryClass = 'exact-term' | 'semantic' | 'multi-document' | 'no-answer';
 
 export type DatasetCase = {
   id: string;
@@ -148,5 +148,20 @@ export const DATASET_CASES: DatasetCase[] = [
     queryClass: 'multi-document',
     query: 'satisfaction et adoption des utilisateurs',
     expectedChunkIds: ['rapport:satisfaction', 'rapport:adoption'],
+  },
+  // Questions this corpus genuinely cannot answer. Retrieval must return
+  // nothing rather than the nearest topical passage, otherwise the deck gets
+  // grounded in evidence that does not support the claim.
+  {
+    id: 'unrelated-hr-policy',
+    queryClass: 'no-answer',
+    query: 'combien de jours de congés parentaux sont accordés',
+    expectedChunkIds: [],
+  },
+  {
+    id: 'unrelated-competitor',
+    queryClass: 'no-answer',
+    query: 'quelle est la part de marché de notre concurrent principal',
+    expectedChunkIds: [],
   },
 ];
