@@ -218,6 +218,65 @@ describe('generateStructured determinism', () => {
   });
 });
 
+describe('generateStructured schema repair', () => {
+  beforeEach(() => {
+    generateMock.mockReset();
+  });
+
+  it('tells the model the actual length so an over-long field can be shortened', async () => {
+    // A repair that only says "too big" leaves the model guessing by how much,
+    // so it re-emits a value that is still over the limit. Observed live: a
+    // `primaryAction` and a `subtitle` that never recovered and failed the run.
+    generateMock
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { action: 'x'.repeat(64) } } }],
+      })
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { action: 'ok' } } }],
+      });
+
+    await generateStructured({
+      name: 'writer:cta',
+      instructions: 'Write it',
+      schema: z.object({ action: z.string().max(50) }),
+      prompt: 'go',
+      maxRepairs: 1,
+    });
+
+    const repairPrompt = String(generateMock.mock.calls[1]![0]);
+    expect(repairPrompt).toContain('64');
+    expect(repairPrompt).toContain('50');
+  });
+
+  it('retries an over-long field more than once before giving up', async () => {
+    // One repair is not enough in practice: the model often overshoots twice.
+    generateMock
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { action: 'x'.repeat(80) } } }],
+      })
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { action: 'y'.repeat(60) } } }],
+      })
+      .mockResolvedValueOnce({
+        finishReason: 'tool-calls',
+        toolCalls: [{ payload: { toolName: 'emit', args: { action: 'fits' } } }],
+      });
+
+    await expect(
+      generateStructured({
+        name: 'writer:cta',
+        instructions: 'Write it',
+        schema: z.object({ action: z.string().max(50) }),
+        prompt: 'go',
+      }),
+    ).resolves.toEqual({ action: 'fits' });
+  });
+});
+
 describe('researchWithSources', () => {
   beforeEach(() => {
     generateMock.mockReset();

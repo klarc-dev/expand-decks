@@ -195,6 +195,28 @@ const samplingFor = (tier: AgentModelTier, attempt: number) =>
     ? ({ modelSettings: { temperature: 0, seed: JUDGE_SEED + attempt } } as const)
     : undefined;
 
+/**
+ * Describe one schema violation for the repair turn.
+ *
+ * A bare "too big" leaves the model guessing by how much to cut, so it
+ * overshoots again. Stating the actual and allowed lengths turns the repair
+ * into a concrete edit. Observed live: `primaryAction` (50) and `subtitle`
+ * (280) each failed a whole workflow run this way.
+ */
+function describeIssue(issue: z.core.$ZodIssue, value: unknown): string {
+  const path = issue.path.join('.') || '(racine)';
+  if (issue.code === 'too_big' && typeof issue.maximum === 'number') {
+    const actual = issue.path.reduce<unknown>(
+      (acc, key) => (acc as Record<string, unknown>)?.[key as string],
+      value,
+    );
+    if (typeof actual === 'string') {
+      return `- ${path} : ${actual.length} caractères, maximum ${issue.maximum}. Raccourcis d'au moins ${actual.length - issue.maximum} caractères en conservant le sens.`;
+    }
+  }
+  return `- ${path} : ${issue.message}`;
+}
+
 export async function generateStructured<T>({
   name,
   instructions,
@@ -202,7 +224,10 @@ export async function generateStructured<T>({
   prompt,
   images,
   timeoutMs = DEFAULT_TIMEOUT_MS,
-  maxRepairs = 1,
+  // Two attempts, not one: a model that overshoots a length limit often
+  // overshoots the correction too, and a single retry failed whole workflow
+  // runs in the live eval.
+  maxRepairs = 2,
   validate,
   maxValidationRepairs = 1,
   modelTier = 'draft',
@@ -290,7 +315,7 @@ export async function generateStructured<T>({
       if (schemaRepairs >= maxRepairs) throw parsed.error;
       schemaRepairs++;
       userPrompt = `${prompt}\n\n---\nLa sortie précédente a échoué la validation du schéma :\n${parsed.error.issues
-        .map((i) => `- ${i.path.join('.') || '(racine)'} : ${i.message}`)
+        .map((issue) => describeIssue(issue, args))
         .join(
           '\n',
         )}\nCorrige UNIQUEMENT ces champs et réémets via l'outil la sortie complète et conforme.`;
