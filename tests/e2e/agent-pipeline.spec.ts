@@ -142,12 +142,13 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
     await page.goto(`/admin/collections/presentations/${presentationId}`);
     await page.getByRole('button', { name: 'IA', exact: true }).click();
 
-    const brief = page.locator('#agent-brief');
+    const brief = page.locator('textarea[name="agentBrief"]');
     await expect(brief).toBeVisible();
     await brief.fill(BRIEF);
 
     // Visual critique is the heaviest feature and ON by default — assert it so a
     // future default flip doesn't silently downgrade this to a content-only run.
+    await page.getByText('Options avancées', { exact: true }).click();
     const visualToggle = page.getByRole('checkbox', { name: /Critique visuelle/ });
     await expect(visualToggle).toBeChecked();
 
@@ -156,7 +157,7 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
       await page.getByRole('checkbox', { name: source.label }).check();
     }
 
-    await page.getByRole('button', { name: 'Lancer le build agentique' }).click();
+    await page.getByRole('button', { name: 'Générer la présentation' }).click();
 
     // The run is fire-and-forget server-side; the doc's draftStatus is the source
     // of truth. Poll the authenticated REST surface until the run reaches a

@@ -36,6 +36,10 @@ async function applyUpdate(data: Record<string, unknown>) {
 }
 
 describe('AgentRun collection mutation boundary', () => {
+  it('is a deck-scoped technical ledger, never a user-facing collection', () => {
+    expect(AgentRuns.admin?.hidden).toBe(true);
+  });
+
   it('rejects a supplied immutable source-policy broadening', async () => {
     await expect(
       applyUpdate({ sourcePolicy: 'multiple', sourceIds: ['docs', 'other'] }),

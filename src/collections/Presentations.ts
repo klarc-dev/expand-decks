@@ -339,8 +339,6 @@ export const Presentations: CollectionConfig = {
         },
         {
           label: 'IA',
-          description:
-            "Build agentique : l'agent recherche, structure, rédige, critique et corrige la présentation à partir d'un brief.",
           fields: [
             {
               name: 'agentBrief',
@@ -367,6 +365,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: "État du dernier build par l'agent IA",
                 readOnly: true,
+                hidden: true,
               },
               options: [
                 { label: 'En attente', value: DRAFT_STATUS.idle },
@@ -417,6 +416,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description: 'Sources sélectionnées pour le dernier build agentique',
                 readOnly: true,
+                hidden: true,
               },
             },
             {

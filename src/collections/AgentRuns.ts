@@ -28,7 +28,7 @@ export const AgentRuns: CollectionConfig = {
   admin: {
     useAsTitle: 'mastraRunId',
     defaultColumns: ['presentation', 'status', 'phase', 'command', 'updatedAt'],
-    hidden: ({ user }) => user?.role !== ROLES.admin,
+    hidden: true,
   },
   access: {
     create: ({ req }) => Boolean(req.user),
@@ -60,10 +60,22 @@ export const AgentRuns: CollectionConfig = {
       relationTo: COLLECTIONS.organisations,
       index: true,
     },
-    { name: 'mastraRunId', type: 'text', required: true, unique: true, index: true },
+    {
+      name: 'mastraRunId',
+      type: 'text',
+      required: true,
+      unique: true,
+      index: true,
+    },
     { name: 'payloadJobId', type: 'text', index: true },
     { name: 'requestId', type: 'text', required: true, index: true },
-    { name: 'traceId', type: 'text', required: true, index: true, admin: { hidden: true } },
+    {
+      name: 'traceId',
+      type: 'text',
+      required: true,
+      index: true,
+      admin: { hidden: true },
+    },
     {
       name: 'status',
       type: 'select',
@@ -123,7 +135,12 @@ export const AgentRuns: CollectionConfig = {
       admin: { readOnly: true },
     },
     { name: 'sourceIds', type: 'json' },
-    { name: 'revisionContext', type: 'textarea', maxLength: 100_000, admin: { hidden: true } },
+    {
+      name: 'revisionContext',
+      type: 'textarea',
+      maxLength: 100_000,
+      admin: { hidden: true },
+    },
     { name: 'inputFingerprint', type: 'text', required: true, index: true },
     { name: 'events', type: 'json' },
     { name: 'evidence', type: 'json', admin: { hidden: true } },

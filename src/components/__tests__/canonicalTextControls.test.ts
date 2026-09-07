@@ -229,11 +229,8 @@ describe('canonical custom admin controls', () => {
     const path = 'src/components/AgentDraftButton.tsx';
     expect(sourceContains(path, 'function AgentJournal')).toBe(true);
     expect(sourceContains(path, 'JOURNAL_STATUS_LABEL')).toBe(true);
-    expect(sourceContains(path, 'useState(initiallyOpen)')).toBe(true);
-    expect(
-      sourceContains(path, 'onToggle={(event) => setExpanded(event.currentTarget.open)}'),
-    ).toBe(true);
-    expect(sourceContains(path, 'open={expanded}')).toBe(true);
+    expect(sourceContains(path, '<details className="agent-draft__journal">')).toBe(true);
+    expect(sourceContains(path, 'initiallyOpen')).toBe(false);
     expect(sourceContains(path, 'aria-label="Événements du build agentique"')).toBe(true);
     expect(sourceContains(path, 'formatDraftEventDetail')).toBe(true);
     expect(sourceContains(path, 'formatDraftEventPhase')).toBe(true);

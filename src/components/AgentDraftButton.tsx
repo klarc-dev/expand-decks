@@ -2,16 +2,9 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Button,
-  CheckboxInput,
-  TextareaInput,
-  toast,
-  useDocumentInfo,
-  useField,
-} from '@payloadcms/ui';
+import { Button, CheckboxInput, TextareaInput, useDocumentInfo, useField } from '@payloadcms/ui';
 
-import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
+import { AdminNotice } from '@/components/adminUi/AdminSurface';
 import {
   formatDraftEventDetail,
   formatDraftEventPhase,
@@ -19,6 +12,7 @@ import {
 } from '@/components/agentDraftJournal';
 import { adminGet, adminPost } from '@/lib/adminFetch';
 import { reconcileRunState } from '@/lib/runState';
+import { COLLECTIONS } from '@/lib/collections';
 import { sourcePolicyForSelection } from '@/lib/adminSourcePolicy';
 import {
   getSourceReadinessLabel,
@@ -34,9 +28,9 @@ type DraftMode = 'replace' | 'augment' | 'revise';
 type SourceOption = BrowserSourceOption;
 
 const DRAFT_MODE_OPTIONS: ReadonlyArray<{ label: string; value: DraftMode }> = [
-  { value: 'revise', label: 'Réviser les diapositives existantes' },
-  { value: 'replace', label: 'Remplacer les diapositives' },
-  { value: 'augment', label: 'Ajouter aux diapositives existantes' },
+  { value: 'revise', label: 'Réviser' },
+  { value: 'replace', label: 'Remplacer' },
+  { value: 'augment', label: 'Ajouter' },
 ];
 
 const JOURNAL_STATUS_LABEL: Record<string, string> = {
@@ -124,10 +118,12 @@ function SourceControls({
   sources: SourceOption[];
   onToggle: (id: string) => void;
 }) {
-  if (sources.length === 0) return null;
-
   return (
     <DraftFieldGroup label="Sources">
+      <a href={`/admin/collections/${COLLECTIONS.knowledgeBases}`}>
+        Gérer les bases de connaissances
+      </a>
+      {sources.length === 0 && <span>Aucune source disponible. Le brief sera utilisé seul.</span>}
       <SourceOptionGroups
         sources={sources}
         renderSource={(source) => {
@@ -162,19 +158,29 @@ function SourceControls({
   );
 }
 
-/** Query the durable Mastra run status; undefined when no handle/unreachable. */
-async function fetchDurableStatus(runId: unknown): Promise<string | undefined> {
+type DurableRun = { status: string; suspended?: unknown; error?: string };
+type PlanItem = { title: string; intent: string };
+
+/** Mastra suspended paths are not a readable approval payload. */
+export function approvalOutline(suspended: unknown): PlanItem[] {
+  if (!suspended || typeof suspended !== 'object' || Array.isArray(suspended)) return [];
+  const { outline } = suspended as Record<string, unknown>;
+  if (!Array.isArray(outline) || !outline.length) return [];
+  return outline.every(
+    (item) =>
+      item &&
+      typeof item === 'object' &&
+      typeof item.title === 'string' &&
+      typeof item.intent === 'string',
+  )
+    ? outline
+    : [];
+}
+
+async function fetchDurableRun(runId: unknown): Promise<DurableRun | undefined> {
   if (typeof runId !== 'string' || !runId) return undefined;
-  try {
-    const res = await fetch(`/api/agent-draft/${encodeURIComponent(runId)}`, {
-      credentials: 'include',
-    });
-    if (!res.ok) return undefined;
-    const body = await res.json();
-    return typeof body.status === 'string' ? body.status : undefined;
-  } catch {
-    return undefined;
-  }
+  const { ok, data } = await adminGet(`/api/agent-draft/${encodeURIComponent(runId)}`);
+  return ok && typeof data.status === 'string' ? data : undefined;
 }
 
 // Pipeline steps shown as a progress rail; each draftStatus maps to an index.
@@ -197,7 +203,7 @@ function DraftProgress({ running, status }: DraftProgressProps) {
   return (
     <ol aria-label="Progression du build agentique" className="agent-draft__progress">
       {STEPS.map((step, index) => {
-        const reached = status === 'done' || (stepIndex >= 0 && index <= stepIndex);
+        const reached = stepIndex >= 0 && index <= stepIndex;
         const current = running && index === stepIndex;
         return (
           <li
@@ -216,20 +222,14 @@ function DraftProgress({ running, status }: DraftProgressProps) {
 
 type AgentJournalProps = {
   events: DraftEvent[];
-  initiallyOpen: boolean;
   status: string;
 };
 
-function AgentJournal({ events, initiallyOpen, status }: AgentJournalProps) {
-  const [expanded, setExpanded] = useState(initiallyOpen);
+function AgentJournal({ events, status }: AgentJournalProps) {
   if (events.length === 0) return null;
 
   return (
-    <details
-      className="agent-draft__journal"
-      onToggle={(event) => setExpanded(event.currentTarget.open)}
-      open={expanded}
-    >
+    <details className="agent-draft__journal">
       <summary className="agent-draft__journal-summary">
         Journal de l&apos;agent — {JOURNAL_STATUS_LABEL[status] ?? 'état inconnu'}
       </summary>
@@ -297,7 +297,8 @@ function getStatusEvent({ durableStatus, event, status }: StatusEventInput) {
 }
 
 type DraftRunActionsProps = {
-  approvalRequired: boolean;
+  canApprove: boolean;
+  pending: boolean;
   canStart: boolean;
   durableStatus: string;
   event: DraftEvent | undefined;
@@ -311,7 +312,8 @@ type DraftRunActionsProps = {
 };
 
 function DraftRunActions({
-  approvalRequired,
+  canApprove,
+  pending,
   canStart,
   durableStatus,
   event,
@@ -326,20 +328,23 @@ function DraftRunActions({
   return (
     <fieldset className="agent-draft__actions">
       <legend className="sr-only">Actions du build agentique</legend>
-      <Button
-        buttonStyle="primary"
-        disabled={!canStart}
-        margin={false}
-        onClick={onStart}
-        size="medium"
-        type="button"
-      >
-        {running ? 'Agent en cours…' : 'Lancer le build agentique'}
-      </Button>
-      {running && hasRun && (
+      {!['suspended', 'stale', 'waiting'].includes(durableStatus) && (
+        <Button
+          buttonStyle="primary"
+          disabled={!canStart}
+          margin={false}
+          onClick={onStart}
+          size="medium"
+          type="button"
+        >
+          {running ? 'Génération en cours…' : 'Générer la présentation'}
+        </Button>
+      )}
+      {(running || ['suspended', 'waiting', 'stale'].includes(durableStatus)) && hasRun && (
         <Button
           buttonStyle="secondary"
           margin={false}
+          disabled={pending}
           onClick={onCancel}
           size="small"
           type="button"
@@ -349,8 +354,9 @@ function DraftRunActions({
       )}
       {!running && durableStatus === 'stale' && hasRun && (
         <Button
-          buttonStyle="secondary"
+          buttonStyle="primary"
           margin={false}
+          disabled={pending}
           onClick={onRestart}
           size="small"
           type="button"
@@ -358,11 +364,12 @@ function DraftRunActions({
           Redémarrer le worker
         </Button>
       )}
-      {!running && durableStatus === 'suspended' && hasRun && approvalRequired && (
+      {!running && durableStatus === 'suspended' && hasRun && (
         <>
           <Button
             buttonStyle="primary"
             margin={false}
+            disabled={pending || !canApprove}
             onClick={() => onResume(true)}
             size="small"
             type="button"
@@ -372,6 +379,7 @@ function DraftRunActions({
           <Button
             buttonStyle="secondary"
             margin={false}
+            disabled={pending}
             onClick={() => onResume(false)}
             size="small"
             type="button"
@@ -392,12 +400,19 @@ function DraftRunActions({
  * progress. Survives reloads (state lives on the doc, not in the request):
  * on mount it reads the doc and resumes polling if a run is already active.
  */
+// fallow-ignore-next-line complexity
 const AgentDraftButton: React.FC = () => {
-  const { setValue: setBriefValue, value: storedBrief } = useField<string>({ path: 'agentBrief' });
+  const { setValue: setBriefValue, value: storedBrief } = useField<string>({
+    path: 'agentBrief',
+  });
   const brief = storedBrief ?? '';
-  const [mode, setMode] = useState<DraftMode>('replace');
+  const [mode, setMode] = useState<DraftMode>('revise');
   const [visual, setVisual] = useState(true);
   const [approvalRequired, setApprovalRequired] = useState(false);
+  const [hasSlides, setHasSlides] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+  const [pending, setPending] = useState(false);
+  const [outline, setOutline] = useState<PlanItem[]>([]);
   const [runId, setRunId] = useState<string>('');
   const [sources, setSources] = useState<SourceOption[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -418,46 +433,46 @@ const AgentDraftButton: React.FC = () => {
     }
   }, []);
 
+  const requestRef = useRef(0);
+  const commandRef = useRef(false);
+  // fallow-ignore-next-line complexity
   const poll = useCallback(async () => {
-    if (!id) return;
+    if (!id || commandRef.current) return;
+    const request = ++requestRef.current;
     try {
-      const res = await fetch(`/api/presentations/${id}?depth=0`, { credentials: 'include' });
-      if (!res.ok) return;
-      const doc = await res.json();
-      const mirror: string = doc.draftStatus ?? 'idle';
-      setStatus(mirror);
-      if (Array.isArray(doc.draftEvents)) setEvents(doc.draftEvents);
-      if (typeof doc.draftRunId === 'string') setRunId(doc.draftRunId);
-
-      // The presentation status is a cheap phase mirror; the AgentRuns ledger
-      // remains authoritative for queued, suspended, stale, and terminal state.
-      const durable = doc.draftRunId ? await fetchDurableStatus(doc.draftRunId) : undefined;
-      if (durable) setDurableStatus(durable);
-      if (durable === 'suspended' || durable === 'waiting') {
-        stopPolling();
-        setRunning(false);
-        return;
-      }
-      if (durable === 'stale') {
-        stopPolling();
-        setRunning(false);
-        setError('Le worker a été interrompu. Vous pouvez redémarrer ce run.');
-        return;
-      }
+      const { ok, data: doc } = await adminGet(`/api/presentations/${id}?depth=0`);
+      if (!ok) throw new Error('Impossible de charger la génération. Rechargez cet onglet.');
+      const run = await fetchDurableRun(doc.draftRunId);
+      if (request !== requestRef.current) return;
+      const durable = run?.status;
+      const mirror = doc.draftStatus ?? 'idle';
       const state = reconcileRunState(mirror, durable);
-
-      if (state === 'done' || state === 'failed') {
-        stopPolling();
-        setRunning(false);
-        if (state === 'done') {
-          router.refresh();
-          toast.success('Présentation générée par l’agent.');
-        } else {
-          setError('Le build agentique a échoué. Voir le journal.');
-        }
-      }
-    } catch {
-      /* transient; keep polling */
+      setHasSlides(Array.isArray(doc.slides) && doc.slides.length > 0);
+      setRunId(typeof doc.draftRunId === 'string' ? doc.draftRunId : '');
+      setDurableStatus(durable ?? '');
+      setOutline(approvalOutline(run?.suspended));
+      setEvents(Array.isArray(doc.draftEvents) ? doc.draftEvents : []);
+      setStatus(state === 'done' || state === 'failed' ? state : mirror);
+      const active =
+        durable === 'queued' || durable === 'running' || (!durable && ACTIVE_STATUSES.has(mirror));
+      setRunning(active);
+      if (durable === 'stale') setError('Le worker a été interrompu. Redémarrez la génération.');
+      else if (durable === 'canceled') setError('');
+      else if (state === 'failed')
+        setError(
+          run?.error || 'La génération a échoué. Consultez le journal de cette présentation.',
+        );
+      else setError('');
+      if (state === 'done' && pollRef.current) router.refresh();
+      if (!active) stopPolling();
+      setInitializing(false);
+    } catch (err) {
+      if (request !== requestRef.current) return;
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Impossible de vérifier la génération. Rechargez cet onglet.',
+      );
     }
   }, [id, router, stopPolling]);
 
@@ -489,53 +504,14 @@ const AgentDraftButton: React.FC = () => {
     };
   }, []);
 
-  // Resume a run already in flight (e.g. the user reloaded or switched tabs):
-  // the run state lives on the doc, so one fetch tells us whether to poll.
   useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/presentations/${id}?depth=0`, { credentials: 'include' });
-        if (!res.ok || cancelled) return;
-        const doc = await res.json();
-        const mirror: string = doc.draftStatus ?? 'idle';
-        if (cancelled) return;
-        setStatus(mirror);
-        if (Array.isArray(doc.draftEvents)) setEvents(doc.draftEvents);
-        if (typeof doc.draftRunId === 'string') setRunId(doc.draftRunId);
-        if (ACTIVE_STATUSES.has(mirror)) {
-          // Resuming onto an active mirror: confirm the durable run is still
-          // alive before re-polling — if it died while we were away, surface it.
-          const durable = await fetchDurableStatus(doc.draftRunId);
-          if (durable) setDurableStatus(durable);
-          if (cancelled) return;
-          if (durable === 'suspended' || durable === 'waiting') {
-            setRunning(false);
-            return;
-          }
-          if (durable === 'stale') {
-            setRunning(false);
-            setError('Le worker a été interrompu. Vous pouvez redémarrer ce run.');
-            return;
-          }
-          if (reconcileRunState(mirror, durable) === 'failed') {
-            setError('Le build agentique a échoué. Voir le journal.');
-            return;
-          }
-          setRunning(true);
-          startPolling();
-        }
-      } catch {
-        /* non-fatal: the panel just starts idle */
-      }
-    })();
+    startPolling();
+    void poll();
     return () => {
-      cancelled = true;
+      ++requestRef.current;
+      stopPolling();
     };
-  }, [id, startPolling]);
-
-  useEffect(() => () => stopPolling(), [stopPolling]);
+  }, [poll, startPolling, stopPolling]);
 
   const toggleSource = useCallback(
     (sourceId: string) => {
@@ -549,7 +525,10 @@ const AgentDraftButton: React.FC = () => {
   );
 
   const handleStart = useCallback(async () => {
-    if (!brief.trim() || !id) return;
+    if (!brief.trim() || !id || commandRef.current) return;
+    commandRef.current = true;
+    ++requestRef.current;
+    setPending(true);
     setRunning(true);
     setError('');
     setEvents([]);
@@ -561,7 +540,7 @@ const AgentDraftButton: React.FC = () => {
       } = await adminPost('/api/agent-draft', {
         presentationId: String(id),
         brief,
-        mode,
+        mode: hasSlides ? mode : 'replace',
         visual,
         sourcePolicy: sourcePolicyForSelection(selectedSources),
         approvalRequired,
@@ -574,33 +553,47 @@ const AgentDraftButton: React.FC = () => {
       setStatus('gathering');
       setDurableStatus('queued');
       if (typeof data.runId === 'string') setRunId(data.runId);
+      setOutline([]);
       startPolling();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur réseau');
       setRunning(false);
+    } finally {
+      commandRef.current = false;
+      setPending(false);
     }
-  }, [approvalRequired, brief, id, mode, selectedSources, visual, startPolling]);
+  }, [hasSlides, approvalRequired, brief, id, mode, selectedSources, visual, startPolling]);
 
   const handleRunAction = useCallback(
     async (action: 'cancel' | 'restart' | 'resume', approved?: boolean) => {
-      if (!runId) return;
-      const { ok, data } = await adminPost(`/api/agent-draft/${encodeURIComponent(runId)}`, {
-        action,
-        ...(action === 'resume' ? { approved } : {}),
-      });
-      if (!ok) {
-        setError(data.error || 'Action impossible');
-        return;
-      }
-      if (action === 'cancel') {
-        stopPolling();
-        setRunning(false);
-        setStatus('failed');
-        setDurableStatus('canceled');
-      } else {
-        setDurableStatus('queued');
-        setRunning(true);
-        startPolling();
+      if (!runId || commandRef.current) return;
+      commandRef.current = true;
+      ++requestRef.current;
+      setPending(true);
+      setError('');
+      try {
+        const { ok, data } = await adminPost(`/api/agent-draft/${encodeURIComponent(runId)}`, {
+          action,
+          ...(action === 'resume' ? { approved } : {}),
+        });
+        if (!ok) throw new Error(data.error || 'Action impossible. Réessayez.');
+        if (action === 'cancel') {
+          stopPolling();
+          setRunning(false);
+          setStatus('failed');
+          setDurableStatus('canceled');
+        } else {
+          setStatus('gathering');
+          setDurableStatus('queued');
+          setRunning(true);
+          setOutline([]);
+          startPolling();
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erreur réseau. Réessayez.');
+      } finally {
+        commandRef.current = false;
+        setPending(false);
       }
     },
     [runId, startPolling, stopPolling],
@@ -616,12 +609,12 @@ const AgentDraftButton: React.FC = () => {
 
   const last = events[events.length - 1];
   const phaseText =
-    status === 'done'
-      ? formatDraftEventPhase('done')
-      : status === 'failed'
-        ? formatDraftEventPhase('failed')
-        : durableStatus === 'canceled'
-          ? formatDraftEventPhase('cancelled')
+    durableStatus === 'canceled'
+      ? formatDraftEventPhase('cancelled')
+      : status === 'done'
+        ? formatDraftEventPhase('done')
+        : status === 'failed'
+          ? formatDraftEventPhase('failed')
           : durableStatus === 'queued'
             ? formatDraftEventPhase('queued')
             : durableStatus === 'suspended'
@@ -632,53 +625,82 @@ const AgentDraftButton: React.FC = () => {
   const statusEvent = getStatusEvent({ durableStatus, event: last, status });
 
   return (
-    <AdminPanel className="agent-draft__panel">
+    <div className="agent-draft__panel">
       <TextareaInput
         className="agent-draft__brief"
-        description="L’agent recherche, structure, rédige, construit le deck réel, le critique visuellement, puis corrige. Comptez plusieurs minutes."
+        description="Décrivez le public, l’objectif et les points à traiter. La génération prend plusieurs minutes."
         label="Brief de la présentation"
         path="agentBrief"
         value={brief}
         onChange={(e) => setBriefValue(e.target.value)}
         placeholder="Ex : Webinaire de 45 min pour juristes d'entreprise sur comment rendre une présentation d'expert réellement intéressante…"
-        readOnly={running}
+        readOnly={running || pending || initializing}
         rows={5}
       />
-
-      <DraftModeSelector readOnly={running} value={mode} onChange={setMode} />
-
-      <DraftFieldGroup label="Options du build">
-        <CheckboxInput
-          checked={visual}
-          className="agent-draft__checkbox"
-          id="agent-visual-review"
-          label="Critique visuelle (plus lent, meilleur rendu)"
-          name="agent-visual-review"
-          onToggle={(event) => setVisual(event.target.checked)}
-          readOnly={running}
-        />
-        <CheckboxInput
-          checked={approvalRequired}
-          className="agent-draft__checkbox"
-          id="agent-plan-approval"
-          label="Valider le plan avant rédaction"
-          name="agent-plan-approval"
-          onToggle={(event) => setApprovalRequired(event.target.checked)}
-          readOnly={running}
-        />
-      </DraftFieldGroup>
 
       <SourceControls
         maxSources={maxSources}
         onToggle={toggleSource}
-        readOnly={running}
+        readOnly={running || pending || initializing}
         selected={selectedSources}
         sources={sources}
       />
 
+      {hasSlides && (
+        <DraftModeSelector
+          readOnly={running || pending || initializing}
+          value={mode}
+          onChange={setMode}
+        />
+      )}
+      <details className="agent-draft__advanced">
+        <summary>Options avancées</summary>
+        <DraftFieldGroup label="Options du build">
+          <CheckboxInput
+            checked={visual}
+            className="agent-draft__checkbox"
+            id="agent-visual-review"
+            label="Critique visuelle (plus lent, meilleur rendu)"
+            name="agent-visual-review"
+            onToggle={(event) => setVisual(event.target.checked)}
+            readOnly={running || pending || initializing}
+          />
+          <CheckboxInput
+            checked={approvalRequired}
+            className="agent-draft__checkbox"
+            id="agent-plan-approval"
+            label="Valider le plan avant rédaction"
+            name="agent-plan-approval"
+            onToggle={(event) => setApprovalRequired(event.target.checked)}
+            readOnly={running || pending || initializing}
+          />
+        </DraftFieldGroup>
+      </details>
+      {durableStatus === 'suspended' && (
+        <section className="agent-draft__plan" aria-label="Plan proposé">
+          <h3>Plan proposé</h3>
+          {outline.length > 0 ? (
+            <ol>
+              {outline.map((item, index) => (
+                <li key={`${index}:${item.title}`}>
+                  <strong>{item.title}</strong>
+                  <p>{item.intent}</p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <AdminNotice variant="hint">
+              Le plan n’est pas disponible dans ce run. Vous pouvez refuser ou annuler la
+              génération, mais pas approuver un plan non consultable.
+            </AdminNotice>
+          )}
+        </section>
+      )}
+
       <DraftRunActions
-        approvalRequired={approvalRequired}
-        canStart={!running && Boolean(brief.trim())}
+        canApprove={outline.length > 0}
+        pending={pending}
+        canStart={!running && !pending && !initializing && Boolean(brief.trim())}
         durableStatus={durableStatus}
         event={statusEvent}
         hasRun={Boolean(runId)}
@@ -690,19 +712,18 @@ const AgentDraftButton: React.FC = () => {
         running={running}
       />
 
-      {(running || status === 'done' || status === 'failed') && (
-        <DraftProgress running={running} status={status} />
-      )}
+      {running && <DraftProgress running={running} status={status} />}
 
-      <AgentJournal events={events} initiallyOpen={running} status={status} />
+      <AgentJournal events={events} status={status} />
 
       {error && (
         <AdminNotice className="agent-draft__error" variant="error">
           {error}
         </AdminNotice>
       )}
-    </AdminPanel>
+    </div>
   );
 };
 
+// fallow-ignore-next-line unused-export
 export default AgentDraftButton;
