@@ -41,6 +41,24 @@ export function assertGoogleFontsKey(): void {
 }
 
 /**
+ * Agent jobs can be claimed by the web process or any Payload worker. Refuse
+ * to start a production process unless it has a complete provider pair; an
+ * empty key plus the development tailnet fallback otherwise turns deployment
+ * drift into a workflow that appears to hang on its first model call.
+ */
+export function assertAIProviderConfig(): void {
+  if (!isProd) return;
+
+  const hasBaseURL = Boolean(process.env.CLIPROXYAPI_BASE_URL || process.env.OPENAI_BASE_URL);
+  const hasAPIKey = Boolean(process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY);
+  if (!hasBaseURL || !hasAPIKey) {
+    throw new Error(
+      'Missing AI provider configuration. Production requires CLIPROXYAPI_BASE_URL + CLIPROXYAPI_KEY or OPENAI_BASE_URL + OPENAI_API_KEY.',
+    );
+  }
+}
+
+/**
  * Payload's Postgres adapter auto-pushes schema in non-production by default.
  * Keep it opt-in: one-off scripts should never block on destructive schema
  * prompts or hold DB sessions while waiting for terminal input.

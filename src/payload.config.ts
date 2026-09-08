@@ -29,13 +29,15 @@ import {
   PAYLOAD_SECRET,
   DATABASE_URL,
   PAYLOAD_DB_PUSH,
+  assertAIProviderConfig,
   assertGoogleFontsKey,
 } from './lib/env';
 import { ROLES } from './access/roles';
 
-// Fail fast in production if the font catalog key is missing: decks would
-// otherwise build with unresolved typography.
+// Fail fast in production if configuration required by deck jobs is missing:
+// every process can claim agent work, and builds require the font catalog.
 assertGoogleFontsKey();
+assertAIProviderConfig();
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
