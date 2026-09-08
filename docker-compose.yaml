@@ -114,6 +114,12 @@ services:
       PAYLOAD_WORKER: "1"
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      # Agent jobs are claimed by workers as well as the web process. Keep the
+      # provider and source registry identical on every queue consumer.
+      CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL}
+      CLIPROXYAPI_KEY: ${CLIPROXYAPI_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-high}
+      AGENT_SOURCE_REGISTRY_JSON: ${AGENT_SOURCE_REGISTRY_JSON:-[]}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_FONTS_API_KEY: ${GOOGLE_FONTS_API_KEY}
