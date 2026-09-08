@@ -95,6 +95,7 @@ async function finalizeSuccess(
     presentationId,
     slides: deck.slides,
     mode: run.mode,
+    expectedDraftRunId: run.mastraRunId,
     existing: run.mode === 'augment' ? (latest?.slides as Presentation['slides']) : undefined,
   });
   const organisationId = idOf(run.organisation);

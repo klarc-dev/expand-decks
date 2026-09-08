@@ -8,9 +8,13 @@ import { persistSlides } from '../tools/persist';
 
 describe('persistSlides', () => {
   const update = vi.fn();
-  const payload = { update } as never;
+  const findByID = vi.fn();
+  const payload = { update, findByID } as never;
 
-  beforeEach(() => update.mockReset().mockResolvedValue({}));
+  beforeEach(() => {
+    update.mockReset().mockResolvedValue({});
+    findByID.mockReset().mockResolvedValue({ draftRunId: 'active-run' });
+  });
 
   it('replaces the stored deck with revised slides instead of appending', async () => {
     const revised = [{ blockType: 'statement', title: 'Revised' }] as never;
@@ -25,6 +29,38 @@ describe('persistSlides', () => {
 
     expect(update.mock.calls[0]![0].data.slides).toEqual(revised);
     expect(update.mock.calls[0]![0]).not.toHaveProperty('context');
+  });
+
+  it('refuses to overwrite slides when a newer run took ownership before persistence', async () => {
+    findByID.mockResolvedValue({ draftRunId: 'newer-run' });
+
+    await expect(
+      persistSlides({
+        payload,
+        presentationId: 1,
+        mode: 'replace',
+        expectedDraftRunId: 'older-run',
+        slides: [{ blockType: 'statement', title: 'Stale result' }] as never,
+      }),
+    ).rejects.toThrow('superseded before slide persistence');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('refuses to overwrite slides when ownership changes during slide preparation', async () => {
+    findByID
+      .mockResolvedValueOnce({ draftRunId: 'active-run' })
+      .mockResolvedValueOnce({ draftRunId: 'newer-run' });
+
+    await expect(
+      persistSlides({
+        payload,
+        presentationId: 1,
+        mode: 'replace',
+        expectedDraftRunId: 'active-run',
+        slides: [{ blockType: 'statement', title: 'Stale result' }] as never,
+      }),
+    ).rejects.toThrow('superseded during slide preparation');
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('rejects malformed slides before conversion or persistence', async () => {
