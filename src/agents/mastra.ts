@@ -30,7 +30,7 @@ if (!g.__mastraStorageVNext) {
     id: 'mastra-storage',
     connectionString: databaseUrl,
     schemaName: 'mastra',
-    disableInit: process.env.NODE_ENV === 'production' || process.env.MASTRA_DISABLE_INIT === '1',
+    disableInit: process.env.MASTRA_DISABLE_INIT === '1',
     retention: AGENT_RETENTION,
     observability: {
       connectionString: observabilityDatabaseUrl,

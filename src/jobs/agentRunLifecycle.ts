@@ -23,7 +23,10 @@ export function agentRunFingerprint(input: {
 
 export const AGENT_RUN_TERMINAL = new Set(['succeeded', 'failed', 'canceled']);
 export const AGENT_TIME_TRAVEL_STEPS = ['validate', 'visual'] as const;
-export const AGENT_RUN_STALE_MS = 5 * 60_000;
+// Heartbeats are written by the Payload job independently of model events.
+export const AGENT_RUN_HEARTBEAT_INTERVAL_MS = 15_000;
+export const AGENT_RUN_MAX_RUNTIME_MS = 20 * 60_000;
+export const AGENT_RUN_STALE_MS = 2 * 60_000;
 
 export function sanitizeRunError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);

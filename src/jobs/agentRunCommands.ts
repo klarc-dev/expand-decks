@@ -12,7 +12,11 @@ import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
 import { configureSourceResolutionPayload } from '../lib/sources/serverContext';
 import { SourceResearchError, type SourceFailure } from '../lib/sources/types';
-import { sanitizeRunError } from './agentRunLifecycle';
+import {
+  AGENT_RUN_HEARTBEAT_INTERVAL_MS,
+  AGENT_RUN_MAX_RUNTIME_MS,
+  sanitizeRunError,
+} from './agentRunLifecycle';
 
 const MAX_EVENTS = 200;
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
@@ -127,7 +131,7 @@ async function consumeResult(result: unknown): Promise<DeckResult> {
   return value.result;
 }
 
-async function consumeWorkflowStream(
+export async function consumeWorkflowStream(
   stream: AsyncIterable<unknown>,
   mirror: (phase: string, detail?: unknown) => Promise<void>,
 ) {
@@ -177,6 +181,7 @@ async function executeWorkflow(
   ledger: AgentRun,
   presentationId: number,
   mirror: (phase: string, detail?: unknown) => Promise<void>,
+  registerCancel: (cancel: () => Promise<void>) => void,
 ): Promise<unknown> {
   const workflow = mastra.getWorkflow('deckWorkflow');
   configureSourceResolutionPayload(payload);
@@ -184,6 +189,7 @@ async function executeWorkflow(
     runId: ledger.mastraRunId,
     resourceId: String(presentationId),
   });
+  registerCancel(() => run.cancel());
   const tracingOptions = {
     traceId: ledger.traceId,
     hideInput: true,
@@ -217,7 +223,7 @@ async function executeWorkflow(
       requestContext,
       tracingOptions,
     });
-    await consumeWorkflowStream(stream, mirror);
+    await consumeWorkflowStream(stream.fullStream, mirror);
     return stream.result;
   }
   if (ledger.command === 'timeTravel') {
@@ -226,7 +232,7 @@ async function executeWorkflow(
       requestContext,
       tracingOptions,
     });
-    await consumeWorkflowStream(stream, mirror);
+    await consumeWorkflowStream(stream.fullStream, mirror);
     return stream.result;
   }
 
@@ -258,8 +264,52 @@ async function executeWorkflow(
     requestContext,
     tracingOptions,
   });
-  await consumeWorkflowStream(stream, mirror);
+  await consumeWorkflowStream(stream.fullStream, mirror);
   return stream.result;
+}
+
+async function withRunLiveness<T>(
+  payload: Payload,
+  ledger: AgentRun,
+  execution: (registerCancel: (cancel: () => Promise<void>) => void) => Promise<T>,
+): Promise<T> {
+  let cancelWorkflow: (() => Promise<void>) | undefined;
+  let heartbeatInFlight = false;
+  const heartbeat = setInterval(() => {
+    if (heartbeatInFlight) return;
+    heartbeatInFlight = true;
+    void patchRun(payload, ledger, { heartbeatAt: new Date().toISOString() })
+      .catch((error) => {
+        console.error(`[agent-run:${ledger.id}] heartbeat failed`, error);
+      })
+      .finally(() => {
+        heartbeatInFlight = false;
+      });
+  }, AGENT_RUN_HEARTBEAT_INTERVAL_MS);
+  heartbeat.unref?.();
+
+  let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutTimer = setTimeout(() => {
+      void cancelWorkflow?.().catch((error) => {
+        console.error(`[agent-run:${ledger.id}] timeout cancellation failed`, error);
+      });
+      reject(new Error('Agent workflow exceeded its 20 minute runtime limit'));
+    }, AGENT_RUN_MAX_RUNTIME_MS);
+    timeoutTimer.unref?.();
+  });
+
+  try {
+    return await Promise.race([
+      execution((cancel) => {
+        cancelWorkflow = cancel;
+      }),
+      timeout,
+    ]);
+  } finally {
+    clearInterval(heartbeat);
+    if (timeoutTimer) clearTimeout(timeoutTimer);
+  }
 }
 
 function failureDetail(message: string, sourceFailures: SourceFailure[]) {
@@ -305,7 +355,9 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       errorCode: null,
       errorSummary: null,
     })) as AgentRun;
-    const workflowResult = await executeWorkflow(payload, ledger, presentationId, mirror);
+    const workflowResult = await withRunLiveness(payload, ledger, (registerCancel) =>
+      executeWorkflow(payload, ledger, presentationId, mirror, registerCancel),
+    );
 
     const state = workflowResult as { status?: string; suspended?: unknown };
     if (state.status === 'suspended') {
