@@ -40,6 +40,11 @@ if (!g.__mastraStorageVNext) {
 }
 export const agentStorage = g.__mastraStorageVNext;
 
+export async function initializeAgentStorage(): Promise<void> {
+  await agentStorage.init();
+  await agentStorage.stores?.observability?.init();
+}
+
 export const agentObservability = new Observability({
   configs: {
     default: {
