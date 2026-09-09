@@ -58,6 +58,7 @@ async function markPriorRequestStale(
   });
 }
 
+// fallow-ignore-next-line complexity -- route owns one authenticated request-to-queue transaction
 export async function POST(req: NextRequest) {
   const { payload, user } = await authenticateRequest(req.headers);
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });

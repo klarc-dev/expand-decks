@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 import { WRITABLE_SLIDE_SCHEMA } from '@/blocks/spec';
 
-export const MEDIA_PRODUCER_ID = 'expand-decks' as const;
-export const MEDIA_PRODUCER_VERSION = '1.0.0' as const;
+const MEDIA_PRODUCER_ID = 'expand-decks' as const;
+const MEDIA_PRODUCER_VERSION = '1.0.0' as const;
 const MEDIA_CAPABILITIES_CONTRACT = 'expand-decks.media-capabilities/1.0' as const;
 const MEDIA_REQUEST_CONTRACT = 'expand-decks.media-request/1.0' as const;
 export const MEDIA_RESULT_CONTRACT = 'expand-decks.media-result/1.0' as const;
@@ -11,7 +11,7 @@ export const LINKEDIN_DOCUMENT_CAROUSEL = 'linkedin_document_carousel' as const;
 export const LINKEDIN_IMAGE = 'linkedin_image' as const;
 export const LINKEDIN_MULTI_IMAGE = 'linkedin_multi_image' as const;
 export const POSTIZ_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-export const POSTIZ_MIN_DOCUMENT_IMAGES = 2;
+const POSTIZ_MIN_DOCUMENT_IMAGES = 2;
 
 export const MEDIA_PRODUCER_STATUS = {
   queued: 'queued',
@@ -21,7 +21,7 @@ export const MEDIA_PRODUCER_STATUS = {
   stale: 'stale',
 } as const;
 
-export const REVIEW_STATUS = {
+const REVIEW_STATUS = {
   pending: 'pending',
   passed: 'passed',
   failed: 'failed',
@@ -210,7 +210,7 @@ const MEDIA_PRODUCER_ADAPTER_SCHEMA = z.discriminatedUnion('route', [
   }),
 ]);
 
-export const MEDIA_PRODUCER_RESULT_SCHEMA = z
+const MEDIA_PRODUCER_RESULT_BASE_SCHEMA = z
   .object({
     contract: z.literal(MEDIA_RESULT_CONTRACT),
     producer: z.literal(MEDIA_PRODUCER_ID),
@@ -235,85 +235,108 @@ export const MEDIA_PRODUCER_RESULT_SCHEMA = z
       })
       .nullable(),
   })
-  .strict()
-  .superRefine((result, context) => {
-    const validationIsPending = Object.values(result.validation).every(
-      (status) => status === REVIEW_STATUS.pending,
+  .strict();
+
+type MediaProducerResultShape = z.infer<typeof MEDIA_PRODUCER_RESULT_BASE_SCHEMA>;
+
+function commonSuccessIsValid(result: MediaProducerResultShape): boolean {
+  const transportOrders = result.transport_artifacts.map((artifact) => artifact.order);
+  const artifactHandles = [...result.delivery_artifacts, ...result.transport_artifacts].map(
+    (artifact) => String(artifact.handle),
+  );
+  const [firstTransport] = result.transport_artifacts;
+  const geometryMatches = result.transport_artifacts.every(
+    (artifact) =>
+      artifact.width_px === firstTransport?.width_px &&
+      artifact.height_px === firstTransport?.height_px,
+  );
+  return (
+    transportOrders.every((order, index) => order === index + 1) &&
+    new Set(artifactHandles).size === artifactHandles.length &&
+    geometryMatches &&
+    result.adapter !== null &&
+    result.validation.layout === REVIEW_STATUS.passed &&
+    result.error === null
+  );
+}
+
+function routeArtifactsAreValid(result: MediaProducerResultShape): boolean {
+  if (result.adapter?.route === 'linkedin_images_to_document') {
+    return (
+      result.delivery_artifacts.length === 1 &&
+      result.transport_artifacts.length >= POSTIZ_MIN_DOCUMENT_IMAGES &&
+      result.transport_artifacts.every((artifact) => artifact.role === 'postiz_document_page') &&
+      result.delivery_artifacts[0]?.page_count === result.transport_artifacts.length
     );
-    if (result.status === MEDIA_PRODUCER_STATUS.succeeded) {
-      const transportOrders = result.transport_artifacts.map((artifact) => artifact.order);
-      const artifactHandles = [...result.delivery_artifacts, ...result.transport_artifacts].map(
-        (artifact) => String(artifact.handle),
-      );
-      const [firstTransport] = result.transport_artifacts;
-      const geometryMatches = result.transport_artifacts.every(
-        (artifact) =>
-          artifact.width_px === firstTransport?.width_px &&
-          artifact.height_px === firstTransport?.height_px,
-      );
-      const commonSuccess =
-        transportOrders.every((order, index) => order === index + 1) &&
-        new Set(artifactHandles).size === artifactHandles.length &&
-        geometryMatches &&
-        result.adapter !== null &&
-        result.validation.layout === REVIEW_STATUS.passed &&
-        result.error === null;
-      const documentSuccess =
-        result.adapter?.route === 'linkedin_images_to_document' &&
-        result.delivery_artifacts.length === 1 &&
-        result.transport_artifacts.length >= POSTIZ_MIN_DOCUMENT_IMAGES &&
-        result.transport_artifacts.every((artifact) => artifact.role === 'postiz_document_page') &&
-        result.delivery_artifacts[0]?.page_count === result.transport_artifacts.length;
-      const singleImageSuccess =
-        result.adapter?.route === LINKEDIN_IMAGE &&
-        result.delivery_artifacts.length === 0 &&
-        result.transport_artifacts.length === 1 &&
-        result.transport_artifacts[0]?.role === 'postiz_image';
-      const multiImageSuccess =
-        result.adapter?.route === LINKEDIN_MULTI_IMAGE &&
-        result.delivery_artifacts.length === 0 &&
-        result.transport_artifacts.length >= 2 &&
-        result.transport_artifacts.every((artifact) => artifact.role === 'postiz_multi_image');
-      if (!commonSuccess || (!documentSuccess && !singleImageSuccess && !multiImageSuccess)) {
-        context.addIssue({
-          code: 'custom',
-          path: ['transport_artifacts'],
-          message: 'Succeeded results require the exact ordered artifacts for their Postiz route',
-        });
-      }
-    } else if (
-      result.delivery_artifacts.length !== 0 ||
-      result.transport_artifacts.length !== 0 ||
-      result.adapter !== null ||
-      !validationIsPending
-    ) {
+  }
+  if (result.adapter?.route === LINKEDIN_IMAGE) {
+    return (
+      result.delivery_artifacts.length === 0 &&
+      result.transport_artifacts.length === 1 &&
+      result.transport_artifacts[0]?.role === 'postiz_image'
+    );
+  }
+  return (
+    result.adapter?.route === LINKEDIN_MULTI_IMAGE &&
+    result.delivery_artifacts.length === 0 &&
+    result.transport_artifacts.length >= 2 &&
+    result.transport_artifacts.every((artifact) => artifact.role === 'postiz_multi_image')
+  );
+}
+
+function validateNonSuccessResult(
+  result: MediaProducerResultShape,
+  context: z.RefinementCtx<MediaProducerResultShape>,
+) {
+  const validationIsPending = Object.values(result.validation).every(
+    (status) => status === REVIEW_STATUS.pending,
+  );
+  if (
+    result.delivery_artifacts.length !== 0 ||
+    result.transport_artifacts.length !== 0 ||
+    result.adapter !== null ||
+    !validationIsPending
+  ) {
+    context.addIssue({
+      code: 'custom',
+      path: ['delivery_artifacts'],
+      message: 'Non-success results require pending validation and no ready artifacts',
+    });
+    return;
+  }
+  const isPending =
+    result.status === MEDIA_PRODUCER_STATUS.queued ||
+    result.status === MEDIA_PRODUCER_STATUS.building;
+  if (isPending && result.error !== null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['error'],
+      message: 'Pending results cannot expose an error',
+    });
+  } else if (!isPending && result.error === null) {
+    context.addIssue({
+      code: 'custom',
+      path: ['error'],
+      message: 'Failed and stale results require an error',
+    });
+  }
+}
+
+export const MEDIA_PRODUCER_RESULT_SCHEMA = MEDIA_PRODUCER_RESULT_BASE_SCHEMA.superRefine(
+  (result, context) => {
+    if (result.status !== MEDIA_PRODUCER_STATUS.succeeded) {
+      validateNonSuccessResult(result, context);
+      return;
+    }
+    if (!commonSuccessIsValid(result) || !routeArtifactsAreValid(result)) {
       context.addIssue({
         code: 'custom',
-        path: ['delivery_artifacts'],
-        message: 'Non-success results require pending validation and no ready artifacts',
-      });
-    } else if (
-      (result.status === MEDIA_PRODUCER_STATUS.queued ||
-        result.status === MEDIA_PRODUCER_STATUS.building) &&
-      result.error !== null
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['error'],
-        message: 'Pending results cannot expose an error',
-      });
-    } else if (
-      (result.status === MEDIA_PRODUCER_STATUS.failed ||
-        result.status === MEDIA_PRODUCER_STATUS.stale) &&
-      result.error === null
-    ) {
-      context.addIssue({
-        code: 'custom',
-        path: ['error'],
-        message: 'Failed and stale results require an error',
+        path: ['transport_artifacts'],
+        message: 'Succeeded results require the exact ordered artifacts for their Postiz route',
       });
     }
-  });
+  },
+);
 
 export type MediaProducerRequest = z.infer<typeof MEDIA_PRODUCER_REQUEST_SCHEMA>;
 export type MediaProducerResult = z.infer<typeof MEDIA_PRODUCER_RESULT_SCHEMA>;
