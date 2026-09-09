@@ -1,9 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { vi } from 'vitest';
+
+vi.mock('../../jobs/buildSlidesRunner', () => ({
+  preflightPresentationLayout: vi.fn(async () => undefined),
+}));
+
+import { beforeEach, describe, expect, it } from 'vitest';
 
 vi.mock('../../lib/richTextWrite', () => ({
   convertSlidesMarkdownToLexical: vi.fn(async (slides) => slides),
 }));
 
+import { preflightPresentationLayout } from '../../jobs/buildSlidesRunner';
 import { persistSlides } from '../tools/persist';
 
 describe('persistSlides', () => {
@@ -13,7 +20,12 @@ describe('persistSlides', () => {
 
   beforeEach(() => {
     update.mockReset().mockResolvedValue({});
-    findByID.mockReset().mockResolvedValue({ draftRunId: 'active-run' });
+    findByID.mockReset().mockResolvedValue({
+      draftRunId: 'active-run',
+      title: 'Current deck',
+      slides: [],
+    });
+    vi.mocked(preflightPresentationLayout).mockReset().mockResolvedValue(undefined);
   });
 
   it('replaces the stored deck with revised slides instead of appending', async () => {
@@ -27,6 +39,10 @@ describe('persistSlides', () => {
       existing: [{ blockType: 'cover', title: 'Old' }] as never,
     });
 
+    expect(preflightPresentationLayout).toHaveBeenCalledWith(
+      payload,
+      expect.objectContaining({ slides: revised }),
+    );
     expect(update.mock.calls[0]![0].data.slides).toEqual(revised);
     expect(update.mock.calls[0]![0]).not.toHaveProperty('context');
   });
@@ -60,6 +76,23 @@ describe('persistSlides', () => {
         slides: [{ blockType: 'statement', title: 'Stale result' }] as never,
       }),
     ).rejects.toThrow('superseded during slide preparation');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('leaves the existing deck unchanged when deterministic layout preflight fails', async () => {
+    vi.mocked(preflightPresentationLayout).mockRejectedValueOnce(
+      new Error('La slide 2 contient trop de contenu pour être exportée.'),
+    );
+
+    await expect(
+      persistSlides({
+        payload,
+        presentationId: 1,
+        mode: 'replace',
+        slides: [{ blockType: 'statement', title: 'Too dense' }] as never,
+      }),
+    ).rejects.toThrow('slide 2 contient trop de contenu');
+
     expect(update).not.toHaveBeenCalled();
   });
 

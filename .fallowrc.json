@@ -13,6 +13,7 @@
     "sass",
     "@vue/compiler-sfc",
     "playwright-chromium",
+    "mermaid",
     "concurrently",
     "kill-port",
     "wait-on",

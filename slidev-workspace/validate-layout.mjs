@@ -95,6 +95,7 @@ try {
           '.k-center-hero-main',
           '.k-cover-main',
           '.k-table-stage',
+          '.k-diagram-slide .mermaid',
         ];
         for (const selector of overflowSelectors) {
           for (const element of slide.querySelectorAll(selector)) {

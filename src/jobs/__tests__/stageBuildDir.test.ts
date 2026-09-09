@@ -58,11 +58,14 @@ describe('stageBuildDir cache posture', () => {
     expect(readlinkSync(media)).toBe(MEDIA_DIR);
   });
 
-  it('writes the generated Mermaid config into the staged setup directory', () => {
+  it('writes the generated Mermaid config and bounded renderer into the staged setup directory', () => {
     const workdir = stage();
     expect(readFileSync(join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'), 'utf-8')).toBe(
       'export const marker = "brand";',
     );
+    expect(
+      readFileSync(join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidRendererDest), 'utf-8'),
+    ).toContain('preserveAspectRatio="xMidYMid meet"');
   });
 
   it('copies public fonts into the staged public directory when fonts exist', () => {

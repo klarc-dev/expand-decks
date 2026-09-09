@@ -7,6 +7,7 @@
     "@slidev/cli": "52.19.1",
     "@slidev/theme-default": "0.25.0",
     "@vue/compiler-sfc": "3.5.41",
+    "mermaid": "11.17.2",
     "vue": "3.5.41"
   },
   "devDependencies": {

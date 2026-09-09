@@ -11,6 +11,7 @@ import { parseAiSlides } from '../../blocks/spec';
 import { COLLECTIONS } from '../../lib/collections';
 import { mergeAugmentedSlides } from '../../lib/augmentSlides';
 import { convertSlidesMarkdownToLexical } from '../../lib/richTextWrite';
+import { preflightPresentationLayout } from '../../jobs/buildSlidesRunner';
 import type { SlideBlock } from '../../export/renderers';
 
 export async function persistSlides(opts: {
@@ -24,19 +25,31 @@ export async function persistSlides(opts: {
 }): Promise<{ slideCount: number }> {
   const { payload, presentationId, slides, mode } = opts;
 
-  if (opts.expectedDraftRunId) {
-    const current = await payload.findByID({
-      collection: COLLECTIONS.presentations,
-      id: presentationId,
-      depth: 0,
-      overrideAccess: true,
-    });
-    if (current.draftRunId !== opts.expectedDraftRunId) {
-      throw new Error('Agent run was superseded before slide persistence');
-    }
+  const current = await payload.findByID({
+    collection: COLLECTIONS.presentations,
+    id: presentationId,
+    depth: 2,
+    overrideAccess: true,
+  });
+
+  if (opts.expectedDraftRunId && current.draftRunId !== opts.expectedDraftRunId) {
+    throw new Error('Agent run was superseded before slide persistence');
   }
 
   const draftedRich = await convertSlidesMarkdownToLexical(parseAiSlides(slides), payload);
+
+  const nextSlides =
+    mode === 'augment'
+      ? (mergeAugmentedSlides(
+          Array.isArray(opts.existing) ? opts.existing : [],
+          draftedRich,
+        ) as Presentation['slides'])
+      : (draftedRich as Presentation['slides']);
+
+  await preflightPresentationLayout(payload, {
+    ...(current as unknown as Record<string, unknown>),
+    slides: nextSlides as unknown[],
+  } as never);
 
   if (opts.expectedDraftRunId) {
     const current = await payload.findByID({
@@ -49,14 +62,6 @@ export async function persistSlides(opts: {
       throw new Error('Agent run was superseded during slide preparation');
     }
   }
-
-  const nextSlides =
-    mode === 'augment'
-      ? (mergeAugmentedSlides(
-          Array.isArray(opts.existing) ? opts.existing : [],
-          draftedRich,
-        ) as Presentation['slides'])
-      : (draftedRich as Presentation['slides']);
 
   await payload.update({
     collection: COLLECTIONS.presentations,

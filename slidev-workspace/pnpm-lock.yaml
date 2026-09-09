@@ -17,6 +17,9 @@ importers:
       '@vue/compiler-sfc':
         specifier: 3.5.41
         version: 3.5.41
+      mermaid:
+        specifier: 11.17.2
+        version: 11.17.2
       vue:
         specifier: 3.5.41
         version: 3.5.41(typescript@6.0.3)

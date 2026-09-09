@@ -24,5 +24,7 @@ export const ARTIFACTS = {
   logoLayer: 'global-top.vue',
   mermaidSetupSrc: 'mermaid-setup.ts',
   mermaidSetupDest: 'mermaid.ts',
+  mermaidRendererSrc: 'mermaid-renderer.ts',
+  mermaidRendererDest: 'mermaid-renderer.ts',
   setupDir: 'setup',
 } as const;

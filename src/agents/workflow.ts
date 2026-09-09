@@ -296,8 +296,9 @@ const visualStep = createStep({
       { title, slides: renderSlides as SlideBlock[] },
       { language: inputData.dossier.language },
     );
-    const { pngs, cleanup } = await exportSlidePngs(md, abortSignal);
+    const { pngs, validateLayout, cleanup } = await exportSlidePngs(md, abortSignal);
     try {
+      await validateLayout();
       const scored = await mapWithConcurrency(
         inputData.slides,
         WRITER_CONCURRENCY,
@@ -339,6 +340,25 @@ const visualStep = createStep({
           abortSignal,
         )) as SlideBlock;
       });
+
+      // The visual rewrite changes the final persisted data. Render that exact
+      // revision once more so a correction cannot reintroduce an overflow after
+      // the first PNG pass succeeded.
+      const revisedRenderSlides = await prepareSlidesForRender(
+        next as Array<Record<string, unknown> & { blockType: string }>,
+      );
+      const revisedMd = buildSlidesMd(
+        { title, slides: revisedRenderSlides as SlideBlock[] },
+        { language: inputData.dossier.language },
+      );
+      const { validateLayout: validateRevisedLayout, cleanup: cleanupRevisedExport } =
+        await exportSlidePngs(revisedMd, abortSignal);
+      try {
+        await validateRevisedLayout();
+      } finally {
+        cleanupRevisedExport();
+      }
+
       return { ...inputData, slides: next };
     } finally {
       cleanup();

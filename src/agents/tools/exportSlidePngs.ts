@@ -26,6 +26,7 @@ import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR } from '../../lib/paths';
+import { parseLayoutViolations, SlideLayoutValidationError } from '../../lib/slideLayoutValidation';
 import { buildSlidevEnv, buildSlidevExportArgs } from '../../jobs/slidevExportArgs';
 
 const execFile = promisify(execFileCb);
@@ -33,6 +34,7 @@ const PROJECT_ROOT = process.cwd();
 const SLIDEV_WORKSPACE = join(PROJECT_ROOT, 'slidev-workspace');
 const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
+const LAYOUT_VALIDATOR = join(SLIDEV_WORKSPACE, 'validate-layout.mjs');
 
 export type ExportedPng = { page: number; path: string; base64: string };
 
@@ -48,7 +50,11 @@ export function deckHasMermaid(slidesMd: string): boolean {
 export async function exportSlidePngs(
   slidesMd: string,
   signal?: AbortSignal,
-): Promise<{ pngs: ExportedPng[]; cleanup: () => void }> {
+): Promise<{
+  pngs: ExportedPng[];
+  validateLayout: () => Promise<void>;
+  cleanup: () => void;
+}> {
   const workdir = mkdtempSync(join(tmpdir(), 'slidev-png-'));
   const cleanup = () => {
     try {
@@ -72,15 +78,29 @@ export async function exportSlidePngs(
       join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
     );
     cpSync(
+      join(EXPORT_DIR, ARTIFACTS.mermaidRendererSrc),
+      join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidRendererDest),
+    );
+    cpSync(
       join(EXPORT_DIR, 'mermaidConfig.ts'),
       join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'),
     );
     if (existsSync(PUBLIC_FONTS_DIR)) {
-      cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), { recursive: true });
+      cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), {
+        recursive: true,
+      });
     }
 
     const outDir = join(workdir, 'png');
     const slidevPath = join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev');
+    await execFile(slidevPath, ['build', '--base', './'], {
+      cwd: workdir,
+      timeout: EXEC_TIMEOUT_MS,
+      maxBuffer: 32 * 1024 * 1024,
+      env: buildSlidevEnv(),
+      signal,
+    });
+
     // Share the PDF export path's native flag policy (U6): `--wait-until load`
     // for ordinary decks, Mermaid-aware `networkidle` + settle wait for diagram
     // decks. `--per-slide` stays PNG-only so global/background layers render.
@@ -103,12 +123,37 @@ export async function exportSlidePngs(
       .filter((f) => f.endsWith('.png'))
       .sort((a, b) => pageNum(a) - pageNum(b));
 
+    const validateLayout = async () => {
+      try {
+        await execFile(
+          process.execPath,
+          [LAYOUT_VALIDATOR, join(workdir, ARTIFACTS.dist), String(files.length)],
+          {
+            cwd: SLIDEV_WORKSPACE,
+            timeout: EXEC_TIMEOUT_MS,
+            maxBuffer: 32 * 1024 * 1024,
+            signal,
+          },
+        );
+      } catch (error) {
+        const violations = parseLayoutViolations(
+          typeof error === 'object' && error && 'stderr' in error ? String(error.stderr) : '',
+        );
+        if (violations.length > 0) throw new SlideLayoutValidationError(violations);
+        throw error;
+      }
+    };
+
     const pngs: ExportedPng[] = files.map((f, i) => {
       const path = join(outDir, f);
-      return { page: i + 1, path, base64: readFileSync(path).toString('base64') };
+      return {
+        page: i + 1,
+        path,
+        base64: readFileSync(path).toString('base64'),
+      };
     });
 
-    return { pngs, cleanup };
+    return { pngs, validateLayout, cleanup };
   } catch (error) {
     cleanup();
     throw error;

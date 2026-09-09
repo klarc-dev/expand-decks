@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
-import type { TaskHandlerArgs } from 'payload';
+import type { Payload, TaskHandlerArgs } from 'payload';
 
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
@@ -32,6 +32,7 @@ import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/p
 import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
+import { parseLayoutViolations, SlideLayoutValidationError } from '../lib/slideLayoutValidation';
 import { patchPresentationBuildMetadata } from './patchPresentationBuildMetadata';
 import { buildSlidevEnv, buildSlidevExportArgs } from './slidevExportArgs';
 
@@ -55,17 +56,25 @@ async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string;
   });
 }
 
-async function validateSlideLayout(workdir: string, slideCount: number): Promise<void> {
+export async function validateSlideLayout(workdir: string, slideCount: number): Promise<void> {
   if (slideCount === 0) return;
-  await execFile(
-    process.execPath,
-    [LAYOUT_VALIDATOR, join(workdir, ARTIFACTS.dist), String(slideCount)],
-    {
-      cwd: SLIDEV_WORKSPACE,
-      timeout: EXEC_TIMEOUT_MS,
-      maxBuffer: 32 * 1024 * 1024,
-    },
-  );
+  try {
+    await execFile(
+      process.execPath,
+      [LAYOUT_VALIDATOR, join(workdir, ARTIFACTS.dist), String(slideCount)],
+      {
+        cwd: SLIDEV_WORKSPACE,
+        timeout: EXEC_TIMEOUT_MS,
+        maxBuffer: 32 * 1024 * 1024,
+      },
+    );
+  } catch (error) {
+    const violations = parseLayoutViolations(
+      typeof error === 'object' && error && 'stderr' in error ? String(error.stderr) : '',
+    );
+    if (violations.length > 0) throw new SlideLayoutValidationError(violations);
+    throw error;
+  }
 }
 
 type StageOptions = {
@@ -131,6 +140,10 @@ export function stageBuildDir({
     join(EXPORT_DIR, ARTIFACTS.mermaidSetupSrc),
     join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
   );
+  cpSync(
+    join(EXPORT_DIR, ARTIFACTS.mermaidRendererSrc),
+    join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidRendererDest),
+  );
   writeFileSync(
     join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'),
     mermaidConfigSource,
@@ -138,7 +151,9 @@ export function stageBuildDir({
   );
 
   if (existsSync(PUBLIC_FONTS_DIR)) {
-    cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), { recursive: true });
+    cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), {
+      recursive: true,
+    });
   }
 
   for (const filename of mediaFilenames) {
@@ -159,6 +174,87 @@ export function stageBuildDir({
   }
 
   return workdir;
+}
+
+export type LayoutPreflightCandidate = {
+  title: string;
+  language?: string | null;
+  organisation?: number | { id: number } | null;
+  footer?: Partial<FooterConfig> | null;
+  slides: unknown[];
+  [key: string]: unknown;
+};
+
+/**
+ * Validate an unpublished candidate with the exact theme, chrome, variables,
+ * media staging and DOM validator used by the production build. This is the
+ * persistence gate for generated decks; the normal build repeats it as defense
+ * in depth after persistence.
+ */
+export async function preflightPresentationLayout(
+  payload: Payload,
+  candidate: LayoutPreflightCandidate,
+): Promise<void> {
+  if (candidate.slides.length === 0) return;
+
+  const orgRel = candidate.organisation;
+  const orgId = typeof orgRel === 'object' && orgRel ? orgRel.id : orgRel;
+  const org = orgId
+    ? await payload.findByID({
+        collection: COLLECTIONS.organisations,
+        id: orgId,
+        depth: 1,
+      })
+    : null;
+  const brand = org as (OrgBrand & Record<string, unknown>) | null;
+  const footer = candidate.footer ?? undefined;
+  const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
+  const logoUrl =
+    logoRel && typeof logoRel === 'object' && logoRel.filename
+      ? `/media/${logoRel.filename}`
+      : null;
+  const language = candidate.language === 'en' ? 'en' : 'fr';
+  const vars: Record<string, unknown> = {
+    ...candidate,
+    organisation: org ?? undefined,
+    org: org ?? undefined,
+    date: new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR'),
+    total: candidate.slides.length,
+  };
+  const resolvedFooter = footer
+    ? {
+        ...footer,
+        left: resolveVarsWith(footer.left ?? '', vars),
+        center: resolveVarsWith(footer.center ?? '', vars),
+        right: resolveVarsWith(footer.right ?? '', vars),
+      }
+    : footer;
+  const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
+  const themedHeadmatter = buildHeadmatter(baseHeadmatter, brand, language);
+  const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
+  const slidesMd = buildSlidesMd(candidate as never, {
+    headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
+    vars,
+  });
+  const mediaFilenames = Array.from(
+    new Set(slidesMd.matchAll(/(?:src=|image:\s*|:src='"?)["']?(?:\.\/|\/)media\/([^"'\s]+)/g)),
+    (match) => match[1],
+  );
+  const workdir = stageBuildDir({
+    slidesMd,
+    themeCss: buildThemeCss(brand),
+    mermaidConfigSource: buildMermaidConfigSource(brand),
+    footerEnabled: Boolean(footer?.enabled),
+    logoPresent: Boolean(logoUrl),
+    mediaFilenames,
+  });
+
+  try {
+    await runSlidev(['build', '--base', './'], workdir);
+    await validateSlideLayout(workdir, candidate.slides.length);
+  } finally {
+    rmSync(workdir, { recursive: true, force: true });
+  }
 }
 
 /**
@@ -345,7 +441,10 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
     const pdfMedia = await req.payload.create({
       collection: COLLECTIONS.media,
-      data: { alt: `${presentation.title} — PDF`, presentation: Number(presentationId) },
+      data: {
+        alt: `${presentation.title} — PDF`,
+        presentation: Number(presentationId),
+      },
       file: {
         data: pdfBuffer,
         mimetype: 'application/pdf',
@@ -360,7 +459,10 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       const coverBuffer = readFileSync(firstPngPath(join(workdir, COVER_DIR)));
       const coverMedia = await req.payload.create({
         collection: COLLECTIONS.media,
-        data: { alt: `${presentation.title} — couverture`, presentation: Number(presentationId) },
+        data: {
+          alt: `${presentation.title} — couverture`,
+          presentation: Number(presentationId),
+        },
         file: {
           data: coverBuffer,
           mimetype: 'image/png',
