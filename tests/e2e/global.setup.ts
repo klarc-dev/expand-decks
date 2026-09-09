@@ -309,31 +309,38 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     overrideAccess: true,
     user: admin,
   });
-  await patchPresentationBuildMetadata(payload, String(successfulBuildPresentation.id), {
-    lastBuildStatus: 'success',
-    lastBuildError: null,
-    lastBuildRequestedAt: '2026-09-08T13:00:00.000Z',
-    lastBuildToken: 'e2e-successful-build',
-    spaUrl: '/spa/e2e-successful-build-presentation/index.html',
-    pdfFile: successfulBuildPdf.id,
-    artifacts: [
-      {
-        key: 'web-presentation',
-        kind: 'web',
-        label: 'Présentation web',
-        actionLabel: 'Ouvrir la présentation web',
-        buildId: 'e2e-successful-build',
-        url: '/spa/e2e-successful-build-presentation/index.html',
-      },
-      {
-        key: 'pdf',
-        kind: 'pdf',
-        label: 'PDF',
-        actionLabel: 'Télécharger le PDF',
-        buildId: 'e2e-successful-build',
-        file: successfulBuildPdf.id,
-      },
-    ],
+  await payload.update({
+    collection: COLLECTIONS.presentations,
+    id: successfulBuildPresentation.id,
+    data: {
+      lastBuildStatus: 'success',
+      lastBuildError: null,
+      lastBuildRequestedAt: '2026-09-08T13:00:00.000Z',
+      lastBuildToken: 'e2e-successful-build',
+      spaUrl: '/spa/e2e-successful-build-presentation/index.html',
+      pdfFile: successfulBuildPdf.id,
+      artifacts: [
+        {
+          key: 'web-presentation',
+          kind: 'web',
+          label: 'Présentation web',
+          actionLabel: 'Ouvrir la présentation web',
+          buildId: 'e2e-successful-build',
+          url: '/spa/e2e-successful-build-presentation/index.html',
+        },
+        {
+          key: 'pdf',
+          kind: 'pdf',
+          label: 'PDF',
+          actionLabel: 'Télécharger le PDF',
+          buildId: 'e2e-successful-build',
+          file: successfulBuildPdf.id,
+        },
+      ],
+    },
+    overrideAccess: true,
+    context: { skipBuildQueue: true },
+    user: admin,
   });
 
   const spaPresentation = await payload.create({
