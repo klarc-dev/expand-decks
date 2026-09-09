@@ -1,21 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const E2E_ADMIN_AUTH_FILE = resolve('test-results/.auth/admin.json');
 const E2E_AUTHOR_AUTH_FILE = resolve('test-results/.auth/author.json');
-const E2E_FIXTURES_FILE = resolve('test-results/.auth/fixtures.json');
 const PIXEL = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
   'base64',
 );
-
-async function adminMediaId(): Promise<string> {
-  const fixtures = JSON.parse(await readFile(E2E_FIXTURES_FILE, 'utf8')) as {
-    adminMediaId: string;
-  };
-  return fixtures.adminMediaId;
-}
 
 test.describe('Payload media-library UI', () => {
   test.use({ storageState: E2E_AUTHOR_AUTH_FILE });
@@ -70,15 +61,33 @@ test.describe('Payload media administration UI', () => {
 
   test('admin edits media metadata and deletes the record through the real admin form', async ({
     page,
-  }) => {
-    const mediaId = await adminMediaId();
-    const reset = await page.request.patch(`/api/media/${mediaId}`, {
-      data: { alt: 'E2E admin editable media' },
+  }, testInfo) => {
+    await page.goto('/admin/collections/media/create');
+
+    const file = page.locator('input[type="file"]');
+    await expect(file).toBeAttached();
+    await file.setInputFiles({
+      name: `e2e-admin-pixel-retry-${testInfo.retry}.png`,
+      mimeType: 'image/png',
+      buffer: PIXEL,
     });
-    expect(reset.ok()).toBe(true);
-    await page.goto(`/admin/collections/media/${mediaId}`);
 
     const alt = page.locator('input[name="alt"]');
+    await expect(alt).toBeVisible();
+    await alt.fill('E2E admin editable media');
+
+    const created = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/media') &&
+        response.request().method() === 'POST' &&
+        response.status() === 201,
+    );
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    const response = await created;
+    const result = await response.json();
+    const mediaId = String(result.doc?.id ?? result.id);
+
+    await expect(page).toHaveURL(new RegExp(`/admin/collections/media/${mediaId}$`));
     await expect(alt).toHaveValue('E2E admin editable media');
     await alt.fill('E2E admin updated media');
     const updated = page.waitForResponse(
