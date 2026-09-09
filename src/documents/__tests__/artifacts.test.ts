@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE, PRESENTATION_DOCUMENT_TEMPLATE } from '../templates';
+import {
+  LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+  SALES_SHEET_DOCUMENT_TEMPLATE,
+  VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
+} from '../templates';
 import {
   artifactsForBuild,
   availableArtifactLinks,
@@ -177,5 +182,28 @@ describe('document artifacts', () => {
       { key: 'page-image', href: '/media/page-2.png', label: 'Télécharger la page 2' },
       { key: 'page-image', href: '/media/page-3.png', label: 'Télécharger la page 3' },
     ]);
+  });
+  it('persists each one-page template primary artifact and fails if it is absent', () => {
+    expect(
+      artifactsForBuild(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, 'visual-build', {
+        'page-image': { file: 21 },
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        key: 'page-image',
+        kind: 'image',
+        file: 21,
+        pageIndex: 0,
+      }),
+    ]);
+    expect(
+      artifactsForBuild(SALES_SHEET_DOCUMENT_TEMPLATE, 'sheet-build', { pdf: { file: 22 } }),
+    ).toEqual([expect.objectContaining({ key: 'pdf', kind: 'pdf', file: 22 })]);
+    expect(() =>
+      artifactsForBuild(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, 'visual-build', {}),
+    ).toThrow('page-image');
+    expect(() => artifactsForBuild(SALES_SHEET_DOCUMENT_TEMPLATE, 'sheet-build', {})).toThrow(
+      'pdf',
+    );
   });
 });

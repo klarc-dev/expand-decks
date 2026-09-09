@@ -23,6 +23,7 @@ import * as migration_20260909_074031_agent_run_slide_count_range from './202609
 import * as migration_20260909_131019_document_template_foundation from './20260909_131019_document_template_foundation';
 import * as migration_20260909_134008_generic_document_artifacts from './20260909_134008_generic_document_artifacts';
 import * as migration_20260909_140127_linkedin_carousel from './20260909_140127_linkedin_carousel';
+import * as migration_20260909_140201_issue_26_single_page_templates from './20260909_140201_issue_26_single_page_templates';
 
 export const migrations = [
   {
@@ -149,5 +150,10 @@ export const migrations = [
     up: migration_20260909_140127_linkedin_carousel.up,
     down: migration_20260909_140127_linkedin_carousel.down,
     name: '20260909_140127_linkedin_carousel',
+  },
+  {
+    up: migration_20260909_140201_issue_26_single_page_templates.up,
+    down: migration_20260909_140201_issue_26_single_page_templates.down,
+    name: '20260909_140201_issue_26_single_page_templates',
   },
 ];

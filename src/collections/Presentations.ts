@@ -17,7 +17,11 @@ import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
-import { documentTemplateField, payloadBlocksForTemplate } from '../documents/payload';
+import {
+  documentTemplateField,
+  payloadBlocksForTemplate,
+  payloadBlockSlugsForTemplate,
+} from '../documents/payload';
 import { resolvePrimaryArtifactHref } from '../documents/artifacts';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
@@ -339,12 +343,16 @@ export const Presentations: CollectionConfig = {
             {
               name: 'slides',
               type: 'blocks',
-              label: 'Diapositives',
+              label: 'Pages',
               admin: {
                 description:
-                  'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.',
+                  'Une page par bloc. Les layouts proposés dépendent du template de document.',
               },
               blocks: payloadBlocksForTemplate('presentation'),
+              filterOptions: ({ data }) =>
+                payloadBlockSlugsForTemplate(
+                  (data as { documentTemplate?: unknown } | undefined)?.documentTemplate,
+                ),
             },
           ],
         },

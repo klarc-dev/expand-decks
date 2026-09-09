@@ -548,7 +548,11 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         });
         pageImageOutputs.push({ file: media.id as number | string });
       }
-      outputs['page-image'] = pageImageOutputs;
+      outputs['page-image'] = template.artifacts.some(
+        (artifact) => artifact.key === 'page-image' && artifact.repeat === 'per-page',
+      )
+        ? pageImageOutputs
+        : pageImageOutputs[0];
     }
 
     if (templateDeclaresArtifact(template, 'web-presentation')) {

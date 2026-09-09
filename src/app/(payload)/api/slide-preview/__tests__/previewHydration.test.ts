@@ -179,6 +179,28 @@ describe('POST /api/slide-preview hydration + access', () => {
     expect(body.chrome).not.toHaveProperty('logoUrl');
   });
 
+  it('returns the selected one-page template canvas geometry', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'visual-publication' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Square message' },
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).canvas).toMatchObject({
+      width: 1080,
+      height: 1080,
+      aspectRatio: '1/1',
+      orientation: 'square',
+    });
+  });
+
   it('fails explicitly when the persisted template is unknown', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
     findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'unknown' });

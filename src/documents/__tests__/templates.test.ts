@@ -9,14 +9,16 @@ import {
   LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE,
   PRESENTATION_DOCUMENT_TEMPLATE,
   resolveDocumentTemplate,
+  SALES_SHEET_DOCUMENT_TEMPLATE,
   type DocumentTemplateDefinition,
+  VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
 } from '../templates';
 
 const minimalCover = { blockType: 'cover', title: 'Cover' };
 
 describe('document template registry', () => {
   it('defines presentation behavior from one canonical contract', () => {
-    expect(DOCUMENT_TEMPLATES).toHaveLength(2);
+    expect(DOCUMENT_TEMPLATES).toHaveLength(4);
     expect(PRESENTATION_DOCUMENT_TEMPLATE).toMatchObject({
       id: 'presentation',
       label: 'Présentation 16:9',
@@ -75,6 +77,52 @@ describe('document template registry', () => {
         { blockType: 'table', title: 'Too dense' },
       ]),
     ).toThrow('page 2');
+  });
+
+  it('declares both one-page document templates without new layouts', () => {
+    expect(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE).toMatchObject({
+      id: 'visual-publication',
+      canvas: { width: 1080, height: 1080, aspectRatio: '1/1', orientation: 'square' },
+      pageCount: { min: 1, max: 1 },
+      chrome: { footer: false, logo: true, pageNumbers: false },
+      artifacts: [expect.objectContaining({ key: 'page-image', kind: 'image', pageIndex: 0 })],
+      primaryArtifact: 'page-image',
+      agent: { pageCount: { min: 1, max: 1 } },
+    });
+    expect(SALES_SHEET_DOCUMENT_TEMPLATE).toMatchObject({
+      id: 'sales-sheet',
+      canvas: {
+        width: 794,
+        height: 1123,
+        aspectRatio: '794/1123',
+        orientation: 'portrait',
+      },
+      pageCount: { min: 1, max: 1 },
+      chrome: { footer: true, logo: true, pageNumbers: false },
+      artifacts: [expect.objectContaining({ key: 'pdf', kind: 'pdf' })],
+      primaryArtifact: 'pdf',
+      agent: { pageCount: { min: 1, max: 1 } },
+    });
+
+    const registeredLayouts = new Set(ALL_SPECS.map((spec) => spec.blockType));
+    for (const template of [VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, SALES_SHEET_DOCUMENT_TEMPLATE]) {
+      expect(template.allowedLayouts.every((layout) => registeredLayouts.has(layout))).toBe(true);
+    }
+  });
+
+  it('enforces exactly one allowed page for one-page templates across render and AI schemas', () => {
+    const valid = { blockType: 'statement', title: 'One page' };
+
+    for (const template of [VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, SALES_SHEET_DOCUMENT_TEMPLATE]) {
+      expect(documentTemplateSchemas(template).renderPages.safeParse([valid]).success).toBe(true);
+      expect(documentTemplateSchemas(template).renderPages.safeParse([]).success).toBe(false);
+      expect(documentTemplateSchemas(template).renderPages.safeParse([valid, valid]).success).toBe(
+        false,
+      );
+      expect(documentTemplateSchemas(template).aiPages.safeParse([valid, valid]).success).toBe(
+        false,
+      );
+    }
   });
 
   it('maps missing legacy values to presentation but rejects explicit unknown values', () => {

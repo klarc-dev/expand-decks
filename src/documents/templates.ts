@@ -13,6 +13,8 @@ import { PRESENTATION_CANVAS } from './presentationContract';
 export const DOCUMENT_TEMPLATE_IDS = {
   linkedinCarousel: 'linkedin-carousel',
   presentation: 'presentation',
+  visualPublication: 'visual-publication',
+  salesSheet: 'sales-sheet',
 } as const;
 
 export type DocumentTemplateId = (typeof DOCUMENT_TEMPLATE_IDS)[keyof typeof DOCUMENT_TEMPLATE_IDS];
@@ -147,7 +149,81 @@ const LINKEDIN_CAROUSEL_TEMPLATE = {
   },
 } as const satisfies DocumentTemplateDefinition;
 
-export const DOCUMENT_TEMPLATES = [PRESENTATION_TEMPLATE, LINKEDIN_CAROUSEL_TEMPLATE] as const;
+const VISUAL_PUBLICATION_TEMPLATE = {
+  id: DOCUMENT_TEMPLATE_IDS.visualPublication,
+  label: 'Publication visuelle carrée',
+  canvas: {
+    width: 1080,
+    height: 1080,
+    aspectRatio: '1/1',
+    orientation: 'square',
+  },
+  allowedLayouts: ['statement', 'cardGrid', 'stats', 'quotes', 'cta'],
+  pageCount: { min: 1, max: 1 },
+  chrome: {
+    footer: false,
+    logo: true,
+    pageNumbers: false,
+  },
+  artifacts: [
+    {
+      key: 'page-image',
+      kind: 'image',
+      label: 'Image PNG',
+      actionLabel: 'Télécharger l’image',
+      location: 'file',
+      requiredWhen: 'always',
+      pageIndex: 0,
+    },
+  ],
+  primaryArtifact: 'page-image',
+  agent: {
+    guidance:
+      'Compose une publication visuelle autonome en une page, avec un message immédiatement lisible et une densité faible.',
+    pageCount: { min: 1, max: 1 },
+  },
+} as const satisfies DocumentTemplateDefinition;
+
+const SALES_SHEET_TEMPLATE = {
+  id: DOCUMENT_TEMPLATE_IDS.salesSheet,
+  label: 'Fiche commerciale A4',
+  canvas: {
+    width: 794,
+    height: 1123,
+    aspectRatio: '794/1123',
+    orientation: 'portrait',
+  },
+  allowedLayouts: ['statement', 'twoCols', 'cardGrid', 'stats', 'quotes', 'cta', 'table'],
+  pageCount: { min: 1, max: 1 },
+  chrome: {
+    footer: true,
+    logo: true,
+    pageNumbers: false,
+  },
+  artifacts: [
+    {
+      key: 'pdf',
+      kind: 'pdf',
+      label: 'PDF',
+      actionLabel: 'Télécharger le PDF',
+      location: 'file',
+      requiredWhen: 'always',
+    },
+  ],
+  primaryArtifact: 'pdf',
+  agent: {
+    guidance:
+      'Compose une fiche autonome en une page, structurée pour présenter clairement une proposition, ses preuves et une prochaine étape.',
+    pageCount: { min: 1, max: 1 },
+  },
+} as const satisfies DocumentTemplateDefinition;
+
+export const DOCUMENT_TEMPLATES = [
+  PRESENTATION_TEMPLATE,
+  LINKEDIN_CAROUSEL_TEMPLATE,
+  VISUAL_PUBLICATION_TEMPLATE,
+  SALES_SHEET_TEMPLATE,
+] as const;
 export const DOCUMENT_TEMPLATE_ID_SCHEMA = z.enum(
   DOCUMENT_TEMPLATES.map((template) => template.id) as [
     DocumentTemplateId,
@@ -292,3 +368,5 @@ export function applyDocumentCanvasToHeadmatter(
 
 export const PRESENTATION_DOCUMENT_TEMPLATE = PRESENTATION_TEMPLATE;
 export const LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE = LINKEDIN_CAROUSEL_TEMPLATE;
+export const VISUAL_PUBLICATION_DOCUMENT_TEMPLATE = VISUAL_PUBLICATION_TEMPLATE;
+export const SALES_SHEET_DOCUMENT_TEMPLATE = SALES_SHEET_TEMPLATE;

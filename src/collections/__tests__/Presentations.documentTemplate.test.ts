@@ -46,6 +46,33 @@ describe('Presentations document template contract', () => {
     ).toThrow('page 1');
   });
 
+  it('rejects missing, extra, and disallowed pages for one-page templates', () => {
+    expect(() =>
+      beforeValidate?.({
+        data: { documentTemplate: 'visual-publication', slides: [] },
+      } as never),
+    ).toThrow('entre 1 et 1 pages');
+    expect(() =>
+      beforeValidate?.({
+        data: {
+          documentTemplate: 'sales-sheet',
+          slides: [
+            { blockType: 'statement', title: 'First' },
+            { blockType: 'statement', title: 'Second' },
+          ],
+        },
+      } as never),
+    ).toThrow('entre 1 et 1 pages');
+    expect(() =>
+      beforeValidate?.({
+        data: {
+          documentTemplate: 'visual-publication',
+          slides: [{ blockType: 'table', title: 'Not visual' }],
+        },
+      } as never),
+    ).toThrow('n’est pas autorisé');
+  });
+
   it('keeps the existing presentation layout roster visible in the editor', () => {
     const visit = (fields: unknown[]): Record<string, unknown> | undefined => {
       for (const field of fields as Array<Record<string, unknown>>) {
@@ -81,6 +108,26 @@ describe('Presentations document template contract', () => {
       'mermaid',
       'agenda',
       'markdown',
+    ]);
+
+    const filterOptions = slidesField!.filterOptions as (args: {
+      data?: Record<string, unknown>;
+    }) => string[];
+    expect(filterOptions({ data: { documentTemplate: 'visual-publication' } })).toEqual([
+      'statement',
+      'cardGrid',
+      'stats',
+      'quotes',
+      'cta',
+    ]);
+    expect(filterOptions({ data: { documentTemplate: 'sales-sheet' } })).toEqual([
+      'statement',
+      'twoCols',
+      'cardGrid',
+      'stats',
+      'quotes',
+      'cta',
+      'table',
     ]);
   });
 
