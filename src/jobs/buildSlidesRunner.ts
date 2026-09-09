@@ -34,6 +34,28 @@ import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/p
 import { SLUG_RE } from '../lib/slug';
 import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
+import {
+  MEDIA_PRODUCER_REQUEST_SCHEMA,
+  MEDIA_PRODUCER_RESULT_SCHEMA,
+  MEDIA_PRODUCER_STATUS,
+  MEDIA_PRODUCER_ID,
+  MEDIA_PRODUCER_VERSION,
+  MEDIA_RESULT_CONTRACT,
+  REVIEW_STATUS,
+  mediaProducerRelationshipId,
+  pendingMediaProducerResult,
+  presentationMatchesMediaRequest,
+  terminalMediaProducerResult,
+  type MediaProducerRequest,
+  type MediaProducerResult,
+} from '../lib/mediaProducer';
+import {
+  assertPdfConstraints,
+  assertTransportConstraints,
+  measurePdfArtifact,
+  measurePngArtifact,
+  MediaProducerConstraintError,
+} from '../lib/mediaProducerArtifact';
 import { parseLayoutViolations, SlideLayoutValidationError } from '../lib/slideLayoutValidation';
 import { patchPresentationBuildMetadata } from './patchPresentationBuildMetadata';
 import { buildSlidevEnv, buildSlidevExportArgs } from './slidevExportArgs';
@@ -46,6 +68,7 @@ const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
 const COVER_DIR = 'cover';
+const TRANSPORT_DIR = 'transport-pages';
 const LAYOUT_VALIDATOR = join(SLIDEV_WORKSPACE, 'validate-layout.mjs');
 
 async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string; stderr: string }> {
@@ -102,11 +125,16 @@ export function slideHasImages(block: SlideWithMedia): boolean {
 }
 
 export function firstPngPath(directory: string): string {
-  const filename = readdirSync(directory)
-    .filter((entry) => entry.toLowerCase().endsWith('.png'))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))[0];
+  const filename = orderedPngPaths(directory)[0];
   if (!filename) throw new Error('Slidev did not generate a cover PNG');
-  return join(directory, filename);
+  return filename;
+}
+
+export function orderedPngPaths(directory: string): string[] {
+  return readdirSync(directory)
+    .filter((entry) => entry.toLowerCase().endsWith('.png'))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((filename) => join(directory, filename));
 }
 
 // Exported for the staging contract test. The symlinked `node_modules`
@@ -273,12 +301,128 @@ export type BuildSlidesTaskArgs = {
   req: Pick<TaskHandlerArgs<'buildSlides'>['req'], 'payload'>;
 };
 
+type ProducerTaskInput = {
+  mediaProductionRequestId: string;
+  mediaRequestId: string;
+  publicationId: string;
+  revisionSha256: string;
+};
+
+type ProducerBinding = ProducerTaskInput & {
+  request: MediaProducerRequest;
+  identity: {
+    request_id: string;
+    publication_id: string;
+    revision_sha256: string;
+    presentation_id: string | number;
+  };
+};
+
+async function patchMediaProductionRequest(
+  payload: Payload,
+  requestRecordId: string,
+  status: (typeof MEDIA_PRODUCER_STATUS)[keyof typeof MEDIA_PRODUCER_STATUS],
+  result: MediaProducerResult,
+) {
+  await payload.update({
+    collection: COLLECTIONS.mediaProductionRequests,
+    id: requestRecordId,
+    data: { status, result },
+    overrideAccess: true,
+    depth: 0,
+  });
+}
+
+export async function commitMediaProductionSuccess(
+  payload: Payload,
+  binding: ProducerBinding,
+  result: MediaProducerResult,
+): Promise<boolean> {
+  const updated = await payload.update({
+    collection: COLLECTIONS.mediaProductionRequests,
+    where: {
+      and: [
+        { id: { equals: binding.mediaProductionRequestId } },
+        { requestId: { equals: binding.mediaRequestId } },
+        { publicationId: { equals: binding.publicationId } },
+        { revisionSha256: { equals: binding.revisionSha256 } },
+        { status: { equals: MEDIA_PRODUCER_STATUS.building } },
+      ],
+    },
+    data: { status: MEDIA_PRODUCER_STATUS.succeeded, result },
+    overrideAccess: true,
+    depth: 0,
+  });
+  return updated.docs.length === 1;
+}
+
+async function loadProducerBinding(
+  payload: Payload,
+  presentation: Record<string, unknown>,
+  presentationId: string,
+  input: Partial<ProducerTaskInput>,
+): Promise<ProducerBinding | null> {
+  const values = [
+    input.mediaProductionRequestId,
+    input.mediaRequestId,
+    input.publicationId,
+    input.revisionSha256,
+  ];
+  if (values.every((value) => value === undefined)) return null;
+  if (!values.every((value) => typeof value === 'string' && value.length > 0)) {
+    throw new Error('Incomplete media producer task identity');
+  }
+
+  const record = await payload.findByID({
+    collection: COLLECTIONS.mediaProductionRequests,
+    id: input.mediaProductionRequestId!,
+    depth: 0,
+    overrideAccess: true,
+  });
+  const request = MEDIA_PRODUCER_REQUEST_SCHEMA.parse(record.request);
+  const matches =
+    record.requestId === input.mediaRequestId &&
+    record.publicationId === input.publicationId &&
+    record.revisionSha256 === input.revisionSha256 &&
+    String(mediaProducerRelationshipId(record.presentation)) === String(presentationId) &&
+    String(mediaProducerRelationshipId(presentation.currentMediaProductionRequest)) ===
+      String(input.mediaProductionRequestId) &&
+    presentationMatchesMediaRequest(presentation, request);
+  const identity = {
+    request_id: input.mediaRequestId!,
+    publication_id: input.publicationId!,
+    revision_sha256: input.revisionSha256!,
+    presentation_id: presentationId,
+  };
+  if (!matches) {
+    const result = terminalMediaProducerResult(
+      identity,
+      MEDIA_PRODUCER_STATUS.stale,
+      'revision_mismatch',
+      'La demande ne correspond plus à la révision courante.',
+    );
+    await patchMediaProductionRequest(
+      payload,
+      input.mediaProductionRequestId!,
+      MEDIA_PRODUCER_STATUS.stale,
+      result,
+    );
+    return null;
+  }
+  return { ...(input as ProducerTaskInput), request, identity };
+}
+
+// This remains one canonical build transaction so generic and producer exports
+// share the same renderer, stale-token checks, uploads, and cleanup boundary.
+// fallow-ignore-next-line complexity
 export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
-  const { presentationId, buildToken } = input as {
+  const { presentationId, buildToken, ...producerInput } = input as {
     presentationId: string;
     buildToken?: string;
-  };
+  } & Partial<ProducerTaskInput>;
   let workdir: string | null = null;
+  let producerBinding: ProducerBinding | null = null;
+  const createdProducerMediaIds: (string | number)[] = [];
 
   try {
     const presentation = await req.payload.findByID({
@@ -286,11 +430,51 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       id: presentationId,
       depth: 0,
     });
+    producerBinding = await loadProducerBinding(
+      req.payload,
+      presentation as unknown as Record<string, unknown>,
+      presentationId,
+      producerInput,
+    );
+    if (producerInput.mediaRequestId && !producerBinding) {
+      return {
+        output: {
+          success: false,
+          status: MEDIA_PRODUCER_STATUS.stale,
+        },
+      };
+    }
     if (buildToken && (presentation as { lastBuildToken?: string }).lastBuildToken !== buildToken) {
       req.payload.logger.info(
         `Presentation ${presentationId} has a newer build token; skipped stale job.`,
       );
-      return { output: { success: false, skipped: 'stale' } };
+      let result: MediaProducerResult | undefined;
+      if (producerBinding) {
+        result = terminalMediaProducerResult(
+          producerBinding.identity,
+          MEDIA_PRODUCER_STATUS.stale,
+          'build_superseded',
+          'Un build plus récent a remplacé cette demande.',
+        );
+        await patchMediaProductionRequest(
+          req.payload,
+          producerBinding.mediaProductionRequestId,
+          MEDIA_PRODUCER_STATUS.stale,
+          result,
+        );
+      }
+      return producerBinding
+        ? { output: { success: false, status: MEDIA_PRODUCER_STATUS.stale, result } }
+        : { output: { success: false, skipped: 'stale' } };
+    }
+
+    if (producerBinding) {
+      await patchMediaProductionRequest(
+        req.payload,
+        producerBinding.mediaProductionRequestId,
+        MEDIA_PRODUCER_STATUS.building,
+        pendingMediaProducerResult(producerBinding.identity, MEDIA_PRODUCER_STATUS.building),
+      );
     }
 
     const buildId =
@@ -410,10 +594,29 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     await runSlidev(['build', '--base', './'], workdir);
     await validateSlideLayout(workdir, slides.length);
     await runSlidev(
-      buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
+      buildSlidevExportArgs({
+        output: ARTIFACTS.pdf,
+        hasMermaid,
+        hasImages,
+        // Verified against pinned Slidev 52.19.1: its default exporter emitted
+        // one PDF page for a two-slide deck. Per-slide mode preserves the
+        // exact 1 block -> 1 page invariant; kPage/kTotal are already baked.
+        perSlide: true,
+      }),
       workdir,
     );
-    if (slides.length > 0) {
+    if (producerBinding) {
+      await runSlidev(
+        buildSlidevExportArgs({
+          output: TRANSPORT_DIR,
+          format: 'png',
+          hasMermaid,
+          hasImages,
+          perSlide: true,
+        }),
+        workdir,
+      );
+    } else if (slides.length > 0) {
       await runSlidev(
         buildSlidevExportArgs({
           output: COVER_DIR,
@@ -434,22 +637,72 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     });
     if (
       (latest as { lastBuildToken?: string }).lastBuildToken !== buildId ||
-      buildFingerprint(latest as unknown as Record<string, unknown>) !== initialFingerprint
+      buildFingerprint(latest as unknown as Record<string, unknown>) !== initialFingerprint ||
+      (producerBinding &&
+        String(
+          mediaProducerRelationshipId(
+            (latest as { currentMediaProductionRequest?: unknown }).currentMediaProductionRequest,
+          ),
+        ) !== String(producerBinding.mediaProductionRequestId))
     ) {
       req.payload.logger.info(
         `Presentation ${presentationId} changed during build; skipped stale artifact write.`,
       );
-      return { output: { success: false, skipped: 'stale' } };
+      let result: MediaProducerResult | undefined;
+      if (producerBinding) {
+        result = terminalMediaProducerResult(
+          producerBinding.identity,
+          MEDIA_PRODUCER_STATUS.stale,
+          'content_changed',
+          'La présentation a changé pendant la production.',
+        );
+        await patchMediaProductionRequest(
+          req.payload,
+          producerBinding.mediaProductionRequestId,
+          MEDIA_PRODUCER_STATUS.stale,
+          result,
+        );
+      }
+      return producerBinding
+        ? { output: { success: false, status: MEDIA_PRODUCER_STATUS.stale, result } }
+        : { output: { success: false, skipped: 'stale' } };
     }
 
     let coverMediaId: unknown = null;
 
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
+    const measuredPdf = producerBinding ? await measurePdfArtifact(pdfBuffer, 'pending') : null;
+    if (producerBinding && measuredPdf) {
+      assertPdfConstraints(measuredPdf, producerBinding.request.constraints.delivery_pdf);
+      if (measuredPdf.page_count !== producerBinding.request.pages.length) {
+        throw new MediaProducerConstraintError(
+          `PDF page count ${measuredPdf.page_count} does not match requested pages ${producerBinding.request.pages.length}`,
+        );
+      }
+    }
     const pdfMedia = await req.payload.create({
       collection: COLLECTIONS.media,
       data: {
         alt: `${presentation.title} — PDF`,
         presentation: Number(presentationId),
+        ...(producerBinding && measuredPdf
+          ? {
+              mediaProductionRequest: Number(producerBinding.mediaProductionRequestId),
+              producerContract: MEDIA_RESULT_CONTRACT,
+              producerRequestId: producerBinding.mediaRequestId,
+              publicationId: producerBinding.publicationId,
+              revisionSha256: producerBinding.revisionSha256,
+              artifactOrder: measuredPdf.order,
+              artifactGroup: 'delivery',
+              artifactRole: measuredPdf.role,
+              artifactMediaType: measuredPdf.media_type,
+              artifactBytes: measuredPdf.bytes,
+              artifactSha256: measuredPdf.sha256,
+              artifactPageCount: measuredPdf.page_count,
+              artifactWidthPx: measuredPdf.width_px,
+              artifactHeightPx: measuredPdf.height_px,
+            }
+          : {}),
       },
       file: {
         data: pdfBuffer,
@@ -458,8 +711,120 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         size: pdfBuffer.byteLength,
       },
     });
+    if (producerBinding) createdProducerMediaIds.push(pdfMedia.id);
+
+    const measuredTransport = [];
+    if (producerBinding) {
+      const pngPaths = orderedPngPaths(join(workdir, TRANSPORT_DIR));
+      if (pngPaths.length !== producerBinding.request.pages.length) {
+        throw new MediaProducerConstraintError(
+          `Transport PNG count ${pngPaths.length} does not match requested pages ${producerBinding.request.pages.length}`,
+        );
+      }
+      for (const [index, pngPath] of pngPaths.entries()) {
+        const page = producerBinding.request.pages[index]!;
+        measuredTransport.push(
+          await measurePngArtifact(readFileSync(pngPath), 'pending', index + 1, page.alt_text),
+        );
+      }
+      assertTransportConstraints(
+        measuredTransport,
+        producerBinding.request.constraints.transport_images,
+      );
+      if (measuredPdf?.page_count !== measuredTransport.length) {
+        throw new MediaProducerConstraintError(
+          `PDF page count ${measuredPdf?.page_count} does not match transport image count ${measuredTransport.length}`,
+        );
+      }
+
+      for (const [index, measured] of measuredTransport.entries()) {
+        const pngBuffer = readFileSync(pngPaths[index]!);
+        const imageMedia = await req.payload.create({
+          collection: COLLECTIONS.media,
+          data: {
+            alt: measured.alt_text,
+            presentation: Number(presentationId),
+            mediaProductionRequest: Number(producerBinding.mediaProductionRequestId),
+            producerContract: MEDIA_RESULT_CONTRACT,
+            producerRequestId: producerBinding.mediaRequestId,
+            publicationId: producerBinding.publicationId,
+            revisionSha256: producerBinding.revisionSha256,
+            artifactOrder: measured.order,
+            artifactGroup: 'transport',
+            artifactRole: measured.role,
+            artifactMediaType: measured.media_type,
+            artifactBytes: measured.bytes,
+            artifactSha256: measured.sha256,
+            artifactPageCount: measured.page_count,
+            artifactWidthPx: measured.width_px,
+            artifactHeightPx: measured.height_px,
+          },
+          file: {
+            data: pngBuffer,
+            mimetype: 'image/png',
+            name: `${randomUUID()}.png`,
+            size: pngBuffer.byteLength,
+          },
+        });
+        createdProducerMediaIds.push(imageMedia.id);
+        measured.handle = imageMedia.id;
+      }
+    }
+
+    if (producerBinding) {
+      const [postUploadPresentation, postUploadRequest] = await Promise.all([
+        req.payload.findByID({
+          collection: COLLECTIONS.presentations,
+          id: presentationId,
+          depth: 0,
+        }),
+        req.payload.findByID({
+          collection: COLLECTIONS.mediaProductionRequests,
+          id: producerBinding.mediaProductionRequestId,
+          depth: 0,
+          overrideAccess: true,
+        }),
+      ]);
+      const stillCurrent =
+        (postUploadPresentation as { lastBuildToken?: string }).lastBuildToken === buildId &&
+        buildFingerprint(postUploadPresentation as unknown as Record<string, unknown>) ===
+          initialFingerprint &&
+        String(
+          mediaProducerRelationshipId(
+            (postUploadPresentation as { currentMediaProductionRequest?: unknown })
+              .currentMediaProductionRequest,
+          ),
+        ) === String(producerBinding.mediaProductionRequestId) &&
+        postUploadRequest.requestId === producerBinding.mediaRequestId &&
+        postUploadRequest.publicationId === producerBinding.publicationId &&
+        postUploadRequest.revisionSha256 === producerBinding.revisionSha256;
+      if (!stillCurrent) {
+        await Promise.all(
+          createdProducerMediaIds.map((id) =>
+            req.payload.delete({ collection: COLLECTIONS.media, id, overrideAccess: true }),
+          ),
+        );
+        createdProducerMediaIds.length = 0;
+        const result = terminalMediaProducerResult(
+          producerBinding.identity,
+          MEDIA_PRODUCER_STATUS.stale,
+          'revision_changed_after_upload',
+          'La révision a changé avant la publication du résultat.',
+        );
+        await patchMediaProductionRequest(
+          req.payload,
+          producerBinding.mediaProductionRequestId,
+          MEDIA_PRODUCER_STATUS.stale,
+          result,
+        );
+        return { output: { success: false, status: MEDIA_PRODUCER_STATUS.stale, result } };
+      }
+    }
+
     if (slides.length > 0) {
-      const coverBuffer = readFileSync(firstPngPath(join(workdir, COVER_DIR)));
+      const coverBuffer = readFileSync(
+        firstPngPath(join(workdir, producerBinding ? TRANSPORT_DIR : COVER_DIR)),
+      );
       const coverMedia = await req.payload.create({
         collection: COLLECTIONS.media,
         data: {
@@ -474,6 +839,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         },
       });
       coverMediaId = coverMedia.id;
+      if (producerBinding) createdProducerMediaIds.push(coverMedia.id);
     }
 
     const spaTargetDir = spaDir(slug);
@@ -494,6 +860,50 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       lastBuildError: '',
       ...artifactPatch,
     };
+
+    let producerResult: MediaProducerResult | undefined;
+    if (producerBinding && measuredPdf) {
+      producerResult = MEDIA_PRODUCER_RESULT_SCHEMA.parse({
+        contract: MEDIA_RESULT_CONTRACT,
+        producer: MEDIA_PRODUCER_ID,
+        producer_version: MEDIA_PRODUCER_VERSION,
+        ...producerBinding.identity,
+        status: MEDIA_PRODUCER_STATUS.succeeded,
+        delivery_artifacts: [{ ...measuredPdf, handle: pdfMedia.id }],
+        transport_artifacts: measuredTransport,
+        adapter: {
+          provider: 'postiz',
+          route: 'linkedin_images_to_document',
+          settings: {
+            post_as_images_carousel: true,
+            carousel_name: producerBinding.request.title,
+          },
+        },
+        validation: {
+          layout: REVIEW_STATUS.passed,
+          visual_review: REVIEW_STATUS.pending,
+          editorial_review: REVIEW_STATUS.pending,
+        },
+        error: null,
+      });
+      if (!(await commitMediaProductionSuccess(req.payload, producerBinding, producerResult))) {
+        await Promise.all(
+          createdProducerMediaIds.map((id) =>
+            req.payload.delete({ collection: COLLECTIONS.media, id, overrideAccess: true }),
+          ),
+        );
+        createdProducerMediaIds.length = 0;
+        const stale = terminalMediaProducerResult(
+          producerBinding.identity,
+          MEDIA_PRODUCER_STATUS.stale,
+          'request_superseded_before_commit',
+          'La demande a été remplacée avant la validation finale du résultat.',
+        );
+        return {
+          output: { success: false, status: MEDIA_PRODUCER_STATUS.stale, result: stale },
+        };
+      }
+    }
 
     await patchPresentationBuildMetadata(req.payload, presentationId, patchData);
 
@@ -516,7 +926,15 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       'slide build completed',
     );
 
-    return { output: { success: true } };
+    return producerBinding
+      ? {
+          output: {
+            success: true,
+            status: MEDIA_PRODUCER_STATUS.succeeded,
+            result: producerResult,
+          },
+        }
+      : { output: { success: true } };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
 
@@ -524,6 +942,30 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       lastBuildStatus: BUILD_STATUS.failed,
       lastBuildError: errorMessage.slice(0, 5000),
     });
+
+    if (producerBinding) {
+      const result = terminalMediaProducerResult(
+        producerBinding.identity,
+        MEDIA_PRODUCER_STATUS.failed,
+        err instanceof MediaProducerConstraintError ? err.code : 'build_failed',
+        errorMessage.slice(0, 5000),
+      );
+      await patchMediaProductionRequest(
+        req.payload,
+        producerBinding.mediaProductionRequestId,
+        MEDIA_PRODUCER_STATUS.failed,
+        result,
+      );
+    }
+    if (createdProducerMediaIds.length > 0) {
+      await Promise.all(
+        createdProducerMediaIds.map((id) =>
+          req.payload
+            .delete({ collection: COLLECTIONS.media, id, overrideAccess: true })
+            .catch(() => undefined),
+        ),
+      );
+    }
 
     throw err;
   } finally {

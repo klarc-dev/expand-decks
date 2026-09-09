@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { WRITABLE_SLIDE_SCHEMA } from '@/blocks/spec';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
 import { slideRevisionSchema } from '@/lib/deckCrudContract';
+import { MEDIA_PRODUCER_REQUEST_SCHEMA } from '@/lib/mediaProducer';
 import { AGENT_TIME_TRAVEL_STEPS } from '@/jobs/agentRunLifecycle';
 
 const id = z.union([z.string().min(1).max(128), z.number()]);
@@ -60,6 +61,13 @@ const workflowCommandSchema = z.discriminatedUnion('action', [
 const deckSchema = z.object({ command: deckCommandSchema });
 const slideSchema = z.object({ command: slideCommandSchema });
 const workflowSchema = z.object({ command: workflowCommandSchema });
+const mediaProducerSchema = z.object({
+  command: z.discriminatedUnion('action', [
+    z.object({ action: z.literal('capabilities') }),
+    z.object({ action: z.literal('request'), request: MEDIA_PRODUCER_REQUEST_SCHEMA }),
+    z.object({ action: z.literal('status'), requestId: z.string().min(1).max(128) }),
+  ]),
+});
 
 async function request(path: string, options: { method?: string; body?: unknown } = {}) {
   const baseUrl = process.env.DECK_API_URL?.replace(/\/$/, '');
@@ -148,6 +156,21 @@ export const deckMcpTools = {
       }
       const { runId, ...command } = input;
       return request(`/api/agent-draft/${encodeURIComponent(runId)}`, { body: command });
+    },
+  }),
+  media_producer: createTool({
+    id: 'media_producer',
+    description:
+      'Inspect capabilities, request versioned delivery-PDF and Postiz transport-image production, or poll its result.',
+    inputSchema: mediaProducerSchema,
+    execute: ({ command: input }) => {
+      if (input.action === 'capabilities') {
+        return request('/api/media-producer/capabilities');
+      }
+      if (input.action === 'request') {
+        return request('/api/media-producer/requests', { body: input.request });
+      }
+      return request(`/api/media-producer/requests/${encodeURIComponent(input.requestId)}`);
     },
   }),
 };

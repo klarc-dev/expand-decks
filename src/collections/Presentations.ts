@@ -689,6 +689,12 @@ export const Presentations: CollectionConfig = {
               type: 'text',
               admin: { readOnly: true, hidden: true },
             },
+            {
+              name: 'currentMediaProductionRequest',
+              type: 'relationship',
+              relationTo: COLLECTIONS.mediaProductionRequests,
+              admin: { readOnly: true, hidden: true },
+            },
           ],
         },
       ],
