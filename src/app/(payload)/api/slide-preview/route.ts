@@ -6,7 +6,11 @@ import config from '@payload-config';
 import { renderBlockPreview } from '@/export/preview';
 import { buildPreviewRenderContext } from '@/export/renderContext';
 import type { SlideBlock } from '@/export/renderers';
-import { documentTemplateSchemas, resolveDocumentTemplate } from '@/documents/templates';
+import {
+  assertDocumentPages,
+  documentTemplateSchemas,
+  resolveDocumentTemplate,
+} from '@/documents/templates';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
@@ -142,6 +146,7 @@ export async function POST(req: NextRequest) {
   if (!body?.block?.blockType) {
     return NextResponse.json({ error: 'Bloc invalide' }, { status: 400 });
   }
+  const previewBlock = body.block;
 
   const presentation = await payload
     .findByID({
@@ -170,6 +175,27 @@ export async function POST(req: NextRequest) {
   const fields = body.fields ?? {};
   const previewFieldPath = body.previewFieldPath ?? 'slides.0.preview';
   const slideIndex = typeof body.slideIndex === 'number' ? body.slideIndex : 0;
+  const previewPages = Array.isArray(body.blockTypes)
+    ? body.blockTypes.map((blockType, index) => ({
+        blockType: index === slideIndex ? previewBlock.blockType : blockType,
+      }))
+    : Array.isArray((presentation as { slides?: unknown }).slides)
+      ? ((presentation as { slides: Array<{ blockType?: unknown }> }).slides.map(
+          (slide, index) => ({
+            blockType: index === slideIndex ? previewBlock.blockType : slide.blockType,
+          }),
+        ) as Array<{ blockType: unknown }>)
+      : null;
+  if (previewPages) {
+    try {
+      assertDocumentPages(template, previewPages);
+    } catch (error) {
+      return noStoreJson(
+        { error: error instanceof Error ? error.message : 'Structure du document invalide' },
+        { status: 422 },
+      );
+    }
+  }
   const renderContext = Array.isArray(body.blockTypes)
     ? buildPreviewRenderContext(body.blockTypes, slideIndex, body.sections ?? [])
     : undefined;
@@ -188,7 +214,7 @@ export async function POST(req: NextRequest) {
   if (cached) return noStoreJson(cached);
 
   const [hydratedBlock, hydratedFields] = await Promise.all([
-    hydratePreviewBlock(body.block, payload, user, authedUser.id),
+    hydratePreviewBlock(previewBlock, payload, user, authedUser.id),
     hydrateChromeFields(fields, payload, user, authedUser.id),
   ]);
   const parsedBlock = documentTemplateSchemas(template).renderPage.safeParse(hydratedBlock);

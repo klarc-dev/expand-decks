@@ -96,6 +96,34 @@ describe('persistSlides', () => {
     expect(update).not.toHaveBeenCalled();
   });
 
+  it('does not persist a completed report that violates its structural template', async () => {
+    findByID.mockResolvedValueOnce({
+      draftRunId: 'active-run',
+      documentTemplate: 'standard-report',
+      title: 'Report',
+      slides: [],
+    });
+
+    await expect(
+      persistSlides({
+        payload,
+        presentationId: 1,
+        mode: 'replace',
+        slides: [
+          { blockType: 'cover', title: 'Cover' },
+          { blockType: 'agenda', title: 'Agenda' },
+          { blockType: 'statement', title: 'One' },
+          { blockType: 'statement', title: 'Two' },
+          { blockType: 'statement', title: 'Three' },
+          { blockType: 'cta', title: 'Close' },
+        ] as never,
+      }),
+    ).rejects.toThrow('layout « stats »');
+
+    expect(preflightPresentationLayout).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it('rejects malformed slides before conversion or persistence', async () => {
     await expect(
       persistSlides({

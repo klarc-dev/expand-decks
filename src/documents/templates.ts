@@ -13,6 +13,7 @@ import { PRESENTATION_CANVAS } from './presentationContract';
 export const DOCUMENT_TEMPLATE_IDS = {
   linkedinCarousel: 'linkedin-carousel',
   presentation: 'presentation',
+  standardReport: 'standard-report',
   visualPublication: 'visual-publication',
   salesSheet: 'sales-sheet',
 } as const;
@@ -44,6 +45,11 @@ export type DocumentTemplateDefinition = {
   };
   allowedLayouts: readonly string[];
   pageCount: { min: number; max: number | null };
+  structuralRules?: {
+    firstLayout?: string;
+    lastLayout?: string;
+    layoutOccurrences?: Readonly<Record<string, { min?: number; max?: number }>>;
+  };
   chrome: {
     footer: boolean;
     logo: boolean;
@@ -149,6 +155,69 @@ const LINKEDIN_CAROUSEL_TEMPLATE = {
   },
 } as const satisfies DocumentTemplateDefinition;
 
+const STANDARD_REPORT_TEMPLATE = {
+  id: DOCUMENT_TEMPLATE_IDS.standardReport,
+  label: 'Rapport standardisé A4',
+  canvas: {
+    width: 794,
+    height: 1123,
+    aspectRatio: '794/1123',
+    orientation: 'portrait',
+  },
+  allowedLayouts: ['cover', 'agenda', 'section', 'statement', 'twoCols', 'stats', 'table', 'cta'],
+  pageCount: { min: 6, max: 12 },
+  structuralRules: {
+    firstLayout: 'cover',
+    lastLayout: 'cta',
+    layoutOccurrences: {
+      cover: { min: 1, max: 1 },
+      agenda: { min: 1, max: 1 },
+      section: { max: 3 },
+      stats: { min: 1, max: 2 },
+      table: { max: 2 },
+      cta: { min: 1, max: 1 },
+    },
+  },
+  chrome: {
+    footer: true,
+    logo: true,
+    pageNumbers: true,
+  },
+  artifacts: [
+    {
+      key: 'pdf',
+      kind: 'pdf',
+      label: 'PDF',
+      actionLabel: 'Télécharger le rapport',
+      location: 'file',
+      requiredWhen: 'always',
+    },
+    {
+      key: 'web-presentation',
+      kind: 'web',
+      label: 'Rapport web',
+      actionLabel: 'Ouvrir le rapport web',
+      location: 'url',
+      requiredWhen: 'always',
+    },
+    {
+      key: 'cover-image',
+      kind: 'image',
+      label: 'Image de couverture',
+      actionLabel: 'Ouvrir l’image de couverture',
+      location: 'file',
+      requiredWhen: 'has-pages',
+      pageIndex: 0,
+    },
+  ],
+  primaryArtifact: 'pdf',
+  agent: {
+    guidance:
+      'Compose un rapport standardisé : couverture, sommaire, développement factuel avec au moins une page de chiffres clés, puis conclusion et prochaine étape.',
+    pageCount: { min: 6, max: 12 },
+  },
+} as const satisfies DocumentTemplateDefinition;
+
 const VISUAL_PUBLICATION_TEMPLATE = {
   id: DOCUMENT_TEMPLATE_IDS.visualPublication,
   label: 'Publication visuelle carrée',
@@ -221,6 +290,7 @@ const SALES_SHEET_TEMPLATE = {
 export const DOCUMENT_TEMPLATES = [
   PRESENTATION_TEMPLATE,
   LINKEDIN_CAROUSEL_TEMPLATE,
+  STANDARD_REPORT_TEMPLATE,
   VISUAL_PUBLICATION_TEMPLATE,
   SALES_SHEET_TEMPLATE,
 ] as const;
@@ -273,6 +343,18 @@ export function specsForDocumentTemplate(template: DocumentTemplateDefinition): 
       `Le template « ${template.id} » référence des layouts inconnus : ${missing.join(', ')}`,
     );
   }
+  const rules = template.structuralRules;
+  for (const layout of [
+    rules?.firstLayout,
+    rules?.lastLayout,
+    ...Object.keys(rules?.layoutOccurrences ?? {}),
+  ]) {
+    if (layout && !allowed.has(layout)) {
+      throw new Error(
+        `Le template « ${template.id} » déclare une règle structurelle pour le layout non autorisé « ${layout} ».`,
+      );
+    }
+  }
   return specs;
 }
 
@@ -316,6 +398,27 @@ export function parseDocumentAiPages(
   }>;
 }
 
+export function documentStructuralRulesPrompt(template: DocumentTemplateDefinition): string {
+  const rules = template.structuralRules;
+  const lines = [
+    `- Nombre total de pages : minimum ${template.pageCount.min}${template.pageCount.max === null ? ', sans maximum.' : `, maximum ${template.pageCount.max}.`}`,
+  ];
+  if (rules?.firstLayout)
+    lines.push(`- Première page obligatoire : layout « ${rules.firstLayout} ».`);
+  if (rules?.lastLayout)
+    lines.push(`- Dernière page obligatoire : layout « ${rules.lastLayout} ».`);
+  for (const [layout, occurrence] of Object.entries(rules?.layoutOccurrences ?? {})) {
+    const bounds = [
+      occurrence.min === undefined ? null : `minimum ${occurrence.min}`,
+      occurrence.max === undefined ? null : `maximum ${occurrence.max}`,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    lines.push(`- Layout « ${layout} » : ${bounds} occurrence(s).`);
+  }
+  return `CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automatiquement) :\n${lines.join('\n')}`;
+}
+
 export function parseDocumentRenderPages(
   template: DocumentTemplateDefinition,
   pages: unknown,
@@ -339,7 +442,9 @@ export function assertDocumentPages(
       template.pageCount.max === null
         ? `au moins ${template.pageCount.min}`
         : `entre ${template.pageCount.min} et ${template.pageCount.max}`;
-    throw new Error(`Le template « ${template.id} » exige ${range} pages.`);
+    throw new Error(
+      `Le template « ${template.id} » viole la règle de nombre total : il exige ${range} pages, ${pages.length} trouvée(s).`,
+    );
   }
   const allowed = new Set(template.allowedLayouts);
   pages.forEach((page, index) => {
@@ -349,6 +454,47 @@ export function assertDocumentPages(
       throw new DisallowedDocumentLayoutError(template.id, blockType, index);
     }
   });
+
+  const rules = template.structuralRules;
+  if (!rules || pages.length === 0) return;
+
+  const layoutAt = (index: number) => String(pages[index]?.blockType);
+  if (rules.firstLayout && layoutAt(0) !== rules.firstLayout) {
+    throw new Error(
+      `Le template « ${template.id} » exige le layout « ${rules.firstLayout} » à la page 1 (première page), reçu « ${layoutAt(0)} ».`,
+    );
+  }
+  const lastIndex = pages.length - 1;
+  if (rules.lastLayout && layoutAt(lastIndex) !== rules.lastLayout) {
+    throw new Error(
+      `Le template « ${template.id} » exige le layout « ${rules.lastLayout} » à la page ${lastIndex + 1} (dernière page), reçu « ${layoutAt(lastIndex)} ».`,
+    );
+  }
+
+  const counts = new Map<string, number>();
+  for (const page of pages) {
+    const layout = String(page.blockType);
+    counts.set(layout, (counts.get(layout) ?? 0) + 1);
+  }
+  for (const [layout, occurrence] of Object.entries(rules.layoutOccurrences ?? {})) {
+    const count = counts.get(layout) ?? 0;
+    if (occurrence.min !== undefined && count < occurrence.min) {
+      throw new Error(
+        `Le template « ${template.id} » exige au moins ${occurrence.min} occurrence(s) du layout « ${layout} » ; ${count} trouvée(s).`,
+      );
+    }
+    if (occurrence.max !== undefined && count > occurrence.max) {
+      const violatingPage = pages.findIndex(
+        (page, index) =>
+          page.blockType === layout &&
+          pages.slice(0, index + 1).filter((candidate) => candidate.blockType === layout).length >
+            occurrence.max!,
+      );
+      throw new Error(
+        `Le template « ${template.id} » autorise au maximum ${occurrence.max} occurrence(s) du layout « ${layout} » ; violation à la page ${violatingPage + 1}.`,
+      );
+    }
+  }
 }
 
 export function applyDocumentCanvasToHeadmatter(
@@ -368,5 +514,6 @@ export function applyDocumentCanvasToHeadmatter(
 
 export const PRESENTATION_DOCUMENT_TEMPLATE = PRESENTATION_TEMPLATE;
 export const LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE = LINKEDIN_CAROUSEL_TEMPLATE;
+export const STANDARD_REPORT_DOCUMENT_TEMPLATE = STANDARD_REPORT_TEMPLATE;
 export const VISUAL_PUBLICATION_DOCUMENT_TEMPLATE = VISUAL_PUBLICATION_TEMPLATE;
 export const SALES_SHEET_DOCUMENT_TEMPLATE = SALES_SHEET_TEMPLATE;

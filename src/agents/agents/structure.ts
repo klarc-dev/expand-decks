@@ -13,6 +13,8 @@
  */
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import {
+  assertDocumentPages,
+  documentStructuralRulesPrompt,
   type DocumentTemplateDefinition,
   documentTemplateSchemas,
   PRESENTATION_DOCUMENT_TEMPLATE,
@@ -45,6 +47,8 @@ function structureInstructions(template: DocumentTemplateDefinition): string {
 Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
 
 ${buildStructureSystemPrompt(template)}
+
+${documentStructuralRulesPrompt(template)}
 
 ${RUBRIC_PROMPT}
 
@@ -88,6 +92,15 @@ function enforceOutlineEndpoints(slides: OutlineStub[]): OutlineStub[] {
   });
 }
 
+function finalizeOutline(
+  slides: OutlineStub[],
+  template: DocumentTemplateDefinition,
+): OutlineStub[] {
+  const finalized = template.structuralRules ? slides : enforceOutlineEndpoints(slides);
+  assertDocumentPages(template, finalized);
+  return finalized;
+}
+
 function outlineSchemaForRange(
   range: SlideCountRange | null,
   template: DocumentTemplateDefinition,
@@ -97,6 +110,21 @@ function outlineSchemaForRange(
   return outlineSchema.extend({
     slides: outlineSchema.shape.slides.min(range.min).max(range.max),
   });
+}
+
+function structuralSlideRange(
+  requested: SlideCountRange | null,
+  template: DocumentTemplateDefinition,
+): SlideCountRange | null {
+  if (!requested) return null;
+  const min = Math.max(requested.min, template.pageCount.min);
+  const max = Math.min(requested.max, template.pageCount.max ?? requested.max);
+  if (min > max) {
+    throw new Error(
+      `Le template « ${template.id} » viole la règle de nombre total : la plage demandée ${requested.min}–${requested.max} est incompatible avec ${template.pageCount.min}–${template.pageCount.max ?? '∞'} pages.`,
+    );
+  }
+  return { min, max };
 }
 
 /**
@@ -241,14 +269,16 @@ export async function structureWithProvenance(
   slideCountRange?: SlideCountRange,
   template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
 ): Promise<StructureResult> {
-  const range = slideCountRange
+  const requestedRange = slideCountRange
     ? slideCountRangeSchema.parse(slideCountRange)
     : requestedSlideRange(dossier.rawBrief);
+  const range = structuralSlideRange(requestedRange, template);
   const schema = outlineSchemaForRange(range, template);
   if (revisionContext && !revisionChangesStructure(dossier.rawBrief)) {
     const preserved = parseRevisionContext(revisionContext, dossier.rawBrief, template);
-    if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success))
-      return { stubs: preserved, evidence: [], sourceFailures: [] };
+    if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success)) {
+      return { stubs: finalizeOutline(preserved, template), evidence: [], sourceFailures: [] };
+    }
   }
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (
@@ -257,7 +287,7 @@ export async function structureWithProvenance(
     findInformationalStyleViolations({ slides: explicit }).length === 0
   ) {
     return {
-      stubs: schema.parse({ slides: explicit }).slides,
+      stubs: finalizeOutline(schema.parse({ slides: explicit }).slides, template),
       evidence: [],
       sourceFailures: [],
     };
@@ -281,7 +311,7 @@ export async function structureWithProvenance(
       modelTier: 'research',
       abortSignal,
     });
-    const slides = enforceOutlineEndpoints(generated.slides);
+    const slides = finalizeOutline(generated.slides, template);
 
     const uncovered = uncoveredKeyPoints(dossier, slides);
     if (uncovered.length === 0 || attempt >= MAX_COVERAGE_RETRIES) {

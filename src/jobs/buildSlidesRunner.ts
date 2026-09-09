@@ -25,7 +25,11 @@ import {
   type ArtifactOutput,
   type ArtifactOutputs,
 } from '../documents/artifacts';
-import { resolveDocumentTemplate, templateDeclaresArtifact } from '../documents/templates';
+import {
+  assertDocumentPages,
+  resolveDocumentTemplate,
+  templateDeclaresArtifact,
+} from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
   buildFooterHeadmatter,
@@ -327,6 +331,11 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       return { output: { success: false, skipped: 'stale' } };
     }
 
+    const template = resolveDocumentTemplate(
+      (presentation as { documentTemplate?: unknown }).documentTemplate,
+    );
+    assertDocumentPages(template, (presentation as { slides?: unknown }).slides);
+
     const buildId =
       buildToken ?? (presentation as { lastBuildToken?: string }).lastBuildToken ?? randomUUID();
 
@@ -344,10 +353,6 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       { file: presentation.pdfFile },
       { file: presentation.coverImage },
     ]);
-    const template = resolveDocumentTemplate(
-      (presentation as { documentTemplate?: unknown }).documentTemplate,
-    );
-
     const slug = presentation.slug as string;
     if (!SLUG_RE.test(slug)) {
       throw new Error(`Invalid slug format: "${slug}"`);

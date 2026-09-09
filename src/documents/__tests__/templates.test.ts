@@ -10,6 +10,7 @@ import {
   PRESENTATION_DOCUMENT_TEMPLATE,
   resolveDocumentTemplate,
   SALES_SHEET_DOCUMENT_TEMPLATE,
+  STANDARD_REPORT_DOCUMENT_TEMPLATE,
   type DocumentTemplateDefinition,
   VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
 } from '../templates';
@@ -18,7 +19,7 @@ const minimalCover = { blockType: 'cover', title: 'Cover' };
 
 describe('document template registry', () => {
   it('defines presentation behavior from one canonical contract', () => {
-    expect(DOCUMENT_TEMPLATES).toHaveLength(4);
+    expect(DOCUMENT_TEMPLATES).toHaveLength(5);
     expect(PRESENTATION_DOCUMENT_TEMPLATE).toMatchObject({
       id: 'presentation',
       label: 'Présentation 16:9',
@@ -36,6 +37,66 @@ describe('document template registry', () => {
     expect(PRESENTATION_DOCUMENT_TEMPLATE.allowedLayouts).toEqual(
       ALL_SPECS.map((spec) => spec.blockType),
     );
+  });
+
+  it('defines and enforces the standardized multipage report structure', () => {
+    expect(STANDARD_REPORT_DOCUMENT_TEMPLATE).toMatchObject({
+      id: 'standard-report',
+      pageCount: { min: 6, max: 12 },
+      structuralRules: {
+        firstLayout: 'cover',
+        lastLayout: 'cta',
+        layoutOccurrences: {
+          cover: { min: 1, max: 1 },
+          agenda: { min: 1, max: 1 },
+          stats: { min: 1, max: 2 },
+          cta: { min: 1, max: 1 },
+        },
+      },
+      primaryArtifact: 'pdf',
+    });
+
+    const valid = [
+      { blockType: 'cover' },
+      { blockType: 'agenda' },
+      { blockType: 'statement' },
+      { blockType: 'stats' },
+      { blockType: 'table' },
+      { blockType: 'cta' },
+    ];
+    expect(() => assertDocumentPages(STANDARD_REPORT_DOCUMENT_TEMPLATE, valid)).not.toThrow();
+    expect(() =>
+      assertDocumentPages(STANDARD_REPORT_DOCUMENT_TEMPLATE, [
+        { blockType: 'statement' },
+        ...valid.slice(1),
+      ]),
+    ).toThrow('page 1');
+    expect(() =>
+      assertDocumentPages(STANDARD_REPORT_DOCUMENT_TEMPLATE, [
+        ...valid.slice(0, -1),
+        { blockType: 'statement' },
+      ]),
+    ).toThrow('page 6');
+    expect(() =>
+      assertDocumentPages(STANDARD_REPORT_DOCUMENT_TEMPLATE, [
+        { blockType: 'cover' },
+        { blockType: 'agenda' },
+        { blockType: 'stats' },
+        { blockType: 'stats' },
+        { blockType: 'stats' },
+        { blockType: 'cta' },
+      ]),
+    ).toThrow('layout « stats » ; violation à la page 5');
+    expect(() =>
+      assertDocumentPages(STANDARD_REPORT_DOCUMENT_TEMPLATE, [
+        { blockType: 'cover' },
+        { blockType: 'agenda' },
+        { blockType: 'statement' },
+        { blockType: 'statement' },
+        { blockType: 'table' },
+        { blockType: 'cta' },
+      ]),
+    ).toThrow('layout « stats » ; 0 trouvée');
   });
 
   it('defines the LinkedIn carousel as a portrait, image-per-page document', () => {

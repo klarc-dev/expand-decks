@@ -210,4 +210,23 @@ describe('POST /api/slide-preview hydration + access', () => {
     expect(res.status).toBe(422);
     expect((await res.json()).error).toContain('Template de document inconnu');
   });
+
+  it('rejects a structurally invalid report before rendering its page preview', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'standard-report' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Invalid first page' },
+        blockTypes: ['statement', 'agenda', 'statement', 'stats', 'table', 'cta'],
+        slideIndex: 0,
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toContain('page 1');
+  });
 });

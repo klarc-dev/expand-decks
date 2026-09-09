@@ -8,6 +8,7 @@ import { researchSources } from '../agents/research';
 import { structure, structureWithProvenance } from '../agents/structure';
 import type { DeckDossier } from '../schemas';
 import type { DeckLanguage } from '../language';
+import { STANDARD_REPORT_DOCUMENT_TEMPLATE } from '../../documents/templates';
 
 const mockedGenerateStructured = vi.mocked(generateStructured);
 const mockedResearchSources = vi.mocked(researchSources);
@@ -117,6 +118,37 @@ describe('structure() slide count target', () => {
       }),
     ).rejects.toThrow();
     expect(mockedGenerateStructured).toHaveBeenCalledOnce();
+  });
+
+  it('gives structural rules to the agent and rejects an invalid generated report', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      slides: [
+        { blockType: 'cover', title: 'Cover', intent: 'Open' },
+        { blockType: 'agenda', title: 'Agenda', intent: 'Orient' },
+        { blockType: 'statement', title: 'One', intent: 'Explain' },
+        { blockType: 'statement', title: 'Two', intent: 'Explain' },
+        { blockType: 'table', title: 'Data', intent: 'Compare' },
+        { blockType: 'cta', title: 'Close', intent: 'Act' },
+      ],
+    });
+
+    await expect(
+      structureWithProvenance(
+        baseDossier('Rapport libre'),
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        STANDARD_REPORT_DOCUMENT_TEMPLATE,
+      ),
+    ).rejects.toThrow('layout « stats »');
+    expect(mockedGenerateStructured.mock.calls[0]![0].instructions).toContain(
+      'Première page obligatoire : layout « cover »',
+    );
+    expect(mockedGenerateStructured.mock.calls[0]![0].instructions).toContain(
+      'Layout « stats » : minimum 1, maximum 2 occurrence(s)',
+    );
   });
 });
 

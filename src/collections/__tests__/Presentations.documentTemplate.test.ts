@@ -73,6 +73,24 @@ describe('Presentations document template contract', () => {
     ).toThrow('n’est pas autorisé');
   });
 
+  it('rejects a standardized report with an invalid ordered structure', () => {
+    expect(() =>
+      beforeValidate?.({
+        data: {
+          documentTemplate: 'standard-report',
+          slides: [
+            { blockType: 'cover' },
+            { blockType: 'agenda' },
+            { blockType: 'statement' },
+            { blockType: 'statement' },
+            { blockType: 'table' },
+            { blockType: 'cta' },
+          ],
+        },
+      } as never),
+    ).toThrow('layout « stats »');
+  });
+
   it('keeps the existing presentation layout roster visible in the editor', () => {
     const visit = (fields: unknown[]): Record<string, unknown> | undefined => {
       for (const field of fields as Array<Record<string, unknown>>) {
@@ -128,6 +146,16 @@ describe('Presentations document template contract', () => {
       'quotes',
       'cta',
       'table',
+    ]);
+    expect(filterOptions({ data: { documentTemplate: 'standard-report' } })).toEqual([
+      'cover',
+      'section',
+      'statement',
+      'twoCols',
+      'stats',
+      'cta',
+      'table',
+      'agenda',
     ]);
   });
 
