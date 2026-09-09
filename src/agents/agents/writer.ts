@@ -83,6 +83,14 @@ function existingSlideForStub(
 ): Record<string, unknown> | null {
   if (!revisionContext || !stub.intent.includes('Préserve intégralement')) return null;
   try {
+    const embedded = stub.intent.match(/Contenu existant\s*:\s*(\{[\s\S]*\})\s*$/)?.[1];
+    if (embedded) {
+      return documentTemplateSchemas(template).aiPage.parse(JSON.parse(embedded)) as Record<
+        string,
+        unknown
+      >;
+    }
+
     const slides = JSON.parse(revisionContext);
     if (!Array.isArray(slides)) return null;
     const slide = slides.find(
