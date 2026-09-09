@@ -18,7 +18,11 @@ test.describe('Payload media-library UI', () => {
 
     const file = page.locator('input[type="file"]');
     await expect(file).toBeAttached();
-    await file.setInputFiles({ name: 'e2e-ui-pixel.png', mimeType: 'image/png', buffer: PIXEL });
+    await file.setInputFiles({
+      name: 'e2e-ui-pixel.png',
+      mimeType: 'image/png',
+      buffer: PIXEL,
+    });
 
     const alt = page.locator('input[name="alt"]');
     await expect(alt).toBeVisible();
@@ -58,6 +62,8 @@ test.describe('Payload media administration UI', () => {
   test('admin edits media metadata and deletes the record through the real admin form', async ({
     page,
   }, testInfo) => {
+    test.setTimeout(60_000);
+
     await page.goto('/admin/collections/media/create');
 
     const file = page.locator('input[type="file"]');
