@@ -112,9 +112,13 @@ describe('openSourceToolsets', () => {
       filter: { knowledgeBaseId: '42' },
     });
     expect(result).toMatchObject({
-      sourceId: 'knowledge_42',
       data: [expect.objectContaining({ text: '  Clause résolutoire verbatim.  ' })],
     });
+    expect(result).not.toHaveProperty('sourceId');
+    expect(result).not.toHaveProperty('toolName');
+    expect(result.data[0]).not.toHaveProperty('documentId');
+    expect(result.data[0]).not.toHaveProperty('documentTitle');
+    expect(result.data[0]).not.toHaveProperty('chunkIndex');
     expect(opened.recorder.snapshot()).toEqual([
       expect.objectContaining({
         sourceId: 'knowledge_42',

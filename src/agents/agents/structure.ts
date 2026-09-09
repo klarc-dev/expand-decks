@@ -38,7 +38,7 @@ function requestedSlideRange(brief: string): { min: number; max: number } | null
 
 const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
-Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la fonction pédagogique et les faits, conditions, réserves, sources ou actions que la diapositive doit rendre explicites.
+Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
 
 ${STRUCTURE_SYSTEM_PROMPT}
 
@@ -203,10 +203,22 @@ export type StructureResult = {
   sourceFailures: SourceFailure[];
 };
 
-function revisionPrompt(revisionContext?: string, range?: SlideCountRange): string {
+function revisionChangesStructure(revisionBrief: string): boolean {
+  return /\b(?:ajout\w*|add\w*|ins[eè]r\w*|insert\w*|cr[eé]\w*|create\w*|supprim\w*|remov\w*|retir\w*|delete\w*|dupliqu\w*|duplicat\w*|fusionn\w*|merg\w*|scind\w*|split\w*|r[eé]organis\w*|reorder\w*|[eé]tend\w*|extend\w*)\b[^.!?\n]{0,100}\b(?:slides?|diapositives?|deck|pr[eé]sentation)\b/iu.test(
+    revisionBrief,
+  );
+}
+
+function revisionPrompt(
+  revisionContext?: string,
+  range?: SlideCountRange,
+  revisionBrief = '',
+): string {
   if (!revisionContext) return '';
   if (range)
     return `\n\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : tu peux fusionner ou scinder les diapositives pour respecter la plage demandée. Préserve les faits et les points couverts ; adapte l'ordre et les layouts seulement si nécessaire. Chaque intention doit expliquer le contenu à reprendre ou à répartir.`;
+  if (revisionChangesStructure(revisionBrief))
+    return `\n\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION STRUCTURELLE : exécute la demande en créant, supprimant, déplaçant, fusionnant ou scindant seulement les diapositives nécessaires. Préserve les diapositives et contenus non concernés. Si l'auteur demande des exemples, crée les diapositives supplémentaires demandées avec un titre-message et une intention qui décrivent l'exemple final destiné au public : faits, analyse et conclusion. Ne crée jamais une diapositive qui explique comment ajouter, rédiger ou construire ces exemples.`;
   return `\n\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : conserve exactement le nombre, l'ordre et le blockType des diapositives existantes. Conserve aussi chaque titre et intention sauf lorsque la demande de révision exige explicitement de les modifier. Ne crée, ne supprime et ne remplace aucune diapositive hors du périmètre demandé.`;
 }
 
@@ -222,7 +234,7 @@ export async function structureWithProvenance(
     ? slideCountRangeSchema.parse(slideCountRange)
     : requestedSlideRange(dossier.rawBrief);
   const schema = outlineSchemaForRange(range);
-  if (revisionContext) {
+  if (revisionContext && !revisionChangesStructure(dossier.rawBrief)) {
     const preserved = parseRevisionContext(revisionContext, dossier.rawBrief);
     if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success))
       return { stubs: preserved, evidence: [], sourceFailures: [] };
@@ -243,7 +255,7 @@ export async function structureWithProvenance(
   const countPrompt = range
     ? `\n\nNOMBRE DE DIAPOSITIVES : génère entre ${range.min} et ${range.max} diapositives, bornes incluses (couverture, intercalaires et conclusion compris). Cette cible est prioritaire sur tout nombre indiqué ailleurs et sur la plage par défaut. Répartis les points sans remplissage ni faits inventés.`
     : '';
-  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange)}${countPrompt}`;
+  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange, dossier.rawBrief)}${countPrompt}`;
   const evidence: Evidence[] = [];
   const sourceFailures: SourceFailure[] = [];
 
@@ -281,7 +293,7 @@ export async function structureWithProvenance(
       sourceFailures.push(...research.failures);
     }
 
-    prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
+    prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange, dossier.rawBrief)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
       sourceNotes
         ? `\n\n---\nNOTES DE RECHERCHE (sources sélectionnées — n'utilise que le pertinent) :\n${sourceNotes}`
         : ''

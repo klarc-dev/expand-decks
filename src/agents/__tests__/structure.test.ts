@@ -15,7 +15,11 @@ const mockedResearchSources = vi.mocked(researchSources);
 beforeEach(() => {
   mockedGenerateStructured.mockReset();
   mockedResearchSources.mockReset();
-  mockedResearchSources.mockResolvedValue({ notes: '', evidence: [], failures: [] });
+  mockedResearchSources.mockResolvedValue({
+    notes: '',
+    evidence: [],
+    failures: [],
+  });
 });
 
 const baseDossier = (rawBrief: string, language: DeckLanguage = 'fr'): DeckDossier => ({
@@ -182,7 +186,11 @@ describe('structure() explicit-brief fast-path', () => {
       slides: [
         { blockType: 'cover', title: 'Existing title', intent: 'Keep it' },
         { blockType: 'statement', title: 'Existing body', intent: 'Keep it' },
-        { blockType: 'cta', title: 'Updated action', intent: 'Change only the CTA' },
+        {
+          blockType: 'cta',
+          title: 'Updated action',
+          intent: 'Change only the CTA',
+        },
       ],
     });
 
@@ -199,6 +207,54 @@ describe('structure() explicit-brief fast-path', () => {
     expect(prompt).toContain("conserve exactement le nombre, l'ordre et le blockType");
   });
 
+  it('replans a structural revision and requires authored example slides instead of instruction slides', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      slides: [
+        {
+          blockType: 'cover',
+          title: 'Existing cover',
+          intent: 'Preserve the existing cover',
+        },
+        {
+          blockType: 'statement',
+          title: 'Existing rule',
+          intent: 'Preserve the existing rule',
+        },
+        {
+          blockType: 'statement',
+          title: 'Un cas concret montre la marge de position',
+          intent: 'Présenter le cas concret, ses faits, son analyse et sa conclusion',
+        },
+        {
+          blockType: 'cta',
+          title: 'Existing action',
+          intent: 'Preserve the existing action',
+        },
+      ],
+    });
+    const existing = [
+      { blockType: 'cover', title: 'Existing cover' },
+      { blockType: 'statement', title: 'Existing rule' },
+      { blockType: 'cta', title: 'Existing action' },
+    ];
+
+    const result = await structureWithProvenance(
+      baseDossier('Étends le deck en ajoutant des slides avec des exemples concrets.'),
+      { mode: 'none', sourceIds: [] },
+      undefined,
+      JSON.stringify(existing),
+    );
+
+    expect(result.stubs).toHaveLength(4);
+    expect(mockedGenerateStructured).toHaveBeenCalledOnce();
+    const call = mockedGenerateStructured.mock.calls[0]![0];
+    expect(call.prompt).toContain('crée les diapositives supplémentaires demandées');
+    expect(call.prompt).toContain('final destiné au public');
+    expect(call.prompt).not.toContain('conserve exactement le nombre');
+    expect(call.instructions).toContain("Tu exécutes la demande de l'auteur");
+    expect(call.instructions).toContain('jamais la consigne elle-même');
+  });
+
   it('returns structure-phase evidence and failures with the outline', async () => {
     const dossier = {
       ...baseDossier('brief libre'),
@@ -210,8 +266,16 @@ describe('structure() explicit-brief fast-path', () => {
     ];
     const complete = [
       { blockType: 'cover', title: 'Alpha decision', intent: 'Alpha decision' },
-      { blockType: 'statement', title: 'Bravo outcome', intent: 'Bravo outcome' },
-      { blockType: 'cta', title: 'Act', intent: 'Alpha decision bravo outcome' },
+      {
+        blockType: 'statement',
+        title: 'Bravo outcome',
+        intent: 'Bravo outcome',
+      },
+      {
+        blockType: 'cta',
+        title: 'Act',
+        intent: 'Alpha decision bravo outcome',
+      },
     ];
     mockedGenerateStructured
       .mockResolvedValueOnce({ slides: incomplete })
@@ -220,14 +284,22 @@ describe('structure() explicit-brief fast-path', () => {
     const failures = [
       { sourceId: 'docs', stage: 'tool', code: 'timeout', message: 'slow' },
     ] as never;
-    mockedResearchSources.mockResolvedValue({ notes: 'grounded', evidence, failures });
+    mockedResearchSources.mockResolvedValue({
+      notes: 'grounded',
+      evidence,
+      failures,
+    });
 
     const result = await structureWithProvenance(dossier, {
       mode: 'multiple',
       sourceIds: ['docs'],
     });
 
-    expect(result).toMatchObject({ stubs: complete, evidence, sourceFailures: failures });
+    expect(result).toMatchObject({
+      stubs: complete,
+      evidence,
+      sourceFailures: failures,
+    });
     expect(mockedResearchSources).toHaveBeenCalledOnce();
   });
 
@@ -258,7 +330,12 @@ describe('structure() explicit-brief fast-path', () => {
   it('preserves the existing slide count, order, titles, and block types during revision', async () => {
     const existing = [
       { blockType: 'cover', title: 'Existing cover', subtitle: 'Keep me' },
-      { blockType: 'table', title: 'Existing example', columns: ['A'], rows: [] },
+      {
+        blockType: 'table',
+        title: 'Existing example',
+        columns: ['A'],
+        rows: [],
+      },
       { blockType: 'cta', title: 'Existing action', actions: [] },
     ];
 
@@ -408,9 +485,21 @@ describe('structure() parser — brief with fewer than 3 S-markers falls to LLM'
   it('repairs LLM outlines to the required cover/cta endpoints', async () => {
     mockedGenerateStructured.mockResolvedValue({
       slides: [
-        { blockType: 'statement', title: 'Opening', intent: 'frame the problem' },
-        { blockType: 'statement', title: 'Middle', intent: 'explain the mechanism' },
-        { blockType: 'statement', title: 'Next', intent: 'make the audience act' },
+        {
+          blockType: 'statement',
+          title: 'Opening',
+          intent: 'frame the problem',
+        },
+        {
+          blockType: 'statement',
+          title: 'Middle',
+          intent: 'explain the mechanism',
+        },
+        {
+          blockType: 'statement',
+          title: 'Next',
+          intent: 'make the audience act',
+        },
       ],
     });
 

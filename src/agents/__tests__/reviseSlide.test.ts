@@ -38,6 +38,34 @@ describe('reviseSlide', () => {
     expect(call.instructions).toContain('Required output language: English');
   });
 
+  it('forbids replacing the requested result with instructions about how to produce it', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      blockType: 'statement',
+      title: 'Concrete example',
+      body: 'The actual facts, analysis, and conclusion.',
+    } as never);
+
+    await reviseSlide({
+      instruction: 'Add a concrete example.',
+      language: 'en',
+      slide: {
+        blockType: 'statement',
+        title: 'Original',
+        body: 'Original body',
+      },
+    });
+
+    const call = mockedGenerateStructured.mock.calls[0]![0];
+    expect(call.instructions).toContain('final audience-facing slide');
+    expect(call.instructions).toContain('Never describe what should be written');
+    expect(
+      call.validate?.({
+        title: 'Add a slide with an example',
+        body: 'Create a slide that explains the example.',
+      } as never),
+    ).toEqual(expect.arrayContaining([expect.stringContaining('métadiscours de production')]));
+  });
+
   it('rejects non-draftable slide layouts', async () => {
     await expect(
       reviseSlide({

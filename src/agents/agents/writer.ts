@@ -16,7 +16,7 @@ import { buildWriterLayoutPrompt } from '../prompts/catalog';
 import { languageInstruction } from '../language';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
-import { findInformationalStyleViolations } from '../prompts/style';
+import { findFinalSlideViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 
 function writerInstructions(blockType: string, dossier: DeckDossier): string {
@@ -29,6 +29,8 @@ ${buildWriterLayoutPrompt(blockType)}
 ${RUBRIC_PROMPT}
 
 ${languageInstruction(dossier.language)}
+
+Tu dois livrer le résultat final destiné au public, jamais commenter le travail de rédaction. Exécute l'intention : si elle demande un exemple, écris l'exemple lui-même avec les faits autorisés, l'analyse et la conclusion ; si elle demande une comparaison, écris la comparaison. Ne décris jamais ce qu’il faudrait écrire, ajouter, créer ou montrer dans une diapositive.
 
 Règles de rédaction :
 - Conserve EXACTEMENT le blockType et le title imposés.
@@ -53,12 +55,9 @@ function dossierExcerpt(dossier: DeckDossier): string {
     dossier.data.length
       ? `DONNÉES DISPONIBLES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}`
       : '',
-    dossier.references?.length || dossier.sources.length
-      ? `RÉFÉRENCES AUTORISÉES POUR LES FOOTNOTES :\n${[
-          ...(dossier.references ?? []),
-          ...dossier.sources,
-        ]
-          .map((source) => `- ${source}`)
+    dossier.references?.length
+      ? `RÉFÉRENCES AUTORISÉES POUR LES FOOTNOTES :\n${dossier.references
+          .map((reference) => `- ${reference}`)
           .join('\n')}`
       : '',
   ]
@@ -133,7 +132,7 @@ export async function writeSlide(
     }`,
     schema: aiSchemaOf(spec) as never,
     prompt,
-    validate: findInformationalStyleViolations,
+    validate: findFinalSlideViolations,
     maxValidationRepairs: 3,
     abortSignal,
   });
