@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,6 +9,37 @@ import {
 } from '../agentRunLifecycle';
 
 describe('agent run lifecycle', () => {
+  it('preserves old fingerprints for absent ranges and includes canonical bounds when present', () => {
+    const base = {
+      presentationId: '42',
+      brief: 'A sufficiently detailed deck brief',
+      mode: 'replace',
+      visual: true,
+      sourceIds: ['b', 'a'],
+      approvalRequired: false,
+    };
+    const legacy = createHash('sha256')
+      .update(
+        JSON.stringify({
+          ...base,
+          sourcePolicy: 'multiple',
+          sourceIds: ['a', 'b'],
+        }),
+      )
+      .digest('hex');
+    expect(agentRunFingerprint(base)).toBe(legacy);
+    expect(agentRunFingerprint({ ...base, slideCountRange: undefined })).toBe(legacy);
+    expect(agentRunFingerprint({ ...base, slideCountRange: null })).toBe(legacy);
+    const ranged = agentRunFingerprint({
+      ...base,
+      slideCountRange: { min: 8, max: 12 },
+    });
+    expect(ranged).not.toBe(legacy);
+    expect(ranged).toBe(agentRunFingerprint({ ...base, slideCountRange: { max: 12, min: 8 } }));
+    expect(ranged).not.toBe(agentRunFingerprint({ ...base, slideCountRange: { min: 9, max: 12 } }));
+    expect(ranged).not.toBe(agentRunFingerprint({ ...base, slideCountRange: { min: 8, max: 13 } }));
+  });
+
   it('creates the same fingerprint regardless of source selection order', () => {
     const base = {
       presentationId: '42',

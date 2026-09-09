@@ -13,7 +13,7 @@
  */
 import { OUTLINE_SCHEMA } from '../../blocks/spec';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
-import { INTENT_MAX } from '../../lib/draftConfig';
+import { INTENT_MAX, slideCountRangeSchema, type SlideCountRange } from '../../lib/draftConfig';
 import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
 import { languageInstruction } from '../language';
 import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
@@ -27,7 +27,7 @@ const MAX_COVERAGE_RETRIES = 2;
 
 function requestedSlideRange(brief: string): { min: number; max: number } | null {
   const match = brief.match(
-    /\b(\d{1,2})\s*(?:[–—-]\s*(\d{1,2}))?\s+(?:slide|slides|diapositive|diapositives)\b/i,
+    /\b(\d{1,2})\s*(?:(?:[–—-]|à|to)\s*(\d{1,2}))?\s+(?:slide|slides|diapositive|diapositives)\b/i,
   );
   if (!match) return null;
   const min = Number(match[1]);
@@ -83,13 +83,11 @@ function enforceOutlineEndpoints(slides: OutlineStub[]): OutlineStub[] {
   });
 }
 
-function outlineSchemaForBrief(brief: string) {
-  const range = requestedSlideRange(brief);
+function outlineSchemaForRange(range: SlideCountRange | null) {
   if (!range) return OUTLINE_SCHEMA;
-  return OUTLINE_SCHEMA.refine(
-    ({ slides }) => slides.length >= range.min && slides.length <= range.max,
-    `Le brief exige entre ${range.min} et ${range.max} diapositives`,
-  );
+  return OUTLINE_SCHEMA.extend({
+    slides: OUTLINE_SCHEMA.shape.slides.min(range.min).max(range.max),
+  });
 }
 
 /**
@@ -205,8 +203,10 @@ export type StructureResult = {
   sourceFailures: SourceFailure[];
 };
 
-function revisionPrompt(revisionContext?: string): string {
+function revisionPrompt(revisionContext?: string, range?: SlideCountRange): string {
   if (!revisionContext) return '';
+  if (range)
+    return `\n\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : tu peux fusionner ou scinder les diapositives pour respecter la plage demandée. Préserve les faits et les points couverts ; adapte l'ordre et les layouts seulement si nécessaire. Chaque intention doit expliquer le contenu à reprendre ou à répartir.`;
   return `\n\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : conserve exactement le nombre, l'ordre et le blockType des diapositives existantes. Conserve aussi chaque titre et intention sauf lorsque la demande de révision exige explicitement de les modifier. Ne crée, ne supprime et ne remplace aucune diapositive hors du périmètre demandé.`;
 }
 
@@ -216,13 +216,23 @@ export async function structureWithProvenance(
   abortSignal?: AbortSignal,
   revisionContext?: string,
   userId?: string,
+  slideCountRange?: SlideCountRange,
 ): Promise<StructureResult> {
+  const range = slideCountRange
+    ? slideCountRangeSchema.parse(slideCountRange)
+    : requestedSlideRange(dossier.rawBrief);
+  const schema = outlineSchemaForRange(range);
   if (revisionContext) {
     const preserved = parseRevisionContext(revisionContext, dossier.rawBrief);
-    if (preserved) return { stubs: preserved, evidence: [], sourceFailures: [] };
+    if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success))
+      return { stubs: preserved, evidence: [], sourceFailures: [] };
   }
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
-  if (explicit && findInformationalStyleViolations({ slides: explicit }).length === 0) {
+  if (
+    explicit &&
+    (!range || schema.safeParse({ slides: explicit }).success) &&
+    findInformationalStyleViolations({ slides: explicit }).length === 0
+  ) {
     return {
       stubs: OUTLINE_SCHEMA.parse({ slides: explicit }).slides,
       evidence: [],
@@ -230,7 +240,10 @@ export async function structureWithProvenance(
     };
   }
 
-  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext)}`;
+  const countPrompt = range
+    ? `\n\nNOMBRE DE DIAPOSITIVES : génère entre ${range.min} et ${range.max} diapositives, bornes incluses (couverture, intercalaires et conclusion compris). Cette cible est prioritaire sur tout nombre indiqué ailleurs et sur la plage par défaut. Répartis les points sans remplissage ni faits inventés.`
+    : '';
+  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange)}${countPrompt}`;
   const evidence: Evidence[] = [];
   const sourceFailures: SourceFailure[] = [];
 
@@ -238,7 +251,7 @@ export async function structureWithProvenance(
     const generated = await generateStructured({
       name: 'structure',
       instructions: `${STRUCTURE_INSTRUCTIONS}\n\n${languageInstruction(dossier.language)}`,
-      schema: outlineSchemaForBrief(dossier.rawBrief),
+      schema,
       prompt,
       validate: findInformationalStyleViolations,
       maxValidationRepairs: 3,

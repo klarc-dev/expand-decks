@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  const { presentationId, brief, mode, visual, approvalRequired } = parsed.data;
+  const { presentationId, brief, mode, visual, approvalRequired, slideCountRange } = parsed.data;
   let sourceIds: string[];
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
   try {
@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
       language: presentation.language,
       visual,
       approvalRequired,
+      ...(slideCountRange ? { slideCountRange } : {}),
       sourcePolicy,
       sourceIds,
       inputFingerprint: agentRunFingerprint({
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
         sourcePolicy,
         sourceIds,
         approvalRequired,
+        ...(slideCountRange ? { slideCountRange } : {}),
       }),
       events: [event],
     },

@@ -70,8 +70,9 @@ Règles :
   - timeline : étapes ordonnées, phases ou chronologie
   - mermaid : relations, dépendances, flux, décisions ou organisation qu’une liste expliquerait mal
 - Le choix de la langue est fourni séparément par le workflow ; ne l'infère pas ici
-- Si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
-- Sinon, génère entre 8 et 15 diapositives selon la complexité du brief
+- Si une cible de nombre de diapositives est fournie séparément, respecte sa plage en priorité (cover et cta inclus dans le décompte)
+- Sinon, si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
+- Sans cible ni nombre dans le brief, génère entre 8 et 15 diapositives selon la complexité du brief
 - Les textes doivent être concis et factuels`;
 
 /**

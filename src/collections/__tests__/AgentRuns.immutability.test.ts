@@ -15,6 +15,7 @@ const original = {
   language: 'fr',
   visual: true,
   approvalRequired: false,
+  slideCountRange: { min: 8, max: 12 },
   sourcePolicy: 'exclusive',
   sourceIds: ['docs'],
   revisionContext: 'original deck',
@@ -36,6 +37,53 @@ async function applyUpdate(data: Record<string, unknown>) {
 }
 
 describe('AgentRun collection mutation boundary', () => {
+  it('validates JSON ranges while accepting absent legacy values', async () => {
+    const field = AgentRuns.fields.find(
+      (field) => 'name' in field && field.name === 'slideCountRange',
+    );
+    if (!field || field.type !== 'json' || typeof field.validate !== 'function') {
+      throw new Error('Expected a validated JSON slideCountRange field');
+    }
+    for (const value of [undefined, null, { min: 3, max: 40 }, { min: 8, max: 8 }]) {
+      expect(await field.validate(value as never, {} as never)).toBe(true);
+    }
+    for (const value of [
+      { min: 2, max: 10 },
+      { min: 3, max: 41 },
+      { min: 9, max: 8 },
+      { min: 3.5, max: 8 },
+      {},
+    ]) {
+      expect(await field.validate(value as never, {} as never)).not.toBe(true);
+    }
+  });
+
+  it('rejects changing or clearing a range but accepts reordered identical bounds', async () => {
+    await expect(applyUpdate({ slideCountRange: { min: 9, max: 12 } })).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(applyUpdate({ slideCountRange: null })).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(applyUpdate({ slideCountRange: { max: 12, min: 8 } })).resolves.toBeDefined();
+  });
+
+  it('cannot add a range to an old run but accepts its absent/null representation', async () => {
+    const update = async (slideCountRange: unknown) =>
+      beforeChange({
+        collection: AgentRuns,
+        context: {},
+        operation: 'update',
+        req: {} as never,
+        originalDoc: { ...original, slideCountRange: undefined },
+        data: { slideCountRange },
+      } as never);
+    await expect(update({ min: 8, max: 12 })).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(update(null)).resolves.toBeDefined();
+  });
+
   it('is a deck-scoped technical ledger, never a user-facing collection', () => {
     expect(AgentRuns.admin?.hidden).toBe(true);
   });

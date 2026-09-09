@@ -6,6 +6,8 @@
  * than hunting literals across modules.
  */
 
+import { z } from 'zod';
+
 /** Minimum slides a drafted deck must have (schema floor). */
 export const MIN_SLIDES = 3;
 
@@ -15,6 +17,19 @@ export const MIN_SLIDES = 3;
  * rejected after generation.
  */
 export const MAX_SLIDES = 40;
+
+/** Optional per-run target, including cover and closing slides. */
+export const slideCountRangeSchema = z
+  .object({
+    min: z.number().int().min(MIN_SLIDES).max(MAX_SLIDES),
+    max: z.number().int().min(MIN_SLIDES).max(MAX_SLIDES),
+  })
+  .refine(({ min, max }) => min <= max, {
+    path: ['max'],
+    message: 'Le maximum doit être supérieur ou égal au minimum.',
+  });
+
+export type SlideCountRange = z.infer<typeof slideCountRangeSchema>;
 
 /** Chars of per-slide intent kept when parsing an explicit `S1 — …` brief. */
 export const INTENT_MAX = 1600;

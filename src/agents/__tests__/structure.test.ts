@@ -29,6 +29,93 @@ const baseDossier = (rawBrief: string, language: DeckLanguage = 'fr'): DeckDossi
   language,
 });
 
+describe('structure() slide count target', () => {
+  const slides = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      blockType: 'statement',
+      title: `Slide ${index + 1}`,
+      intent: 'Explain the topic',
+    }));
+
+  it('puts explicit bounds in the LLM prompt and schema, overriding a brief count', async () => {
+    mockedGenerateStructured.mockResolvedValue({ slides: slides(25) });
+    await structureWithProvenance(
+      baseDossier('Create 15 slides'),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { min: 20, max: 30 },
+    );
+    const call = mockedGenerateStructured.mock.calls[0]![0];
+    expect(call.prompt).toContain('entre 20 et 30 diapositives');
+    expect(call.prompt).toContain('prioritaire');
+    expect(call.schema.safeParse({ slides: slides(19) }).success).toBe(false);
+    expect(call.schema.safeParse({ slides: slides(20) }).success).toBe(true);
+    expect(call.schema.safeParse({ slides: slides(30) }).success).toBe(true);
+    expect(call.schema.safeParse({ slides: slides(31) }).success).toBe(false);
+  });
+
+  it.each(['explicit', 'revision'])('replans an out-of-range %s fast path', async (kind) => {
+    mockedGenerateStructured.mockResolvedValue({ slides: slides(6) });
+    const brief =
+      kind === 'explicit'
+        ? 'S1 — Introduction\nHello\nS2 — Contenu\nBody\nS3 — Fin\nAct'
+        : 'Keep the facts';
+    const result = await structureWithProvenance(
+      baseDossier(brief),
+      undefined,
+      undefined,
+      kind === 'revision' ? JSON.stringify(slides(3)) : undefined,
+      undefined,
+      { min: 5, max: 7 },
+    );
+    expect(result.stubs).toHaveLength(6);
+    expect(mockedGenerateStructured).toHaveBeenCalledOnce();
+    if (kind === 'revision') {
+      expect(mockedGenerateStructured.mock.calls[0]![0].prompt).toContain('fusionner ou scinder');
+      expect(mockedGenerateStructured.mock.calls[0]![0].prompt).not.toContain(
+        'conserve exactement le nombre',
+      );
+    }
+  });
+
+  it('preserves a revision already within the requested range', async () => {
+    const result = await structureWithProvenance(
+      baseDossier('Keep the facts'),
+      undefined,
+      undefined,
+      JSON.stringify(slides(6)),
+      undefined,
+      { min: 5, max: 7 },
+    );
+    expect(result.stubs).toHaveLength(6);
+    expect(mockedGenerateStructured).not.toHaveBeenCalled();
+  });
+
+  it('supports an exact count and rejects invalid targets before generation', async () => {
+    mockedGenerateStructured.mockResolvedValue({ slides: slides(20) });
+    await structureWithProvenance(
+      baseDossier('Brief'),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { min: 20, max: 20 },
+    );
+    const schema = mockedGenerateStructured.mock.calls[0]![0].schema;
+    expect(schema.safeParse({ slides: slides(19) }).success).toBe(false);
+    expect(schema.safeParse({ slides: slides(20) }).success).toBe(true);
+    await expect(
+      structureWithProvenance(baseDossier('Brief'), undefined, undefined, undefined, undefined, {
+        min: 30,
+        max: 20,
+      }),
+    ).rejects.toThrow();
+    expect(mockedGenerateStructured).toHaveBeenCalledOnce();
+  });
+});
+
 describe('structure() explicit-brief fast-path', () => {
   it('returns exactly N stubs without calling the LLM for an S1—…Sn— brief', async () => {
     const brief = [

@@ -31,6 +31,7 @@ import { z } from 'zod';
 import { AI_SLIDE_SCHEMA, OUTLINE_SCHEMA } from '../blocks/spec';
 import { REVISE_MAX_ITERATIONS, SCORE_THRESHOLD, WRITER_CONCURRENCY } from '../lib/agentConfig';
 import { mapWithConcurrency } from '../lib/concurrency';
+import { MAX_SLIDES, slideCountRangeSchema } from '../lib/draftConfig';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import type { SlideBlock } from '../export/renderers';
 import type { OutlineStub } from '../blocks/spec/emit/emitDraftSchema';
@@ -180,6 +181,7 @@ const structureStep = createStep({
       abortSignal,
       init.revisionContext,
       requestContext?.get('userId'),
+      init.slideCountRange,
     );
     return {
       dossier: inputData.dossier,
@@ -198,7 +200,7 @@ const approvalStep = createStep({
   resumeSchema: z.object({ approved: z.boolean() }),
   suspendSchema: z.object({
     reason: z.string(),
-    outline: z.array(z.object({ title: z.string(), intent: z.string() })).max(40),
+    outline: z.array(z.object({ title: z.string(), intent: z.string() })).max(MAX_SLIDES),
   }),
   execute: async ({ inputData, getInitData, resumeData, suspend, bail }) => {
     if (!(getInitData() as DeckWorkflowInput).approvalRequired) return inputData;
@@ -388,6 +390,7 @@ const InputSchema = z.object({
   brief: z.string(),
   language: z.enum(['fr', 'en']),
   title: z.string().optional(),
+  slideCountRange: slideCountRangeSchema.optional(),
   visual: z.boolean().default(false),
   sourcePolicy: SourcePolicySchema.default({ mode: 'none', sourceIds: [] }),
   revisionContext: z.string().max(100_000).optional(),

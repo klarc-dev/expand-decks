@@ -1,6 +1,22 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
-import { forceNonStreamFetch } from '../ai';
+import { forceNonStreamFetch, modelForTier } from '../ai';
+
+describe('model routing', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('defaults every phase to GPT-6 Astra while retaining explicit overrides', () => {
+    vi.stubEnv('OPENAI_MODEL', '');
+    for (const tier of ['research', 'draft', 'judge', 'visual'] as const) {
+      vi.stubEnv(`OPENAI_${tier.toUpperCase()}_MODEL`, '');
+      expect(modelForTier(tier)).toBe('gpt-6-astra');
+    }
+    vi.stubEnv('OPENAI_MODEL', 'custom-default');
+    expect(modelForTier('research')).toBe('custom-default');
+    vi.stubEnv('OPENAI_DRAFT_MODEL', 'custom-draft');
+    expect(modelForTier('draft')).toBe('custom-draft');
+  });
+});
 
 describe('CloudCLIProxy configuration', () => {
   it('supports the same CLIPROXYAPI ckey environment used by Hermes', async () => {

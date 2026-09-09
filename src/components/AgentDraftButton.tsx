@@ -2,7 +2,16 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, CheckboxInput, TextareaInput, useDocumentInfo, useField } from '@payloadcms/ui';
+import {
+  Button,
+  CheckboxInput,
+  FieldPathContext,
+  NumberField,
+  TextareaInput,
+  useDocumentInfo,
+  useField,
+} from '@payloadcms/ui';
+import { MAX_SLIDES, MIN_SLIDES, slideCountRangeSchema } from '@/lib/draftConfig';
 
 import { AdminNotice } from '@/components/adminUi/AdminSurface';
 import {
@@ -57,6 +66,51 @@ function DraftFieldGroup({ children, label }: DraftFieldGroupProps) {
       <legend>{label}</legend>
       {children}
     </fieldset>
+  );
+}
+
+/** Empty bounds leave the workflow's automatic slide count unchanged. */
+export function validateSlideCountRange(
+  min: number | null | undefined,
+  max: number | null | undefined,
+) {
+  if (min == null && max == null) return { range: undefined, error: '' };
+  const parsed = slideCountRangeSchema.safeParse({ min, max });
+  if (parsed.success) return { range: parsed.data, error: '' };
+  return {
+    range: undefined,
+    error: `Renseignez un minimum et un maximum entiers entre ${MIN_SLIDES} et ${MAX_SLIDES}, avec un minimum inférieur ou égal au maximum.`,
+  };
+}
+
+function SlideCountInput({
+  path,
+  label,
+  readOnly,
+}: {
+  path: string;
+  label: string;
+  readOnly: boolean;
+}) {
+  return (
+    <FieldPathContext.Provider value={path}>
+      <NumberField
+        field={{
+          name: path,
+          label,
+          min: MIN_SLIDES,
+          max: MAX_SLIDES,
+          admin: {
+            autoComplete: 'off',
+            className: 'agent-draft__count-input',
+            step: 1,
+            placeholder: 'Auto',
+          },
+        }}
+        path={path}
+        readOnly={readOnly}
+      />
+    </FieldPathContext.Provider>
   );
 }
 
@@ -406,6 +460,15 @@ const AgentDraftButton: React.FC = () => {
     path: 'agentBrief',
   });
   const brief = storedBrief ?? '';
+  const { value: slideCountMin } = useField<number | null>({
+    path: 'agentSlideCountMin',
+    disableFormData: true,
+  });
+  const { value: slideCountMax } = useField<number | null>({
+    path: 'agentSlideCountMax',
+    disableFormData: true,
+  });
+  const { error: slideCountError } = validateSlideCountRange(slideCountMin, slideCountMax);
   const [mode, setMode] = useState<DraftMode>('revise');
   const [visual, setVisual] = useState(true);
   const [approvalRequired, setApprovalRequired] = useState(false);
@@ -526,6 +589,11 @@ const AgentDraftButton: React.FC = () => {
 
   const handleStart = useCallback(async () => {
     if (!brief.trim() || !id || commandRef.current) return;
+    const { range: slideCountRange, error: rangeError } = validateSlideCountRange(
+      slideCountMin,
+      slideCountMax,
+    );
+    if (rangeError) return;
     commandRef.current = true;
     ++requestRef.current;
     setPending(true);
@@ -544,6 +612,7 @@ const AgentDraftButton: React.FC = () => {
         visual,
         sourcePolicy: sourcePolicyForSelection(selectedSources),
         approvalRequired,
+        ...(slideCountRange ? { slideCountRange } : {}),
       });
       if (!ok) {
         setError(data.error || `Erreur (HTTP ${httpStatus})`);
@@ -562,7 +631,18 @@ const AgentDraftButton: React.FC = () => {
       commandRef.current = false;
       setPending(false);
     }
-  }, [hasSlides, approvalRequired, brief, id, mode, selectedSources, visual, startPolling]);
+  }, [
+    hasSlides,
+    approvalRequired,
+    brief,
+    id,
+    mode,
+    selectedSources,
+    visual,
+    startPolling,
+    slideCountMin,
+    slideCountMax,
+  ]);
 
   const handleRunAction = useCallback(
     async (action: 'cancel' | 'restart' | 'resume', approved?: boolean) => {
@@ -638,6 +718,25 @@ const AgentDraftButton: React.FC = () => {
         rows={5}
       />
 
+      <DraftFieldGroup label="Nombre de slides (facultatif)">
+        <SlideCountInput
+          label="Minimum"
+          path="agentSlideCountMin"
+          readOnly={running || pending || initializing}
+        />
+        <SlideCountInput
+          label="Maximum"
+          path="agentSlideCountMax"
+          readOnly={running || pending || initializing}
+        />
+        <p className="agent-draft__option-help">
+          Laissez les deux champs vides pour un nombre automatique ; en révision, le nombre actuel
+          est conservé par défaut. Couverture et conclusion incluses. En mode ajout, la fourchette
+          concerne uniquement les nouvelles slides.
+        </p>
+        {slideCountError && <AdminNotice variant="error">{slideCountError}</AdminNotice>}
+      </DraftFieldGroup>
+
       <SourceControls
         maxSources={maxSources}
         onToggle={toggleSource}
@@ -700,7 +799,9 @@ const AgentDraftButton: React.FC = () => {
       <DraftRunActions
         canApprove={outline.length > 0}
         pending={pending}
-        canStart={!running && !pending && !initializing && Boolean(brief.trim())}
+        canStart={
+          !running && !pending && !initializing && !slideCountError && Boolean(brief.trim())
+        }
         durableStatus={durableStatus}
         event={statusEvent}
         hasRun={Boolean(runId)}

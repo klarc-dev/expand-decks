@@ -2,6 +2,7 @@ import type { Access, CollectionConfig, FieldHook } from 'payload';
 
 import { ROLES, userIsAdmin, userOrganisationIds } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
+import { slideCountRangeSchema } from '../lib/draftConfig';
 import { preserveAgentRunInputs } from './agentRunImmutability';
 
 /**
@@ -126,6 +127,15 @@ export const AgentRuns: CollectionConfig = {
     { name: 'language', type: 'select', required: true, options: ['fr', 'en'] },
     { name: 'visual', type: 'checkbox', defaultValue: true },
     { name: 'approvalRequired', type: 'checkbox', defaultValue: false },
+    {
+      name: 'slideCountRange',
+      type: 'json',
+      admin: { readOnly: true },
+      validate: (value) =>
+        value == null || slideCountRangeSchema.safeParse(value).success
+          ? true
+          : 'Invalid slide count range',
+    },
     {
       name: 'sourcePolicy',
       type: 'select',

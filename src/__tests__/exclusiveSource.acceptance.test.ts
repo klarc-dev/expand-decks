@@ -9,6 +9,9 @@ const state = vi.hoisted(() => ({
   evidenceByOpen: [] as Record<string, unknown>[][],
   forceStructureResearch: false,
   structureCalls: 0,
+  targetSlideCount: 0,
+  structurePrompt: '',
+  structureSchema: undefined as { safeParse: Function } | undefined,
   sourceFailures: [] as Record<string, unknown>[],
   knowledgeHits: [] as Record<string, unknown>[],
   knowledgeQuery: vi.fn(),
@@ -125,59 +128,79 @@ vi.mock('../agents/model', () => ({
       return 'Grounded research notes';
     },
   ),
-  generateStructured: vi.fn(async ({ name }: { name: string }) => {
-    state.modelCalls.push(name);
-    if (name === 'gather') {
-      return {
-        coreIdea: 'Grounded decision',
-        audience: 'Executives',
-        soWhat: 'The decision affects risk',
-        keyPoints: ['Grounded decision'],
-        data: ['Fact'],
-        sources: state.openedSourceIds.filter((id) => id.startsWith('knowledge_')).length
-          ? ['knowledge_42']
-          : ['docs'],
-      };
-    }
-    if (name === 'structure') {
-      state.structureCalls += 1;
-      if (state.forceStructureResearch && state.structureCalls === 1) {
+  generateStructured: vi.fn(
+    async ({
+      name,
+      prompt,
+      schema,
+    }: {
+      name: string;
+      prompt: string;
+      schema: { safeParse: Function };
+    }) => {
+      state.modelCalls.push(name);
+      if (name === 'gather') {
+        return {
+          coreIdea: 'Grounded decision',
+          audience: 'Executives',
+          soWhat: 'The decision affects risk',
+          keyPoints: ['Grounded decision'],
+          data: ['Fact'],
+          sources: state.openedSourceIds.filter((id) => id.startsWith('knowledge_')).length
+            ? ['knowledge_42']
+            : ['docs'],
+        };
+      }
+      if (name === 'structure') {
+        state.structurePrompt = prompt;
+        state.structureSchema = schema;
+        state.structureCalls += 1;
+        if (state.targetSlideCount)
+          return {
+            slides: Array.from({ length: state.targetSlideCount }, () => ({
+              blockType: 'statement',
+              title: 'Grounded decision',
+              intent: 'Grounded decision',
+            })),
+          };
+        if (state.forceStructureResearch && state.structureCalls === 1) {
+          return {
+            slides: [
+              { blockType: 'cover', title: 'Unrelated', intent: 'Unrelated' },
+              { blockType: 'cta', title: 'Act', intent: 'Act' },
+            ],
+          };
+        }
         return {
           slides: [
-            { blockType: 'cover', title: 'Unrelated', intent: 'Unrelated' },
-            { blockType: 'cta', title: 'Act', intent: 'Act' },
+            {
+              blockType: 'cover',
+              title: 'Grounded decision',
+              intent: 'Grounded decision',
+            },
+            {
+              blockType: 'statement',
+              title: 'Grounded decision',
+              intent: 'Grounded decision',
+            },
+            { blockType: 'cta', title: 'Act', intent: 'Grounded decision' },
           ],
         };
       }
-      return {
-        slides: [
-          {
-            blockType: 'cover',
-            title: 'Grounded decision',
-            intent: 'Grounded decision',
-          },
-          {
-            blockType: 'statement',
-            title: 'Grounded decision',
-            intent: 'Grounded decision',
-          },
-          { blockType: 'cta', title: 'Act', intent: 'Grounded decision' },
-        ],
-      };
-    }
-    if (name === 'gather:grounding-audit') {
-      return { supported: true, unsupportedClaims: [], reason: 'All claims are grounded.' };
-    }
-    if (name === 'rubricScorer') return { score: 1, flags: [], fix: '' };
-    if (name.startsWith('writer:')) {
-      const blockType = name.slice('writer:'.length);
-      return {
-        blockType,
-        title: blockType === 'cta' ? 'Act' : 'Grounded decision',
-      };
-    }
-    throw new Error(`Unexpected model call ${name}`);
-  }),
+      if (name === 'gather:grounding-audit') {
+        return { supported: true, unsupportedClaims: [], reason: 'All claims are grounded.' };
+      }
+      if (name === 'rubricScorer') return { score: 1, flags: [], fix: '' };
+      if (name.startsWith('writer:')) {
+        const blockType = name.slice('writer:'.length);
+        return {
+          blockType,
+          title: blockType === 'cta' ? 'Act' : 'Grounded decision',
+        };
+      }
+      throw new Error(`Unexpected model call ${name}`);
+    },
+  ),
 }));
 vi.mock('../agents/mastra', async () => {
   const { deckWorkflow } = await import('../agents/workflow');
@@ -257,6 +280,7 @@ const knowledgeEvidence = {
 async function queueRun(
   sourcePolicy: { mode: 'exclusive' | 'multiple'; sourceIds: string[] },
   approvalRequired = false,
+  slideCountRange?: { min: number; max: number },
 ) {
   return POST(
     new Request('http://local/api/agent-draft', {
@@ -267,6 +291,7 @@ async function queueRun(
         brief: 'A sufficiently detailed exclusive-source brief',
         visual: false,
         approvalRequired,
+        slideCountRange,
         sourcePolicy,
       }),
     }) as never,
@@ -287,6 +312,9 @@ describe('exclusive source admin-to-worker acceptance', () => {
     state.evidenceByOpen = [];
     state.forceStructureResearch = false;
     state.structureCalls = 0;
+    state.targetSlideCount = 0;
+    state.structurePrompt = '';
+    state.structureSchema = undefined;
     state.sourceFailures = [];
     state.knowledgeHits = [];
     state.knowledgeQuery.mockReset().mockImplementation(async () => state.knowledgeHits);
@@ -347,6 +375,29 @@ describe('exclusive source admin-to-worker acceptance', () => {
       draftStatus: 'done',
       draftSources: ['docs'],
     });
+  });
+
+  it('carries a 20–25 slide target from the API through the real workflow to persistence', async () => {
+    state.targetSlideCount = 22;
+    const response = await queueRun({ mode: 'exclusive', sourceIds: ['docs'] }, false, {
+      min: 20,
+      max: 25,
+    });
+    expect(response.status).toBe(202);
+    expect(state.ledger?.slideCountRange).toEqual({ min: 20, max: 25 });
+    await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
+    expect(state.ledger?.status).toBe('succeeded');
+    expect(state.structurePrompt).toContain('entre 20 et 25 diapositives');
+    const stubs = (count: number) => ({
+      slides: Array.from({ length: count }, () => ({
+        blockType: 'statement',
+        title: 'Grounded decision',
+        intent: 'Grounded decision',
+      })),
+    });
+    expect(state.structureSchema?.safeParse(stubs(15)).success).toBe(false);
+    expect(state.structureSchema?.safeParse(stubs(22)).success).toBe(true);
+    expect(state.persistSlides.mock.calls[0]![0].slides).toHaveLength(22);
   });
 
   it('persists provenance captured during structure research alongside gather evidence', async () => {

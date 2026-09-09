@@ -1,4 +1,5 @@
 import { ValidationError, type CollectionBeforeChangeHook } from 'payload';
+import { slideCountRangeSchema } from '../lib/draftConfig';
 
 export const AGENT_RUN_IMMUTABLE_FIELDS = [
   'presentation',
@@ -12,6 +13,7 @@ export const AGENT_RUN_IMMUTABLE_FIELDS = [
   'language',
   'visual',
   'approvalRequired',
+  'slideCountRange',
   'sourcePolicy',
   'sourceIds',
   'revisionContext',
@@ -31,6 +33,11 @@ function semanticValue(
 ): unknown {
   if (field === 'presentation' || field === 'createdBy' || field === 'organisation') {
     return relationshipId(value);
+  }
+  if (field === 'slideCountRange') {
+    if (value == null) return undefined;
+    const parsed = slideCountRangeSchema.safeParse(value);
+    if (parsed.success) return parsed.data;
   }
   return value;
 }

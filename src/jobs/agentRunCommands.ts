@@ -8,6 +8,7 @@ import { deckContext } from '../lib/deckContext';
 import { currentDeckContext } from '../lib/currentDeckContext';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
+import { slideCountRangeSchema } from '../lib/draftConfig';
 import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
 import { configureSourceResolutionPayload } from '../lib/sources/serverContext';
@@ -121,7 +122,11 @@ type DeckResult = {
 };
 
 async function consumeResult(result: unknown): Promise<DeckResult> {
-  const value = result as { status?: string; result?: DeckResult; error?: { message?: string } };
+  const value = result as {
+    status?: string;
+    result?: DeckResult;
+    error?: { message?: string };
+  };
   if (value.status !== 'success' || !value.result) {
     throw new Error(
       `[deckWorkflow] run ${value.status ?? 'unknown'}${
@@ -184,6 +189,10 @@ async function executeWorkflow(
   mirror: (phase: string, detail?: unknown) => Promise<void>,
   registerCancel: (cancel: () => Promise<void>) => void,
 ): Promise<unknown> {
+  const slideCountRange =
+    ledger.slideCountRange == null
+      ? undefined
+      : slideCountRangeSchema.parse(ledger.slideCountRange);
   const workflow = mastra.getWorkflow('deckWorkflow');
   configureSourceResolutionPayload(payload);
   const run = await workflow.createRun({
@@ -251,7 +260,9 @@ async function executeWorkflow(
     : deckContext(presentation) + ledger.brief;
   const stream = run.stream({
     inputData: {
-      brief: revisionBrief,
+      brief: slideCountRange
+        ? `${revisionBrief}\n\nSLIDE COUNT TARGET: ${slideCountRange.min}–${slideCountRange.max} slides. This explicit range takes priority over other slide counts. Resizing is requested: merge or split slides as needed while preserving all facts.`
+        : revisionBrief,
       language: ledger.language,
       title: presentation.title ?? undefined,
       visual: ledger.visual !== false,
@@ -261,6 +272,7 @@ async function executeWorkflow(
       },
       revisionContext,
       approvalRequired: ledger.approvalRequired === true,
+      ...(slideCountRange ? { slideCountRange } : {}),
     },
     requestContext,
     tracingOptions,

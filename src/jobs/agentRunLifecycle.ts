@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { SlideCountRange } from '../lib/draftConfig';
 
 export function agentRunFingerprint(input: {
   presentationId: string;
@@ -8,14 +9,24 @@ export function agentRunFingerprint(input: {
   sourcePolicy?: string;
   sourceIds: readonly string[];
   approvalRequired: boolean;
+  slideCountRange?: SlideCountRange | null;
 }): string {
+  const { slideCountRange, ...legacyInput } = input;
   const sourcePolicy = input.sourcePolicy ?? (input.sourceIds.length === 0 ? 'none' : 'multiple');
   return createHash('sha256')
     .update(
       JSON.stringify({
-        ...input,
+        ...legacyInput,
         sourcePolicy,
         sourceIds: [...input.sourceIds].sort(),
+        ...(slideCountRange
+          ? {
+              slideCountRange: {
+                min: slideCountRange.min,
+                max: slideCountRange.max,
+              },
+            }
+          : {}),
       }),
     )
     .digest('hex');

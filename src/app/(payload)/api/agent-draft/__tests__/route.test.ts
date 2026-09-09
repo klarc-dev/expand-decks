@@ -38,7 +38,12 @@ const base = { presentationId: 1, brief: 'A sufficiently detailed deck brief' };
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({ user: { id: 2, role: 'admin' } });
-  mocks.findByID.mockResolvedValue({ id: 1, createdBy: 2, language: 'fr', slides: [] });
+  mocks.findByID.mockResolvedValue({
+    id: 1,
+    createdBy: 2,
+    language: 'fr',
+    slides: [],
+  });
   mocks.find.mockResolvedValue({ docs: [] });
   mocks.create.mockResolvedValue({ id: 7 });
   mocks.queue.mockResolvedValue({ id: 'job-1' });
@@ -62,6 +67,35 @@ beforeEach(() => {
 });
 
 describe('agent draft source policy API', () => {
+  it.each([
+    { min: 2, max: 10 },
+    { min: 3, max: 41 },
+    { min: 10, max: 5 },
+    { min: 3.5, max: 10 },
+    { min: 3 },
+    { min: '3', max: 10 },
+    null,
+  ])('rejects invalid slide count range %j before persistence', async (slideCountRange) => {
+    expect((await POST(request({ ...base, slideCountRange }))).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
+
+  it('persists the range separately from the brief and fingerprints it', async () => {
+    await POST(request(base));
+    const legacy = mocks.create.mock.calls[0]![0].data;
+    expect(legacy).not.toHaveProperty('slideCountRange');
+    const slideCountRange = { min: 8, max: 12 };
+    expect((await POST(request({ ...base, slideCountRange }))).status).toBe(202);
+    const saved = mocks.create.mock.calls[1]![0].data;
+    expect(saved).toMatchObject({ brief: base.brief, slideCountRange });
+    expect(saved.inputFingerprint).not.toBe(legacy.inputFingerprint);
+    expect(mocks.queue).toHaveBeenLastCalledWith({
+      task: 'agentDraft',
+      input: { agentRunId: '7', presentationId: '1' },
+    });
+  });
+
   it('rejects unauthenticated requests', async () => {
     mocks.auth.mockResolvedValue({ user: null });
     expect((await POST(request(base))).status).toBe(401);
@@ -83,22 +117,33 @@ describe('agent draft source policy API', () => {
     mocks.find.mockResolvedValue({ docs: [] });
 
     const response = await POST(
-      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_99'] } }),
+      request({
+        ...base,
+        sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_99'] },
+      }),
     );
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: 'Unknown source id(s): knowledge_99' });
+    expect(await response.json()).toEqual({
+      error: 'Unknown source id(s): knowledge_99',
+    });
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it('normalizes and persists a valid exclusive policy', async () => {
     const response = await POST(
-      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: [' docs '] } }),
+      request({
+        ...base,
+        sourcePolicy: { mode: 'exclusive', sourceIds: [' docs '] },
+      }),
     );
     expect(response.status).toBe(202);
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ sourcePolicy: 'exclusive', sourceIds: ['docs'] }),
+        data: expect.objectContaining({
+          sourcePolicy: 'exclusive',
+          sourceIds: ['docs'],
+        }),
       }),
     );
   });
@@ -113,7 +158,10 @@ describe('agent draft source policy API', () => {
     expect((await POST(request({ ...base, sourceIds: ['docs', 'web'] }))).status).toBe(202);
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ sourcePolicy: 'multiple', sourceIds: ['docs', 'web'] }),
+        data: expect.objectContaining({
+          sourcePolicy: 'multiple',
+          sourceIds: ['docs', 'web'],
+        }),
       }),
     );
   });
