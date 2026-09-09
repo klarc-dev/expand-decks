@@ -1,5 +1,5 @@
 import { expect, test as setup } from '@playwright/test';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { getPayload } from 'payload';
 
@@ -95,6 +95,34 @@ async function login(
   await page.context().storageState({ path: authFile });
 }
 
+async function authenticateRoles(browser: import('@playwright/test').Browser) {
+  for (const [role, authFile] of [
+    ['admin', E2E_ADMIN_AUTH_FILE],
+    ['author', E2E_AUTHOR_AUTH_FILE],
+    ['viewer', E2E_VIEWER_AUTH_FILE],
+  ] as const) {
+    const context = await browser.newContext();
+    await login(await context.newPage(), credentials[role], authFile);
+    await context.close();
+  }
+}
+
+async function reusableFixtures(payload: Awaited<ReturnType<typeof getPayload>>) {
+  try {
+    const fixtures = JSON.parse(await readFile(E2E_FIXTURES_FILE, 'utf8')) as E2EFixtures;
+    const agentRuns = await payload.find({
+      collection: COLLECTIONS.agentRuns,
+      where: { mastraRunId: { equals: fixtures.agentRunId } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    });
+    return agentRuns.docs[0] ? fixtures : null;
+  } catch {
+    return null;
+  }
+}
+
 setup('seed deterministic users and authenticate roles', async ({ browser }) => {
   const payload = await getPayload({ config });
   const seededUsers = await Promise.all(
@@ -102,6 +130,15 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
   );
   const [admin, author, viewer] = seededUsers;
   if (!admin || !author || !viewer) throw new Error('Failed to seed E2E users.');
+
+  // Playwright retries setup tests in CI. The fixture manifest is written only
+  // after every deterministic record exists, and the run row is its database
+  // sentinel. Reuse that completed seed instead of replaying non-idempotent
+  // creates against the same disposable database.
+  if (await reusableFixtures(payload)) {
+    await authenticateRoles(browser);
+    return;
+  }
 
   const organisation = await payload.create({
     collection: COLLECTIONS.organisations,
@@ -413,13 +450,5 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
   await mkdir(dirname(E2E_FIXTURES_FILE), { recursive: true });
   await writeFile(E2E_FIXTURES_FILE, JSON.stringify(fixtures));
 
-  for (const [role, authFile] of [
-    ['admin', E2E_ADMIN_AUTH_FILE],
-    ['author', E2E_AUTHOR_AUTH_FILE],
-    ['viewer', E2E_VIEWER_AUTH_FILE],
-  ] as const) {
-    const context = await browser.newContext();
-    await login(await context.newPage(), credentials[role], authFile);
-    await context.close();
-  }
+  await authenticateRoles(browser);
 });
