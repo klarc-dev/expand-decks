@@ -10,7 +10,7 @@ import {
 import { MAX_SLIDES, MIN_SLIDES } from '../lib/draftConfig';
 import { PRESENTATION_CANVAS } from './presentationContract';
 
-export const DOCUMENT_TEMPLATE_IDS = {
+const DOCUMENT_TEMPLATE_IDS = {
   linkedinCarousel: 'linkedin-carousel',
   presentation: 'presentation',
   standardReport: 'standard-report',
@@ -356,13 +356,6 @@ export function specsForDocumentTemplate(template: DocumentTemplateDefinition): 
     }
   }
   return specs;
-}
-
-export function templateDeclaresArtifact(
-  template: DocumentTemplateDefinition,
-  artifactKey: string,
-): boolean {
-  return template.artifacts.some((artifact) => artifact.key === artifactKey);
 }
 
 export function documentTemplateSchemas(template: DocumentTemplateDefinition) {
