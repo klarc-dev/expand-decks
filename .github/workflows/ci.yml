@@ -102,7 +102,7 @@ jobs:
         run: pnpm test
 
       - name: End-to-end tests
-        run: pnpm test:e2e
+        run: pnpm exec playwright test
 
       - name: Upload Playwright report
         if: always()
