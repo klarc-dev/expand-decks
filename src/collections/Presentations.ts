@@ -263,7 +263,14 @@ export const Presentations: CollectionConfig = {
             : previous?.documentTemplate,
         );
         const pages = Object.hasOwn(record, 'slides') ? record.slides : previous?.slides;
-        if (pages !== undefined) assertDocumentPages(template, pages);
+        // Authors must be able to save the aggregate before the ID-based draft
+        // workflow can populate it. Once at least one page exists, enforce the
+        // complete template contract at the write boundary; the build boundary
+        // revalidates even empty documents and therefore cannot emit artifacts
+        // for an incomplete standardized template.
+        if (pages !== undefined && (!Array.isArray(pages) || pages.length > 0)) {
+          assertDocumentPages(template, pages);
+        }
         record.documentTemplate = template.id;
         if (!template.chrome.footer) {
           record.footer = {

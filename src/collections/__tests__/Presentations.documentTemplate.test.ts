@@ -46,12 +46,18 @@ describe('Presentations document template contract', () => {
     ).toThrow('page 1');
   });
 
-  it('rejects missing, extra, and disallowed pages for one-page templates', () => {
-    expect(() =>
-      beforeValidate?.({
+  it('allows an empty pre-generation draft, then validates pages once authored', async () => {
+    expect(
+      await beforeValidate?.({
         data: { documentTemplate: 'visual-publication', slides: [] },
       } as never),
-    ).toThrow('entre 1 et 1 pages');
+    ).toMatchObject({ documentTemplate: 'visual-publication', slides: [] });
+    expect(() =>
+      beforeValidate?.({
+        data: { documentTemplate: 'visual-publication', slides: 'invalid' },
+      } as never),
+    ).toThrow();
+
     expect(() =>
       beforeValidate?.({
         data: {

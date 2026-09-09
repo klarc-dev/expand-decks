@@ -127,13 +127,26 @@ export function artifactHref(artifact: DocumentArtifact): string | null {
   return null;
 }
 
+export function artifactLinkKey(artifact: { key: string; pageIndex?: number }): string {
+  return `${artifact.key}:${artifact.pageIndex ?? 'aggregate'}`;
+}
+
 export function availableArtifactLinks(document: {
   artifacts?: unknown;
   lastBuildToken?: unknown;
-}): Array<{ key: string; href: string; label: string }> {
+}): Array<{ key: string; href: string; label: string; pageIndex?: number }> {
   return currentBuildArtifacts(document.artifacts, document.lastBuildToken).flatMap((artifact) => {
     const href = artifactHref(artifact);
-    return href ? [{ key: artifact.key, href, label: artifact.actionLabel }] : [];
+    return href
+      ? [
+          {
+            key: artifact.key,
+            href,
+            label: artifact.actionLabel,
+            ...(artifact.pageIndex == null ? {} : { pageIndex: artifact.pageIndex }),
+          },
+        ]
+      : [];
   });
 }
 

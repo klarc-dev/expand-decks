@@ -25,11 +25,8 @@ import {
   type ArtifactOutput,
   type ArtifactOutputs,
 } from '../documents/artifacts';
-import {
-  assertDocumentPages,
-  resolveDocumentTemplate,
-  templateDeclaresArtifact,
-} from '../documents/templates';
+import { documentExportPlan } from '../documents/exportPlan';
+import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
   buildFooterHeadmatter,
@@ -334,6 +331,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     const template = resolveDocumentTemplate(
       (presentation as { documentTemplate?: unknown }).documentTemplate,
     );
+    const exportPlan = documentExportPlan(template);
     assertDocumentPages(template, (presentation as { slides?: unknown }).slides);
 
     const buildId =
@@ -450,13 +448,15 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     // Mermaid/image settling, and range/per-slide options needed by PNG exports.
     await runSlidev(['build', '--base', './'], workdir);
     await validateSlideLayout(workdir, slides.length);
-    if (templateDeclaresArtifact(template, 'pdf')) {
-      await runSlidev(
-        buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
-        workdir,
-      );
-    }
-    if (slides.length > 0 && templateDeclaresArtifact(template, 'cover-image')) {
+    // The native Slidev pipeline has a canonical output contract independent
+    // from which artifacts a document template exposes: PDF, SPA, and a
+    // first-page cover are always produced. Template declarations only select
+    // which of those outputs (plus optional per-page images) are persisted.
+    await runSlidev(
+      buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
+      workdir,
+    );
+    if (slides.length > 0) {
       await runSlidev(
         buildSlidevExportArgs({
           output: COVER_DIR,
@@ -469,7 +469,8 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         workdir,
       );
     }
-    if (slides.length > 0 && templateDeclaresArtifact(template, 'page-image')) {
+    const needsPageImages = exportPlan.native.pageImages;
+    if (slides.length > 0 && needsPageImages) {
       await runSlidev(
         buildSlidevExportArgs({
           output: PAGE_IMAGES_DIR,
@@ -503,7 +504,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     }
 
     const outputs: ArtifactOutputs = {};
-    if (templateDeclaresArtifact(template, 'pdf')) {
+    if (exportPlan.pdf.length > 0) {
       const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
       const pdfMedia = await req.payload.create({
         collection: COLLECTIONS.media,
@@ -515,9 +516,17 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           size: pdfBuffer.byteLength,
         },
       });
-      outputs.pdf = { file: pdfMedia.id as number | string };
+      for (const artifact of exportPlan.pdf) {
+        outputs[artifact.key] = { file: pdfMedia.id as number | string };
+      }
     }
-    if (slides.length > 0 && templateDeclaresArtifact(template, 'cover-image')) {
+    let coverOutput: ArtifactOutput | undefined;
+    if (
+      slides.length > 0 &&
+      exportPlan.images.some(
+        (artifact) => artifact.repeat !== 'per-page' && (artifact.pageIndex ?? 0) === 0,
+      )
+    ) {
       const coverBuffer = readFileSync(firstPngPath(join(workdir, COVER_DIR)));
       const coverMedia = await req.payload.create({
         collection: COLLECTIONS.media,
@@ -532,10 +541,10 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           size: coverBuffer.byteLength,
         },
       });
-      outputs['cover-image'] = { file: coverMedia.id as number | string };
+      coverOutput = { file: coverMedia.id as number | string };
     }
-    if (slides.length > 0 && templateDeclaresArtifact(template, 'page-image')) {
-      const pageImageOutputs: ArtifactOutput[] = [];
+    const pageImageOutputs: ArtifactOutput[] = [];
+    if (slides.length > 0 && needsPageImages) {
       for (const [pageIndex, file] of pngPaths(join(workdir, PAGE_IMAGES_DIR)).entries()) {
         const buffer = readFileSync(file);
         const media = await req.payload.create({
@@ -553,18 +562,22 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         });
         pageImageOutputs.push({ file: media.id as number | string });
       }
-      outputs['page-image'] = template.artifacts.some(
-        (artifact) => artifact.key === 'page-image' && 'repeat' in artifact,
-      )
-        ? pageImageOutputs
-        : pageImageOutputs[0];
+    }
+    for (const artifact of exportPlan.images) {
+      if (artifact.repeat === 'per-page') {
+        outputs[artifact.key] = pageImageOutputs;
+        continue;
+      }
+      const pageIndex = artifact.pageIndex ?? 0;
+      outputs[artifact.key] =
+        pageIndex === 0 && coverOutput ? coverOutput : pageImageOutputs[pageIndex];
     }
 
-    if (templateDeclaresArtifact(template, 'web-presentation')) {
-      const spaTargetDir = spaDir(slug);
-      rmSync(spaTargetDir, { recursive: true, force: true });
-      cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
-      outputs['web-presentation'] = { url: spaUrl(slug) };
+    const spaTargetDir = spaDir(slug);
+    rmSync(spaTargetDir, { recursive: true, force: true });
+    cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
+    for (const artifact of exportPlan.web) {
+      outputs[artifact.key] = { url: spaUrl(slug) };
     }
     const artifactPatch = presentationArtifactPatch(template, buildId, outputs, slides.length);
     const patchData: Record<string, unknown> = {

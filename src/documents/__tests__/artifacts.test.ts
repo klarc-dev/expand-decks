@@ -7,6 +7,7 @@ import {
   VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
 } from '../templates';
 import {
+  artifactLinkKey,
   artifactsForBuild,
   availableArtifactLinks,
   MissingPrimaryArtifactError,
@@ -114,7 +115,12 @@ describe('document artifacts', () => {
         href: '/spa/deck/index.html',
         label: 'Ouvrir la présentation web',
       },
-      { key: 'cover-image', href: '/media/cover.png', label: 'Ouvrir l’image de couverture' },
+      {
+        key: 'cover-image',
+        href: '/media/cover.png',
+        label: 'Ouvrir l’image de couverture',
+        pageIndex: 0,
+      },
     ]);
     expect(
       resolvePrimaryArtifactHref(PRESENTATION_DOCUMENT_TEMPLATE, {
@@ -178,10 +184,28 @@ describe('document artifacts', () => {
       expect.objectContaining({ key: 'page-image', pageIndex: 2 }),
     ]);
     expect(availableArtifactLinks({ artifacts, lastBuildToken: 'carousel-build' })).toEqual([
-      { key: 'page-image', href: '/media/page-1.png', label: 'Télécharger la page 1' },
-      { key: 'page-image', href: '/media/page-2.png', label: 'Télécharger la page 2' },
-      { key: 'page-image', href: '/media/page-3.png', label: 'Télécharger la page 3' },
+      {
+        key: 'page-image',
+        href: '/media/page-1.png',
+        label: 'Télécharger la page 1',
+        pageIndex: 0,
+      },
+      {
+        key: 'page-image',
+        href: '/media/page-2.png',
+        label: 'Télécharger la page 2',
+        pageIndex: 1,
+      },
+      {
+        key: 'page-image',
+        href: '/media/page-3.png',
+        label: 'Télécharger la page 3',
+        pageIndex: 2,
+      },
     ]);
+    expect(
+      availableArtifactLinks({ artifacts, lastBuildToken: 'carousel-build' }).map(artifactLinkKey),
+    ).toEqual(['page-image:0', 'page-image:1', 'page-image:2']);
   });
   it('persists each one-page template primary artifact and fails if it is absent', () => {
     expect(
