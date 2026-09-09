@@ -27,7 +27,11 @@ test.describe('Payload media-library UI', () => {
 
     const file = page.locator('input[type="file"]');
     await expect(file).toBeAttached();
-    await file.setInputFiles({ name: 'e2e-ui-pixel.png', mimeType: 'image/png', buffer: PIXEL });
+    await file.setInputFiles({
+      name: 'e2e-ui-pixel.png',
+      mimeType: 'image/png',
+      buffer: PIXEL,
+    });
 
     const alt = page.locator('input[name="alt"]');
     await expect(alt).toBeVisible();
@@ -68,6 +72,10 @@ test.describe('Payload media administration UI', () => {
     page,
   }) => {
     const mediaId = await adminMediaId();
+    const reset = await page.request.patch(`/api/media/${mediaId}`, {
+      data: { alt: 'E2E admin editable media' },
+    });
+    expect(reset.ok()).toBe(true);
     await page.goto(`/admin/collections/media/${mediaId}`);
 
     const alt = page.locator('input[name="alt"]');

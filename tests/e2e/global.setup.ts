@@ -63,7 +63,11 @@ async function upsertUser(
     limit: 1,
     overrideAccess: true,
   });
-  const data = { password: user.password, role: user.role, membershipStatus: 'active' as const };
+  const data = {
+    password: user.password,
+    role: user.role,
+    membershipStatus: 'active' as const,
+  };
   if (existing.docs[0]) {
     const updated = await payload.update({
       collection: COLLECTIONS.users,
@@ -138,7 +142,10 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     await payload.update({
       collection: COLLECTIONS.users,
       id: user.id,
-      data: { organisations: [organisation.id], defaultOrganisation: organisation.id },
+      data: {
+        organisations: [organisation.id],
+        defaultOrganisation: organisation.id,
+      },
       overrideAccess: true,
     });
   }
@@ -306,8 +313,27 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     lastBuildStatus: 'success',
     lastBuildError: null,
     lastBuildRequestedAt: '2026-09-08T13:00:00.000Z',
+    lastBuildToken: 'e2e-successful-build',
     spaUrl: '/spa/e2e-successful-build-presentation/index.html',
     pdfFile: successfulBuildPdf.id,
+    artifacts: [
+      {
+        key: 'web-presentation',
+        kind: 'web',
+        label: 'Présentation web',
+        actionLabel: 'Ouvrir la présentation web',
+        buildId: 'e2e-successful-build',
+        url: '/spa/e2e-successful-build-presentation/index.html',
+      },
+      {
+        key: 'pdf',
+        kind: 'pdf',
+        label: 'PDF',
+        actionLabel: 'Télécharger le PDF',
+        buildId: 'e2e-successful-build',
+        file: successfulBuildPdf.id,
+      },
+    ],
   });
 
   const spaPresentation = await payload.create({
@@ -397,8 +423,13 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     user: admin,
   });
 
-  await rm(resolve('media/spa/e2e-spa-presentation'), { recursive: true, force: true });
-  await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), { recursive: true });
+  await rm(resolve('media/spa/e2e-spa-presentation'), {
+    recursive: true,
+    force: true,
+  });
+  await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), {
+    recursive: true,
+  });
   await writeFile(
     resolve('media/spa/e2e-spa-presentation/index.html'),
     '<!doctype html><html><body><h1>E2E built deck</h1><script src="/spa/e2e-spa-presentation/assets/app.js"></script></body></html>',
