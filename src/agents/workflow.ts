@@ -28,7 +28,13 @@
 import { createStep, createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
 
-import { AI_SLIDE_SCHEMA, OUTLINE_SCHEMA } from '../blocks/spec';
+import {
+  documentTemplateSchemas,
+  DOCUMENT_TEMPLATE_ID_SCHEMA,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+  resolveDocumentTemplate,
+  type DocumentTemplateId,
+} from '../documents/templates';
 import { REVISE_MAX_ITERATIONS, SCORE_THRESHOLD, WRITER_CONCURRENCY } from '../lib/agentConfig';
 import { mapWithConcurrency } from '../lib/concurrency';
 import { MAX_SLIDES, slideCountRangeSchema } from '../lib/draftConfig';
@@ -92,8 +98,9 @@ type DeckBundle = {
 const dossierT = DeckDossierSchema;
 const evidenceT = EvidenceSchema;
 const sourceFailureT = SourceFailureSchema;
-const slideT = AI_SLIDE_SCHEMA;
-const stubT = OUTLINE_SCHEMA.shape.slides.element;
+const PRESENTATION_SCHEMAS = documentTemplateSchemas(PRESENTATION_DOCUMENT_TEMPLATE);
+const slideT = PRESENTATION_SCHEMAS.aiPage;
+const stubT = PRESENTATION_SCHEMAS.outline.shape.slides.element;
 const bundle = z.object({
   dossier: dossierT,
   evidence: z.array(evidenceT),
@@ -113,12 +120,14 @@ type WriterJob = {
   dossier: DeckDossier;
   allTitles: string[];
   revisionContext?: string;
+  documentTemplate: DocumentTemplateId;
 };
 const writerJob = z.object({
   stub: stubT,
   dossier: dossierT,
   allTitles: z.array(z.string()),
   revisionContext: z.string().optional(),
+  documentTemplate: DOCUMENT_TEMPLATE_ID_SCHEMA,
 });
 
 // ── steps (step id === phase name; the route maps payload.stepName → status) ──
@@ -175,6 +184,7 @@ const structureStep = createStep({
   }),
   execute: async ({ inputData, getInitData, abortSignal, requestContext }) => {
     const init = getInitData() as DeckWorkflowInput;
+    const template = resolveDocumentTemplate(init.documentTemplate);
     const structured = await structureWithProvenance(
       inputData.dossier,
       inputData.sourcePolicy,
@@ -182,6 +192,7 @@ const structureStep = createStep({
       init.revisionContext,
       requestContext?.get('userId'),
       init.slideCountRange,
+      template,
     );
     return {
       dossier: inputData.dossier,
@@ -230,6 +241,7 @@ const draftStep = createStep({
       inputData.allTitles,
       inputData.revisionContext,
       abortSignal,
+      resolveDocumentTemplate(inputData.documentTemplate),
     )) as SlideBlock,
 });
 
@@ -242,8 +254,9 @@ const validateStep = createStep({
   id: 'validate',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData, abortSignal, writer }) => {
+  execute: async ({ inputData, getInitData, abortSignal, writer }) => {
     const { stubs, dossier, titles } = inputData;
+    const template = resolveDocumentTemplate((getInitData() as DeckWorkflowInput).documentTemplate);
     const scored = await mapWithConcurrency(inputData.slides, WRITER_CONCURRENCY, (slide) =>
       scoreSlide(slide as Record<string, unknown>, abortSignal),
     );
@@ -271,6 +284,7 @@ const validateStep = createStep({
         titles.filter((_, j) => j !== i),
         inputData.revisionContext,
         abortSignal,
+        template,
       )) as SlideBlock;
     });
 
@@ -288,12 +302,18 @@ const visualStep = createStep({
   inputSchema: bundle,
   outputSchema: bundle,
   execute: async ({ inputData, getInitData, abortSignal, writer }) => {
-    const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
+    const init = getInitData() as DeckWorkflowInput;
+    const template = resolveDocumentTemplate(init.documentTemplate);
+    const title = init.title ?? inputData.dossier.coreIdea;
     const renderSlides = await prepareSlidesForRender(
       inputData.slides as Array<Record<string, unknown> & { blockType: string }>,
     );
     const md = buildSlidesMd(
-      { title, slides: renderSlides as SlideBlock[] },
+      {
+        title,
+        documentTemplate: init.documentTemplate ?? 'presentation',
+        slides: renderSlides as SlideBlock[],
+      },
       { language: inputData.dossier.language },
     );
     const { pngs, validateLayout, cleanup } = await exportSlidePngs(md, abortSignal);
@@ -338,6 +358,7 @@ const visualStep = createStep({
           inputData.titles.filter((_, j) => j !== i),
           inputData.revisionContext,
           abortSignal,
+          template,
         )) as SlideBlock;
       });
 
@@ -348,7 +369,11 @@ const visualStep = createStep({
         next as Array<Record<string, unknown> & { blockType: string }>,
       );
       const revisedMd = buildSlidesMd(
-        { title, slides: revisedRenderSlides as SlideBlock[] },
+        {
+          title,
+          documentTemplate: init.documentTemplate ?? 'presentation',
+          slides: revisedRenderSlides as SlideBlock[],
+        },
         { language: inputData.dossier.language },
       );
       const { validateLayout: validateRevisedLayout, cleanup: cleanupRevisedExport } =
@@ -386,7 +411,8 @@ const assembleStep = createStep({
     sourcePolicy: SourcePolicySchema,
   }),
   execute: async ({ inputData, getInitData }) => {
-    const title = (getInitData() as DeckWorkflowInput).title ?? inputData.dossier.coreIdea;
+    const init = getInitData() as DeckWorkflowInput;
+    const title = init.title ?? inputData.dossier.coreIdea;
     const renderSlides = await prepareSlidesForRender(
       inputData.slides as Array<Record<string, unknown> & { blockType: string }>,
     );
@@ -394,7 +420,11 @@ const assembleStep = createStep({
       dossier: inputData.dossier,
       slides: inputData.slides,
       md: buildSlidesMd(
-        { title, slides: renderSlides as SlideBlock[] },
+        {
+          title,
+          documentTemplate: init.documentTemplate ?? 'presentation',
+          slides: renderSlides as SlideBlock[],
+        },
         { language: inputData.dossier.language },
       ),
       evidence: inputData.evidence,
@@ -407,6 +437,7 @@ const assembleStep = createStep({
 // ── workflow input/output ────────────────────────────────────────────────────
 
 const InputSchema = z.object({
+  documentTemplate: DOCUMENT_TEMPLATE_ID_SCHEMA.optional(),
   brief: z.string(),
   language: z.enum(['fr', 'en']),
   title: z.string().optional(),
@@ -447,6 +478,7 @@ export const deckWorkflow = createWorkflow({
         dossier: inputData.dossier,
         allTitles: inputData.stubs.map((s) => s.title),
         revisionContext: (getInitData() as DeckWorkflowInput).revisionContext,
+        documentTemplate: (getInitData() as DeckWorkflowInput).documentTemplate ?? 'presentation',
       }),
     ),
   )

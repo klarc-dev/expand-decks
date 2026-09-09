@@ -1,5 +1,5 @@
 import { expect, test as setup } from '@playwright/test';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { getPayload } from 'payload';
 
@@ -63,7 +63,11 @@ async function upsertUser(
     limit: 1,
     overrideAccess: true,
   });
-  const data = { password: user.password, role: user.role, membershipStatus: 'active' as const };
+  const data = {
+    password: user.password,
+    role: user.role,
+    membershipStatus: 'active' as const,
+  };
   if (existing.docs[0]) {
     const updated = await payload.update({
       collection: COLLECTIONS.users,
@@ -95,13 +99,52 @@ async function login(
   await page.context().storageState({ path: authFile });
 }
 
+async function authenticateRoles(browser: import('@playwright/test').Browser) {
+  for (const [role, authFile] of [
+    ['admin', E2E_ADMIN_AUTH_FILE],
+    ['author', E2E_AUTHOR_AUTH_FILE],
+    ['viewer', E2E_VIEWER_AUTH_FILE],
+  ] as const) {
+    const context = await browser.newContext();
+    await login(await context.newPage(), credentials[role], authFile);
+    await context.close();
+  }
+}
+
+async function reusableFixtures(payload: Awaited<ReturnType<typeof getPayload>>) {
+  try {
+    const fixtures = JSON.parse(await readFile(E2E_FIXTURES_FILE, 'utf8')) as E2EFixtures;
+    const agentRuns = await payload.find({
+      collection: COLLECTIONS.agentRuns,
+      where: { mastraRunId: { equals: fixtures.agentRunId } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    });
+    return agentRuns.docs[0] ? fixtures : null;
+  } catch {
+    return null;
+  }
+}
+
 setup('seed deterministic users and authenticate roles', async ({ browser }) => {
+  setup.setTimeout(120_000);
+
   const payload = await getPayload({ config });
   const seededUsers = await Promise.all(
     Object.values(credentials).map((user) => upsertUser(payload, user)),
   );
   const [admin, author, viewer] = seededUsers;
   if (!admin || !author || !viewer) throw new Error('Failed to seed E2E users.');
+
+  // Playwright retries setup tests in CI. The fixture manifest is written only
+  // after every deterministic record exists, and the run row is its database
+  // sentinel. Reuse that completed seed instead of replaying non-idempotent
+  // creates against the same disposable database.
+  if (await reusableFixtures(payload)) {
+    await authenticateRoles(browser);
+    return;
+  }
 
   const organisation = await payload.create({
     collection: COLLECTIONS.organisations,
@@ -136,7 +179,10 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     await payload.update({
       collection: COLLECTIONS.users,
       id: user.id,
-      data: { organisations: [organisation.id], defaultOrganisation: organisation.id },
+      data: {
+        organisations: [organisation.id],
+        defaultOrganisation: organisation.id,
+      },
       overrideAccess: true,
     });
   }
@@ -300,12 +346,38 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     overrideAccess: true,
     user: admin,
   });
-  await patchPresentationBuildMetadata(payload, String(successfulBuildPresentation.id), {
-    lastBuildStatus: 'success',
-    lastBuildError: null,
-    lastBuildRequestedAt: '2026-09-08T13:00:00.000Z',
-    spaUrl: '/spa/e2e-successful-build-presentation/index.html',
-    pdfFile: successfulBuildPdf.id,
+  await payload.update({
+    collection: COLLECTIONS.presentations,
+    id: successfulBuildPresentation.id,
+    data: {
+      lastBuildStatus: 'success',
+      lastBuildError: null,
+      lastBuildRequestedAt: '2026-09-08T13:00:00.000Z',
+      lastBuildToken: 'e2e-successful-build',
+      spaUrl: '/spa/e2e-successful-build-presentation/index.html',
+      pdfFile: successfulBuildPdf.id,
+      artifacts: [
+        {
+          key: 'web-presentation',
+          kind: 'web',
+          label: 'Présentation web',
+          actionLabel: 'Ouvrir la présentation web',
+          buildId: 'e2e-successful-build',
+          url: '/spa/e2e-successful-build-presentation/index.html',
+        },
+        {
+          key: 'pdf',
+          kind: 'pdf',
+          label: 'PDF',
+          actionLabel: 'Télécharger le PDF',
+          buildId: 'e2e-successful-build',
+          file: successfulBuildPdf.id,
+        },
+      ],
+    },
+    overrideAccess: true,
+    context: { skipBuildQueue: true },
+    user: admin,
   });
 
   const spaPresentation = await payload.create({
@@ -351,6 +423,22 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
   });
 
   const agentRunId = 'e2e-agent-run';
+  const existingAgentRuns = await payload.find({
+    collection: COLLECTIONS.agentRuns,
+    where: { mastraRunId: { equals: agentRunId } },
+    depth: 0,
+    limit: 100,
+    overrideAccess: true,
+  });
+  await Promise.all(
+    existingAgentRuns.docs.map((agentRun) =>
+      payload.delete({
+        collection: COLLECTIONS.agentRuns,
+        id: agentRun.id,
+        overrideAccess: true,
+      }),
+    ),
+  );
   await payload.create({
     collection: COLLECTIONS.agentRuns,
     data: {
@@ -379,8 +467,13 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     user: admin,
   });
 
-  await rm(resolve('media/spa/e2e-spa-presentation'), { recursive: true, force: true });
-  await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), { recursive: true });
+  await rm(resolve('media/spa/e2e-spa-presentation'), {
+    recursive: true,
+    force: true,
+  });
+  await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), {
+    recursive: true,
+  });
   await writeFile(
     resolve('media/spa/e2e-spa-presentation/index.html'),
     '<!doctype html><html><body><h1>E2E built deck</h1><script src="/spa/e2e-spa-presentation/assets/app.js"></script></body></html>',
@@ -413,13 +506,5 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
   await mkdir(dirname(E2E_FIXTURES_FILE), { recursive: true });
   await writeFile(E2E_FIXTURES_FILE, JSON.stringify(fixtures));
 
-  for (const [role, authFile] of [
-    ['admin', E2E_ADMIN_AUTH_FILE],
-    ['author', E2E_AUTHOR_AUTH_FILE],
-    ['viewer', E2E_VIEWER_AUTH_FILE],
-  ] as const) {
-    const context = await browser.newContext();
-    await login(await context.newPage(), credentials[role], authFile);
-    await context.close();
-  }
+  await authenticateRoles(browser);
 });

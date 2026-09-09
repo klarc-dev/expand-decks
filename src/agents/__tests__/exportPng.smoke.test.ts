@@ -4,6 +4,7 @@
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import sharp from 'sharp';
 
 import { describe, expect, it } from 'vitest';
 
@@ -35,6 +36,33 @@ maybe('exportSlidePngs (real Slidev)', () => {
       expect(pngs.length).toBe(3);
       for (const p of pngs) {
         expect(p.base64.length).toBeGreaterThan(1000); // a real rendered image
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('exports an ordered 1080x1350 LinkedIn carousel PNG for every page', {
+    timeout: 300_000,
+  }, async () => {
+    const md = buildSlidesMd({
+      title: 'LinkedIn carousel export check',
+      documentTemplate: 'linkedin-carousel',
+      slides: [
+        { blockType: 'cover', title: 'First page' },
+        { blockType: 'statement', title: 'Second page', body: 'One concise idea.' },
+        { blockType: 'cta', title: 'Third page' },
+      ] as never,
+    });
+
+    const { pngs, cleanup } = await exportSlidePngs(md);
+    try {
+      expect(pngs).toHaveLength(3);
+      for (const png of pngs) {
+        expect(png.base64.length).toBeGreaterThan(1000);
+        const metadata = await sharp(Buffer.from(png.base64, 'base64')).metadata();
+        expect(metadata.width).toBe(1080);
+        expect(metadata.height).toBe(1350);
       }
     } finally {
       cleanup();

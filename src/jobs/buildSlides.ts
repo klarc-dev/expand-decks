@@ -18,12 +18,18 @@ export const buildSlidesTask: TaskConfig = {
       name: 'buildToken',
       type: 'text',
     },
+    { name: 'mediaProductionRequestId', type: 'text' },
+    { name: 'mediaRequestId', type: 'text' },
+    { name: 'publicationId', type: 'text' },
+    { name: 'revisionSha256', type: 'text' },
   ],
   outputSchema: [
     {
       name: 'success',
       type: 'checkbox',
     },
+    { name: 'status', type: 'text' },
+    { name: 'result', type: 'json' },
   ],
   retries: {
     attempts: 1,

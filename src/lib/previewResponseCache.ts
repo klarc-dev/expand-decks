@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 
 type PreviewResponse = {
+  canvas?: {
+    width: number;
+    height: number;
+    aspectRatio: string;
+    orientation: 'landscape' | 'portrait' | 'square';
+  };
   chrome: unknown;
   preview: unknown;
 };
@@ -27,6 +33,7 @@ function stable(value: unknown): unknown {
 export function buildPreviewResponseCacheKey(input: {
   block: Record<string, unknown>;
   blockTypes?: string[];
+  documentTemplate?: string;
   fields: Record<string, unknown>;
   previewFieldPath: string;
   sections?: string[];

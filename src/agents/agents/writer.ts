@@ -9,26 +9,39 @@
  * blockType/title are force-locked back to the stub (the `alignBatch` invariant)
  * so a model substitution can't drift the structure.
  */
-import { parseAiSlide, SPEC_BY_TYPE } from '../../blocks/spec';
 import { aiSchemaOf } from '../../blocks/spec/dsl';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import { buildWriterLayoutPrompt } from '../prompts/catalog';
 import { languageInstruction } from '../language';
 import { generateStructured } from '../model';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
-import { findInformationalStyleViolations } from '../prompts/style';
+import { findFinalSlideViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
+import {
+  type DocumentTemplateDefinition,
+  documentTemplateSchemas,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+  specsForDocumentTemplate,
+} from '../../documents/templates';
 
-function writerInstructions(blockType: string, dossier: DeckDossier): string {
+function writerInstructions(
+  blockType: string,
+  dossier: DeckDossier,
+  template: DocumentTemplateDefinition,
+): string {
   return `Tu es le rédacteur pédagogique. Tu rédiges le contenu d'UNE seule diapositive de formation de niveau expert déjà planifiée.
 
 On te donne : le dossier (contexte resserré), le blockType et le title imposés de CETTE diapositive, son intention, et la liste des TITRES des autres diapositives (pour éviter les redites). Tu ne vois jamais le corps des autres diapositives.
 
-${buildWriterLayoutPrompt(blockType)}
+${buildWriterLayoutPrompt(blockType, template)}
+
+Contraintes du support : ${template.agent.guidance}
 
 ${RUBRIC_PROMPT}
 
 ${languageInstruction(dossier.language)}
+
+Tu dois livrer le résultat final destiné au public, jamais commenter le travail de rédaction. Exécute l'intention : si elle demande un exemple, écris l'exemple lui-même avec les faits autorisés, l'analyse et la conclusion ; si elle demande une comparaison, écris la comparaison. Ne décris jamais ce qu’il faudrait écrire, ajouter, créer ou montrer dans une diapositive.
 
 Règles de rédaction :
 - Conserve EXACTEMENT le blockType et le title imposés.
@@ -53,12 +66,9 @@ function dossierExcerpt(dossier: DeckDossier): string {
     dossier.data.length
       ? `DONNÉES DISPONIBLES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}`
       : '',
-    dossier.references?.length || dossier.sources.length
-      ? `RÉFÉRENCES AUTORISÉES POUR LES FOOTNOTES :\n${[
-          ...(dossier.references ?? []),
-          ...dossier.sources,
-        ]
-          .map((source) => `- ${source}`)
+    dossier.references?.length
+      ? `RÉFÉRENCES AUTORISÉES POUR LES FOOTNOTES :\n${dossier.references
+          .map((reference) => `- ${reference}`)
           .join('\n')}`
       : '',
   ]
@@ -69,6 +79,7 @@ function dossierExcerpt(dossier: DeckDossier): string {
 function existingSlideForStub(
   revisionContext: string | undefined,
   stub: OutlineStub,
+  template: DocumentTemplateDefinition,
 ): Record<string, unknown> | null {
   if (!revisionContext || !stub.intent.includes('Préserve intégralement')) return null;
   try {
@@ -81,7 +92,9 @@ function existingSlideForStub(
         candidate.blockType === stub.blockType &&
         candidate.title === stub.title,
     );
-    return slide ? parseAiSlide(slide) : null;
+    return slide
+      ? (documentTemplateSchemas(template).aiPage.parse(slide) as Record<string, unknown>)
+      : null;
   } catch {
     return null;
   }
@@ -98,12 +111,15 @@ export async function writeSlide(
   otherTitles: string[],
   revisionContext?: string,
   abortSignal?: AbortSignal,
+  template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
 ): Promise<Record<string, unknown>> {
-  const existingSlide = existingSlideForStub(revisionContext, stub);
+  const existingSlide = existingSlideForStub(revisionContext, stub, template);
   if (existingSlide) return existingSlide;
   const isTargetedRevision = Boolean(revisionContext);
 
-  const spec = SPEC_BY_TYPE.get(stub.blockType);
+  const spec = specsForDocumentTemplate(template).find(
+    (candidate) => candidate.blockType === stub.blockType,
+  );
   if (!spec) {
     throw new Error(`[writer] unknown blockType: ${stub.blockType}`);
   }
@@ -126,23 +142,23 @@ export async function writeSlide(
 
   const block = await generateStructured<Record<string, unknown>>({
     name: `writer:${stub.blockType}`,
-    instructions: `${writerInstructions(stub.blockType, dossier)}${
+    instructions: `${writerInstructions(stub.blockType, dossier, template)}${
       isTargetedRevision
         ? '\n- Révision ciblée : le blockType reste imposé, mais le titre peut changer lorsque la demande le requiert.'
         : ''
     }`,
     schema: aiSchemaOf(spec) as never,
     prompt,
-    validate: findInformationalStyleViolations,
+    validate: findFinalSlideViolations,
     maxValidationRepairs: 3,
     abortSignal,
   });
 
   // alignBatch invariant: force the planned structure back onto the block.
   // A targeted revision may rename the slide, but never change its layout.
-  return parseAiSlide({
+  return documentTemplateSchemas(template).aiPage.parse({
     ...block,
     blockType: stub.blockType,
     title: isTargetedRevision ? block.title : stub.title,
-  });
+  }) as Record<string, unknown>;
 }

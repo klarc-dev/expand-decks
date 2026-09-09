@@ -61,7 +61,10 @@ describe('writeSlide invariants', () => {
   });
 
   it('passes other slides TITLES into the prompt (small-context: no bodies)', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, ['Title of slide two', 'Title of slide three']);
 
@@ -74,7 +77,10 @@ describe('writeSlide invariants', () => {
   });
 
   it('gives the writer the complete authorized dossier and forbids unsupported elaboration', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, []);
 
@@ -83,10 +89,21 @@ describe('writeSlide invariants', () => {
     expect(call.prompt).toContain('BLUF works');
     expect(call.instructions).toContain('N’ajoute aucun fait, chiffre, attribution, cas');
     expect(call.instructions).toContain('directement du dossier');
+    expect(call.instructions).toContain('résultat final destiné au public');
+    expect(call.instructions).toContain('Ne décris jamais ce qu’il faudrait écrire');
+    expect(
+      call.validate?.({
+        title: 'Ajouter une diapositive d’exemple',
+        body: 'Créez une diapositive avec un cas pratique.',
+      } as never),
+    ).toEqual(expect.arrayContaining([expect.stringContaining('métadiscours de production')]));
   });
 
   it('receives only the selected layout guidance and no deck-level planning commands', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, []);
 
@@ -101,7 +118,10 @@ describe('writeSlide invariants', () => {
   });
 
   it('assigns cover and CTA distinct roles instead of repeating the thesis across the deck', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, []);
 
@@ -114,7 +134,10 @@ describe('writeSlide invariants', () => {
   });
 
   it('requires each slide to use only the facts needed for its own intent', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, []);
 
@@ -125,7 +148,10 @@ describe('writeSlide invariants', () => {
   });
 
   it('passes source references and requires claim-level footnotes when sources are available', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, []);
 
@@ -139,15 +165,36 @@ describe('writeSlide invariants', () => {
     expect(instructions).not.toContain('Les sources servent seulement à vérifier les faits');
   });
 
+  it('never exposes connected source ids as footnote references', async () => {
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
+
+    await writeSlide(stub, { ...dossier, sources: ['knowledge_42', 'Private KB'] }, []);
+
+    const prompt = mocked.mock.calls[0]![0].prompt;
+    expect(prompt).not.toContain('knowledge_42');
+    expect(prompt).not.toContain('Private KB');
+    expect(prompt).toContain('Garner, Legal Writing in Plain English');
+  });
+
   it('returns a minimal block for non-aiDraftable types without calling the model', async () => {
-    const md: OutlineStub = { blockType: 'markdown', title: 'Raw', intent: 'x' };
+    const md: OutlineStub = {
+      blockType: 'markdown',
+      title: 'Raw',
+      intent: 'x',
+    };
     const out = await writeSlide(md, dossier, []);
     expect(out).toEqual({ blockType: 'markdown', title: 'Raw' });
     expect(mocked).not.toHaveBeenCalled();
   });
 
   it('supplies the existing deck and preservation rule during a revision', async () => {
-    mocked.mockResolvedValue({ blockType: 'statement', title: stub.title } as never);
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
 
     await writeSlide(stub, dossier, [], '[{"slide":1,"title":"Existing title"}]');
 
@@ -188,8 +235,14 @@ describe('writeSlide invariants', () => {
     } as never);
 
     const out = await writeSlide(
-      { ...stub, intent: 'Modifie cette diapositive uniquement selon la demande de révision.' },
-      { ...dossier, rawBrief: 'Replace the final CTA with a three-question checklist.' },
+      {
+        ...stub,
+        intent: 'Modifie cette diapositive uniquement selon la demande de révision.',
+      },
+      {
+        ...dossier,
+        rawBrief: 'Replace the final CTA with a three-question checklist.',
+      },
       [],
       JSON.stringify([{ blockType: 'statement', title: stub.title, body: 'Old body' }]),
     );

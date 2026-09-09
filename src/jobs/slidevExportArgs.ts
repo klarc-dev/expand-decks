@@ -22,6 +22,7 @@ export type SlidevExportArgsOptions = {
   hasImages?: boolean;
   perSlide?: boolean;
   range?: string;
+  scale?: number;
 };
 
 export function buildSlidevExportArgs({
@@ -31,6 +32,7 @@ export function buildSlidevExportArgs({
   hasImages = false,
   perSlide = false,
   range,
+  scale,
 }: SlidevExportArgsOptions): string[] {
   const hasAsyncVisualAssets = hasMermaid || hasImages;
   const waitUntil: WaitUntil = hasAsyncVisualAssets ? 'networkidle' : 'load';
@@ -54,6 +56,9 @@ export function buildSlidevExportArgs({
   }
   if (perSlide) {
     args.push('--per-slide');
+  }
+  if (format === 'png') {
+    args.push('--scale', String(scale ?? 1));
   }
 
   return args;

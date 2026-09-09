@@ -101,6 +101,41 @@ describe('agent draft source policy API', () => {
     expect((await POST(request(base))).status).toBe(401);
   });
 
+  it('rejects an unknown persisted document template before creating a run', async () => {
+    mocks.findByID.mockResolvedValueOnce({
+      id: 1,
+      createdBy: 2,
+      language: 'fr',
+      organisation: 1,
+      documentTemplate: 'unknown',
+      slides: [],
+    });
+
+    const response = await POST(request(base));
+
+    expect(response.status).toBe(422);
+    expect((await response.json()).error).toContain('Template de document inconnu');
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
+
+  it('preserves access denial before reporting an unknown template', async () => {
+    mocks.auth.mockResolvedValueOnce({ user: { id: 2, role: 'viewer', organisations: [] } });
+    mocks.findByID.mockResolvedValueOnce({
+      id: 1,
+      createdBy: 3,
+      language: 'fr',
+      organisation: 99,
+      documentTemplate: 'unknown',
+      slides: [],
+    });
+
+    const response = await POST(request(base));
+
+    expect(response.status).toBe(403);
+    expect((await response.json()).error).toBe('Accès refusé');
+  });
+
   it.each([
     [{ mode: 'exclusive', sourceIds: [] }, 'exactly one source'],
     [{ mode: 'exclusive', sourceIds: ['docs', 'web'] }, 'exactly one source'],

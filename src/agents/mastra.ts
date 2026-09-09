@@ -6,6 +6,7 @@ import { PostgresStoreVNext } from '@mastra/pg';
 
 import { rubricScorer } from './scorers/rubric';
 import { visualScorer } from './scorers/visual';
+import { deckAgents } from './registry';
 import { deckWorkflow } from './workflow';
 
 const databaseUrl = process.env.DATABASE_URL ?? '';
@@ -24,7 +25,9 @@ export const AGENT_RETENTION: RetentionConfig = {
   experiments: { experiments: { maxAge: '180d', batchSize: 250 } },
 };
 
-const g = global as typeof globalThis & { __mastraStorageVNext?: PostgresStoreVNext };
+const g = global as typeof globalThis & {
+  __mastraStorageVNext?: PostgresStoreVNext;
+};
 if (!g.__mastraStorageVNext) {
   g.__mastraStorageVNext = new PostgresStoreVNext({
     id: 'mastra-storage',
@@ -106,6 +109,7 @@ export const agentObservability = new Observability({
 });
 
 export const mastra = new Mastra({
+  agents: deckAgents,
   workflows: { deckWorkflow },
   storage: agentStorage,
   observability: agentObservability,

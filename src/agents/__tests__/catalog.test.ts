@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STRUCTURE_SYSTEM_PROMPT, buildWriterLayoutPrompt } from '../prompts/catalog';
+import { LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE } from '../../documents/templates';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 
 describe('structure prompt catalogue', () => {
@@ -56,6 +57,14 @@ describe('structure prompt catalogue', () => {
   it('derives writer cardinality and text budgets from block specs', () => {
     expect(buildWriterLayoutPrompt('table')).toContain('rows: 1–8 éléments');
     expect(buildWriterLayoutPrompt('stats')).toContain('title: 180 caractères max');
+  });
+
+  it('keeps the carousel writer on the template-specific low-density contract', () => {
+    const prompt = buildWriterLayoutPrompt('statement', LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE);
+    expect(prompt).toContain('**statement**');
+    expect(LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE.agent.guidance).toContain(
+      'une idée principale par page',
+    );
   });
 });
 

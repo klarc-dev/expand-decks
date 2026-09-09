@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { findInformationalStyleViolations, StylePolicyError } from '../prompts/style';
+import {
+  findFinalSlideViolations,
+  findInformationalStyleViolations,
+  StylePolicyError,
+} from '../prompts/style';
 
 describe('informational style policy', () => {
   it('accepts factual informational prose', () => {
@@ -22,7 +26,11 @@ describe('informational style policy', () => {
       slides: [
         {
           title: 'Une approche révolutionnaire',
-          cards: [{ description: 'Boostez vos résultats avec une solution world-class !' }],
+          cards: [
+            {
+              description: 'Boostez vos résultats avec une solution world-class !',
+            },
+          ],
         },
       ],
     });
@@ -47,9 +55,9 @@ describe('informational style policy', () => {
 
   it('deduplicates repeated matches on the same path and term', () => {
     expect(
-      findInformationalStyleViolations({ title: 'Incroyable, vraiment incroyable' }).filter((v) =>
-        v.includes('incroyable'),
-      ),
+      findInformationalStyleViolations({
+        title: 'Incroyable, vraiment incroyable',
+      }).filter((v) => v.includes('incroyable')),
     ).toHaveLength(1);
   });
 
@@ -64,7 +72,11 @@ describe('informational style policy', () => {
   });
 
   it('does not match banned terms inside longer words', () => {
-    expect(findInformationalStyleViolations({ title: 'Le leadership est documenté' })).toEqual([]);
+    expect(
+      findInformationalStyleViolations({
+        title: 'Le leadership est documenté',
+      }),
+    ).toEqual([]);
   });
 
   it('rejects empty AI filler and metadiscourse in nested slide content', () => {
@@ -72,7 +84,9 @@ describe('informational style policy', () => {
       title: 'Une analyse claire et complète',
       body: 'Il est important de noter que cette approche robuste permet de sécuriser efficacement le dispositif.',
       cards: [
-        { description: 'Cette démarche essentielle offre une vision globale et pertinente.' },
+        {
+          description: 'Cette démarche essentielle offre une vision globale et pertinente.',
+        },
       ],
     });
 
@@ -85,6 +99,27 @@ describe('informational style policy', () => {
         expect.stringMatching(/cards\.0\.description.*vision globale/),
       ]),
     );
+  });
+
+  it('rejects instruction-shaped prose where the audience-facing result should be', () => {
+    const violations = findFinalSlideViolations({
+      title: 'Ajouter des diapositives d’exemples concrets',
+      body: 'Créez deux diapositives pour illustrer la marge de position, puis détaillez un cas pratique.',
+    });
+
+    expect(violations).toEqual([
+      expect.stringContaining('métadiscours de production'),
+      expect.stringContaining('métadiscours de production'),
+    ]);
+  });
+
+  it('accepts an authored example with facts, analysis, and conclusion', () => {
+    expect(
+      findFinalSlideViolations({
+        title: 'La marge de position absorbe un décalage sans modifier la décision',
+        body: 'Cas : la demande reste dans l’intervalle prévu. Analyse : le décalage ne franchit aucun seuil. Conclusion : la position initiale reste applicable.',
+      }),
+    ).toEqual([]);
   });
 
   it('accepts precise legal conditions, consequences and source references', () => {

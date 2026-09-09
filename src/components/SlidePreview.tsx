@@ -26,6 +26,7 @@ import './SlidePreview.scss';
 const PREVIEW_DEBOUNCE_MS = 200;
 
 type PreviewResult = {
+  canvas: { width: number; height: number; aspectRatio: string };
   chrome?: SlideChrome;
   preview: {
     className: string;
@@ -200,7 +201,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
     <section
       aria-label="Aperçu de la diapositive"
       className="slide-preview"
-      style={previewCanvasVariables}
+      style={previewCanvasVariables(result?.canvas)}
     >
       <div className="slide-preview__header">
         <strong>Aperçu de la diapositive</strong>
@@ -268,23 +269,24 @@ function PreviewFrame({ result }: { result: PreviewResult }) {
           image={image}
           layout={layout}
           mermaid={mermaid}
-          style={slideStyle}
+          style={slideStyle(result.canvas)}
         />
       </div>
     </div>
   );
 }
 
-const slideStyle = {
-  width: `${SLIDE_CANVAS_WIDTH}px`,
-  height: `${SLIDE_CANVAS_HEIGHT}px`,
+const slideStyle = (canvas: PreviewResult['canvas']) => ({
+  width: `${canvas.width}px`,
+  height: `${canvas.height}px`,
   overflow: 'hidden',
   position: 'relative' as const,
-};
+});
 
-const previewCanvasVariables = {
-  '--slide-preview-height': `${SLIDE_CANVAS_HEIGHT}px`,
-  '--slide-preview-width': `${SLIDE_CANVAS_WIDTH}px`,
-} as React.CSSProperties;
+const previewCanvasVariables = (canvas?: PreviewResult['canvas']) =>
+  ({
+    '--slide-preview-height': `${canvas?.height ?? SLIDE_CANVAS_HEIGHT}px`,
+    '--slide-preview-width': `${canvas?.width ?? SLIDE_CANVAS_WIDTH}px`,
+  }) as React.CSSProperties;
 
 export default SlidePreview;

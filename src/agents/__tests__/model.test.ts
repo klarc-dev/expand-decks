@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const generateMock = vi.fn();
+const { generateMock } = vi.hoisted(() => ({ generateMock: vi.fn() }));
 
 vi.mock('@mastra/core/agent', () => ({
   Agent: vi.fn().mockImplementation(function Agent() {
@@ -42,7 +42,11 @@ describe('scoreVisual image boundary', () => {
       .toBuffer();
     generateMock.mockResolvedValue({
       finishReason: 'tool-calls',
-      toolCalls: [{ payload: { toolName: 'emit', args: { score: 1, flags: [], fix: '' } } }],
+      toolCalls: [
+        {
+          payload: { toolName: 'emit', args: { score: 1, flags: [], fix: '' } },
+        },
+      ],
     });
 
     // When: the scorer runs through the model boundary.
@@ -67,6 +71,18 @@ describe('generateStructured image inputs', () => {
     generateMock.mockReset();
   });
 
+  it('requires an explicit role for non-canonical invocation names', async () => {
+    await expect(
+      generateStructured({
+        name: 'unknown',
+        instructions: 'Return data',
+        schema: z.object({ ok: z.boolean() }),
+        prompt: 'go',
+        maxRepairs: 0,
+      }),
+    ).rejects.toThrow(/no registered Mastra agent role/);
+  });
+
   it('preserves explicit image MIME types in multimodal inputs', async () => {
     generateMock.mockResolvedValue({
       finishReason: 'tool-calls',
@@ -80,6 +96,7 @@ describe('generateStructured image inputs', () => {
         schema: z.object({ ok: z.boolean() }),
         prompt: 'go',
         images: [{ base64: 'abc', mimeType: 'image/jpeg' }],
+        agentRole: 'writer',
         maxRepairs: 0,
       }),
     ).resolves.toEqual({ ok: true });
@@ -90,11 +107,19 @@ describe('generateStructured image inputs', () => {
           role: 'user',
           content: [
             { type: 'text', text: 'go' },
-            { type: 'image', image: 'data:image/jpeg;base64,abc', mediaType: 'image/jpeg' },
+            {
+              type: 'image',
+              image: 'data:image/jpeg;base64,abc',
+              mediaType: 'image/jpeg',
+            },
           ],
         },
       ],
-      expect.objectContaining({ toolChoice: 'required', maxSteps: 1 }),
+      expect.objectContaining({
+        clientTools: expect.objectContaining({ emit: expect.any(Object) }),
+        toolChoice: { type: 'tool', toolName: 'emit' },
+        maxSteps: 1,
+      }),
     );
   });
 });
@@ -116,6 +141,7 @@ describe('generateStructured emit tool selection', () => {
         instructions: 'Return data',
         schema: z.object({ ok: z.boolean() }),
         prompt: 'go',
+        agentRole: 'writer',
         maxRepairs: 0,
       }),
     ).rejects.toThrow(/emit tool/);
@@ -136,6 +162,7 @@ describe('generateStructured emit tool selection', () => {
         instructions: 'Return data',
         schema: z.object({ ok: z.boolean() }),
         prompt: 'go',
+        agentRole: 'writer',
         maxRepairs: 0,
       }),
     ).resolves.toEqual({ ok: true });
@@ -181,6 +208,7 @@ describe('generateStructured determinism', () => {
       schema: z.object({ ok: z.boolean() }),
       prompt: 'go',
       modelTier: 'draft',
+      agentRole: 'writer',
       maxRepairs: 0,
     });
 
@@ -282,7 +310,7 @@ describe('researchWithSources', () => {
     generateMock.mockReset();
   });
 
-  it('passes toolsets with multiple steps and does not force tool choice', async () => {
+  it('passes toolsets with multiple steps and requires a source tool call', async () => {
     generateMock.mockResolvedValue({ text: 'research notes' });
 
     await expect(

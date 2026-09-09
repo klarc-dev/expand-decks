@@ -17,19 +17,13 @@ import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
-import { CoverBlock } from '../blocks/CoverBlock';
-import { SectionBlock } from '../blocks/SectionBlock';
-import { StatementBlock } from '../blocks/StatementBlock';
-import { TwoColsBlock } from '../blocks/TwoColsBlock';
-import { CardGridBlock } from '../blocks/CardGridBlock';
-import { StatsBlock } from '../blocks/StatsBlock';
-import { QuotesBlock } from '../blocks/QuotesBlock';
-import { CtaBlock } from '../blocks/CtaBlock';
-import { TableBlock } from '../blocks/TableBlock';
-import { TimelineBlock } from '../blocks/TimelineBlock';
-import { MermaidBlock } from '../blocks/MermaidBlock';
-import { AgendaBlock } from '../blocks/AgendaBlock';
-import { MarkdownBlock } from '../blocks/MarkdownBlock';
+import {
+  documentTemplateField,
+  payloadBlocksForTemplate,
+  payloadBlockSlugsForTemplate,
+} from '../documents/payload';
+import { resolvePrimaryArtifactHref } from '../documents/artifacts';
+import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
 /**
@@ -74,7 +68,11 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
-    preview: (data) => (typeof data.spaUrl === 'string' && data.spaUrl ? data.spaUrl : null),
+    preview: (data) => {
+      if (data.lastBuildStatus !== BUILD_STATUS.success) return null;
+      const template = resolveDocumentTemplate(data.documentTemplate);
+      return resolvePrimaryArtifactHref(template, data);
+    },
     components: {
       edit: {
         editMenuItems: ['/components/ExportMenuItem#default'],
@@ -136,7 +134,9 @@ export const Presentations: CollectionConfig = {
           : 0;
         if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
           return Response.json(
-            { error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.' },
+            {
+              error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.',
+            },
             { status: 429 },
           );
         }
@@ -158,6 +158,9 @@ export const Presentations: CollectionConfig = {
               lastBuildToken: buildToken,
               lastBuildStatus: BUILD_STATUS.building,
               lastBuildError: '',
+              spaUrl: null,
+              pdfFile: null,
+              coverImage: null,
             },
             req,
           );
@@ -250,6 +253,35 @@ export const Presentations: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [
+      ({ data, originalDoc }) => {
+        if (!data || typeof data !== 'object') return data;
+        const record = data as Record<string, unknown>;
+        const previous = originalDoc as
+          | { documentTemplate?: unknown; slides?: unknown }
+          | undefined;
+        const template = resolveDocumentTemplate(
+          Object.hasOwn(record, 'documentTemplate')
+            ? record.documentTemplate
+            : previous?.documentTemplate,
+        );
+        const pages = Object.hasOwn(record, 'slides') ? record.slides : previous?.slides;
+        // Authors must be able to save the aggregate before the ID-based draft
+        // workflow can populate it. Once at least one page exists, enforce the
+        // complete template contract at the write boundary; the build boundary
+        // revalidates even empty documents and therefore cannot emit artifacts
+        // for an incomplete standardized template.
+        if (pages !== undefined && (!Array.isArray(pages) || pages.length > 0)) {
+          assertDocumentPages(template, pages);
+        }
+        record.documentTemplate = template.id;
+        if (!template.chrome.footer) {
+          record.footer = {
+            ...((record.footer as Record<string, unknown> | undefined) ?? {}),
+            enabled: false,
+          };
+        }
+        return data;
+      },
       // Standardized footer: no free text. Whatever the client submits (admin
       // is read-only, but the API is not), the stored footer is always the
       // canonical {org.name} / empty / {page} / {total}. `enabled` stays
@@ -309,6 +341,7 @@ export const Presentations: CollectionConfig = {
         },
       ],
     },
+    documentTemplateField,
     {
       type: 'tabs',
       tabs: [
@@ -319,26 +352,16 @@ export const Presentations: CollectionConfig = {
             {
               name: 'slides',
               type: 'blocks',
-              label: 'Diapositives',
+              label: 'Pages',
               admin: {
                 description:
-                  'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.',
+                  'Une page par bloc. Les layouts proposés dépendent du template de document.',
               },
-              blocks: [
-                CoverBlock,
-                SectionBlock,
-                StatementBlock,
-                TwoColsBlock,
-                CardGridBlock,
-                StatsBlock,
-                QuotesBlock,
-                CtaBlock,
-                TableBlock,
-                TimelineBlock,
-                MermaidBlock,
-                AgendaBlock,
-                MarkdownBlock,
-              ],
+              blocks: payloadBlocksForTemplate('presentation'),
+              filterOptions: ({ data }) =>
+                payloadBlockSlugsForTemplate(
+                  (data as { documentTemplate?: unknown } | undefined)?.documentTemplate,
+                ),
             },
           ],
         },
@@ -510,7 +533,9 @@ export const Presentations: CollectionConfig = {
               type: 'text',
               hasMany: true,
               label: 'Tags',
-              admin: { description: 'Mots-clés libres pour classer la présentation' },
+              admin: {
+                description: 'Mots-clés libres pour classer la présentation',
+              },
             },
             {
               name: 'language',
@@ -531,6 +556,8 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description:
                   'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche, {page} / {total} à droite.',
+                condition: (_data, siblingData) =>
+                  resolveDocumentTemplate(siblingData?.documentTemplate).chrome.footer,
               },
               fields: [
                 {
@@ -547,20 +574,29 @@ export const Presentations: CollectionConfig = {
                       type: 'text',
                       defaultValue: '{org.name}',
                       label: 'Gauche',
-                      admin: { readOnly: true, description: 'Standardisé : {org.name}.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : {org.name}.',
+                      },
                     },
                     {
                       name: 'center',
                       type: 'text',
                       label: 'Centre',
-                      admin: { readOnly: true, description: 'Standardisé : vide.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : vide.',
+                      },
                     },
                     {
                       name: 'right',
                       type: 'text',
                       defaultValue: '{page} / {total}',
                       label: 'Droite',
-                      admin: { readOnly: true, description: 'Standardisé : {page} / {total}.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : {page} / {total}.',
+                      },
                     },
                   ],
                 },
@@ -600,6 +636,35 @@ export const Presentations: CollectionConfig = {
               ],
             },
             {
+              name: 'artifacts',
+              type: 'array',
+              label: 'Artefacts du build',
+              admin: {
+                description: 'Sorties ordonnées définies par le template du document.',
+                readOnly: true,
+              },
+              access: { create: () => false, update: () => false },
+              fields: [
+                { name: 'key', type: 'text', required: true },
+                {
+                  name: 'kind',
+                  type: 'select',
+                  required: true,
+                  options: [
+                    { label: 'PDF', value: 'pdf' },
+                    { label: 'Web', value: 'web' },
+                    { label: 'Image', value: 'image' },
+                  ],
+                },
+                { name: 'label', type: 'text', required: true },
+                { name: 'actionLabel', type: 'text', required: true },
+                { name: 'buildId', type: 'text', required: true, index: true },
+                { name: 'file', type: 'upload', relationTo: COLLECTIONS.media },
+                { name: 'url', type: 'text' },
+                { name: 'pageIndex', type: 'number', min: 0 },
+              ],
+            },
+            {
               name: 'spaUrl',
               type: 'text',
               label: 'URL de la présentation web',
@@ -608,6 +673,7 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+              access: { create: () => false, update: () => false },
             },
             {
               name: 'pdfFile',
@@ -619,6 +685,7 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+              access: { create: () => false, update: () => false },
             },
             {
               name: 'coverImage',
@@ -630,6 +697,7 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+              access: { create: () => false, update: () => false },
             },
             {
               name: 'lastBuildError',
@@ -655,6 +723,12 @@ export const Presentations: CollectionConfig = {
             {
               name: 'lastBuildToken',
               type: 'text',
+              admin: { readOnly: true, hidden: true },
+            },
+            {
+              name: 'currentMediaProductionRequest',
+              type: 'relationship',
+              relationTo: COLLECTIONS.mediaProductionRequests,
               admin: { readOnly: true, hidden: true },
             },
           ],

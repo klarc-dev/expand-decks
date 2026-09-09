@@ -11,20 +11,25 @@
  * Fast-path: if dossier.rawBrief follows the deterministic "S1 — … Sn —"
  * format (≥3 slides), the outline is parsed locally with no LLM call.
  */
-import { OUTLINE_SCHEMA } from '../../blocks/spec';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
+import {
+  assertDocumentPages,
+  documentStructuralRulesPrompt,
+  type DocumentTemplateDefinition,
+  documentTemplateSchemas,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+} from '../../documents/templates';
 import { INTENT_MAX, slideCountRangeSchema, type SlideCountRange } from '../../lib/draftConfig';
 import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
 import { languageInstruction } from '../language';
-import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
+import { buildStructureSystemPrompt } from '../prompts/catalog';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 import { researchSources } from './research';
 
 const MAX_COVERAGE_RETRIES = 2;
-
 function requestedSlideRange(brief: string): { min: number; max: number } | null {
   const match = brief.match(
     /\b(\d{1,2})\s*(?:(?:[–—-]|à|to)\s*(\d{1,2}))?\s+(?:slide|slides|diapositive|diapositives)\b/i,
@@ -36,11 +41,14 @@ function requestedSlideRange(brief: string): { min: number; max: number } | null
   return { min, max };
 }
 
-const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
+function structureInstructions(template: DocumentTemplateDefinition): string {
+  return `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
-Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la fonction pédagogique et les faits, conditions, réserves, sources ou actions que la diapositive doit rendre explicites.
+Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
 
-${STRUCTURE_SYSTEM_PROMPT}
+${buildStructureSystemPrompt(template)}
+
+${documentStructuralRulesPrompt(template)}
 
 ${RUBRIC_PROMPT}
 
@@ -58,6 +66,7 @@ Arc du deck (sparkline) :
 
 Couverture (impératif) : CHAQUE point clé du dossier doit être porté par au moins une diapositive.
 Les références/sources ne sont pas du contenu visible : ne planifie jamais une diapositive ou une intention "Sources" / "Références".`;
+}
 
 function dossierPrompt(dossier: DeckDossier): string {
   return [
@@ -83,11 +92,39 @@ function enforceOutlineEndpoints(slides: OutlineStub[]): OutlineStub[] {
   });
 }
 
-function outlineSchemaForRange(range: SlideCountRange | null) {
-  if (!range) return OUTLINE_SCHEMA;
-  return OUTLINE_SCHEMA.extend({
-    slides: OUTLINE_SCHEMA.shape.slides.min(range.min).max(range.max),
+function finalizeOutline(
+  slides: OutlineStub[],
+  template: DocumentTemplateDefinition,
+): OutlineStub[] {
+  const finalized = template.structuralRules ? slides : enforceOutlineEndpoints(slides);
+  assertDocumentPages(template, finalized);
+  return finalized;
+}
+
+function outlineSchemaForRange(
+  range: SlideCountRange | null,
+  template: DocumentTemplateDefinition,
+) {
+  const outlineSchema = documentTemplateSchemas(template).outline;
+  if (!range) return outlineSchema;
+  return outlineSchema.extend({
+    slides: outlineSchema.shape.slides.min(range.min).max(range.max),
   });
+}
+
+function structuralSlideRange(
+  requested: SlideCountRange | null,
+  template: DocumentTemplateDefinition,
+): SlideCountRange | null {
+  if (!requested) return null;
+  const min = Math.max(requested.min, template.pageCount.min);
+  const max = Math.min(requested.max, template.pageCount.max ?? requested.max);
+  if (min > max) {
+    throw new Error(
+      `Le template « ${template.id} » viole la règle de nombre total : la plage demandée ${requested.min}–${requested.max} est incompatible avec ${template.pageCount.min}–${template.pageCount.max ?? '∞'} pages.`,
+    );
+  }
+  return { min, max };
 }
 
 /**
@@ -134,11 +171,12 @@ function parseSlideBySlideBrief(brief: string): OutlineStub[] | null {
 function parseRevisionContext(
   revisionContext: string,
   revisionBrief: string,
+  template: DocumentTemplateDefinition,
 ): OutlineStub[] | null {
   try {
     const slides = JSON.parse(revisionContext);
     if (!Array.isArray(slides) || slides.length < 3) return null;
-    return OUTLINE_SCHEMA.parse({
+    return documentTemplateSchemas(template).outline.parse({
       slides: slides.map((slide, index) => {
         const targetsEveryTitle = /\b(?:titres?|titles?|tone|ton)\b/i.test(revisionBrief);
         const targetsFinalSlide =
@@ -203,10 +241,22 @@ export type StructureResult = {
   sourceFailures: SourceFailure[];
 };
 
-function revisionPrompt(revisionContext?: string, range?: SlideCountRange): string {
+function revisionChangesStructure(revisionBrief: string): boolean {
+  return /\b(?:ajout\w*|add\w*|ins[eè]r\w*|insert\w*|cr[eé]\w*|create\w*|supprim\w*|remov\w*|retir\w*|delete\w*|dupliqu\w*|duplicat\w*|fusionn\w*|merg\w*|scind\w*|split\w*|r[eé]organis\w*|reorder\w*|[eé]tend\w*|extend\w*)\b[^.!?\n]{0,100}\b(?:slides?|diapositives?|deck|pr[eé]sentation)\b/iu.test(
+    revisionBrief,
+  );
+}
+
+function revisionPrompt(
+  revisionContext?: string,
+  range?: SlideCountRange,
+  revisionBrief = '',
+): string {
   if (!revisionContext) return '';
   if (range)
     return `\n\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : tu peux fusionner ou scinder les diapositives pour respecter la plage demandée. Préserve les faits et les points couverts ; adapte l'ordre et les layouts seulement si nécessaire. Chaque intention doit expliquer le contenu à reprendre ou à répartir.`;
+  if (revisionChangesStructure(revisionBrief))
+    return `\n\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION STRUCTURELLE : exécute la demande en créant, supprimant, déplaçant, fusionnant ou scindant seulement les diapositives nécessaires. Préserve les diapositives et contenus non concernés. Si l'auteur demande des exemples, crée les diapositives supplémentaires demandées avec un titre-message et une intention qui décrivent l'exemple final destiné au public : faits, analyse et conclusion. Ne crée jamais une diapositive qui explique comment ajouter, rédiger ou construire ces exemples.`;
   return `\n\n---\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nRÈGLE DE RÉVISION : conserve exactement le nombre, l'ordre et le blockType des diapositives existantes. Conserve aussi chaque titre et intention sauf lorsque la demande de révision exige explicitement de les modifier. Ne crée, ne supprime et ne remplace aucune diapositive hors du périmètre demandé.`;
 }
 
@@ -217,15 +267,18 @@ export async function structureWithProvenance(
   revisionContext?: string,
   userId?: string,
   slideCountRange?: SlideCountRange,
+  template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
 ): Promise<StructureResult> {
-  const range = slideCountRange
+  const requestedRange = slideCountRange
     ? slideCountRangeSchema.parse(slideCountRange)
     : requestedSlideRange(dossier.rawBrief);
-  const schema = outlineSchemaForRange(range);
-  if (revisionContext) {
-    const preserved = parseRevisionContext(revisionContext, dossier.rawBrief);
-    if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success))
-      return { stubs: preserved, evidence: [], sourceFailures: [] };
+  const range = structuralSlideRange(requestedRange, template);
+  const schema = outlineSchemaForRange(range, template);
+  if (revisionContext && !revisionChangesStructure(dossier.rawBrief)) {
+    const preserved = parseRevisionContext(revisionContext, dossier.rawBrief, template);
+    if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success)) {
+      return { stubs: finalizeOutline(preserved, template), evidence: [], sourceFailures: [] };
+    }
   }
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);
   if (
@@ -234,7 +287,7 @@ export async function structureWithProvenance(
     findInformationalStyleViolations({ slides: explicit }).length === 0
   ) {
     return {
-      stubs: OUTLINE_SCHEMA.parse({ slides: explicit }).slides,
+      stubs: finalizeOutline(schema.parse({ slides: explicit }).slides, template),
       evidence: [],
       sourceFailures: [],
     };
@@ -243,14 +296,14 @@ export async function structureWithProvenance(
   const countPrompt = range
     ? `\n\nNOMBRE DE DIAPOSITIVES : génère entre ${range.min} et ${range.max} diapositives, bornes incluses (couverture, intercalaires et conclusion compris). Cette cible est prioritaire sur tout nombre indiqué ailleurs et sur la plage par défaut. Répartis les points sans remplissage ni faits inventés.`
     : '';
-  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange)}${countPrompt}`;
+  let prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange, dossier.rawBrief)}${countPrompt}`;
   const evidence: Evidence[] = [];
   const sourceFailures: SourceFailure[] = [];
 
   for (let attempt = 0; ; attempt++) {
     const generated = await generateStructured({
       name: 'structure',
-      instructions: `${STRUCTURE_INSTRUCTIONS}\n\n${languageInstruction(dossier.language)}`,
+      instructions: `${structureInstructions(template)}\n\n${languageInstruction(dossier.language)}`,
       schema,
       prompt,
       validate: findInformationalStyleViolations,
@@ -258,7 +311,7 @@ export async function structureWithProvenance(
       modelTier: 'research',
       abortSignal,
     });
-    const slides = enforceOutlineEndpoints(generated.slides);
+    const slides = finalizeOutline(generated.slides, template);
 
     const uncovered = uncoveredKeyPoints(dossier, slides);
     if (uncovered.length === 0 || attempt >= MAX_COVERAGE_RETRIES) {
@@ -281,7 +334,7 @@ export async function structureWithProvenance(
       sourceFailures.push(...research.failures);
     }
 
-    prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
+    prompt = `${dossierPrompt(dossier)}${revisionPrompt(revisionContext, slideCountRange, dossier.rawBrief)}\n\n---\nLe plan précédent NE COUVRE PAS ces points clés. Ajoute/ajuste des diapositives pour les couvrir :\n${uncovered.map((p) => `- ${p}`).join('\n')}${
       sourceNotes
         ? `\n\n---\nNOTES DE RECHERCHE (sources sélectionnées — n'utilise que le pertinent) :\n${sourceNotes}`
         : ''

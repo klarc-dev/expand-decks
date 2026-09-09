@@ -7,4 +7,5 @@ export const COLLECTIONS = {
   agentRuns: 'agent-runs',
   knowledgeBases: 'knowledge-bases',
   knowledgeDocuments: 'knowledge-documents',
+  mediaProductionRequests: 'media-production-requests',
 } as const;

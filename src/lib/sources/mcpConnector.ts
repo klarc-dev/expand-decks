@@ -191,6 +191,8 @@ function wrapTool(
   options: {
     evidenceItems?: (raw: unknown) => unknown[];
     provenance?: (raw: unknown) => EvidenceProvenance;
+    modelData?: (raw: unknown, sanitizedData: unknown) => unknown;
+    exposeSourceIdentity?: boolean;
   } = {},
 ): Tool<any, any, any, any> {
   if (!tool.execute)
@@ -256,13 +258,14 @@ function wrapTool(
           ...options.provenance?.(rawItem),
         });
         evidenceIds.push(id);
-        modelItems.push(sanitized.data);
+        modelItems.push(options.modelData?.(rawItem, sanitized.data) ?? sanitized.data);
       }
       return {
         evidenceId: evidenceIds[0],
         evidenceIds,
-        sourceId: source.id,
-        toolName: advertisedName,
+        ...(options.exposeSourceIdentity === false
+          ? {}
+          : { sourceId: source.id, toolName: advertisedName }),
         trust: 'untrusted-source-data',
         data: options.evidenceItems ? modelItems : modelItems[0],
       };
@@ -289,6 +292,15 @@ async function openOneSource(
       tools: {
         search: wrapTool(source, 'search', tool, recorder, {
           evidenceItems: (raw) => (Array.isArray(raw) ? raw : []),
+          // The knowledge document is a retrieval container, not an authority.
+          // Keep its identity in server-side evidence, but expose only its text
+          // to the model so slide footnotes can cite references found in-text
+          // without ever citing the uploaded knowledge document itself.
+          exposeSourceIdentity: false,
+          modelData: (_raw, sanitizedData) => {
+            const item = sanitizedData as { text?: unknown };
+            return { text: typeof item.text === 'string' ? item.text : '' };
+          },
           provenance: (raw) => {
             const item = raw as {
               documentId?: unknown;

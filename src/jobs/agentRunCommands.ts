@@ -9,6 +9,7 @@ import { currentDeckContext } from '../lib/currentDeckContext';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 import { slideCountRangeSchema } from '../lib/draftConfig';
+import { resolveDocumentTemplate } from '../documents/templates';
 import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
 import { configureSourceResolutionPayload } from '../lib/sources/serverContext';
@@ -258,8 +259,10 @@ async function executeWorkflow(
   const revisionBrief = revisionContext
     ? `${deckContext(presentation)}DECK EXISTANT À RÉVISER :\n${revisionContext}\n\n---\n\nDEMANDE DE RÉVISION :\n${ledger.brief}`
     : deckContext(presentation) + ledger.brief;
+  const documentTemplate = resolveDocumentTemplate(presentation.documentTemplate);
   const stream = run.stream({
     inputData: {
+      documentTemplate: documentTemplate.id,
       brief: slideCountRange
         ? `${revisionBrief}\n\nSLIDE COUNT TARGET: ${slideCountRange.min}–${slideCountRange.max} slides. This explicit range takes priority over other slide counts. Resizing is requested: merge or split slides as needed while preserving all facts.`
         : revisionBrief,

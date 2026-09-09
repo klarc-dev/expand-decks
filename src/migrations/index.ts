@@ -20,6 +20,13 @@ import * as migration_20260904_134932_simplify_knowledge_experience from './2026
 import * as migration_20260906_061027_add_knowledge_retrieval_version from './20260906_061027_add_knowledge_retrieval_version';
 import * as migration_20260906_151740_knowledge_base_organisation from './20260906_151740_knowledge_base_organisation';
 import * as migration_20260909_074031_agent_run_slide_count_range from './20260909_074031_agent_run_slide_count_range';
+import * as migration_20260909_131019_document_template_foundation from './20260909_131019_document_template_foundation';
+import * as migration_20260909_134008_generic_document_artifacts from './20260909_134008_generic_document_artifacts';
+import * as migration_20260909_140127_linkedin_carousel from './20260909_140127_linkedin_carousel';
+import * as migration_20260909_140201_issue_26_single_page_templates from './20260909_140201_issue_26_single_page_templates';
+import * as migration_20260909_140837 from './20260909_140837';
+import * as migration_20260909_141932 from './20260909_141932';
+import * as migration_20260909_163216_spec19_linkedin_image_formats from './20260909_163216_spec19_linkedin_image_formats';
 
 export const migrations = [
   {
@@ -131,5 +138,40 @@ export const migrations = [
     up: migration_20260909_074031_agent_run_slide_count_range.up,
     down: migration_20260909_074031_agent_run_slide_count_range.down,
     name: '20260909_074031_agent_run_slide_count_range',
+  },
+  {
+    up: migration_20260909_131019_document_template_foundation.up,
+    down: migration_20260909_131019_document_template_foundation.down,
+    name: '20260909_131019_document_template_foundation',
+  },
+  {
+    up: migration_20260909_134008_generic_document_artifacts.up,
+    down: migration_20260909_134008_generic_document_artifacts.down,
+    name: '20260909_134008_generic_document_artifacts',
+  },
+  {
+    up: migration_20260909_140127_linkedin_carousel.up,
+    down: migration_20260909_140127_linkedin_carousel.down,
+    name: '20260909_140127_linkedin_carousel',
+  },
+  {
+    up: migration_20260909_140201_issue_26_single_page_templates.up,
+    down: migration_20260909_140201_issue_26_single_page_templates.down,
+    name: '20260909_140201_issue_26_single_page_templates',
+  },
+  {
+    up: migration_20260909_140837.up,
+    down: migration_20260909_140837.down,
+    name: '20260909_140837',
+  },
+  {
+    up: migration_20260909_141932.up,
+    down: migration_20260909_141932.down,
+    name: '20260909_141932',
+  },
+  {
+    up: migration_20260909_163216_spec19_linkedin_image_formats.up,
+    down: migration_20260909_163216_spec19_linkedin_image_formats.down,
+    name: '20260909_163216_spec19_linkedin_image_formats',
   },
 ];

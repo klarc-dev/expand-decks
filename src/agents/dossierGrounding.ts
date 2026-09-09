@@ -56,6 +56,7 @@ export async function groundDossier(
     schema: DeckDossierSchema,
     prompt: `${authorized}\n\nDOSSIER NON FONDÉ :\n${JSON.stringify(dossier, null, 2)}\n\nAFFIRMATIONS À RETIRER OU GÉNÉRALISER :\n${verdict.unsupportedClaims.map((claim) => `- ${claim}`).join('\n')}\n\nMOTIF DE L'AUDIT : ${verdict.reason}`,
     modelTier: 'research',
+    agentRole: 'research',
     abortSignal,
   });
 }

@@ -23,6 +23,7 @@ describe('runDeckFromBrief workflow input', () => {
     expect(mocks.start).toHaveBeenCalledWith({
       inputData: {
         brief: 'A sufficiently detailed English presentation brief.',
+        documentTemplate: 'presentation',
         language: 'en',
         sourcePolicy: { mode: 'none', sourceIds: [] },
         visual: true,
@@ -55,6 +56,18 @@ describe('runDeckFromBrief workflow input', () => {
         inputData: expect.objectContaining({
           sourcePolicy: { mode: 'exclusive', sourceIds: ['docs'] },
         }),
+      }),
+    );
+  });
+
+  it('threads a non-presentation template through the common workflow', async () => {
+    await runDeckFromBrief('Un brief suffisamment détaillé pour un carrousel LinkedIn.', {
+      documentTemplate: 'linkedin-carousel',
+    });
+
+    expect(mocks.start).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputData: expect.objectContaining({ documentTemplate: 'linkedin-carousel' }),
       }),
     );
   });

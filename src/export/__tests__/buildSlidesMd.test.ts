@@ -169,6 +169,39 @@ describe('buildSlidesMd()', () => {
     expect(() => build([{ blockType: 'unknown' as never, title: 'Bad' } as never])).toThrow();
   });
 
+  it('rejects an unknown document template without falling back to presentation', () => {
+    expect(() =>
+      buildSlidesMd(
+        {
+          title: 'Bad template',
+          documentTemplate: 'unknown' as never,
+          slides: [{ blockType: 'cover', title: 'Cover' }],
+        },
+        { headmatter: HEADMATTER },
+      ),
+    ).toThrow('Template de document inconnu');
+  });
+
+  it('rejects an invalid standardized report at the canonical render boundary', () => {
+    expect(() =>
+      buildSlidesMd(
+        {
+          title: 'Invalid report',
+          documentTemplate: 'standard-report',
+          slides: [
+            { blockType: 'cover', title: 'Cover' },
+            { blockType: 'agenda', title: 'Agenda', items: [] },
+            { blockType: 'statement', title: 'One' },
+            { blockType: 'statement', title: 'Two' },
+            { blockType: 'table', title: 'Table', columns: [], rows: [] },
+            { blockType: 'cta', title: 'Close' },
+          ],
+        } as never,
+        { headmatter: HEADMATTER },
+      ),
+    ).toThrow('layout « stats »');
+  });
+
   it('rejects over-limit content before a renderer can clip or omit it', () => {
     const cards = Array.from({ length: SLIDE_LIMITS.cardGrid.cards.max + 1 }, (_, index) => ({
       number: String(index + 1),

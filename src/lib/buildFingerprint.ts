@@ -19,6 +19,7 @@ export function buildFingerprint(doc: Record<string, unknown>): string {
     footer: doc.footer ?? null,
     title: doc.title ?? '',
     language: doc.language ?? '',
+    documentTemplate: doc.documentTemplate ?? 'presentation',
   };
   return createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
 }

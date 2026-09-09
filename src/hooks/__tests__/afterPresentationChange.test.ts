@@ -39,6 +39,9 @@ describe('afterPresentationChange', () => {
       lastBuildRequestedAt: expect.any(String),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
+      spaUrl: null,
+      pdfFile: null,
+      coverImage: null,
       updatedAt: null,
     });
     expect(Date.parse(updateOne.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
@@ -94,6 +97,25 @@ describe('afterPresentationChange', () => {
     expect(updateOne).not.toHaveBeenCalled();
     expect(queue).not.toHaveBeenCalled();
   });
+
+  it('leaves producer-triggered queueing to the versioned request route', async () => {
+    const updateOne = vi.fn();
+    const queue = vi.fn();
+    const doc = { id: 'presentation-1', status: 'draft', ...base };
+
+    const result = await afterPresentationChange({
+      doc,
+      operation: 'create',
+      req: {
+        context: { [CTX.mediaProducerRequest]: true },
+        payload: { db: { updateOne }, jobs: { queue } },
+      },
+    } as never);
+
+    expect(result).toBe(doc);
+    expect(updateOne).not.toHaveBeenCalled();
+    expect(queue).not.toHaveBeenCalled();
+  });
 });
 
 describe('buildInputsChanged — rebuild fingerprint', () => {
@@ -132,5 +154,6 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
     );
     expect(buildInputsChanged({ ...base, title: 'New' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, language: 'en' }, base)).toBe(true);
+    expect(buildInputsChanged({ ...base, documentTemplate: 'other' }, base)).toBe(true);
   });
 });

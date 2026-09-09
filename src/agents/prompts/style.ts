@@ -94,7 +94,10 @@ function termPattern(term: string): RegExp {
   return new RegExp(`(^|[^a-z0-9])${tokens.join('[^a-z0-9]+')}(?=$|[^a-z0-9])`, 'i');
 }
 
-const TERM_PATTERNS = BANNED_TERMS.map((term) => ({ term, pattern: termPattern(term) }));
+const TERM_PATTERNS = BANNED_TERMS.map((term) => ({
+  term,
+  pattern: termPattern(term),
+}));
 
 const EMPTY_AI_PHRASES = [
   'analyse claire',
@@ -161,8 +164,46 @@ function visit(value: unknown, path: string[], violations: Set<string>): void {
   }
 }
 
+const META_PRODUCTION_PATTERNS = [
+  /\b(?:ajout(?:e|er|ez|ons)?|cre(?:e|er|ez|ons)?|redig(?:e|er|ez|ons)?|gener(?:e|er|ez|ons)?|inser(?:e|er|ez|ons)?|produi(?:s|re|sez|sons)?|dupliqu(?:e|er|ez|ons)?|remplac(?:e|er|ez|ons)?)\b[^.!?\n]{0,100}\b(?:slides?|diapositives?|deck|presentation)\b/iu,
+  /\b(?:add|create|write|generate|insert|produce|duplicate|replace)\b[^.!?\n]{0,100}\b(?:slides?|deck|presentation)\b/iu,
+  /\b(?:cette|la|une)\s+diapositive\s+(?:doit|devrait|peut)\b/iu,
+  /\b(?:this|the|a)\s+slide\s+(?:must|should|can)\b/iu,
+] as const;
+
+function visitFinalSlide(value: unknown, path: string[], violations: Set<string>): void {
+  if (typeof value === 'string') {
+    if (shouldSkip(path)) return;
+    const normalized = normalizeText(value);
+    if (META_PRODUCTION_PATTERNS.some((pattern) => pattern.test(normalized))) {
+      violations.add(
+        `${formatPath(path)} : métadiscours de production au lieu du contenu final destiné au public`,
+      );
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      visitFinalSlide(item, [...path, String(index)], violations);
+    }
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) {
+      visitFinalSlide(child, [...path, key], violations);
+    }
+  }
+}
+
 export function findInformationalStyleViolations(value: unknown): string[] {
   const violations = new Set<string>();
   visit(value, [], violations);
+  return [...violations];
+}
+
+/** Reject authoring instructions accidentally emitted as audience-facing slide copy. */
+export function findFinalSlideViolations(value: unknown): string[] {
+  const violations = new Set(findInformationalStyleViolations(value));
+  visitFinalSlide(value, [], violations);
   return [...violations];
 }
