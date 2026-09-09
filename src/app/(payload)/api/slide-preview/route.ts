@@ -211,7 +211,12 @@ export async function POST(req: NextRequest) {
   const formFields = Object.fromEntries(
     Object.entries(hydratedFields).map(([key, value]) => [key, { value }]),
   );
-  const chrome = buildSlidePreviewChrome(formFields, previewFieldPath, preview.hideChrome);
+  const resolvedChrome = buildSlidePreviewChrome(formFields, previewFieldPath, preview.hideChrome);
+  const chrome = {
+    ...resolvedChrome,
+    footer: template.chrome.footer ? resolvedChrome.footer : undefined,
+    logoUrl: template.chrome.logo ? resolvedChrome.logoUrl : undefined,
+  };
   const response = setPreviewResponse(cacheKey, { canvas: template.canvas, chrome, preview });
 
   return noStoreJson(response);

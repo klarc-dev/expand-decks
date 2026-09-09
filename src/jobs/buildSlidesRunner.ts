@@ -8,6 +8,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -16,9 +17,15 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import type { Payload, TaskHandlerArgs } from 'payload';
+import sharp from 'sharp';
 
-import { artifactFileIds, presentationArtifactPatch } from '../documents/artifacts';
-import { resolveDocumentTemplate } from '../documents/templates';
+import {
+  artifactFileIds,
+  presentationArtifactPatch,
+  type ArtifactOutput,
+  type ArtifactOutputs,
+} from '../documents/artifacts';
+import { resolveDocumentTemplate, templateDeclaresArtifact } from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
   buildFooterHeadmatter,
@@ -46,6 +53,7 @@ const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
 const COVER_DIR = 'cover';
+const PAGE_IMAGES_DIR = 'page-images';
 const LAYOUT_VALIDATOR = join(SLIDEV_WORKSPACE, 'validate-layout.mjs');
 
 async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string; stderr: string }> {
@@ -102,11 +110,36 @@ export function slideHasImages(block: SlideWithMedia): boolean {
 }
 
 export function firstPngPath(directory: string): string {
-  const filename = readdirSync(directory)
-    .filter((entry) => entry.toLowerCase().endsWith('.png'))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))[0];
+  const filename = pngPaths(directory)[0];
   if (!filename) throw new Error('Slidev did not generate a cover PNG');
-  return join(directory, filename);
+  return filename;
+}
+
+export function pngPaths(directory: string): string[] {
+  return readdirSync(directory)
+    .filter((entry) => entry.toLowerCase().endsWith('.png'))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    .map((filename) => join(directory, filename));
+}
+
+export async function assertPageImages(
+  files: string[],
+  expected: { count: number; width: number; height: number },
+): Promise<void> {
+  if (files.length !== expected.count) {
+    throw new Error(`Slidev a produit ${files.length} images pour ${expected.count} pages.`);
+  }
+  for (const [index, file] of files.entries()) {
+    const metadata = await sharp(file).metadata();
+    if (metadata.width !== expected.width || metadata.height !== expected.height) {
+      throw new Error(
+        `L’image de la page ${index + 1} mesure ${metadata.width ?? '?'}×${metadata.height ?? '?'} au lieu de ${expected.width}×${expected.height}.`,
+      );
+    }
+    if (statSync(file).size === 0) {
+      throw new Error(`L’image de la page ${index + 1} est vide.`);
+    }
+  }
 }
 
 // Exported for the staging contract test. The symlinked `node_modules`
@@ -209,10 +242,11 @@ export async function preflightPresentationLayout(
       })
     : null;
   const brand = org as (OrgBrand & Record<string, unknown>) | null;
-  const footer = candidate.footer ?? undefined;
+  const template = resolveDocumentTemplate(candidate.documentTemplate);
+  const footer = template.chrome.footer ? (candidate.footer ?? undefined) : { enabled: false };
   const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
   const logoUrl =
-    logoRel && typeof logoRel === 'object' && logoRel.filename
+    template.chrome.logo && logoRel && typeof logoRel === 'object' && logoRel.filename
       ? `/media/${logoRel.filename}`
       : null;
   const language = candidate.language === 'en' ? 'en' : 'fr';
@@ -341,10 +375,12 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       depth: 2,
     });
 
-    const footer = (presentation as { footer?: Partial<FooterConfig> }).footer;
+    const footer = template.chrome.footer
+      ? (presentation as { footer?: Partial<FooterConfig> }).footer
+      : { enabled: false };
     const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
     const logoUrl =
-      logoRel && typeof logoRel === 'object' && logoRel.filename
+      template.chrome.logo && logoRel && typeof logoRel === 'object' && logoRel.filename
         ? `/media/${logoRel.filename}`
         : null;
 
@@ -409,11 +445,13 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     // Mermaid/image settling, and range/per-slide options needed by PNG exports.
     await runSlidev(['build', '--base', './'], workdir);
     await validateSlideLayout(workdir, slides.length);
-    await runSlidev(
-      buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
-      workdir,
-    );
-    if (slides.length > 0) {
+    if (templateDeclaresArtifact(template, 'pdf')) {
+      await runSlidev(
+        buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
+        workdir,
+      );
+    }
+    if (slides.length > 0 && templateDeclaresArtifact(template, 'cover-image')) {
       await runSlidev(
         buildSlidevExportArgs({
           output: COVER_DIR,
@@ -425,6 +463,23 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         }),
         workdir,
       );
+    }
+    if (slides.length > 0 && templateDeclaresArtifact(template, 'page-image')) {
+      await runSlidev(
+        buildSlidevExportArgs({
+          output: PAGE_IMAGES_DIR,
+          format: 'png',
+          hasMermaid,
+          hasImages,
+          perSlide: true,
+        }),
+        workdir,
+      );
+      await assertPageImages(pngPaths(join(workdir, PAGE_IMAGES_DIR)), {
+        count: slides.length,
+        width: template.canvas.width,
+        height: template.canvas.height,
+      });
     }
 
     const latest = await req.payload.findByID({
@@ -442,23 +497,22 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       return { output: { success: false, skipped: 'stale' } };
     }
 
-    let coverMediaId: unknown = null;
-
-    const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
-    const pdfMedia = await req.payload.create({
-      collection: COLLECTIONS.media,
-      data: {
-        alt: `${presentation.title} — PDF`,
-        presentation: Number(presentationId),
-      },
-      file: {
-        data: pdfBuffer,
-        mimetype: 'application/pdf',
-        name: `${randomUUID()}.pdf`,
-        size: pdfBuffer.byteLength,
-      },
-    });
-    if (slides.length > 0) {
+    const outputs: ArtifactOutputs = {};
+    if (templateDeclaresArtifact(template, 'pdf')) {
+      const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
+      const pdfMedia = await req.payload.create({
+        collection: COLLECTIONS.media,
+        data: { alt: `${presentation.title} — PDF`, presentation: Number(presentationId) },
+        file: {
+          data: pdfBuffer,
+          mimetype: 'application/pdf',
+          name: `${randomUUID()}.pdf`,
+          size: pdfBuffer.byteLength,
+        },
+      });
+      outputs.pdf = { file: pdfMedia.id as number | string };
+    }
+    if (slides.length > 0 && templateDeclaresArtifact(template, 'cover-image')) {
       const coverBuffer = readFileSync(firstPngPath(join(workdir, COVER_DIR)));
       const coverMedia = await req.payload.create({
         collection: COLLECTIONS.media,
@@ -473,22 +527,37 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           size: coverBuffer.byteLength,
         },
       });
-      coverMediaId = coverMedia.id;
+      outputs['cover-image'] = { file: coverMedia.id as number | string };
+    }
+    if (slides.length > 0 && templateDeclaresArtifact(template, 'page-image')) {
+      const pageImageOutputs: ArtifactOutput[] = [];
+      for (const [pageIndex, file] of pngPaths(join(workdir, PAGE_IMAGES_DIR)).entries()) {
+        const buffer = readFileSync(file);
+        const media = await req.payload.create({
+          collection: COLLECTIONS.media,
+          data: {
+            alt: `${presentation.title} — page ${pageIndex + 1}`,
+            presentation: Number(presentationId),
+          },
+          file: {
+            data: buffer,
+            mimetype: 'image/png',
+            name: `${randomUUID()}.png`,
+            size: buffer.byteLength,
+          },
+        });
+        pageImageOutputs.push({ file: media.id as number | string });
+      }
+      outputs['page-image'] = pageImageOutputs;
     }
 
-    const spaTargetDir = spaDir(slug);
-    rmSync(spaTargetDir, { recursive: true, force: true });
-    cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
-    const artifactPatch = presentationArtifactPatch(
-      template,
-      buildId,
-      {
-        pdf: { file: pdfMedia.id as number | string },
-        'web-presentation': { url: spaUrl(slug) },
-        ...(coverMediaId ? { 'cover-image': { file: coverMediaId as number | string } } : {}),
-      },
-      slides.length,
-    );
+    if (templateDeclaresArtifact(template, 'web-presentation')) {
+      const spaTargetDir = spaDir(slug);
+      rmSync(spaTargetDir, { recursive: true, force: true });
+      cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
+      outputs['web-presentation'] = { url: spaUrl(slug) };
+    }
+    const artifactPatch = presentationArtifactPatch(template, buildId, outputs, slides.length);
     const patchData: Record<string, unknown> = {
       lastBuildStatus: BUILD_STATUS.success,
       lastBuildError: '',

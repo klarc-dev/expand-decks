@@ -35,6 +35,8 @@ On te donne : le dossier (contexte resserré), le blockType et le title imposés
 
 ${buildWriterLayoutPrompt(blockType, template)}
 
+Contraintes du support : ${template.agent.guidance}
+
 ${RUBRIC_PROMPT}
 
 ${languageInstruction(dossier.language)}

@@ -10,7 +10,8 @@ import {
 import { MAX_SLIDES, MIN_SLIDES } from '../lib/draftConfig';
 import { PRESENTATION_CANVAS } from './presentationContract';
 
-const DOCUMENT_TEMPLATE_IDS = {
+export const DOCUMENT_TEMPLATE_IDS = {
+  linkedinCarousel: 'linkedin-carousel',
   presentation: 'presentation',
 } as const;
 
@@ -27,6 +28,7 @@ export type DocumentArtifactDefinition = {
   location: DocumentArtifactLocation;
   requiredWhen: 'always' | 'has-pages';
   pageIndex?: number;
+  repeat?: 'per-page';
 };
 
 export type DocumentTemplateDefinition = {
@@ -101,7 +103,57 @@ const PRESENTATION_TEMPLATE = {
   },
 } as const satisfies DocumentTemplateDefinition;
 
-export const DOCUMENT_TEMPLATES = [PRESENTATION_TEMPLATE] as const;
+const LINKEDIN_CAROUSEL_TEMPLATE = {
+  id: DOCUMENT_TEMPLATE_IDS.linkedinCarousel,
+  label: 'Carrousel LinkedIn 4:5',
+  canvas: {
+    width: 1080,
+    height: 1350,
+    aspectRatio: '4/5',
+    orientation: 'portrait',
+  },
+  allowedLayouts: [
+    'cover',
+    'statement',
+    'twoCols',
+    'cardGrid',
+    'stats',
+    'quotes',
+    'timeline',
+    'cta',
+  ],
+  pageCount: { min: 2, max: 20 },
+  chrome: {
+    footer: false,
+    logo: false,
+    pageNumbers: false,
+  },
+  artifacts: [
+    {
+      key: 'page-image',
+      kind: 'image',
+      label: 'Image de page',
+      actionLabel: 'Télécharger la page',
+      location: 'file',
+      requiredWhen: 'has-pages',
+      repeat: 'per-page',
+    },
+  ],
+  primaryArtifact: 'page-image',
+  agent: {
+    guidance:
+      'Compose un carrousel LinkedIn très concis : une idée principale par page, accroche immédiate, progression autonome au balayage et appel à l’action final. Réduis nettement la densité de texte par rapport à une présentation.',
+    pageCount: { min: 2, max: 20 },
+  },
+} as const satisfies DocumentTemplateDefinition;
+
+export const DOCUMENT_TEMPLATES = [PRESENTATION_TEMPLATE, LINKEDIN_CAROUSEL_TEMPLATE] as const;
+export const DOCUMENT_TEMPLATE_ID_SCHEMA = z.enum(
+  DOCUMENT_TEMPLATES.map((template) => template.id) as [
+    DocumentTemplateId,
+    ...DocumentTemplateId[],
+  ],
+);
 
 const TEMPLATE_BY_ID = new Map(DOCUMENT_TEMPLATES.map((template) => [template.id, template]));
 const SCHEMAS_BY_TEMPLATE = new WeakMap<
@@ -146,6 +198,13 @@ export function specsForDocumentTemplate(template: DocumentTemplateDefinition): 
     );
   }
   return specs;
+}
+
+export function templateDeclaresArtifact(
+  template: DocumentTemplateDefinition,
+  artifactKey: string,
+): boolean {
+  return template.artifacts.some((artifact) => artifact.key === artifactKey);
 }
 
 export function documentTemplateSchemas(template: DocumentTemplateDefinition) {
@@ -232,3 +291,4 @@ export function applyDocumentCanvasToHeadmatter(
 }
 
 export const PRESENTATION_DOCUMENT_TEMPLATE = PRESENTATION_TEMPLATE;
+export const LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE = LINKEDIN_CAROUSEL_TEMPLATE;

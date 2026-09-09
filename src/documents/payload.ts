@@ -27,7 +27,5 @@ export const documentTemplateField: SelectField = {
   },
   admin: {
     description: 'Format fixe qui définit le canvas, les layouts et les sorties.',
-    hidden: DOCUMENT_TEMPLATES.length === 1,
-    readOnly: DOCUMENT_TEMPLATES.length === 1,
   },
 };

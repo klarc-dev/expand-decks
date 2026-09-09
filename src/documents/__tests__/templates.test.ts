@@ -6,6 +6,7 @@ import {
   assertDocumentPages,
   DOCUMENT_TEMPLATES,
   documentTemplateSchemas,
+  LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE,
   PRESENTATION_DOCUMENT_TEMPLATE,
   resolveDocumentTemplate,
   type DocumentTemplateDefinition,
@@ -15,7 +16,7 @@ const minimalCover = { blockType: 'cover', title: 'Cover' };
 
 describe('document template registry', () => {
   it('defines presentation behavior from one canonical contract', () => {
-    expect(DOCUMENT_TEMPLATES).toHaveLength(1);
+    expect(DOCUMENT_TEMPLATES).toHaveLength(2);
     expect(PRESENTATION_DOCUMENT_TEMPLATE).toMatchObject({
       id: 'presentation',
       label: 'Présentation 16:9',
@@ -33,6 +34,47 @@ describe('document template registry', () => {
     expect(PRESENTATION_DOCUMENT_TEMPLATE.allowedLayouts).toEqual(
       ALL_SPECS.map((spec) => spec.blockType),
     );
+  });
+
+  it('defines the LinkedIn carousel as a portrait, image-per-page document', () => {
+    expect(LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE).toMatchObject({
+      id: 'linkedin-carousel',
+      canvas: { width: 1080, height: 1350, aspectRatio: '4/5', orientation: 'portrait' },
+      pageCount: { min: 2, max: 20 },
+      chrome: { footer: false, logo: false, pageNumbers: false },
+      artifacts: [
+        expect.objectContaining({
+          key: 'page-image',
+          kind: 'image',
+          location: 'file',
+          repeat: 'per-page',
+        }),
+      ],
+      primaryArtifact: 'page-image',
+      agent: { pageCount: { min: 2, max: 20 } },
+    });
+    expect(LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE.allowedLayouts).toEqual([
+      'cover',
+      'statement',
+      'twoCols',
+      'cardGrid',
+      'stats',
+      'quotes',
+      'timeline',
+      'cta',
+    ]);
+  });
+
+  it('rejects carousel page-count and layout violations before rendering', () => {
+    expect(() => assertDocumentPages(LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE, [minimalCover])).toThrow(
+      'entre 2 et 20 pages',
+    );
+    expect(() =>
+      assertDocumentPages(LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE, [
+        minimalCover,
+        { blockType: 'table', title: 'Too dense' },
+      ]),
+    ).toThrow('page 2');
   });
 
   it('maps missing legacy values to presentation but rejects explicit unknown values', () => {

@@ -59,4 +59,16 @@ describe('runDeckFromBrief workflow input', () => {
       }),
     );
   });
+
+  it('threads a non-presentation template through the common workflow', async () => {
+    await runDeckFromBrief('Un brief suffisamment détaillé pour un carrousel LinkedIn.', {
+      documentTemplate: 'linkedin-carousel',
+    });
+
+    expect(mocks.start).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputData: expect.objectContaining({ documentTemplate: 'linkedin-carousel' }),
+      }),
+    );
+  });
 });

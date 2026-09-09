@@ -151,6 +151,34 @@ describe('POST /api/slide-preview hydration + access', () => {
     });
   });
 
+  it('returns the carousel canvas and suppresses presentation chrome', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockImplementation(async ({ collection }: { collection: string }) =>
+      collection === 'presentations'
+        ? { id: 'p1', documentTemplate: 'linkedin-carousel' }
+        : { id: 1, name: 'Klarc', logo: { filename: 'logo.png' } },
+    );
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Portrait' },
+        fields: {
+          organisation: 1,
+          'footer.enabled': true,
+          'footer.left': 'Klarc',
+        },
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.canvas).toMatchObject({ width: 1080, height: 1350, aspectRatio: '4/5' });
+    expect(body.chrome).not.toHaveProperty('footer');
+    expect(body.chrome).not.toHaveProperty('logoUrl');
+  });
+
   it('fails explicitly when the persisted template is unknown', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
     findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'unknown' });

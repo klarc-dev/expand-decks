@@ -30,6 +30,7 @@ import { z } from 'zod';
 
 import {
   documentTemplateSchemas,
+  DOCUMENT_TEMPLATE_ID_SCHEMA,
   PRESENTATION_DOCUMENT_TEMPLATE,
   resolveDocumentTemplate,
   type DocumentTemplateId,
@@ -126,7 +127,7 @@ const writerJob = z.object({
   dossier: dossierT,
   allTitles: z.array(z.string()),
   revisionContext: z.string().optional(),
-  documentTemplate: z.literal('presentation'),
+  documentTemplate: DOCUMENT_TEMPLATE_ID_SCHEMA,
 });
 
 // ── steps (step id === phase name; the route maps payload.stepName → status) ──
@@ -436,7 +437,7 @@ const assembleStep = createStep({
 // ── workflow input/output ────────────────────────────────────────────────────
 
 const InputSchema = z.object({
-  documentTemplate: z.literal('presentation').optional(),
+  documentTemplate: DOCUMENT_TEMPLATE_ID_SCHEMA.optional(),
   brief: z.string(),
   language: z.enum(['fr', 'en']),
   title: z.string().optional(),

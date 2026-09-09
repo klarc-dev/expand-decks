@@ -14,6 +14,10 @@ export type DocumentArtifact = {
 };
 
 export type ArtifactOutput = { file: ArtifactFile } | { url: string };
+export type ArtifactOutputs = Record<
+  string,
+  ArtifactOutput | readonly ArtifactOutput[] | undefined
+>;
 
 export class MissingPrimaryArtifactError extends Error {
   constructor(templateId: string, artifactKey: string, buildId?: string | null) {
@@ -38,11 +42,27 @@ export class MissingExpectedArtifactError extends Error {
 export function artifactsForBuild(
   template: DocumentTemplateDefinition,
   buildId: string,
-  outputs: Record<string, ArtifactOutput | undefined>,
+  outputs: ArtifactOutputs,
   options: { pageCount?: number } = {},
 ): DocumentArtifact[] {
   return template.artifacts.flatMap((definition) => {
     const output = outputs[definition.key];
+    if (definition.repeat === 'per-page') {
+      const pageOutputs = Array.isArray(output) ? output : output ? [output] : [];
+      const pageCount = options.pageCount ?? pageOutputs.length;
+      if (pageOutputs.length !== pageCount) {
+        throw new MissingExpectedArtifactError(template.id, definition.key);
+      }
+      return pageOutputs.map((pageOutput, pageIndex) => ({
+        key: definition.key,
+        kind: definition.kind,
+        label: `${definition.label} ${pageIndex + 1}`,
+        actionLabel: `${definition.actionLabel} ${pageIndex + 1}`,
+        buildId,
+        ...pageOutput,
+        pageIndex,
+      }));
+    }
     if (!output) {
       if (definition.requiredWhen === 'always' || (options.pageCount ?? 1) > 0) {
         throw new MissingExpectedArtifactError(template.id, definition.key);
@@ -56,7 +76,7 @@ export function artifactsForBuild(
         label: definition.label,
         actionLabel: definition.actionLabel,
         buildId,
-        ...output,
+        ...(output as ArtifactOutput),
         ...(definition.pageIndex === undefined ? {} : { pageIndex: definition.pageIndex }),
       },
     ];
@@ -148,7 +168,7 @@ export function projectLegacyPresentationArtifacts(
 export function presentationArtifactPatch(
   template: DocumentTemplateDefinition,
   buildId: string,
-  outputs: Record<string, ArtifactOutput | undefined>,
+  outputs: ArtifactOutputs,
   pageCount: number,
 ) {
   const artifacts = artifactsForBuild(template, buildId, outputs, { pageCount });

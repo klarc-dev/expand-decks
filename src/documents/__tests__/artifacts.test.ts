@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PRESENTATION_DOCUMENT_TEMPLATE } from '../templates';
+import { LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE, PRESENTATION_DOCUMENT_TEMPLATE } from '../templates';
 import {
   artifactsForBuild,
   availableArtifactLinks,
@@ -151,5 +151,31 @@ describe('document artifacts', () => {
       spaUrl: '/spa/deck/index.html',
       coverImage: 12,
     });
+  });
+
+  it('persists one ordered carousel image artifact per page', () => {
+    const artifacts = artifactsForBuild(
+      LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE,
+      'carousel-build',
+      {
+        'page-image': [
+          { file: { id: 21, url: '/media/page-1.png' } },
+          { file: { id: 22, url: '/media/page-2.png' } },
+          { file: { id: 23, url: '/media/page-3.png' } },
+        ],
+      },
+      { pageCount: 3 },
+    );
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({ key: 'page-image', pageIndex: 0 }),
+      expect.objectContaining({ key: 'page-image', pageIndex: 1 }),
+      expect.objectContaining({ key: 'page-image', pageIndex: 2 }),
+    ]);
+    expect(availableArtifactLinks({ artifacts, lastBuildToken: 'carousel-build' })).toEqual([
+      { key: 'page-image', href: '/media/page-1.png', label: 'Télécharger la page 1' },
+      { key: 'page-image', href: '/media/page-2.png', label: 'Télécharger la page 2' },
+      { key: 'page-image', href: '/media/page-3.png', label: 'Télécharger la page 3' },
+    ]);
   });
 });

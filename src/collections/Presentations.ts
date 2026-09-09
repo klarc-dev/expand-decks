@@ -261,6 +261,12 @@ export const Presentations: CollectionConfig = {
         const pages = Object.hasOwn(record, 'slides') ? record.slides : previous?.slides;
         if (pages !== undefined) assertDocumentPages(template, pages);
         record.documentTemplate = template.id;
+        if (!template.chrome.footer) {
+          record.footer = {
+            ...((record.footer as Record<string, unknown> | undefined) ?? {}),
+            enabled: false,
+          };
+        }
         return data;
       },
       // Standardized footer: no free text. Whatever the client submits (admin
@@ -531,6 +537,8 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description:
                   'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche, {page} / {total} à droite.',
+                condition: (_data, siblingData) =>
+                  resolveDocumentTemplate(siblingData?.documentTemplate).chrome.footer,
               },
               fields: [
                 {
