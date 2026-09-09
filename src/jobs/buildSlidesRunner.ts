@@ -549,7 +549,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         pageImageOutputs.push({ file: media.id as number | string });
       }
       outputs['page-image'] = template.artifacts.some(
-        (artifact) => artifact.key === 'page-image' && artifact.repeat === 'per-page',
+        (artifact) => artifact.key === 'page-image' && 'repeat' in artifact,
       )
         ? pageImageOutputs
         : pageImageOutputs[0];
