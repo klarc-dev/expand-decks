@@ -227,6 +227,38 @@ describe('writeSlide invariants', () => {
     expect(mocked).not.toHaveBeenCalled();
   });
 
+  it('returns the exact embedded slide when preserved slides share a title and layout', async () => {
+    const first = {
+      blockType: 'statement',
+      title: stub.title,
+      eyebrow: 'First',
+      body: 'First body',
+      footer: '',
+      variant: 'big-statement',
+    };
+    const second = {
+      blockType: 'statement',
+      title: stub.title,
+      eyebrow: 'Second',
+      body: 'Second body',
+      footer: '',
+      variant: 'split',
+    };
+
+    const out = await writeSlide(
+      {
+        ...stub,
+        intent: `Préserve intégralement cette diapositive uniquement selon la demande de révision. Contenu existant : ${JSON.stringify(second)}`,
+      },
+      dossier,
+      [],
+      JSON.stringify([first, second]),
+    );
+
+    expect(out).toEqual(second);
+    expect(mocked).not.toHaveBeenCalled();
+  });
+
   it('allows a targeted revision to change the title while preserving the block type', async () => {
     mocked.mockResolvedValue({
       blockType: 'cover',
