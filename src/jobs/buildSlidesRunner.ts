@@ -17,6 +17,8 @@ import { promisify } from 'node:util';
 
 import type { Payload, TaskHandlerArgs } from 'payload';
 
+import { artifactFileIds, presentationArtifactPatch } from '../documents/artifacts';
+import { resolveDocumentTemplate } from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
   buildFooterHeadmatter,
@@ -291,17 +293,26 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       return { output: { success: false, skipped: 'stale' } };
     }
 
+    const buildId =
+      buildToken ?? (presentation as { lastBuildToken?: string }).lastBuildToken ?? randomUUID();
+
     await patchPresentationBuildMetadata(req.payload, presentationId, {
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
+      lastBuildToken: buildId,
+      spaUrl: null,
+      pdfFile: null,
+      coverImage: null,
     });
     const initialFingerprint = buildFingerprint(presentation as unknown as Record<string, unknown>);
-    const previousPdfId =
-      typeof presentation.pdfFile === 'object' ? presentation.pdfFile?.id : presentation.pdfFile;
-    const previousCoverId =
-      typeof presentation.coverImage === 'object'
-        ? presentation.coverImage?.id
-        : presentation.coverImage;
+    const previousArtifactFileIds = artifactFileIds([
+      ...(((presentation as { artifacts?: unknown }).artifacts as unknown[]) ?? []),
+      { file: presentation.pdfFile },
+      { file: presentation.coverImage },
+    ]);
+    const template = resolveDocumentTemplate(
+      (presentation as { documentTemplate?: unknown }).documentTemplate,
+    );
 
     const slug = presentation.slug as string;
     if (!SLUG_RE.test(slug)) {
@@ -422,7 +433,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       depth: 0,
     });
     if (
-      (buildToken && (latest as { lastBuildToken?: string }).lastBuildToken !== buildToken) ||
+      (latest as { lastBuildToken?: string }).lastBuildToken !== buildId ||
       buildFingerprint(latest as unknown as Record<string, unknown>) !== initialFingerprint
     ) {
       req.payload.logger.info(
@@ -431,11 +442,6 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       return { output: { success: false, skipped: 'stale' } };
     }
 
-    const patchData: Record<string, unknown> = {
-      lastBuildStatus: BUILD_STATUS.success,
-      lastBuildError: '',
-    };
-    let pdfMediaId: unknown = null;
     let coverMediaId: unknown = null;
 
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
@@ -452,9 +458,6 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         size: pdfBuffer.byteLength,
       },
     });
-    pdfMediaId = pdfMedia.id;
-    patchData.pdfFile = pdfMedia.id;
-
     if (slides.length > 0) {
       const coverBuffer = readFileSync(firstPngPath(join(workdir, COVER_DIR)));
       const coverMedia = await req.payload.create({
@@ -471,39 +474,40 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
         },
       });
       coverMediaId = coverMedia.id;
-      patchData.coverImage = coverMedia.id;
-    } else {
-      patchData.coverImage = null;
     }
 
     const spaTargetDir = spaDir(slug);
     rmSync(spaTargetDir, { recursive: true, force: true });
     cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
-    patchData.spaUrl = spaUrl(slug);
+    const artifactPatch = presentationArtifactPatch(
+      template,
+      buildId,
+      {
+        pdf: { file: pdfMedia.id as number | string },
+        'web-presentation': { url: spaUrl(slug) },
+        ...(coverMediaId ? { 'cover-image': { file: coverMediaId as number | string } } : {}),
+      },
+      slides.length,
+    );
+    const patchData: Record<string, unknown> = {
+      lastBuildStatus: BUILD_STATUS.success,
+      lastBuildError: '',
+      ...artifactPatch,
+    };
 
     await patchPresentationBuildMetadata(req.payload, presentationId, patchData);
 
-    if (previousPdfId && previousPdfId !== pdfMediaId) {
+    const currentArtifactFileIds = new Set(artifactFileIds(artifactPatch.artifacts));
+    for (const previousFileId of previousArtifactFileIds) {
+      if (currentArtifactFileIds.has(previousFileId)) continue;
       await req.payload
         .delete({
           collection: COLLECTIONS.media,
-          id: previousPdfId,
+          id: previousFileId,
           overrideAccess: true,
         })
         .catch((err) =>
-          req.payload.logger.warn(`Failed to delete old PDF ${previousPdfId}: ${err}`),
-        );
-    }
-
-    if (previousCoverId && previousCoverId !== coverMediaId) {
-      await req.payload
-        .delete({
-          collection: COLLECTIONS.media,
-          id: previousCoverId,
-          overrideAccess: true,
-        })
-        .catch((err) =>
-          req.payload.logger.warn(`Failed to delete old cover ${previousCoverId}: ${err}`),
+          req.payload.logger.warn(`Failed to delete old artifact ${previousFileId}: ${err}`),
         );
     }
 

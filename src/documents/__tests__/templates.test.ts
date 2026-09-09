@@ -22,7 +22,11 @@ describe('document template registry', () => {
       canvas: { width: 1280, height: 720, aspectRatio: '16/9', orientation: 'landscape' },
       pageCount: { min: 0, max: null },
       chrome: { footer: true, logo: true, pageNumbers: true },
-      artifacts: ['pdf', 'web-presentation', 'cover-image'],
+      artifacts: [
+        expect.objectContaining({ key: 'pdf', kind: 'pdf', location: 'file' }),
+        expect.objectContaining({ key: 'web-presentation', kind: 'web', location: 'url' }),
+        expect.objectContaining({ key: 'cover-image', kind: 'image', pageIndex: 0 }),
+      ],
       primaryArtifact: 'web-presentation',
       agent: { pageCount: { min: 3, max: 40 } },
     });

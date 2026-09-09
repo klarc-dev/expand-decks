@@ -4,18 +4,17 @@ import React, { useEffect } from 'react';
 import { Pill, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
 import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
+import { availableArtifactLinks, type DocumentArtifact } from '@/documents/artifacts';
 import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
 
 import './BuildStatusField.scss';
 
-type MediaRef = number | { id?: number; url?: string | null; filename?: string | null } | null;
-
 type BuildInfo = {
   lastBuildStatus?: BuildStatus | null;
-  spaUrl?: string | null;
+  lastBuildToken?: string | null;
   lastBuildError?: string | null;
   lastBuildRequestedAt?: string | null;
-  pdfFile?: MediaRef;
+  artifacts?: DocumentArtifact[] | null;
 };
 
 type BuildStatusPillStyle = 'error' | 'light-gray' | 'success' | 'warning';
@@ -40,11 +39,6 @@ const BUILDING_POLL_MS = 2000;
 // window the field keeps polling even on a terminal status so authors see the
 // transition without a manual refresh.
 const RECENT_REQUEST_MS = 90_000;
-
-function pdfUrl(pdf: MediaRef | undefined): string | null {
-  if (pdf && typeof pdf === 'object' && typeof pdf.url === 'string') return pdf.url;
-  return null;
-}
 
 function formatRequestedAt(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -123,7 +117,7 @@ function BuildErrorNotice({ error }: { error: string }) {
 
 const BuildStatusField: React.FC = () => {
   const { id } = useDocumentInfo();
-  // depth:1 populates pdfFile so the artifact link reflects the latest build
+  // depth:1 populates artifact files so links reflect the active build
   // without a full document reload.
   const [{ data }, { setParams }] = usePayloadAPI(id ? `/api/presentations/${id}` : '', {
     initialParams: { depth: 1 },
@@ -158,14 +152,8 @@ const BuildStatusField: React.FC = () => {
 
   const meta = STATUS_LABELS[status] ?? STATUS_LABELS[BUILD_STATUS.idle]!;
   const requestedAtLabel = formatRequestedAt(info.lastBuildRequestedAt);
-  const pdf = pdfUrl(info.pdfFile);
   const artifacts: BuildArtifact[] =
-    status === BUILD_STATUS.success
-      ? [
-          ...(info.spaUrl ? [{ href: info.spaUrl, label: 'Ouvrir la présentation web' }] : []),
-          ...(pdf ? [{ href: pdf, label: 'Télécharger le PDF' }] : []),
-        ]
-      : [];
+    status === BUILD_STATUS.success ? availableArtifactLinks(info) : [];
 
   return (
     <AdminPanel className="build-status">

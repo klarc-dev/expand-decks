@@ -16,7 +16,18 @@ const DOCUMENT_TEMPLATE_IDS = {
 
 export type DocumentTemplateId = (typeof DOCUMENT_TEMPLATE_IDS)[keyof typeof DOCUMENT_TEMPLATE_IDS];
 
-export type DocumentArtifactKind = 'pdf' | 'web-presentation' | 'cover-image';
+export type DocumentArtifactKind = 'pdf' | 'web' | 'image';
+export type DocumentArtifactLocation = 'file' | 'url';
+
+export type DocumentArtifactDefinition = {
+  key: string;
+  kind: DocumentArtifactKind;
+  label: string;
+  actionLabel: string;
+  location: DocumentArtifactLocation;
+  requiredWhen: 'always' | 'has-pages';
+  pageIndex?: number;
+};
 
 export type DocumentTemplateDefinition = {
   id: DocumentTemplateId;
@@ -34,8 +45,8 @@ export type DocumentTemplateDefinition = {
     logo: boolean;
     pageNumbers: boolean;
   };
-  artifacts: readonly DocumentArtifactKind[];
-  primaryArtifact: DocumentArtifactKind;
+  artifacts: readonly DocumentArtifactDefinition[];
+  primaryArtifact: string;
   agent: {
     guidance: string;
     pageCount: { min: number; max: number };
@@ -55,7 +66,33 @@ const PRESENTATION_TEMPLATE = {
     logo: true,
     pageNumbers: true,
   },
-  artifacts: ['pdf', 'web-presentation', 'cover-image'],
+  artifacts: [
+    {
+      key: 'pdf',
+      kind: 'pdf',
+      label: 'PDF',
+      actionLabel: 'Télécharger le PDF',
+      location: 'file',
+      requiredWhen: 'always',
+    },
+    {
+      key: 'web-presentation',
+      kind: 'web',
+      label: 'Présentation web',
+      actionLabel: 'Ouvrir la présentation web',
+      location: 'url',
+      requiredWhen: 'always',
+    },
+    {
+      key: 'cover-image',
+      kind: 'image',
+      label: 'Image de couverture',
+      actionLabel: 'Ouvrir l’image de couverture',
+      location: 'file',
+      requiredWhen: 'has-pages',
+      pageIndex: 0,
+    },
+  ],
   primaryArtifact: 'web-presentation',
   agent: {
     guidance:

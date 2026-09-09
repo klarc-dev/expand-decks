@@ -21,6 +21,7 @@ import * as migration_20260906_061027_add_knowledge_retrieval_version from './20
 import * as migration_20260906_151740_knowledge_base_organisation from './20260906_151740_knowledge_base_organisation';
 import * as migration_20260909_074031_agent_run_slide_count_range from './20260909_074031_agent_run_slide_count_range';
 import * as migration_20260909_131019_document_template_foundation from './20260909_131019_document_template_foundation';
+import * as migration_20260909_134008_generic_document_artifacts from './20260909_134008_generic_document_artifacts';
 
 export const migrations = [
   {
@@ -137,5 +138,10 @@ export const migrations = [
     up: migration_20260909_131019_document_template_foundation.up,
     down: migration_20260909_131019_document_template_foundation.down,
     name: '20260909_131019_document_template_foundation',
+  },
+  {
+    up: migration_20260909_134008_generic_document_artifacts.up,
+    down: migration_20260909_134008_generic_document_artifacts.down,
+    name: '20260909_134008_generic_document_artifacts',
   },
 ];

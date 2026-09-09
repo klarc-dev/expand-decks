@@ -31,6 +31,9 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
       lastBuildRequestedAt: new Date().toISOString(),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
+      spaUrl: null,
+      pdfFile: null,
+      coverImage: null,
     },
     req,
   );

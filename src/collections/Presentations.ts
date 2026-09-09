@@ -18,6 +18,7 @@ import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
 import { documentTemplateField, payloadBlocksForTemplate } from '../documents/payload';
+import { resolvePrimaryArtifactHref } from '../documents/artifacts';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
@@ -63,7 +64,11 @@ export const Presentations: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
-    preview: (data) => (typeof data.spaUrl === 'string' && data.spaUrl ? data.spaUrl : null),
+    preview: (data) => {
+      if (data.lastBuildStatus !== BUILD_STATUS.success) return null;
+      const template = resolveDocumentTemplate(data.documentTemplate);
+      return resolvePrimaryArtifactHref(template, data);
+    },
     components: {
       edit: {
         editMenuItems: ['/components/ExportMenuItem#default'],
@@ -147,6 +152,9 @@ export const Presentations: CollectionConfig = {
               lastBuildToken: buildToken,
               lastBuildStatus: BUILD_STATUS.building,
               lastBuildError: '',
+              spaUrl: null,
+              pdfFile: null,
+              coverImage: null,
             },
             req,
           );
@@ -592,6 +600,35 @@ export const Presentations: CollectionConfig = {
               ],
             },
             {
+              name: 'artifacts',
+              type: 'array',
+              label: 'Artefacts du build',
+              admin: {
+                description: 'Sorties ordonnées définies par le template du document.',
+                readOnly: true,
+              },
+              access: { create: () => false, update: () => false },
+              fields: [
+                { name: 'key', type: 'text', required: true },
+                {
+                  name: 'kind',
+                  type: 'select',
+                  required: true,
+                  options: [
+                    { label: 'PDF', value: 'pdf' },
+                    { label: 'Web', value: 'web' },
+                    { label: 'Image', value: 'image' },
+                  ],
+                },
+                { name: 'label', type: 'text', required: true },
+                { name: 'actionLabel', type: 'text', required: true },
+                { name: 'buildId', type: 'text', required: true, index: true },
+                { name: 'file', type: 'upload', relationTo: COLLECTIONS.media },
+                { name: 'url', type: 'text' },
+                { name: 'pageIndex', type: 'number', min: 0 },
+              ],
+            },
+            {
               name: 'spaUrl',
               type: 'text',
               label: 'URL de la présentation web',
@@ -600,6 +637,7 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+              access: { create: () => false, update: () => false },
             },
             {
               name: 'pdfFile',
@@ -611,6 +649,7 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+              access: { create: () => false, update: () => false },
             },
             {
               name: 'coverImage',
@@ -622,6 +661,7 @@ export const Presentations: CollectionConfig = {
                 readOnly: true,
                 hidden: true,
               },
+              access: { create: () => false, update: () => false },
             },
             {
               name: 'lastBuildError',

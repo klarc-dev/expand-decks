@@ -83,4 +83,86 @@ describe('Presentations document template contract', () => {
       'markdown',
     ]);
   });
+
+  it('declares ordered generic build artifacts and keeps legacy fields hidden', () => {
+    const visit = (fields: unknown[]): Array<Record<string, unknown>> => {
+      const matches: Array<Record<string, unknown>> = [];
+      for (const field of fields as Array<Record<string, unknown>>) {
+        if (
+          field.name === 'artifacts' ||
+          ['spaUrl', 'pdfFile', 'coverImage'].includes(String(field.name))
+        ) {
+          matches.push(field);
+        }
+        if (Array.isArray(field.fields)) matches.push(...visit(field.fields));
+        if (Array.isArray(field.tabs)) {
+          for (const tab of field.tabs as Array<Record<string, unknown>>) {
+            if (Array.isArray(tab.fields)) matches.push(...visit(tab.fields));
+          }
+        }
+      }
+      return matches;
+    };
+
+    const fields = visit(Presentations.fields as unknown[]);
+    const artifacts = fields.find((field) => field.name === 'artifacts');
+    expect(artifacts).toMatchObject({ type: 'array', admin: { readOnly: true } });
+    expect((artifacts!.fields as Array<{ name?: string }>).map((field) => field.name)).toEqual([
+      'key',
+      'kind',
+      'label',
+      'actionLabel',
+      'buildId',
+      'file',
+      'url',
+      'pageIndex',
+    ]);
+    for (const name of ['spaUrl', 'pdfFile', 'coverImage']) {
+      const field = fields.find((candidate) => candidate.name === name);
+      expect(field).toMatchObject({
+        admin: { readOnly: true, hidden: true },
+      });
+      expect((field!.access as { create: () => boolean }).create()).toBe(false);
+      expect((field!.access as { update: () => boolean }).update()).toBe(false);
+    }
+  });
+
+  it('resolves admin preview from the template primary artifact and rejects stale artifacts', () => {
+    const preview = Presentations.admin?.preview as (data: Record<string, unknown>) => string;
+    expect(
+      preview({
+        documentTemplate: 'presentation',
+        lastBuildStatus: 'success',
+        lastBuildToken: 'build-2',
+        artifacts: [
+          {
+            key: 'web-presentation',
+            kind: 'web',
+            label: 'Web',
+            actionLabel: 'Open',
+            buildId: 'build-2',
+            url: '/spa/current/index.html',
+          },
+        ],
+      }),
+    ).toBe('/spa/current/index.html');
+    expect(() =>
+      preview({
+        documentTemplate: 'presentation',
+        lastBuildStatus: 'success',
+        lastBuildToken: 'build-2',
+        artifacts: [
+          {
+            key: 'web-presentation',
+            kind: 'web',
+            label: 'Web',
+            actionLabel: 'Open',
+            buildId: 'build-1',
+            url: '/spa/stale/index.html',
+          },
+        ],
+      }),
+    ).toThrow('artefact principal');
+    expect(preview({ documentTemplate: 'presentation', lastBuildStatus: 'building' })).toBeNull();
+  });
 });

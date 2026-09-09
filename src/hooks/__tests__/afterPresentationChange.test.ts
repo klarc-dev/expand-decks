@@ -39,6 +39,9 @@ describe('afterPresentationChange', () => {
       lastBuildRequestedAt: expect.any(String),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
+      spaUrl: null,
+      pdfFile: null,
+      coverImage: null,
       updatedAt: null,
     });
     expect(Date.parse(updateOne.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
@@ -132,5 +135,6 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
     );
     expect(buildInputsChanged({ ...base, title: 'New' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, language: 'en' }, base)).toBe(true);
+    expect(buildInputsChanged({ ...base, documentTemplate: 'other' }, base)).toBe(true);
   });
 });

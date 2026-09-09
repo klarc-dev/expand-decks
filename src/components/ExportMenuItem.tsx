@@ -1,14 +1,21 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { PopupList, toast, useDocumentInfo } from '@payloadcms/ui';
+import { PopupList, toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
+import { availableArtifactLinks, type DocumentArtifact } from '@/documents/artifacts';
 import { adminPost } from '@/lib/adminFetch';
 
-/** Native Payload three-dot menu action for a complete SPA, PDF and cover export. */
+/** Native Payload menu for available template artifacts and rebuild requests. */
 const ExportMenuItem: React.FC = () => {
   const { id } = useDocumentInfo();
   const [loading, setLoading] = useState(false);
+  const [{ data }] = usePayloadAPI(id ? `/api/presentations/${id}` : '', {
+    initialParams: { depth: 1 },
+  });
+  const artifacts = availableArtifactLinks(
+    (data ?? {}) as { artifacts?: DocumentArtifact[]; lastBuildToken?: string },
+  );
 
   const handleExport = useCallback(async () => {
     if (!id || loading) return;
@@ -33,6 +40,14 @@ const ExportMenuItem: React.FC = () => {
 
   return (
     <PopupList.ButtonGroup>
+      {artifacts.map((artifact) => (
+        <PopupList.Button
+          key={artifact.key}
+          onClick={() => window.open(artifact.href, '_blank', 'noopener,noreferrer')}
+        >
+          {artifact.label}
+        </PopupList.Button>
+      ))}
       <PopupList.Button onClick={handleExport} disabled={loading}>
         {loading ? 'Export en cours…' : 'Exporter'}
       </PopupList.Button>
