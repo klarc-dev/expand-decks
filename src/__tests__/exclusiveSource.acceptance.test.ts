@@ -57,6 +57,7 @@ const payload = vi.hoisted(() => ({
     },
   ),
   jobs: {
+    cancelByID: vi.fn(),
     queue: vi.fn(async ({ input }: { input: Record<string, unknown> }) => {
       state.queuedInput = input;
       return { id: 'job-1' };

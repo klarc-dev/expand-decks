@@ -135,6 +135,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
         { status: 409 },
       );
     }
+    // A dead worker can leave processing=true, blocking this presentation's concurrency key.
+    // Release its job before queueing replaces the only durable pointer to it.
+    if (auth.ledger.payloadJobId) {
+      await auth.payload.jobs.cancelByID({ id: auth.ledger.payloadJobId, overrideAccess: true });
+    }
     await auth.payload.update({
       collection: COLLECTIONS.agentRuns,
       id: auth.ledger.id,

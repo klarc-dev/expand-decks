@@ -60,6 +60,7 @@ function request(body: unknown) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.cancelByID.mockReset();
   mocks.auth.mockResolvedValue({ user: { id: 2, role: 'admin' } });
   mocks.find.mockResolvedValue({ docs: [ledger] });
   mocks.findByID.mockResolvedValue({ id: 1, createdBy: 2, draftEvents: [] });
@@ -99,6 +100,8 @@ describe('agent run recovery API', () => {
     expect(response).toBeDefined();
     expect(response!.status).toBe(409);
     expect(mocks.queue).not.toHaveBeenCalled();
+    expect(mocks.cancelByID).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 
   it('queues restart for a stale active run through the existing ledger row', async () => {
@@ -131,8 +134,92 @@ describe('agent run recovery API', () => {
     );
   });
 
+  it('awaits release of the orphan processing job before replacing its ledger pointer', async () => {
+    mocks.find.mockResolvedValue({
+      docs: [
+        {
+          ...ledger,
+          status: 'running',
+          heartbeatAt: new Date(0).toISOString(),
+        },
+      ],
+    });
+    let release!: () => void;
+    const cancellation = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    mocks.cancelByID.mockImplementationOnce(() => cancellation);
+
+    const response = POST(request({ action: 'restart' }), {
+      params: Promise.resolve({ runId: 'r1' }),
+    });
+    try {
+      await vi.waitFor(() =>
+        expect(mocks.cancelByID).toHaveBeenCalledWith({
+          id: 'job-1',
+          overrideAccess: true,
+        }),
+      );
+      expect(mocks.update).not.toHaveBeenCalled();
+      expect(mocks.queue).not.toHaveBeenCalled();
+    } finally {
+      release();
+      await response;
+    }
+    expect((await response)!.status).toBe(202);
+    expect(mocks.queue).toHaveBeenCalledOnce();
+    expect(mocks.cancelByID).toHaveBeenCalledOnce();
+    expect(mocks.cancel).not.toHaveBeenCalled();
+    expect(mocks.update).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ payloadJobId: 'job-2' }),
+      }),
+    );
+  });
+
+  it('does not overwrite the old job pointer or requeue when cancellation fails', async () => {
+    mocks.find.mockResolvedValue({
+      docs: [
+        {
+          ...ledger,
+          status: 'running',
+          heartbeatAt: new Date(0).toISOString(),
+        },
+      ],
+    });
+    mocks.cancelByID.mockRejectedValueOnce(new Error('Cancellation unavailable'));
+    await expect(
+      POST(request({ action: 'restart' }), {
+        params: Promise.resolve({ runId: 'r1' }),
+      }),
+    ).rejects.toThrow('Cancellation unavailable');
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
+
+  it('restarts a stale run without a previous job ID', async () => {
+    mocks.find.mockResolvedValue({
+      docs: [
+        {
+          ...ledger,
+          payloadJobId: null,
+          status: 'queued',
+          heartbeatAt: new Date(0).toISOString(),
+        },
+      ],
+    });
+    const response = await POST(request({ action: 'restart' }), {
+      params: Promise.resolve({ runId: 'r1' }),
+    });
+    expect(response!.status).toBe(202);
+    expect(mocks.cancelByID).not.toHaveBeenCalled();
+    expect(mocks.queue).toHaveBeenCalledOnce();
+  });
+
   it('queues approval resume only for a suspended run', async () => {
-    mocks.find.mockResolvedValue({ docs: [{ ...ledger, status: 'suspended' }] });
+    mocks.find.mockResolvedValue({
+      docs: [{ ...ledger, status: 'suspended' }],
+    });
 
     const response = await POST(request({ action: 'resume', approved: true }), {
       params: Promise.resolve({ runId: 'r1' }),
@@ -161,6 +248,9 @@ describe('agent run recovery API', () => {
     expect(response).toBeDefined();
     expect(response!.status).toBe(200);
     expect(mocks.cancel).toHaveBeenCalledOnce();
-    expect(mocks.cancelByID).toHaveBeenCalledWith({ id: 'job-1', overrideAccess: true });
+    expect(mocks.cancelByID).toHaveBeenCalledWith({
+      id: 'job-1',
+      overrideAccess: true,
+    });
   });
 });
