@@ -1,4 +1,6 @@
-import mermaid from 'mermaid';
+// Match Slidev's browser entry: the package root imports unoptimized CommonJS
+// dependencies in the native /print server, even though the SPA build works.
+import mermaid from 'mermaid/dist/mermaid.esm.mjs';
 
 import { buildMermaidConfig } from './mermaidConfig';
 

@@ -36,7 +36,9 @@ const server = createServer(async (request, response) => {
     const filePath = fileUrl.pathname;
     await stat(filePath);
     const extension = relativePath.slice(relativePath.lastIndexOf('.'));
-    response.writeHead(200, { 'content-type': mimeTypes[extension] ?? 'application/octet-stream' });
+    response.writeHead(200, {
+      'content-type': mimeTypes[extension] ?? 'application/octet-stream',
+    });
     createReadStream(filePath).pipe(response);
   } catch (error) {
     response.writeHead(500).end(error instanceof Error ? error.message : String(error));
@@ -54,7 +56,9 @@ const violations = [];
 
 try {
   for (let index = 1; index <= slideCount; index += 1) {
-    await page.goto(`http://127.0.0.1:${address.port}/#/${index}`, { waitUntil: 'networkidle' });
+    await page.goto(`http://127.0.0.1:${address.port}/#/${index}`, {
+      waitUntil: 'networkidle',
+    });
     await page.evaluate(async () => {
       await document.fonts.ready;
       await Promise.all(
@@ -146,6 +150,54 @@ try {
       { slideIndex: index, gap: safetyGap },
     );
     violations.push(...result);
+  }
+
+  // SPA builds and native exports use different Vite transforms. Inspect the
+  // same export-mode print route as the CLI, not the built SPA's print route.
+  // Error panels are rasterized in PDFs, so text extraction cannot guard this.
+  if (violations.length === 0 && slideCount > 0) {
+    process.env.NODE_ENV = 'development';
+    const { createServer: createSlidevServer, resolveOptions } = await import('@slidev/cli');
+    const options = await resolveOptions({ entry: resolve(distDir, '../slides.md') }, 'export');
+    const printServer = await createSlidevServer(options, {
+      server: { host: '127.0.0.1', port: 0 },
+      clearScreen: false,
+    });
+    try {
+      await printServer.listen();
+      const printAddress = printServer.httpServer.address();
+      const base = `http://127.0.0.1:${printAddress.port}`;
+      const url =
+        options.data.config.routerMode === 'hash'
+          ? `${base}/?print=true#print`
+          : `${base}/print?print=true`;
+      await page.goto(url, { waitUntil: 'networkidle', timeout: 120_000 });
+      await page.locator('.print-slide-container').first().waitFor();
+      for (const loading of await page.locator('.slidev-slide-loading').all())
+        await loading.waitFor({ state: 'detached', timeout: 120_000 });
+      await page.waitForTimeout(200);
+      const failures = await page.evaluate((expected) => {
+        const containers = [...document.querySelectorAll('.print-slide-container')];
+        const failures = [];
+        if (containers.length !== expected)
+          failures.push(`Expected ${expected} print slides, found ${containers.length}`);
+        for (const [index, container] of containers.entries()) {
+          const text = container.textContent ?? '';
+          if (
+            /An error occurred on this slide|Failed to fetch this slide/.test(text) ||
+            !container.querySelector('.slidev-layout')
+          )
+            failures.push(`Slide ${index + 1}: error fallback or missing slide layout`);
+        }
+        if (document.querySelector('vite-error-overlay'))
+          failures.push('Vite transform error overlay');
+        return failures;
+      }, slideCount);
+      if (failures.length)
+        throw new Error(`Slidev native print validation failed: ${failures.join('; ')}`);
+    } finally {
+      await printServer.close();
+    }
   }
 } finally {
   await browser.close();
