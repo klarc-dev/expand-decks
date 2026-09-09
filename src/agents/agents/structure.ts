@@ -96,7 +96,8 @@ function finalizeOutline(
   slides: OutlineStub[],
   template: DocumentTemplateDefinition,
 ): OutlineStub[] {
-  const finalized = template.structuralRules ? slides : enforceOutlineEndpoints(slides);
+  const finalized =
+    template.id === PRESENTATION_DOCUMENT_TEMPLATE.id ? enforceOutlineEndpoints(slides) : slides;
   assertDocumentPages(template, finalized);
   return finalized;
 }

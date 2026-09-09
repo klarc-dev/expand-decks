@@ -8,7 +8,11 @@ import { researchSources } from '../agents/research';
 import { structure, structureWithProvenance } from '../agents/structure';
 import type { DeckDossier } from '../schemas';
 import type { DeckLanguage } from '../language';
-import { STANDARD_REPORT_DOCUMENT_TEMPLATE } from '../../documents/templates';
+import {
+  SALES_SHEET_DOCUMENT_TEMPLATE,
+  STANDARD_REPORT_DOCUMENT_TEMPLATE,
+  VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
+} from '../../documents/templates';
 
 const mockedGenerateStructured = vi.mocked(generateStructured);
 const mockedResearchSources = vi.mocked(researchSources);
@@ -119,6 +123,32 @@ describe('structure() slide count target', () => {
     ).rejects.toThrow();
     expect(mockedGenerateStructured).toHaveBeenCalledOnce();
   });
+
+  it.each([
+    ['visual-publication', VISUAL_PUBLICATION_DOCUMENT_TEMPLATE],
+    ['sales-sheet', SALES_SHEET_DOCUMENT_TEMPLATE],
+  ] as const)(
+    'preserves a valid generated layout for the one-page %s template',
+    async (_id, template) => {
+      mockedGenerateStructured.mockResolvedValue({
+        slides: [{ blockType: 'statement', title: 'One clear message', intent: 'Explain' }],
+      });
+
+      const result = await structureWithProvenance(
+        baseDossier('Support visuel en une page'),
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        template,
+      );
+
+      expect(result.stubs).toEqual([
+        { blockType: 'statement', title: 'One clear message', intent: 'Explain' },
+      ]);
+    },
+  );
 
   it('gives structural rules to the agent and rejects an invalid generated report', async () => {
     mockedGenerateStructured.mockResolvedValue({
