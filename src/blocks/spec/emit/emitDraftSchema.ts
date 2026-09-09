@@ -52,7 +52,10 @@ export type OutlineSchema = z.ZodObject<{
  * Pass-1 schema: a cheap list of `{ blockType, title, intent }` stubs that locks
  * the deck's exact slide count and ordering before any body is generated.
  */
-export function emitOutlineSchema(specs: BlockSpec[]): OutlineSchema {
+export function emitOutlineSchema(
+  specs: BlockSpec[],
+  bounds: { min: number; max: number } = { min: MIN_SLIDES, max: MAX_SLIDES },
+): OutlineSchema {
   const stub = z.object({
     blockType: z.enum(draftBlockTypes(specs)),
     title: aiTitle(),
@@ -61,8 +64,8 @@ export function emitOutlineSchema(specs: BlockSpec[]): OutlineSchema {
   return z.object({
     slides: z
       .array(stub as z.ZodType<OutlineStub>)
-      .min(MIN_SLIDES)
-      .max(MAX_SLIDES),
+      .min(bounds.min)
+      .max(bounds.max),
   }) as OutlineSchema;
 }
 
@@ -89,11 +92,14 @@ export type SlidesArraySchema = z.ZodObject<{
  * The bounds come from `draftConfig` (default 3..40) so a long structured brief —
  * e.g. a 26-slide webinar — validates instead of being rejected after generation.
  */
-export function emitSlidesArraySchema(specs: BlockSpec[]): SlidesArraySchema {
+export function emitSlidesArraySchema(
+  specs: BlockSpec[],
+  bounds: { min: number; max: number } = { min: MIN_SLIDES, max: MAX_SLIDES },
+): SlidesArraySchema {
   return z.object({
     slides: z
       .array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>)
-      .min(MIN_SLIDES)
-      .max(MAX_SLIDES),
+      .min(bounds.min)
+      .max(bounds.max),
   }) as SlidesArraySchema;
 }

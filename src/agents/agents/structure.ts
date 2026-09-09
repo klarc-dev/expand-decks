@@ -11,20 +11,23 @@
  * Fast-path: if dossier.rawBrief follows the deterministic "S1 — … Sn —"
  * format (≥3 slides), the outline is parsed locally with no LLM call.
  */
-import { OUTLINE_SCHEMA } from '../../blocks/spec';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
+import {
+  type DocumentTemplateDefinition,
+  documentTemplateSchemas,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+} from '../../documents/templates';
 import { INTENT_MAX, slideCountRangeSchema, type SlideCountRange } from '../../lib/draftConfig';
 import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
 import { languageInstruction } from '../language';
-import { STRUCTURE_SYSTEM_PROMPT } from '../prompts/catalog';
 import { generateStructured } from '../model';
+import { buildStructureSystemPrompt } from '../prompts/catalog';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 import { researchSources } from './research';
 
 const MAX_COVERAGE_RETRIES = 2;
-
 function requestedSlideRange(brief: string): { min: number; max: number } | null {
   const match = brief.match(
     /\b(\d{1,2})\s*(?:(?:[–—-]|à|to)\s*(\d{1,2}))?\s+(?:slide|slides|diapositive|diapositives)\b/i,
@@ -36,11 +39,12 @@ function requestedSlideRange(brief: string): { min: number; max: number } | null
   return { min, max };
 }
 
-const STRUCTURE_INSTRUCTIONS = `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
+function structureInstructions(template: DocumentTemplateDefinition): string {
+  return `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
 
 Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
 
-${STRUCTURE_SYSTEM_PROMPT}
+${buildStructureSystemPrompt(template)}
 
 ${RUBRIC_PROMPT}
 
@@ -58,6 +62,7 @@ Arc du deck (sparkline) :
 
 Couverture (impératif) : CHAQUE point clé du dossier doit être porté par au moins une diapositive.
 Les références/sources ne sont pas du contenu visible : ne planifie jamais une diapositive ou une intention "Sources" / "Références".`;
+}
 
 function dossierPrompt(dossier: DeckDossier): string {
   return [
@@ -83,10 +88,14 @@ function enforceOutlineEndpoints(slides: OutlineStub[]): OutlineStub[] {
   });
 }
 
-function outlineSchemaForRange(range: SlideCountRange | null) {
-  if (!range) return OUTLINE_SCHEMA;
-  return OUTLINE_SCHEMA.extend({
-    slides: OUTLINE_SCHEMA.shape.slides.min(range.min).max(range.max),
+function outlineSchemaForRange(
+  range: SlideCountRange | null,
+  template: DocumentTemplateDefinition,
+) {
+  const outlineSchema = documentTemplateSchemas(template).outline;
+  if (!range) return outlineSchema;
+  return outlineSchema.extend({
+    slides: outlineSchema.shape.slides.min(range.min).max(range.max),
   });
 }
 
@@ -134,11 +143,12 @@ function parseSlideBySlideBrief(brief: string): OutlineStub[] | null {
 function parseRevisionContext(
   revisionContext: string,
   revisionBrief: string,
+  template: DocumentTemplateDefinition,
 ): OutlineStub[] | null {
   try {
     const slides = JSON.parse(revisionContext);
     if (!Array.isArray(slides) || slides.length < 3) return null;
-    return OUTLINE_SCHEMA.parse({
+    return documentTemplateSchemas(template).outline.parse({
       slides: slides.map((slide, index) => {
         const targetsEveryTitle = /\b(?:titres?|titles?|tone|ton)\b/i.test(revisionBrief);
         const targetsFinalSlide =
@@ -229,13 +239,14 @@ export async function structureWithProvenance(
   revisionContext?: string,
   userId?: string,
   slideCountRange?: SlideCountRange,
+  template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
 ): Promise<StructureResult> {
   const range = slideCountRange
     ? slideCountRangeSchema.parse(slideCountRange)
     : requestedSlideRange(dossier.rawBrief);
-  const schema = outlineSchemaForRange(range);
+  const schema = outlineSchemaForRange(range, template);
   if (revisionContext && !revisionChangesStructure(dossier.rawBrief)) {
-    const preserved = parseRevisionContext(revisionContext, dossier.rawBrief);
+    const preserved = parseRevisionContext(revisionContext, dossier.rawBrief, template);
     if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success))
       return { stubs: preserved, evidence: [], sourceFailures: [] };
   }
@@ -246,7 +257,7 @@ export async function structureWithProvenance(
     findInformationalStyleViolations({ slides: explicit }).length === 0
   ) {
     return {
-      stubs: OUTLINE_SCHEMA.parse({ slides: explicit }).slides,
+      stubs: schema.parse({ slides: explicit }).slides,
       evidence: [],
       sourceFailures: [],
     };
@@ -262,7 +273,7 @@ export async function structureWithProvenance(
   for (let attempt = 0; ; attempt++) {
     const generated = await generateStructured({
       name: 'structure',
-      instructions: `${STRUCTURE_INSTRUCTIONS}\n\n${languageInstruction(dossier.language)}`,
+      instructions: `${structureInstructions(template)}\n\n${languageInstruction(dossier.language)}`,
       schema,
       prompt,
       validate: findInformationalStyleViolations,

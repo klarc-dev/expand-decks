@@ -6,7 +6,7 @@ import config from '@payload-config';
 import { renderBlockPreview } from '@/export/preview';
 import { buildPreviewRenderContext } from '@/export/renderContext';
 import type { SlideBlock } from '@/export/renderers';
-import { RENDER_SLIDE_SCHEMA } from '@/blocks/spec';
+import { documentTemplateSchemas, resolveDocumentTemplate } from '@/documents/templates';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
@@ -155,6 +155,17 @@ export async function POST(req: NextRequest) {
   if (!presentation) {
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
   }
+  let template;
+  try {
+    template = resolveDocumentTemplate(
+      (presentation as { documentTemplate?: unknown }).documentTemplate,
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Template de document invalide' },
+      { status: 422 },
+    );
+  }
 
   const fields = body.fields ?? {};
   const previewFieldPath = body.previewFieldPath ?? 'slides.0.preview';
@@ -166,6 +177,7 @@ export async function POST(req: NextRequest) {
   const cacheKey = buildPreviewResponseCacheKey({
     block: body.block,
     blockTypes: body.blockTypes,
+    documentTemplate: template.id,
     fields,
     previewFieldPath,
     sections: body.sections,
@@ -175,9 +187,11 @@ export async function POST(req: NextRequest) {
   const cached = getPreviewResponse(cacheKey);
   if (cached) return noStoreJson(cached);
 
-  const hydratedBlock = await hydratePreviewBlock(body.block, payload, user, authedUser.id);
-  const hydratedFields = await hydrateChromeFields(fields, payload, user, authedUser.id);
-  const parsedBlock = RENDER_SLIDE_SCHEMA.safeParse(hydratedBlock);
+  const [hydratedBlock, hydratedFields] = await Promise.all([
+    hydratePreviewBlock(body.block, payload, user, authedUser.id),
+    hydrateChromeFields(fields, payload, user, authedUser.id),
+  ]);
+  const parsedBlock = documentTemplateSchemas(template).renderPage.safeParse(hydratedBlock);
   if (!parsedBlock.success) {
     return noStoreJson(
       {
@@ -198,7 +212,7 @@ export async function POST(req: NextRequest) {
     Object.entries(hydratedFields).map(([key, value]) => [key, { value }]),
   );
   const chrome = buildSlidePreviewChrome(formFields, previewFieldPath, preview.hideChrome);
-  const response = setPreviewResponse(cacheKey, { chrome, preview });
+  const response = setPreviewResponse(cacheKey, { canvas: template.canvas, chrome, preview });
 
   return noStoreJson(response);
 }

@@ -17,19 +17,8 @@ import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
-import { CoverBlock } from '../blocks/CoverBlock';
-import { SectionBlock } from '../blocks/SectionBlock';
-import { StatementBlock } from '../blocks/StatementBlock';
-import { TwoColsBlock } from '../blocks/TwoColsBlock';
-import { CardGridBlock } from '../blocks/CardGridBlock';
-import { StatsBlock } from '../blocks/StatsBlock';
-import { QuotesBlock } from '../blocks/QuotesBlock';
-import { CtaBlock } from '../blocks/CtaBlock';
-import { TableBlock } from '../blocks/TableBlock';
-import { TimelineBlock } from '../blocks/TimelineBlock';
-import { MermaidBlock } from '../blocks/MermaidBlock';
-import { AgendaBlock } from '../blocks/AgendaBlock';
-import { MarkdownBlock } from '../blocks/MarkdownBlock';
+import { documentTemplateField, payloadBlocksForTemplate } from '../documents/payload';
+import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
 
 /**
@@ -250,6 +239,22 @@ export const Presentations: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [
+      ({ data, originalDoc }) => {
+        if (!data || typeof data !== 'object') return data;
+        const record = data as Record<string, unknown>;
+        const previous = originalDoc as
+          | { documentTemplate?: unknown; slides?: unknown }
+          | undefined;
+        const template = resolveDocumentTemplate(
+          Object.hasOwn(record, 'documentTemplate')
+            ? record.documentTemplate
+            : previous?.documentTemplate,
+        );
+        const pages = Object.hasOwn(record, 'slides') ? record.slides : previous?.slides;
+        if (pages !== undefined) assertDocumentPages(template, pages);
+        record.documentTemplate = template.id;
+        return data;
+      },
       // Standardized footer: no free text. Whatever the client submits (admin
       // is read-only, but the API is not), the stored footer is always the
       // canonical {org.name} / empty / {page} / {total}. `enabled` stays
@@ -309,6 +314,7 @@ export const Presentations: CollectionConfig = {
         },
       ],
     },
+    documentTemplateField,
     {
       type: 'tabs',
       tabs: [
@@ -324,21 +330,7 @@ export const Presentations: CollectionConfig = {
                 description:
                   'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.',
               },
-              blocks: [
-                CoverBlock,
-                SectionBlock,
-                StatementBlock,
-                TwoColsBlock,
-                CardGridBlock,
-                StatsBlock,
-                QuotesBlock,
-                CtaBlock,
-                TableBlock,
-                TimelineBlock,
-                MermaidBlock,
-                AgendaBlock,
-                MarkdownBlock,
-              ],
+              blocks: payloadBlocksForTemplate('presentation'),
             },
           ],
         },

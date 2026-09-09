@@ -7,7 +7,7 @@
 import type { Payload } from 'payload';
 
 import type { Presentation } from '@/payload-types';
-import { parseAiSlides } from '../../blocks/spec';
+import { parseDocumentAiPages, resolveDocumentTemplate } from '../../documents/templates';
 import { COLLECTIONS } from '../../lib/collections';
 import { mergeAugmentedSlides } from '../../lib/augmentSlides';
 import { convertSlidesMarkdownToLexical } from '../../lib/richTextWrite';
@@ -36,7 +36,10 @@ export async function persistSlides(opts: {
     throw new Error('Agent run was superseded before slide persistence');
   }
 
-  const draftedRich = await convertSlidesMarkdownToLexical(parseAiSlides(slides), payload);
+  const draftedRich = await convertSlidesMarkdownToLexical(
+    parseDocumentAiPages(resolveDocumentTemplate(current.documentTemplate), slides),
+    payload,
+  );
 
   const nextSlides =
     mode === 'augment'

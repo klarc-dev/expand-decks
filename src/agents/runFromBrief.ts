@@ -23,6 +23,7 @@ export async function runDeckFromBrief(
   const run = await mastra.getWorkflow('deckWorkflow').createRun();
   const result = await run.start({
     inputData: {
+      documentTemplate: 'presentation',
       brief,
       language: resolveTargetLanguage(opts.language, brief),
       sourcePolicy,

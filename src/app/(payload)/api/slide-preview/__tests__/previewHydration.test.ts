@@ -129,4 +129,35 @@ describe('POST /api/slide-preview hydration + access', () => {
     expect(res.status).toBe(200);
     expect(findByID.mock.calls.map(([a]) => a.collection)).toEqual(['presentations']);
   });
+
+  it('returns canonical template canvas geometry with the preview', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'presentation' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'section', title: 'Geometry' },
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).canvas).toMatchObject({
+      width: 1280,
+      height: 720,
+      aspectRatio: '16/9',
+    });
+  });
+
+  it('fails explicitly when the persisted template is unknown', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'unknown' });
+
+    const res = await POST(request(coverBody('u1')));
+
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toContain('Template de document inconnu');
+  });
 });

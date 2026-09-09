@@ -23,6 +23,7 @@ describe('runDeckFromBrief workflow input', () => {
     expect(mocks.start).toHaveBeenCalledWith({
       inputData: {
         brief: 'A sufficiently detailed English presentation brief.',
+        documentTemplate: 'presentation',
         language: 'en',
         sourcePolicy: { mode: 'none', sourceIds: [] },
         visual: true,

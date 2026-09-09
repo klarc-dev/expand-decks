@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import type { DeckLanguage } from '../agents/language';
 import { ARTIFACTS } from '../lib/paths';
-import { parseRenderSlides } from '../blocks/spec';
+import {
+  applyDocumentCanvasToHeadmatter,
+  resolveDocumentTemplate,
+  parseDocumentRenderPages,
+  type DocumentTemplateId,
+} from '../documents/templates';
 
 import { buildHeadmatter } from './theme';
 import { buildDeckRenderContexts } from './renderContext';
@@ -14,6 +19,7 @@ import { setVarDoc } from './vars';
 
 export type Presentation = {
   title: string;
+  documentTemplate?: DocumentTemplateId | null;
   slides: SlideBlock[];
 };
 
@@ -43,26 +49,32 @@ export function buildSlidesMd(
   },
 ): string {
   const baseHeadmatter = options?.headmatter ?? loadHeadmatter();
-  const headmatter = options?.language
+  const template = resolveDocumentTemplate(presentation.documentTemplate);
+  const localizedHeadmatter = options?.language
     ? buildHeadmatter(baseHeadmatter, null, options.language)
     : baseHeadmatter;
+  const headmatter = applyDocumentCanvasToHeadmatter(localizedHeadmatter, template);
 
   // Dynamic {path} variables (e.g. {org.name}, {title}) resolve against this
   // context inside md()/applyDefs(). Set once; always cleared in finally so the
   // module-level ctx never leaks into the next build (mirrors resetDefs).
   setVarDoc(options?.vars ?? null);
   try {
-    return foldSlides(presentation, headmatter);
+    return foldSlides(presentation, headmatter, template);
   } finally {
     setVarDoc(null);
   }
 }
 
-function foldSlides(presentation: Presentation, headmatter: string): string {
+function foldSlides(
+  presentation: Presentation,
+  headmatter: string,
+  template: ReturnType<typeof resolveDocumentTemplate>,
+): string {
   // Payload, seed scripts, migrations, and workflow output all converge here.
   // Validate once at the final render boundary so malformed or over-limit data
   // fails explicitly instead of reaching a renderer that may clip or omit it.
-  const slides = parseRenderSlides(presentation.slides) as SlideBlock[];
+  const slides = parseDocumentRenderPages(template, presentation.slides) as SlideBlock[];
   // One shared deck-context fold drives export and preview parity: tone chain,
   // statement variant rotation, agenda section derivation, and page totals.
   const contexts = buildDeckRenderContexts(slides);

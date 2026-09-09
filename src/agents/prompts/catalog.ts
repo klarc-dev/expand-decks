@@ -5,7 +5,6 @@
  * rules. A slide writer receives only the already-selected layout guidance, so
  * it cannot be distracted by deck count, cover/closing, or unrelated layouts.
  */
-import { ALL_SPECS } from '../../blocks/spec';
 import type { PromptMeta } from '../../blocks/spec/dsl';
 import {
   buildSystemPrompt,
@@ -13,24 +12,36 @@ import {
   promptMetaOf,
 } from '../../blocks/spec/emit/emitPromptSection';
 import { INFORMATIONAL_STYLE_PROMPT } from './style';
+import {
+  type DocumentTemplateDefinition,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+  specsForDocumentTemplate,
+} from '../../documents/templates';
 
-const PROMPT_META = ALL_SPECS.flatMap((spec) => {
-  const meta = promptMetaOf(spec);
-  return meta ? [meta] : [];
-});
-const META_BY_BLOCK_TYPE = new Map(
-  ALL_SPECS.flatMap((spec) => {
+function promptMetaForTemplate(template: DocumentTemplateDefinition) {
+  return specsForDocumentTemplate(template).flatMap((spec) => {
     const meta = promptMetaOf(spec);
-    return meta ? [[spec.blockType, meta] as const] : [];
-  }),
-);
+    return meta ? [meta] : [];
+  });
+}
 
-export const STRUCTURE_SYSTEM_PROMPT = `${buildSystemPrompt(PROMPT_META)}
+export function buildStructureSystemPrompt(template: DocumentTemplateDefinition): string {
+  return `${buildSystemPrompt(promptMetaForTemplate(template))}
+
+Contraintes du template : ${template.agent.guidance}
 
 ${INFORMATIONAL_STYLE_PROMPT}`;
+}
 
-export function buildWriterLayoutPrompt(blockType: string): string {
-  const meta: PromptMeta | undefined = META_BY_BLOCK_TYPE.get(blockType);
+export const STRUCTURE_SYSTEM_PROMPT = buildStructureSystemPrompt(PRESENTATION_DOCUMENT_TEMPLATE);
+
+export function buildWriterLayoutPrompt(
+  blockType: string,
+  template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
+): string {
+  const meta: PromptMeta | undefined = promptMetaForTemplate(template).find(
+    (candidate) => candidate.heading === blockType,
+  );
   if (!meta) {
     throw new Error(`[prompt catalog] no AI layout guidance for blockType: ${blockType}`);
   }

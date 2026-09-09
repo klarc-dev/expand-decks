@@ -6,6 +6,7 @@ import config from '@payload-config';
 
 import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
+import { resolveDocumentTemplate } from '@/documents/templates';
 import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
 import { COLLECTIONS } from '@/lib/collections';
@@ -16,6 +17,18 @@ import { SourcePolicyError, TooManySourcesError, UnknownSourceError } from '@/li
 import { DRAFT_STATUS } from '@/lib/status';
 
 const ACTIVE = ['queued', 'running', 'suspended', 'waiting'] as const;
+
+function invalidDocumentTemplateResponse(value: unknown): NextResponse | null {
+  try {
+    resolveDocumentTemplate(value);
+    return null;
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Template de document invalide' },
+      { status: 422 },
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   const payload = await getPayload({ config });
@@ -73,6 +86,8 @@ export async function POST(req: NextRequest) {
   if (!userIsAdminOrAuthor(user)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
+  const invalidTemplate = invalidDocumentTemplateResponse(presentation.documentTemplate);
+  if (invalidTemplate) return invalidTemplate;
   const existing = await payload.find({
     collection: COLLECTIONS.agentRuns,
     where: {

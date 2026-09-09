@@ -34,6 +34,15 @@ describe('previewResponseCache', () => {
     expect(a).not.toBe(b);
   });
 
+  it('produces a different key for a different document template', () => {
+    const a = buildPreviewResponseCacheKey({
+      ...baseInput,
+      documentTemplate: 'presentation',
+    });
+    const b = buildPreviewResponseCacheKey({ ...baseInput, documentTemplate: 'other' });
+    expect(a).not.toBe(b);
+  });
+
   it('produces a different key when the footer template changes', () => {
     const a = buildPreviewResponseCacheKey(baseInput);
     const b = buildPreviewResponseCacheKey({

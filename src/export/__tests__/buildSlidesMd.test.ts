@@ -169,6 +169,19 @@ describe('buildSlidesMd()', () => {
     expect(() => build([{ blockType: 'unknown' as never, title: 'Bad' } as never])).toThrow();
   });
 
+  it('rejects an unknown document template without falling back to presentation', () => {
+    expect(() =>
+      buildSlidesMd(
+        {
+          title: 'Bad template',
+          documentTemplate: 'unknown' as never,
+          slides: [{ blockType: 'cover', title: 'Cover' }],
+        },
+        { headmatter: HEADMATTER },
+      ),
+    ).toThrow('Template de document inconnu');
+  });
+
   it('rejects over-limit content before a renderer can clip or omit it', () => {
     const cards = Array.from({ length: SLIDE_LIMITS.cardGrid.cards.max + 1 }, (_, index) => ({
       number: String(index + 1),
