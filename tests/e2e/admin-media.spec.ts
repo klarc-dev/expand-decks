@@ -108,15 +108,9 @@ test.describe('Payload media administration UI', () => {
         response.request().method() === 'DELETE' &&
         response.status() === 200,
     );
-    await page
-      .getByRole('button', { name: 'Save', exact: true })
-      .locator('xpath=following::button[1]')
-      .click();
-    await page.getByText('Delete', { exact: true }).click();
-    await page
-      .getByRole('button', { name: /confirm|delete/i })
-      .last()
-      .click();
+    await page.locator('.doc-controls__popup .popup-button').click();
+    await page.locator('#action-delete').click();
+    await page.locator('#confirm-action').click();
     await deleted;
     await expect(page).toHaveURL(/\/admin\/collections\/media(?:\?.*)?$/);
 

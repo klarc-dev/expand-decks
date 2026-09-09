@@ -134,7 +134,9 @@ export const Presentations: CollectionConfig = {
           : 0;
         if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
           return Response.json(
-            { error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.' },
+            {
+              error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.',
+            },
             { status: 429 },
           );
         }
@@ -531,7 +533,9 @@ export const Presentations: CollectionConfig = {
               type: 'text',
               hasMany: true,
               label: 'Tags',
-              admin: { description: 'Mots-clés libres pour classer la présentation' },
+              admin: {
+                description: 'Mots-clés libres pour classer la présentation',
+              },
             },
             {
               name: 'language',
@@ -570,20 +574,29 @@ export const Presentations: CollectionConfig = {
                       type: 'text',
                       defaultValue: '{org.name}',
                       label: 'Gauche',
-                      admin: { readOnly: true, description: 'Standardisé : {org.name}.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : {org.name}.',
+                      },
                     },
                     {
                       name: 'center',
                       type: 'text',
                       label: 'Centre',
-                      admin: { readOnly: true, description: 'Standardisé : vide.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : vide.',
+                      },
                     },
                     {
                       name: 'right',
                       type: 'text',
                       defaultValue: '{page} / {total}',
                       label: 'Droite',
-                      admin: { readOnly: true, description: 'Standardisé : {page} / {total}.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : {page} / {total}.',
+                      },
                     },
                   ],
                 },
@@ -710,6 +723,12 @@ export const Presentations: CollectionConfig = {
             {
               name: 'lastBuildToken',
               type: 'text',
+              admin: { readOnly: true, hidden: true },
+            },
+            {
+              name: 'currentMediaProductionRequest',
+              type: 'relationship',
+              relationTo: COLLECTIONS.mediaProductionRequests,
               admin: { readOnly: true, hidden: true },
             },
           ],

@@ -15,7 +15,7 @@ describe('composite deck MCP tools', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('exposes exactly one composite tool per domain', () => {
-    expect(Object.keys(deckMcpTools)).toEqual(['deck', 'slide', 'deck_workflow']);
+    expect(Object.keys(deckMcpTools)).toEqual(['deck', 'slide', 'deck_workflow', 'media_producer']);
   });
 
   it.each([
@@ -130,6 +130,80 @@ describe('composite deck MCP tools', () => {
           ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      });
+    },
+  );
+
+  it.each([
+    [
+      'capabilities',
+      { action: 'capabilities' },
+      'GET',
+      '/api/media-producer/capabilities',
+      undefined,
+    ],
+    [
+      'request',
+      {
+        action: 'request',
+        request: {
+          contract: 'expand-decks.media-request/1.0',
+          publication_id: 'publication-1',
+          revision_sha256: 'a'.repeat(64),
+          producer: 'expand-decks',
+          intended_format: 'linkedin_document_carousel',
+          copy_relationship: 'accompanies_caption',
+          title: 'A document',
+          language: 'fr',
+          organisation_id: 7,
+          pages: [
+            { order: 1, block: { blockType: 'statement', title: 'Point' }, alt_text: 'Point' },
+            {
+              order: 2,
+              block: { blockType: 'statement', title: 'Second' },
+              alt_text: 'Second',
+            },
+          ],
+          accessibility: { reading_order_required: true, minimum_body_px: null },
+          constraints: {
+            delivery_pdf: { media_type: 'application/pdf', max_bytes: null, max_pages: null },
+            transport_images: {
+              media_type: 'image/png',
+              max_bytes_each: 10 * 1024 * 1024,
+              minimum_count: 2,
+            },
+          },
+        },
+      },
+      'POST',
+      '/api/media-producer/requests',
+      'request',
+    ],
+    [
+      'status',
+      { action: 'status', requestId: 'request/1' },
+      'GET',
+      '/api/media-producer/requests/request%2F1',
+      undefined,
+    ],
+  ] as const)(
+    'media_producer:%s delegates to the canonical app API',
+    async (_action, input, method, path, bodyKey) => {
+      const fetchSpy = vi.fn().mockResolvedValue(ok());
+      vi.stubGlobal('fetch', fetchSpy);
+      vi.stubEnv('DECK_API_URL', 'https://decks.example');
+      vi.stubEnv('DECK_API_KEY', 'secret');
+
+      await execute('media_producer', input);
+
+      const bodyValue = bodyKey ? (input as { request: unknown }).request : undefined;
+      expect(fetchSpy).toHaveBeenCalledWith(`https://decks.example${path}`, {
+        method,
+        headers: {
+          Authorization: 'users API-Key secret',
+          ...(bodyValue === undefined ? {} : { 'Content-Type': 'application/json' }),
+        },
+        ...(bodyValue === undefined ? {} : { body: JSON.stringify(bodyValue) }),
       });
     },
   );

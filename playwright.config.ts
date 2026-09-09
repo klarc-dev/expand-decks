@@ -37,7 +37,10 @@ export default defineConfig({
   },
   webServer: {
     command: 'node scripts/e2e-server.mjs',
-    url: `${baseURL}/api/health`,
+    // The setup's first browser action opens Payload admin. Waiting on the
+    // lightweight health route alone leaves the much heavier admin route cold
+    // and charges its first compilation against the setup test timeout.
+    url: `${baseURL}/admin/login`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {

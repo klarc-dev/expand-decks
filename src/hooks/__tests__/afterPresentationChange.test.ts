@@ -97,6 +97,25 @@ describe('afterPresentationChange', () => {
     expect(updateOne).not.toHaveBeenCalled();
     expect(queue).not.toHaveBeenCalled();
   });
+
+  it('leaves producer-triggered queueing to the versioned request route', async () => {
+    const updateOne = vi.fn();
+    const queue = vi.fn();
+    const doc = { id: 'presentation-1', status: 'draft', ...base };
+
+    const result = await afterPresentationChange({
+      doc,
+      operation: 'create',
+      req: {
+        context: { [CTX.mediaProducerRequest]: true },
+        payload: { db: { updateOne }, jobs: { queue } },
+      },
+    } as never);
+
+    expect(result).toBe(doc);
+    expect(updateOne).not.toHaveBeenCalled();
+    expect(queue).not.toHaveBeenCalled();
+  });
 });
 
 describe('buildInputsChanged — rebuild fingerprint', () => {
