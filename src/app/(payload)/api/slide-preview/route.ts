@@ -11,6 +11,7 @@ import {
   documentTemplateSchemas,
   resolveDocumentTemplate,
 } from '@/documents/templates';
+import { applyPageNumberChrome } from '@/export/chrome';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
@@ -242,7 +243,9 @@ export async function POST(req: NextRequest) {
   const resolvedChrome = buildSlidePreviewChrome(formFields, previewFieldPath, preview.hideChrome);
   const chrome = {
     ...resolvedChrome,
-    footer: template.chrome.footer ? resolvedChrome.footer : undefined,
+    footer: template.chrome.footer
+      ? applyPageNumberChrome(resolvedChrome.footer, template.chrome.pageNumbers)
+      : undefined,
     logoUrl: template.chrome.logo ? resolvedChrome.logoUrl : undefined,
   };
   const response = setPreviewResponse(cacheKey, { canvas: template.canvas, chrome, preview });

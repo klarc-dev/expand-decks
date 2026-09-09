@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildFooterHeadmatter, buildFooterLayer, buildLogoLayer } from '../chrome';
+import {
+  applyPageNumberChrome,
+  buildFooterHeadmatter,
+  buildFooterLayer,
+  buildLogoLayer,
+} from '../chrome';
+
+describe('applyPageNumberChrome', () => {
+  it('keeps footer content but clears the numbering slot when disabled by the template', () => {
+    expect(
+      applyPageNumberChrome(
+        { enabled: true, left: 'Klarc', center: 'Confidential', right: '{page} / {total}' },
+        false,
+      ),
+    ).toEqual({ enabled: true, left: 'Klarc', center: 'Confidential', right: '' });
+  });
+
+  it('preserves the configured numbering slot when enabled', () => {
+    const footer = { enabled: true, right: '{page} / {total}' };
+    expect(applyPageNumberChrome(footer, true)).toBe(footer);
+  });
+});
 
 describe('buildFooterHeadmatter', () => {
   it('emits a klarcFooter YAML line with the (pre-resolved) templates when enabled', () => {

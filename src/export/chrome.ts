@@ -24,6 +24,20 @@ export interface FooterConfig {
 }
 
 /**
+ * Apply the document template's page-number policy to an enabled footer.
+ * Page numbering is standardized in the footer's right slot; templates such
+ * as the one-page sales sheet retain their left/center footer content without
+ * rendering a redundant “1 / 1”.
+ */
+export function applyPageNumberChrome<T extends { right?: string }>(
+  footer: T | null | undefined,
+  pageNumbers: boolean,
+): T | null | undefined {
+  if (!footer || pageNumbers) return footer;
+  return { ...footer, right: '' };
+}
+
+/**
  * YAML-embed the footer config so the Vue layer reads it via `$slidev.configs`.
  * The left/center/right strings are expected to be ALREADY resolved for static
  * tokens by the caller (runner); the Vue layer only resolves `{page}`/`{total}`.
