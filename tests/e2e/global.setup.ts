@@ -96,6 +96,8 @@ async function login(
 }
 
 setup('seed deterministic users and authenticate roles', async ({ browser }) => {
+  setup.setTimeout(120_000);
+
   const payload = await getPayload({ config });
   const seededUsers = await Promise.all(
     Object.values(credentials).map((user) => upsertUser(payload, user)),
@@ -351,6 +353,22 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
   });
 
   const agentRunId = 'e2e-agent-run';
+  const existingAgentRuns = await payload.find({
+    collection: COLLECTIONS.agentRuns,
+    where: { mastraRunId: { equals: agentRunId } },
+    depth: 0,
+    limit: 100,
+    overrideAccess: true,
+  });
+  await Promise.all(
+    existingAgentRuns.docs.map((agentRun) =>
+      payload.delete({
+        collection: COLLECTIONS.agentRuns,
+        id: agentRun.id,
+        overrideAccess: true,
+      }),
+    ),
+  );
   await payload.create({
     collection: COLLECTIONS.agentRuns,
     data: {
