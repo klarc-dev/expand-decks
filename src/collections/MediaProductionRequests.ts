@@ -2,7 +2,12 @@ import type { CollectionConfig } from 'payload';
 
 import { isOrganisationMember } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
-import { LINKEDIN_DOCUMENT_CAROUSEL, MEDIA_PRODUCER_STATUS } from '../lib/mediaProducer';
+import {
+  LINKEDIN_DOCUMENT_CAROUSEL,
+  LINKEDIN_IMAGE,
+  LINKEDIN_MULTI_IMAGE,
+  MEDIA_PRODUCER_STATUS,
+} from '../lib/mediaProducer';
 
 export const MediaProductionRequests: CollectionConfig = {
   slug: COLLECTIONS.mediaProductionRequests,
@@ -24,6 +29,8 @@ export const MediaProductionRequests: CollectionConfig = {
       required: true,
       options: [
         { label: 'LinkedIn document via Postiz images', value: LINKEDIN_DOCUMENT_CAROUSEL },
+        { label: 'LinkedIn image', value: LINKEDIN_IMAGE },
+        { label: 'LinkedIn native multi-image', value: LINKEDIN_MULTI_IMAGE },
       ],
     },
     {

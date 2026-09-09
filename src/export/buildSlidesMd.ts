@@ -8,6 +8,7 @@ import {
   applyDocumentCanvasToHeadmatter,
   resolveDocumentTemplate,
   parseDocumentRenderPages,
+  type DocumentTemplateDefinition,
   type DocumentTemplateId,
 } from '../documents/templates';
 
@@ -46,10 +47,11 @@ export function buildSlidesMd(
     headmatter?: string;
     vars?: Record<string, unknown>;
     language?: DeckLanguage | null;
+    template?: DocumentTemplateDefinition;
   },
 ): string {
   const baseHeadmatter = options?.headmatter ?? loadHeadmatter();
-  const template = resolveDocumentTemplate(presentation.documentTemplate);
+  const template = options?.template ?? resolveDocumentTemplate(presentation.documentTemplate);
   const localizedHeadmatter = options?.language
     ? buildHeadmatter(baseHeadmatter, null, options.language)
     : baseHeadmatter;
@@ -69,7 +71,7 @@ export function buildSlidesMd(
 function foldSlides(
   presentation: Presentation,
   headmatter: string,
-  template: ReturnType<typeof resolveDocumentTemplate>,
+  template: DocumentTemplateDefinition,
 ): string {
   // Payload, seed scripts, migrations, and workflow output all converge here.
   // Validate once at the final render boundary so malformed or over-limit data

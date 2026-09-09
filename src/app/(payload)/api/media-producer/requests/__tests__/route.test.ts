@@ -113,6 +113,37 @@ describe('POST /api/media-producer/requests', () => {
     });
   });
 
+  it.each([
+    ['linkedin_image', 'visual-publication', [body().pages[0]], 1, 1],
+    ['linkedin_multi_image', 'linkedin-carousel', body().pages, 2, null],
+  ] as const)(
+    'selects the native document template for %s',
+    async (format, template, pages, minimum, maximum) => {
+      const response = await POST(
+        request(
+          body({
+            intended_format: format,
+            pages,
+            constraints: {
+              delivery_pdf: null,
+              transport_images: {
+                media_type: 'image/png',
+                max_bytes_each: 10 * 1024 * 1024,
+                minimum_count: minimum,
+                maximum_count: maximum,
+              },
+            },
+          }),
+        ),
+      );
+      expect(response.status).toBe(202);
+      expect(create.mock.calls[1][0]).toMatchObject({
+        collection: 'presentations',
+        data: { documentTemplate: template },
+      });
+    },
+  );
+
   it('rejects requests for an organisation outside the caller scope', async () => {
     const response = await POST(request(body({ organisation_id: 99 })));
     expect(response.status).toBe(403);

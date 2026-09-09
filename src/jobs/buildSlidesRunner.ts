@@ -44,15 +44,15 @@ import { BUILD_STATUS } from '../lib/status';
 import { buildFingerprint } from '../lib/buildFingerprint';
 import {
   MEDIA_PRODUCER_REQUEST_SCHEMA,
-  MEDIA_PRODUCER_RESULT_SCHEMA,
   MEDIA_PRODUCER_STATUS,
-  MEDIA_PRODUCER_ID,
-  MEDIA_PRODUCER_VERSION,
   MEDIA_RESULT_CONTRACT,
-  REVIEW_STATUS,
+  LINKEDIN_DOCUMENT_CAROUSEL,
+  LINKEDIN_MULTI_IMAGE,
+  mediaProducerImageRole,
   mediaProducerRelationshipId,
   pendingMediaProducerResult,
   presentationMatchesMediaRequest,
+  succeededMediaProducerResult,
   terminalMediaProducerResult,
   type MediaProducerRequest,
   type MediaProducerResult,
@@ -614,9 +614,14 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       presentation.language === 'en' ? 'en' : 'fr',
     );
     const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
+    const renderTemplate =
+      producerBinding?.request.intended_format === LINKEDIN_MULTI_IMAGE
+        ? { ...template, pageCount: { min: 2, max: null } }
+        : template;
     const slidesMd = buildSlidesMd(renderPresentation as never, {
       headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
       vars,
+      template: renderTemplate,
     });
 
     const themeCss = buildThemeCss(brand);
@@ -644,10 +649,10 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     // Mermaid/image settling, and range/per-slide options needed by PNG exports.
     await runSlidev(['build', '--base', './'], workdir);
     await validateSlideLayout(workdir, slides.length);
-    // The native Slidev pipeline has a canonical output contract independent
-    // from which artifacts a document template exposes: PDF, SPA, and a
-    // first-page cover are always produced. Template declarations only select
-    // which of those outputs (plus optional per-page images) are persisted.
+    // The native Slidev pipeline keeps its canonical PDF export for every
+    // build. Native image producer results simply do not expose or persist it.
+    const producerNeedsPdf =
+      producerBinding?.request.intended_format === LINKEDIN_DOCUMENT_CAROUSEL;
     await runSlidev(
       buildSlidevExportArgs({
         output: ARTIFACTS.pdf,
@@ -738,8 +743,8 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
 
     const outputs: ArtifactOutputs = {};
     const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
-    const measuredPdf = producerBinding ? await measurePdfArtifact(pdfBuffer, 'pending') : null;
-    if (producerBinding && measuredPdf) {
+    const measuredPdf = producerNeedsPdf ? await measurePdfArtifact(pdfBuffer, 'pending') : null;
+    if (producerBinding?.request.intended_format === LINKEDIN_DOCUMENT_CAROUSEL && measuredPdf) {
       assertPdfConstraints(measuredPdf, producerBinding.request.constraints.delivery_pdf);
       if (measuredPdf.page_count !== producerBinding.request.pages.length) {
         throw new MediaProducerConstraintError(
@@ -748,13 +753,13 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       }
     }
     let pdfMedia: { id: string | number } | undefined;
-    if (producerBinding || exportPlan.pdf.length > 0) {
+    if (producerNeedsPdf || exportPlan.pdf.length > 0) {
       pdfMedia = await req.payload.create({
         collection: COLLECTIONS.media,
         data: {
           alt: `${presentation.title} — PDF`,
           presentation: Number(presentationId),
-          ...(producerBinding && measuredPdf
+          ...(producerBinding && producerNeedsPdf && measuredPdf
             ? {
                 mediaProductionRequest: Number(producerBinding.mediaProductionRequestId),
                 producerContract: MEDIA_RESULT_CONTRACT,
@@ -780,7 +785,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           size: pdfBuffer.byteLength,
         },
       });
-      if (producerBinding) createdProducerMediaIds.push(pdfMedia.id);
+      if (producerNeedsPdf) createdProducerMediaIds.push(pdfMedia.id);
       for (const artifact of exportPlan.pdf) {
         outputs[artifact.key] = { file: pdfMedia.id as number | string };
       }
@@ -798,14 +803,20 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       for (const [index, pngPath] of pagePaths.entries()) {
         const page = producerBinding.request.pages[index]!;
         measuredTransport.push(
-          await measurePngArtifact(readFileSync(pngPath), 'pending', index + 1, page.alt_text),
+          await measurePngArtifact(
+            readFileSync(pngPath),
+            'pending',
+            index + 1,
+            page.alt_text,
+            mediaProducerImageRole(producerBinding.request.intended_format),
+          ),
         );
       }
       assertTransportConstraints(
         measuredTransport,
         producerBinding.request.constraints.transport_images,
       );
-      if (measuredPdf?.page_count !== measuredTransport.length) {
+      if (producerNeedsPdf && measuredPdf?.page_count !== measuredTransport.length) {
         throw new MediaProducerConstraintError(
           `PDF page count ${measuredPdf?.page_count} does not match transport image count ${measuredTransport.length}`,
         );
@@ -974,30 +985,13 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     };
 
     let producerResult: MediaProducerResult | undefined;
-    if (producerBinding && measuredPdf) {
-      producerResult = MEDIA_PRODUCER_RESULT_SCHEMA.parse({
-        contract: MEDIA_RESULT_CONTRACT,
-        producer: MEDIA_PRODUCER_ID,
-        producer_version: MEDIA_PRODUCER_VERSION,
-        ...producerBinding.identity,
-        status: MEDIA_PRODUCER_STATUS.succeeded,
-        delivery_artifacts: [{ ...measuredPdf, handle: pdfMedia!.id }],
-        transport_artifacts: measuredTransport,
-        adapter: {
-          provider: 'postiz',
-          route: 'linkedin_images_to_document',
-          settings: {
-            post_as_images_carousel: true,
-            carousel_name: producerBinding.request.title,
-          },
-        },
-        validation: {
-          layout: REVIEW_STATUS.passed,
-          visual_review: REVIEW_STATUS.pending,
-          editorial_review: REVIEW_STATUS.pending,
-        },
-        error: null,
-      });
+    if (producerBinding) {
+      producerResult = succeededMediaProducerResult(
+        producerBinding.identity,
+        producerBinding.request,
+        measuredPdf && pdfMedia ? [{ ...measuredPdf, handle: pdfMedia.id }] : [],
+        measuredTransport,
+      );
       if (!(await commitMediaProductionSuccess(req.payload, producerBinding, producerResult))) {
         await Promise.all(
           createdProducerMediaIds.map((id) =>

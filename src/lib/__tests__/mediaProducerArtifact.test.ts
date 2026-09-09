@@ -43,6 +43,13 @@ const transportConstraints: {
   minimum_count: 2,
 };
 
+const singleImageConstraints = {
+  media_type: 'image/png' as const,
+  max_bytes_each: 10485760 as const,
+  minimum_count: 1 as const,
+  maximum_count: 1 as const,
+};
+
 describe('media producer artifact constraints', () => {
   it('enforces PDF bytes and page limits', () => {
     expect(() =>
@@ -60,5 +67,14 @@ describe('media producer artifact constraints', () => {
     [[image(1), image(2, { width_px: 1080 })], 'consistent dimensions'],
   ] as const)('rejects invalid transport sets', (artifacts, message) => {
     expect(() => assertTransportConstraints([...artifacts], transportConstraints)).toThrow(message);
+  });
+
+  it('enforces the declared maximum for a single-image transport', () => {
+    expect(() =>
+      assertTransportConstraints(
+        [image(1, { role: 'postiz_image' }), image(2, { role: 'postiz_image' })],
+        singleImageConstraints,
+      ),
+    ).toThrow('at most 1 image');
   });
 });

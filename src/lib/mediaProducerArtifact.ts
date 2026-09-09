@@ -7,7 +7,6 @@ import { getDocumentProxy } from 'unpdf';
 
 import {
   POSTIZ_MAX_IMAGE_BYTES,
-  POSTIZ_MIN_DOCUMENT_IMAGES,
   type MediaProducerArtifact,
   type MediaProducerImageArtifact,
   type MediaProducerPdfArtifact,
@@ -65,6 +64,7 @@ export async function measurePngArtifact(
   handle: string | number,
   order: number,
   altText: string,
+  role: MediaProducerImageArtifact['role'] = 'postiz_document_page',
 ): Promise<MediaProducerImageArtifact> {
   const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   if (buffer.byteLength === 0 || !buffer.subarray(0, 8).equals(pngSignature)) {
@@ -76,7 +76,7 @@ export async function measurePngArtifact(
   }
   return {
     order,
-    role: 'postiz_document_page',
+    role,
     handle,
     media_type: 'image/png',
     bytes: buffer.byteLength,
@@ -90,7 +90,7 @@ export async function measurePngArtifact(
 
 export function assertPdfConstraints(
   artifact: MediaProducerPdfArtifact,
-  constraints: MediaProducerRequest['constraints']['delivery_pdf'],
+  constraints: Exclude<MediaProducerRequest['constraints']['delivery_pdf'], null>,
 ): void {
   if (constraints.max_bytes !== null && artifact.bytes > constraints.max_bytes) {
     throw new MediaProducerConstraintError(
@@ -108,12 +108,18 @@ export function assertTransportConstraints(
   artifacts: MediaProducerImageArtifact[],
   constraints: MediaProducerRequest['constraints']['transport_images'],
 ): void {
+  if (artifacts.length < constraints.minimum_count) {
+    throw new MediaProducerConstraintError(
+      `Postiz transport requires at least ${constraints.minimum_count} images`,
+    );
+  }
   if (
-    artifacts.length < POSTIZ_MIN_DOCUMENT_IMAGES ||
-    artifacts.length < constraints.minimum_count
+    'maximum_count' in constraints &&
+    constraints.maximum_count !== null &&
+    artifacts.length > constraints.maximum_count
   ) {
     throw new MediaProducerConstraintError(
-      `Postiz document transport requires at least ${POSTIZ_MIN_DOCUMENT_IMAGES} images`,
+      `Postiz transport allows at most ${constraints.maximum_count} images`,
     );
   }
   const first = artifacts[0];

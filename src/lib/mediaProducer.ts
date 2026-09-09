@@ -8,6 +8,8 @@ const MEDIA_CAPABILITIES_CONTRACT = 'expand-decks.media-capabilities/1.0' as con
 const MEDIA_REQUEST_CONTRACT = 'expand-decks.media-request/1.0' as const;
 export const MEDIA_RESULT_CONTRACT = 'expand-decks.media-result/1.0' as const;
 export const LINKEDIN_DOCUMENT_CAROUSEL = 'linkedin_document_carousel' as const;
+export const LINKEDIN_IMAGE = 'linkedin_image' as const;
+export const LINKEDIN_MULTI_IMAGE = 'linkedin_multi_image' as const;
 export const POSTIZ_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export const POSTIZ_MIN_DOCUMENT_IMAGES = 2;
 
@@ -30,42 +32,101 @@ const identity = z.union([z.string().trim().min(1).max(128), z.number().int().po
 const payloadId = z.number().int().positive();
 
 const MEDIA_PRODUCER_PAGE_SCHEMA = z.object({
-  order: z.number().int().min(1).max(100),
+  order: z.number().int().min(1),
   block: WRITABLE_SLIDE_SCHEMA,
   alt_text: z.string().trim().min(1).max(2000),
 });
 
-export const MEDIA_PRODUCER_REQUEST_SCHEMA = z
-  .object({
+const TRANSPORT_BASE = {
+  media_type: z.literal('image/png'),
+  max_bytes_each: z.literal(POSTIZ_MAX_IMAGE_BYTES),
+};
+
+function requestShape<
+  Format extends z.ZodLiteral<string>,
+  Pages extends z.ZodArray<typeof MEDIA_PRODUCER_PAGE_SCHEMA>,
+  Constraints extends z.ZodType,
+>(intendedFormat: Format, pages: Pages, constraints: Constraints) {
+  return {
     contract: z.literal(MEDIA_REQUEST_CONTRACT),
     publication_id: z.string().trim().min(1).max(200),
     revision_sha256: z.string().regex(/^[a-f0-9]{64}$/),
     producer: z.literal(MEDIA_PRODUCER_ID),
-    intended_format: z.literal(LINKEDIN_DOCUMENT_CAROUSEL),
+    intended_format: intendedFormat,
     copy_relationship: z.literal('accompanies_caption'),
     presentation_id: payloadId.optional(),
     title: z.string().trim().min(1).max(200),
     language: z.enum(['fr', 'en']),
     organisation_id: payloadId,
-    pages: z.array(MEDIA_PRODUCER_PAGE_SCHEMA).min(POSTIZ_MIN_DOCUMENT_IMAGES).max(100),
+    pages,
     accessibility: z.object({
       reading_order_required: z.boolean(),
       minimum_body_px: z.null(),
     }),
-    constraints: z.object({
-      delivery_pdf: z.object({
-        media_type: z.literal('application/pdf'),
-        max_bytes: nullableLimit,
-        max_pages: nullableLimit,
+    constraints,
+  };
+}
+
+const DOCUMENT_REQUEST_SCHEMA = z
+  .object(
+    requestShape(
+      z.literal(LINKEDIN_DOCUMENT_CAROUSEL),
+      z.array(MEDIA_PRODUCER_PAGE_SCHEMA).min(POSTIZ_MIN_DOCUMENT_IMAGES).max(100),
+      z.object({
+        delivery_pdf: z.object({
+          media_type: z.literal('application/pdf'),
+          max_bytes: nullableLimit,
+          max_pages: nullableLimit,
+        }),
+        transport_images: z.object({
+          ...TRANSPORT_BASE,
+          minimum_count: z.literal(POSTIZ_MIN_DOCUMENT_IMAGES),
+        }),
       }),
-      transport_images: z.object({
-        media_type: z.literal('image/png'),
-        max_bytes_each: z.literal(POSTIZ_MAX_IMAGE_BYTES),
-        minimum_count: z.literal(POSTIZ_MIN_DOCUMENT_IMAGES),
+    ),
+  )
+  .strict();
+
+const SINGLE_IMAGE_REQUEST_SCHEMA = z
+  .object(
+    requestShape(
+      z.literal(LINKEDIN_IMAGE),
+      z.array(MEDIA_PRODUCER_PAGE_SCHEMA).length(1),
+      z.object({
+        delivery_pdf: z.null(),
+        transport_images: z.object({
+          ...TRANSPORT_BASE,
+          minimum_count: z.literal(1),
+          maximum_count: z.literal(1),
+        }),
       }),
-    }),
-  })
-  .strict()
+    ),
+  )
+  .strict();
+
+const MULTI_IMAGE_REQUEST_SCHEMA = z
+  .object(
+    requestShape(
+      z.literal(LINKEDIN_MULTI_IMAGE),
+      z.array(MEDIA_PRODUCER_PAGE_SCHEMA).min(2),
+      z.object({
+        delivery_pdf: z.null(),
+        transport_images: z.object({
+          ...TRANSPORT_BASE,
+          minimum_count: z.literal(2),
+          maximum_count: z.null(),
+        }),
+      }),
+    ),
+  )
+  .strict();
+
+export const MEDIA_PRODUCER_REQUEST_SCHEMA = z
+  .discriminatedUnion('intended_format', [
+    DOCUMENT_REQUEST_SCHEMA,
+    SINGLE_IMAGE_REQUEST_SCHEMA,
+    MULTI_IMAGE_REQUEST_SCHEMA,
+  ])
   .superRefine((request, context) => {
     request.pages.forEach((page, index) => {
       if (page.order !== index + 1) {
@@ -90,9 +151,8 @@ const MEDIA_PRODUCER_PDF_ARTIFACT_SCHEMA = z.object({
   height_px: z.number().int().positive(),
 });
 
-const MEDIA_PRODUCER_IMAGE_ARTIFACT_SCHEMA = z.object({
+const IMAGE_ARTIFACT_BASE = {
   order: z.number().int().positive(),
-  role: z.literal('postiz_document_page'),
   handle: identity,
   media_type: z.literal('image/png'),
   bytes: z.number().int().positive().max(POSTIZ_MAX_IMAGE_BYTES),
@@ -101,21 +161,54 @@ const MEDIA_PRODUCER_IMAGE_ARTIFACT_SCHEMA = z.object({
   width_px: z.number().int().positive(),
   height_px: z.number().int().positive(),
   alt_text: z.string().trim().min(1).max(2000),
+};
+
+const MEDIA_PRODUCER_DOCUMENT_IMAGE_ARTIFACT_SCHEMA = z.object({
+  ...IMAGE_ARTIFACT_BASE,
+  role: z.literal('postiz_document_page'),
 });
+
+const MEDIA_PRODUCER_SINGLE_IMAGE_ARTIFACT_SCHEMA = z.object({
+  ...IMAGE_ARTIFACT_BASE,
+  role: z.literal('postiz_image'),
+});
+
+const MEDIA_PRODUCER_MULTI_IMAGE_ARTIFACT_SCHEMA = z.object({
+  ...IMAGE_ARTIFACT_BASE,
+  role: z.literal('postiz_multi_image'),
+});
+
+const MEDIA_PRODUCER_IMAGE_ARTIFACT_SCHEMA = z.discriminatedUnion('role', [
+  MEDIA_PRODUCER_DOCUMENT_IMAGE_ARTIFACT_SCHEMA,
+  MEDIA_PRODUCER_SINGLE_IMAGE_ARTIFACT_SCHEMA,
+  MEDIA_PRODUCER_MULTI_IMAGE_ARTIFACT_SCHEMA,
+]);
 
 const MEDIA_PRODUCER_ARTIFACT_SCHEMA = z.discriminatedUnion('role', [
   MEDIA_PRODUCER_PDF_ARTIFACT_SCHEMA,
   MEDIA_PRODUCER_IMAGE_ARTIFACT_SCHEMA,
 ]);
 
-const MEDIA_PRODUCER_ADAPTER_SCHEMA = z.object({
-  provider: z.literal('postiz'),
-  route: z.literal('linkedin_images_to_document'),
-  settings: z.object({
-    post_as_images_carousel: z.literal(true),
-    carousel_name: z.string().trim().min(1).max(200),
+const MEDIA_PRODUCER_ADAPTER_SCHEMA = z.discriminatedUnion('route', [
+  z.object({
+    provider: z.literal('postiz'),
+    route: z.literal('linkedin_images_to_document'),
+    settings: z.object({
+      post_as_images_carousel: z.literal(true),
+      carousel_name: z.string().trim().min(1).max(200),
+    }),
   }),
-});
+  z.object({
+    provider: z.literal('postiz'),
+    route: z.literal(LINKEDIN_IMAGE),
+    settings: z.object({}).strict(),
+  }),
+  z.object({
+    provider: z.literal('postiz'),
+    route: z.literal(LINKEDIN_MULTI_IMAGE),
+    settings: z.object({}).strict(),
+  }),
+]);
 
 export const MEDIA_PRODUCER_RESULT_SCHEMA = z
   .object({
@@ -144,38 +237,80 @@ export const MEDIA_PRODUCER_RESULT_SCHEMA = z
   })
   .strict()
   .superRefine((result, context) => {
+    const validationIsPending = Object.values(result.validation).every(
+      (status) => status === REVIEW_STATUS.pending,
+    );
     if (result.status === MEDIA_PRODUCER_STATUS.succeeded) {
       const transportOrders = result.transport_artifacts.map((artifact) => artifact.order);
+      const artifactHandles = [...result.delivery_artifacts, ...result.transport_artifacts].map(
+        (artifact) => String(artifact.handle),
+      );
       const [firstTransport] = result.transport_artifacts;
       const geometryMatches = result.transport_artifacts.every(
         (artifact) =>
           artifact.width_px === firstTransport?.width_px &&
           artifact.height_px === firstTransport?.height_px,
       );
-      if (
-        result.delivery_artifacts.length !== 1 ||
-        result.transport_artifacts.length < POSTIZ_MIN_DOCUMENT_IMAGES ||
-        result.delivery_artifacts[0]?.page_count !== result.transport_artifacts.length ||
-        !transportOrders.every((order, index) => order === index + 1) ||
-        !geometryMatches ||
-        result.adapter === null ||
-        result.validation.layout !== REVIEW_STATUS.passed
-      ) {
+      const commonSuccess =
+        transportOrders.every((order, index) => order === index + 1) &&
+        new Set(artifactHandles).size === artifactHandles.length &&
+        geometryMatches &&
+        result.adapter !== null &&
+        result.validation.layout === REVIEW_STATUS.passed &&
+        result.error === null;
+      const documentSuccess =
+        result.adapter?.route === 'linkedin_images_to_document' &&
+        result.delivery_artifacts.length === 1 &&
+        result.transport_artifacts.length >= POSTIZ_MIN_DOCUMENT_IMAGES &&
+        result.transport_artifacts.every((artifact) => artifact.role === 'postiz_document_page') &&
+        result.delivery_artifacts[0]?.page_count === result.transport_artifacts.length;
+      const singleImageSuccess =
+        result.adapter?.route === LINKEDIN_IMAGE &&
+        result.delivery_artifacts.length === 0 &&
+        result.transport_artifacts.length === 1 &&
+        result.transport_artifacts[0]?.role === 'postiz_image';
+      const multiImageSuccess =
+        result.adapter?.route === LINKEDIN_MULTI_IMAGE &&
+        result.delivery_artifacts.length === 0 &&
+        result.transport_artifacts.length >= 2 &&
+        result.transport_artifacts.every((artifact) => artifact.role === 'postiz_multi_image');
+      if (!commonSuccess || (!documentSuccess && !singleImageSuccess && !multiImageSuccess)) {
         context.addIssue({
           code: 'custom',
           path: ['transport_artifacts'],
-          message: 'Succeeded results require one PDF and a matching ordered Postiz image set',
+          message: 'Succeeded results require the exact ordered artifacts for their Postiz route',
         });
       }
     } else if (
       result.delivery_artifacts.length !== 0 ||
       result.transport_artifacts.length !== 0 ||
-      result.adapter !== null
+      result.adapter !== null ||
+      !validationIsPending
     ) {
       context.addIssue({
         code: 'custom',
         path: ['delivery_artifacts'],
-        message: 'Non-success results cannot expose ready artifacts or adapter settings',
+        message: 'Non-success results require pending validation and no ready artifacts',
+      });
+    } else if (
+      (result.status === MEDIA_PRODUCER_STATUS.queued ||
+        result.status === MEDIA_PRODUCER_STATUS.building) &&
+      result.error !== null
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['error'],
+        message: 'Pending results cannot expose an error',
+      });
+    } else if (
+      (result.status === MEDIA_PRODUCER_STATUS.failed ||
+        result.status === MEDIA_PRODUCER_STATUS.stale) &&
+      result.error === null
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['error'],
+        message: 'Failed and stale results require an error',
       });
     }
   });
@@ -261,13 +396,109 @@ function buildMediaProducerCapabilities() {
           page_height_px: null,
         },
       },
-      linkedin_multi_image: { status: 'unverified' },
+      linkedin_image: {
+        status: 'supported',
+        delivery: null,
+        transport: {
+          media_type: 'image/png',
+          artifact_role: 'postiz_image',
+          outputs: 1,
+        },
+        adapter: {
+          provider: 'postiz',
+          route: LINKEDIN_IMAGE,
+          settings: {},
+        },
+        constraints: {
+          minimum_images: 1,
+          maximum_images: 1,
+          max_bytes_each_image: POSTIZ_MAX_IMAGE_BYTES,
+          image_width_px: null,
+          image_height_px: null,
+        },
+      },
+      linkedin_multi_image: {
+        status: 'supported',
+        delivery: null,
+        transport: {
+          media_type: 'image/png',
+          artifact_role: 'postiz_multi_image',
+          outputs: 'one_per_page',
+        },
+        adapter: {
+          provider: 'postiz',
+          route: LINKEDIN_MULTI_IMAGE,
+          settings: {},
+        },
+        constraints: {
+          minimum_images: 2,
+          maximum_images: null,
+          max_bytes_each_image: POSTIZ_MAX_IMAGE_BYTES,
+          image_width_px: null,
+          image_height_px: null,
+        },
+      },
       video: { status: 'unsupported' },
     },
     request_schema: z.toJSONSchema(MEDIA_PRODUCER_REQUEST_SCHEMA, { target: 'draft-2020-12' }),
     result_schema: z.toJSONSchema(MEDIA_PRODUCER_RESULT_SCHEMA, { target: 'draft-2020-12' }),
     slide_schema: z.toJSONSchema(WRITABLE_SLIDE_SCHEMA, { target: 'draft-2020-12' }),
   } as const;
+}
+
+export function mediaProducerImageRole(
+  format: MediaProducerRequest['intended_format'],
+): MediaProducerImageArtifact['role'] {
+  if (format === LINKEDIN_IMAGE) return 'postiz_image';
+  if (format === LINKEDIN_MULTI_IMAGE) return 'postiz_multi_image';
+  return 'postiz_document_page';
+}
+
+export function mediaProducerDocumentTemplate(
+  format: MediaProducerRequest['intended_format'],
+): 'visual-publication' | 'linkedin-carousel' | undefined {
+  if (format === LINKEDIN_IMAGE) return 'visual-publication';
+  if (format === LINKEDIN_MULTI_IMAGE) return 'linkedin-carousel';
+  return undefined;
+}
+
+export function succeededMediaProducerResult(
+  identityFields: MediaProducerIdentity,
+  request: MediaProducerRequest,
+  deliveryArtifacts: MediaProducerPdfArtifact[],
+  transportArtifacts: MediaProducerImageArtifact[],
+): MediaProducerResult {
+  const adapter =
+    request.intended_format === LINKEDIN_DOCUMENT_CAROUSEL
+      ? {
+          provider: 'postiz' as const,
+          route: 'linkedin_images_to_document' as const,
+          settings: {
+            post_as_images_carousel: true as const,
+            carousel_name: request.title,
+          },
+        }
+      : {
+          provider: 'postiz' as const,
+          route: request.intended_format,
+          settings: {},
+        };
+  return MEDIA_PRODUCER_RESULT_SCHEMA.parse({
+    contract: MEDIA_RESULT_CONTRACT,
+    producer: MEDIA_PRODUCER_ID,
+    producer_version: MEDIA_PRODUCER_VERSION,
+    ...identityFields,
+    status: MEDIA_PRODUCER_STATUS.succeeded,
+    delivery_artifacts: deliveryArtifacts,
+    transport_artifacts: transportArtifacts,
+    adapter,
+    validation: {
+      layout: REVIEW_STATUS.passed,
+      visual_review: REVIEW_STATUS.pending,
+      editorial_review: REVIEW_STATUS.pending,
+    },
+    error: null,
+  });
 }
 
 export function mediaProducerRelationshipId(value: unknown): unknown {
@@ -283,9 +514,11 @@ export function presentationMatchesMediaRequest(
   presentation: Record<string, unknown>,
   request: MediaProducerRequest,
 ): boolean {
+  const expectedTemplate = mediaProducerDocumentTemplate(request.intended_format);
   if (
     presentation.title !== request.title ||
     presentation.language !== request.language ||
+    (expectedTemplate !== undefined && presentation.documentTemplate !== expectedTemplate) ||
     String(mediaProducerRelationshipId(presentation.organisation)) !==
       String(request.organisation_id)
   ) {
@@ -331,6 +564,6 @@ export function artifactMatchesMediaRecord(
   if (!Object.entries(expectedFields).every(([field, value]) => media[field] === value)) {
     return false;
   }
-  if (artifact.role === 'postiz_document_page' && media.alt !== artifact.alt_text) return false;
+  if (artifact.role !== 'delivery_document' && media.alt !== artifact.alt_text) return false;
   return String(media.id) === String(artifact.handle);
 }

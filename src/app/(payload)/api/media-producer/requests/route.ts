@@ -10,6 +10,7 @@ import {
   MEDIA_PRODUCER_REQUEST_SCHEMA,
   MEDIA_PRODUCER_RESULT_SCHEMA,
   MEDIA_PRODUCER_STATUS,
+  mediaProducerDocumentTemplate,
   mediaProducerRelationshipId,
   pendingMediaProducerResult,
   terminalMediaProducerResult,
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
   if (!userIsOrganisationMember(user, command.organisation_id))
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   if (
+    command.constraints.delivery_pdf !== null &&
     command.constraints.delivery_pdf.max_pages !== null &&
     command.pages.length > command.constraints.delivery_pdf.max_pages
   )
@@ -115,12 +117,14 @@ export async function POST(req: NextRequest) {
 
   let boundPresentationId: string | number | null = existingPresentation?.id ?? null;
   try {
+    const documentTemplate = mediaProducerDocumentTemplate(command.intended_format);
     const presentationData = {
       title: command.title,
       language: command.language,
       organisation: command.organisation_id,
       slides: command.pages.map((page) => page.block),
       currentMediaProductionRequest: requestRecord.id,
+      ...(documentTemplate ? { documentTemplate } : {}),
     };
     const presentation: Presentation = existingPresentation
       ? await payload.update({

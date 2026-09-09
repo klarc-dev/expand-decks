@@ -26,6 +26,7 @@ import * as migration_20260909_140127_linkedin_carousel from './20260909_140127_
 import * as migration_20260909_140201_issue_26_single_page_templates from './20260909_140201_issue_26_single_page_templates';
 import * as migration_20260909_140837 from './20260909_140837';
 import * as migration_20260909_141932 from './20260909_141932';
+import * as migration_20260909_163216_spec19_linkedin_image_formats from './20260909_163216_spec19_linkedin_image_formats';
 
 export const migrations = [
   {
@@ -167,5 +168,10 @@ export const migrations = [
     up: migration_20260909_141932.up,
     down: migration_20260909_141932.down,
     name: '20260909_141932',
+  },
+  {
+    up: migration_20260909_163216_spec19_linkedin_image_formats.up,
+    down: migration_20260909_163216_spec19_linkedin_image_formats.down,
+    name: '20260909_163216_spec19_linkedin_image_formats',
   },
 ];
