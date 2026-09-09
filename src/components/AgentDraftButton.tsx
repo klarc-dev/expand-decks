@@ -36,10 +36,33 @@ type DraftEvent = { ts: number; phase: string; detail?: unknown };
 type DraftMode = 'replace' | 'augment' | 'revise';
 type SourceOption = BrowserSourceOption;
 
-const DRAFT_MODE_OPTIONS: ReadonlyArray<{ label: string; value: DraftMode }> = [
-  { value: 'revise', label: 'Réviser' },
-  { value: 'replace', label: 'Remplacer' },
-  { value: 'augment', label: 'Ajouter' },
+type DraftModeOption = {
+  actionLabel: string;
+  description: string;
+  label: string;
+  value: DraftMode;
+};
+
+const DRAFT_MODE_OPTIONS: ReadonlyArray<DraftModeOption> = [
+  {
+    value: 'revise',
+    label: 'Réviser toute la présentation',
+    actionLabel: 'Réviser toute la présentation',
+    description: 'Reprend le deck actuel comme contexte, puis réécrit l’ensemble des slides.',
+  },
+  {
+    value: 'replace',
+    label: 'Recréer toute la présentation',
+    actionLabel: 'Recréer toute la présentation',
+    description:
+      'Supprime les slides actuelles et génère un nouveau deck complet à partir du brief.',
+  },
+  {
+    value: 'augment',
+    label: 'Ajouter des slides à la fin',
+    actionLabel: 'Ajouter des slides',
+    description: 'Conserve toutes les slides actuelles et ajoute les nouvelles slides à la fin.',
+  },
 ];
 
 const JOURNAL_STATUS_LABEL: Record<string, string> = {
@@ -136,7 +159,10 @@ function DraftModeSelector({ readOnly, value, onChange }: DraftModeSelectorProps
               type="radio"
               value={option.value}
             />
-            {option.label}
+            <span className="agent-draft__choice-copy">
+              <strong>{option.label}</strong>
+              <span>{option.description}</span>
+            </span>
           </label>
         );
       })}
@@ -363,6 +389,7 @@ type DraftRunActionsProps = {
   onRestart: () => void;
   onResume: (approved: boolean) => void;
   onStart: () => void;
+  startLabel: string;
 };
 
 function DraftRunActions({
@@ -378,6 +405,7 @@ function DraftRunActions({
   onStart,
   phase,
   running,
+  startLabel,
 }: DraftRunActionsProps) {
   return (
     <fieldset className="agent-draft__actions">
@@ -391,7 +419,7 @@ function DraftRunActions({
           size="medium"
           type="button"
         >
-          {running ? 'Génération en cours…' : 'Générer la présentation'}
+          {running || pending ? 'Génération…' : startLabel}
         </Button>
       )}
       {(running || ['suspended', 'waiting', 'stale'].includes(durableStatus)) && hasRun && (
@@ -470,6 +498,7 @@ const AgentDraftButton: React.FC = () => {
   });
   const { error: slideCountError } = validateSlideCountRange(slideCountMin, slideCountMax);
   const [mode, setMode] = useState<DraftMode>('revise');
+  const selectedMode = DRAFT_MODE_OPTIONS.find((option) => option.value === mode)!;
   const [visual, setVisual] = useState(true);
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [hasSlides, setHasSlides] = useState(false);
@@ -759,11 +788,15 @@ const AgentDraftButton: React.FC = () => {
             checked={visual}
             className="agent-draft__checkbox"
             id="agent-visual-review"
-            label="Critique visuelle (plus lent, meilleur rendu)"
+            label="Critique visuelle IA (plus lent, meilleur rendu)"
             name="agent-visual-review"
             onToggle={(event) => setVisual(event.target.checked)}
             readOnly={running || pending || initializing}
           />
+          <p className="agent-draft__option-help">
+            Les débordements sont toujours contrôlés avant publication. Cette option ajoute une
+            critique IA de l’équilibre et de la lisibilité.
+          </p>
           <CheckboxInput
             checked={approvalRequired}
             className="agent-draft__checkbox"
@@ -811,6 +844,7 @@ const AgentDraftButton: React.FC = () => {
         onStart={handleStart}
         phase={phaseText}
         running={running}
+        startLabel={selectedMode.actionLabel}
       />
 
       {running && <DraftProgress running={running} status={status} />}

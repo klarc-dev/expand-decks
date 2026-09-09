@@ -25,7 +25,10 @@ function getAttributeValue(attributes: ts.JsxAttributes, name: string): string |
 
 function rawTextControls() {
   const controls: string[] = [];
-  const files = readdirSync(COMPONENTS_DIR, { recursive: true, withFileTypes: true })
+  const files = readdirSync(COMPONENTS_DIR, {
+    recursive: true,
+    withFileTypes: true,
+  })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.tsx'))
     .map((entry) => resolve(entry.parentPath, entry.name));
 
@@ -378,6 +381,20 @@ describe('canonical custom admin controls', () => {
     ).toBe(true);
     expect(sourceContains('src/components/BuildStatusField.tsx', '<AdminPanel aria-live=')).toBe(
       false,
+    );
+  });
+
+  it('makes whole-deck generation modes explicit before an author starts a run', () => {
+    const path = 'src/components/AgentDraftButton.tsx';
+    expect(sourceContains(path, 'Réviser toute la présentation')).toBe(true);
+    expect(sourceContains(path, 'Recréer toute la présentation')).toBe(true);
+    expect(sourceContains(path, 'Supprime les slides actuelles')).toBe(true);
+    expect(sourceContains(path, 'Ajouter des slides à la fin')).toBe(true);
+    expect(sourceContains(path, 'startLabel={selectedMode.actionLabel}')).toBe(true);
+    expect(sourceContains(path, 'Conserve toutes les slides actuelles')).toBe(true);
+    expect(sourceContains(path, 'agent-draft__choice-copy')).toBe(true);
+    expect(sourceContains(path, 'Les débordements sont toujours contrôlés avant publication')).toBe(
+      true,
     );
   });
 
