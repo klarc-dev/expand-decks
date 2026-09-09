@@ -133,6 +133,8 @@ async function hydrateChromeFields(
   return organisation ? { ...fields, organisation } : fields;
 }
 
+// This route intentionally coordinates preview validation, authorization, and rendering at one boundary.
+// fallow-ignore-next-line complexity
 export async function POST(req: NextRequest) {
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: req.headers });

@@ -422,6 +422,8 @@ export function parseDocumentRenderPages(
   >;
 }
 
+// This validator intentionally keeps cross-page template invariants together at the validation boundary.
+// fallow-ignore-next-line complexity
 export function assertDocumentPages(
   template: DocumentTemplateDefinition,
   pages: unknown,

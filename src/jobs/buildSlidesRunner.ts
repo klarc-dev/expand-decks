@@ -227,6 +227,8 @@ export type LayoutPreflightCandidate = {
  * persistence gate for generated decks; the normal build repeats it as defense
  * in depth after persistence.
  */
+// This preflight intentionally coordinates the complete production-equivalent layout validation boundary.
+// fallow-ignore-next-line complexity
 export async function preflightPresentationLayout(
   payload: Payload,
   candidate: LayoutPreflightCandidate,

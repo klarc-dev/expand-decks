@@ -18,6 +18,8 @@ import { DRAFT_STATUS } from '@/lib/status';
 
 const ACTIVE = ['queued', 'running', 'suspended', 'waiting'] as const;
 
+// This route intentionally coordinates authentication, validation, and workflow startup at one boundary.
+// fallow-ignore-next-line complexity
 export async function POST(req: NextRequest) {
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: req.headers });
