@@ -8,6 +8,10 @@ export function payloadBlocksForTemplate(templateValue: unknown): Block[] {
   return specsForDocumentTemplate(template).map(emitPayloadBlock) as Block[];
 }
 
+export function payloadBlockSlugsForTemplate(templateValue: unknown): string[] {
+  return payloadBlocksForTemplate(templateValue).map((block) => block.slug);
+}
+
 export const documentTemplateField: SelectField = {
   name: 'documentTemplate',
   type: 'select',
@@ -27,7 +31,5 @@ export const documentTemplateField: SelectField = {
   },
   admin: {
     description: 'Format fixe qui définit le canvas, les layouts et les sorties.',
-    hidden: DOCUMENT_TEMPLATES.length === 1,
-    readOnly: DOCUMENT_TEMPLATES.length === 1,
   },
 };

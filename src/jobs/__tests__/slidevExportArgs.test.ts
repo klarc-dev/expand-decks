@@ -66,6 +66,8 @@ describe('buildSlidevExportArgs', () => {
       '--wait-until',
       'load',
       '--per-slide',
+      '--scale',
+      '1',
     ]);
   });
 
@@ -85,7 +87,23 @@ describe('buildSlidevExportArgs', () => {
       '--wait',
       '4000',
       '--per-slide',
+      '--scale',
+      '1',
     ]);
+  });
+
+  it('allows an explicit PNG scale while keeping PDF flags unchanged', () => {
+    expect(
+      buildSlidevExportArgs({
+        output: 'png',
+        format: 'png',
+        hasMermaid: false,
+        scale: 2,
+      }),
+    ).toContain('2');
+    expect(
+      buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false, scale: 2 }),
+    ).not.toContain('--scale');
   });
 
   it('supports Slidev range exports needed by cover and agent PNG generation', () => {

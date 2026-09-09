@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { PRESENTATION_DOCUMENT_TEMPLATE } from '../templates';
 import {
+  LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE,
+  PRESENTATION_DOCUMENT_TEMPLATE,
+  SALES_SHEET_DOCUMENT_TEMPLATE,
+  VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
+} from '../templates';
+import {
+  artifactLinkKey,
   artifactsForBuild,
   availableArtifactLinks,
   MissingPrimaryArtifactError,
@@ -109,7 +115,12 @@ describe('document artifacts', () => {
         href: '/spa/deck/index.html',
         label: 'Ouvrir la présentation web',
       },
-      { key: 'cover-image', href: '/media/cover.png', label: 'Ouvrir l’image de couverture' },
+      {
+        key: 'cover-image',
+        href: '/media/cover.png',
+        label: 'Ouvrir l’image de couverture',
+        pageIndex: 0,
+      },
     ]);
     expect(
       resolvePrimaryArtifactHref(PRESENTATION_DOCUMENT_TEMPLATE, {
@@ -151,5 +162,72 @@ describe('document artifacts', () => {
       spaUrl: '/spa/deck/index.html',
       coverImage: 12,
     });
+  });
+
+  it('persists one ordered carousel image artifact per page', () => {
+    const artifacts = artifactsForBuild(
+      LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE,
+      'carousel-build',
+      {
+        'page-image': [
+          { file: { id: 21, url: '/media/page-1.png' } },
+          { file: { id: 22, url: '/media/page-2.png' } },
+          { file: { id: 23, url: '/media/page-3.png' } },
+        ],
+      },
+      { pageCount: 3 },
+    );
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({ key: 'page-image', pageIndex: 0 }),
+      expect.objectContaining({ key: 'page-image', pageIndex: 1 }),
+      expect.objectContaining({ key: 'page-image', pageIndex: 2 }),
+    ]);
+    expect(availableArtifactLinks({ artifacts, lastBuildToken: 'carousel-build' })).toEqual([
+      {
+        key: 'page-image',
+        href: '/media/page-1.png',
+        label: 'Télécharger la page 1',
+        pageIndex: 0,
+      },
+      {
+        key: 'page-image',
+        href: '/media/page-2.png',
+        label: 'Télécharger la page 2',
+        pageIndex: 1,
+      },
+      {
+        key: 'page-image',
+        href: '/media/page-3.png',
+        label: 'Télécharger la page 3',
+        pageIndex: 2,
+      },
+    ]);
+    expect(
+      availableArtifactLinks({ artifacts, lastBuildToken: 'carousel-build' }).map(artifactLinkKey),
+    ).toEqual(['page-image:0', 'page-image:1', 'page-image:2']);
+  });
+  it('persists each one-page template primary artifact and fails if it is absent', () => {
+    expect(
+      artifactsForBuild(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, 'visual-build', {
+        'page-image': { file: 21 },
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        key: 'page-image',
+        kind: 'image',
+        file: 21,
+        pageIndex: 0,
+      }),
+    ]);
+    expect(
+      artifactsForBuild(SALES_SHEET_DOCUMENT_TEMPLATE, 'sheet-build', { pdf: { file: 22 } }),
+    ).toEqual([expect.objectContaining({ key: 'pdf', kind: 'pdf', file: 22 })]);
+    expect(() =>
+      artifactsForBuild(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, 'visual-build', {}),
+    ).toThrow('page-image');
+    expect(() => artifactsForBuild(SALES_SHEET_DOCUMENT_TEMPLATE, 'sheet-build', {})).toThrow(
+      'pdf',
+    );
   });
 });

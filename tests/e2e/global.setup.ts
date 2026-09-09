@@ -63,7 +63,11 @@ async function upsertUser(
     limit: 1,
     overrideAccess: true,
   });
-  const data = { password: user.password, role: user.role, membershipStatus: 'active' as const };
+  const data = {
+    password: user.password,
+    role: user.role,
+    membershipStatus: 'active' as const,
+  };
   if (existing.docs[0]) {
     const updated = await payload.update({
       collection: COLLECTIONS.users,
@@ -124,6 +128,8 @@ async function reusableFixtures(payload: Awaited<ReturnType<typeof getPayload>>)
 }
 
 setup('seed deterministic users and authenticate roles', async ({ browser }) => {
+  setup.setTimeout(120_000);
+
   const payload = await getPayload({ config });
   const seededUsers = await Promise.all(
     Object.values(credentials).map((user) => upsertUser(payload, user)),
@@ -173,7 +179,10 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     await payload.update({
       collection: COLLECTIONS.users,
       id: user.id,
-      data: { organisations: [organisation.id], defaultOrganisation: organisation.id },
+      data: {
+        organisations: [organisation.id],
+        defaultOrganisation: organisation.id,
+      },
       overrideAccess: true,
     });
   }
@@ -388,6 +397,22 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
   });
 
   const agentRunId = 'e2e-agent-run';
+  const existingAgentRuns = await payload.find({
+    collection: COLLECTIONS.agentRuns,
+    where: { mastraRunId: { equals: agentRunId } },
+    depth: 0,
+    limit: 100,
+    overrideAccess: true,
+  });
+  await Promise.all(
+    existingAgentRuns.docs.map((agentRun) =>
+      payload.delete({
+        collection: COLLECTIONS.agentRuns,
+        id: agentRun.id,
+        overrideAccess: true,
+      }),
+    ),
+  );
   await payload.create({
     collection: COLLECTIONS.agentRuns,
     data: {
@@ -416,8 +441,13 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     user: admin,
   });
 
-  await rm(resolve('media/spa/e2e-spa-presentation'), { recursive: true, force: true });
-  await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), { recursive: true });
+  await rm(resolve('media/spa/e2e-spa-presentation'), {
+    recursive: true,
+    force: true,
+  });
+  await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), {
+    recursive: true,
+  });
   await writeFile(
     resolve('media/spa/e2e-spa-presentation/index.html'),
     '<!doctype html><html><body><h1>E2E built deck</h1><script src="/spa/e2e-spa-presentation/assets/app.js"></script></body></html>',

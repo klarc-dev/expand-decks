@@ -46,6 +46,57 @@ describe('Presentations document template contract', () => {
     ).toThrow('page 1');
   });
 
+  it('allows an empty pre-generation draft, then validates pages once authored', async () => {
+    expect(
+      await beforeValidate?.({
+        data: { documentTemplate: 'visual-publication', slides: [] },
+      } as never),
+    ).toMatchObject({ documentTemplate: 'visual-publication', slides: [] });
+    expect(() =>
+      beforeValidate?.({
+        data: { documentTemplate: 'visual-publication', slides: 'invalid' },
+      } as never),
+    ).toThrow();
+
+    expect(() =>
+      beforeValidate?.({
+        data: {
+          documentTemplate: 'sales-sheet',
+          slides: [
+            { blockType: 'statement', title: 'First' },
+            { blockType: 'statement', title: 'Second' },
+          ],
+        },
+      } as never),
+    ).toThrow('entre 1 et 1 pages');
+    expect(() =>
+      beforeValidate?.({
+        data: {
+          documentTemplate: 'visual-publication',
+          slides: [{ blockType: 'table', title: 'Not visual' }],
+        },
+      } as never),
+    ).toThrow('n’est pas autorisé');
+  });
+
+  it('rejects a standardized report with an invalid ordered structure', () => {
+    expect(() =>
+      beforeValidate?.({
+        data: {
+          documentTemplate: 'standard-report',
+          slides: [
+            { blockType: 'cover' },
+            { blockType: 'agenda' },
+            { blockType: 'statement' },
+            { blockType: 'statement' },
+            { blockType: 'table' },
+            { blockType: 'cta' },
+          ],
+        },
+      } as never),
+    ).toThrow('layout « stats »');
+  });
+
   it('keeps the existing presentation layout roster visible in the editor', () => {
     const visit = (fields: unknown[]): Record<string, unknown> | undefined => {
       for (const field of fields as Array<Record<string, unknown>>) {
@@ -81,6 +132,36 @@ describe('Presentations document template contract', () => {
       'mermaid',
       'agenda',
       'markdown',
+    ]);
+
+    const filterOptions = slidesField!.filterOptions as (args: {
+      data?: Record<string, unknown>;
+    }) => string[];
+    expect(filterOptions({ data: { documentTemplate: 'visual-publication' } })).toEqual([
+      'statement',
+      'cardGrid',
+      'stats',
+      'quotes',
+      'cta',
+    ]);
+    expect(filterOptions({ data: { documentTemplate: 'sales-sheet' } })).toEqual([
+      'statement',
+      'twoCols',
+      'cardGrid',
+      'stats',
+      'quotes',
+      'cta',
+      'table',
+    ]);
+    expect(filterOptions({ data: { documentTemplate: 'standard-report' } })).toEqual([
+      'cover',
+      'section',
+      'statement',
+      'twoCols',
+      'stats',
+      'cta',
+      'table',
+      'agenda',
     ]);
   });
 

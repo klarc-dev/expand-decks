@@ -18,18 +18,8 @@ import { DRAFT_STATUS } from '@/lib/status';
 
 const ACTIVE = ['queued', 'running', 'suspended', 'waiting'] as const;
 
-function invalidDocumentTemplateResponse(value: unknown): NextResponse | null {
-  try {
-    resolveDocumentTemplate(value);
-    return null;
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Template de document invalide' },
-      { status: 422 },
-    );
-  }
-}
-
+// This route intentionally coordinates authentication, validation, and workflow startup at one boundary.
+// fallow-ignore-next-line complexity
 export async function POST(req: NextRequest) {
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: req.headers });
@@ -86,8 +76,26 @@ export async function POST(req: NextRequest) {
   if (!userIsAdminOrAuthor(user)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
-  const invalidTemplate = invalidDocumentTemplateResponse(presentation.documentTemplate);
-  if (invalidTemplate) return invalidTemplate;
+  try {
+    const template = resolveDocumentTemplate(presentation.documentTemplate);
+    if (
+      slideCountRange &&
+      (slideCountRange.min < template.agent.pageCount.min ||
+        slideCountRange.max > template.agent.pageCount.max)
+    ) {
+      return NextResponse.json(
+        {
+          error: `Le template « ${template.id} » exige une cible entre ${template.agent.pageCount.min} et ${template.agent.pageCount.max} pages.`,
+        },
+        { status: 400 },
+      );
+    }
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Template de document invalide' },
+      { status: 422 },
+    );
+  }
   const existing = await payload.find({
     collection: COLLECTIONS.agentRuns,
     where: {

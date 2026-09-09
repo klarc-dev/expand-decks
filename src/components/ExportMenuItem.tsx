@@ -3,7 +3,11 @@
 import React, { useCallback, useState } from 'react';
 import { PopupList, toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
-import { availableArtifactLinks, type DocumentArtifact } from '@/documents/artifacts';
+import {
+  artifactLinkKey,
+  availableArtifactLinks,
+  type DocumentArtifact,
+} from '@/documents/artifacts';
 import { adminPost } from '@/lib/adminFetch';
 
 /** Native Payload menu for available template artifacts and rebuild requests. */
@@ -42,7 +46,7 @@ const ExportMenuItem: React.FC = () => {
     <PopupList.ButtonGroup>
       {artifacts.map((artifact) => (
         <PopupList.Button
-          key={artifact.key}
+          key={artifactLinkKey(artifact)}
           onClick={() => window.open(artifact.href, '_blank', 'noopener,noreferrer')}
         >
           {artifact.label}

@@ -15,14 +15,19 @@
  * `generateStructured` is the single LLM entry point for every agent in this
  * runtime — the Mastra-native replacement for `src/lib/ai.ts` `draftObject`.
  */
-import { Agent } from '@mastra/core/agent';
 import type { OutputProcessor } from '@mastra/core/processors';
 import { createTool } from '@mastra/core/tools';
 import type { z } from 'zod';
 
-import { cloudCLIProxy, modelForTier, type AgentModelTier } from '../lib/ai';
+import type { AgentModelTier } from '../lib/ai';
 import { abortableDelay, combineAbortSignals, throwIfAborted } from '../lib/abort';
 import { sanitizeToolResult } from '../lib/sources/toolPolicy';
+import {
+  agentForInvocation,
+  agentForRole,
+  instructionsForAgent,
+  type DeckAgentRole,
+} from './registry';
 import { StylePolicyError } from './prompts/style';
 
 /**
@@ -34,20 +39,8 @@ import { StylePolicyError } from './prompts/style';
 const DEFAULT_TIMEOUT_MS = 300_000;
 
 /**
- * The model instance every agent shares (forceNonStreamFetch is baked in).
- *
- * Typed as `any` at this one boundary: `cloudCLIProxy` is built from the app's
- * `@ai-sdk/openai-compatible@2` provider, while `@mastra/core` bundles its own
- * AI-SDK provider types (LanguageModelV3). The two are runtime-compatible (proven
- * by the live smokes) but their structural types don't unify. The cast is
- * isolated here so every call site stays fully typed.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const modelFor = (tier: AgentModelTier) => cloudCLIProxy(modelForTier(tier)) as any;
-
-/**
- * Run a one-shot structured generation: build a throwaway Agent with a single
- * forced `emit` tool, capture its validated arguments.
+ * Run one structured generation through a registered role-specific Mastra Agent
+ * with a per-call forced `emit` tool, then capture its validated arguments.
  *
  * @throws if the model never calls the tool or the args fail Zod validation.
  */
@@ -149,20 +142,16 @@ export async function researchWithSources({
       });
     },
   };
-  const agent = new Agent({
-    id: name,
-    name,
-    instructions,
-    model: modelFor('research'),
-    outputProcessors: [sourceBoundary],
-  });
+  const agent = agentForInvocation(name);
 
   const res = await withTransientRetry(name, abortSignal, () =>
     agent.generate(prompt as never, {
+      instructions: instructionsForAgent(agent, instructions),
       toolsets: toolsets as never,
       toolChoice: 'required',
       maxSteps,
       toolCallConcurrency,
+      outputProcessors: [sourceBoundary],
       abortSignal: combineAbortSignals(abortSignal, timeoutMs),
     }),
   );
@@ -192,7 +181,9 @@ const DETERMINISTIC_TIERS = new Set<AgentModelTier>(['judge', 'visual']);
 
 const samplingFor = (tier: AgentModelTier, attempt: number) =>
   DETERMINISTIC_TIERS.has(tier)
-    ? ({ modelSettings: { temperature: 0, seed: JUDGE_SEED + attempt } } as const)
+    ? ({
+        modelSettings: { temperature: 0, seed: JUDGE_SEED + attempt },
+      } as const)
     : undefined;
 
 /**
@@ -231,6 +222,7 @@ export async function generateStructured<T>({
   validate,
   maxValidationRepairs = 1,
   modelTier = 'draft',
+  agentRole,
   abortSignal,
 }: {
   name: string;
@@ -245,6 +237,8 @@ export async function generateStructured<T>({
   validate?: (value: T) => string[];
   maxValidationRepairs?: number;
   modelTier?: AgentModelTier;
+  /** Explicit registered role; required when the invocation name is not canonical. */
+  agentRole?: DeckAgentRole;
   abortSignal?: AbortSignal;
 }): Promise<T> {
   const emit = createTool({
@@ -254,13 +248,7 @@ export async function generateStructured<T>({
     execute: async () => ({ ok: true }),
   });
 
-  const agent = new Agent({
-    id: name,
-    name,
-    instructions: `${instructions}\n\nYou MUST call the \`emit\` tool exactly once with the result. Do not write prose.`,
-    model: modelFor(modelTier),
-    tools: { emit },
-  });
+  const agent = agentRole ? agentForRole(agentRole) : agentForInvocation(name);
 
   // Build the user turn: plain string, or a content-parts message when images
   // are present (AI SDK v5 image part shape).
@@ -295,7 +283,12 @@ export async function generateStructured<T>({
     // from the first response. Avoid an unnecessary second model round-trip.
     const res = await withTransientRetry(name, abortSignal, () =>
       agent.generate(buildInput(userPrompt) as never, {
-        toolChoice: 'required',
+        instructions: instructionsForAgent(
+          agent,
+          `${instructions}\n\nYou MUST call the \`emit\` tool exactly once with the result. Do not write prose.`,
+        ),
+        clientTools: { emit },
+        toolChoice: { type: 'tool', toolName: 'emit' },
         maxSteps: 1,
         ...samplingFor(modelTier, attempt),
         abortSignal: combineAbortSignals(abortSignal, timeoutMs),

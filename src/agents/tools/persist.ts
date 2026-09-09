@@ -7,7 +7,11 @@
 import type { Payload } from 'payload';
 
 import type { Presentation } from '@/payload-types';
-import { parseDocumentAiPages, resolveDocumentTemplate } from '../../documents/templates';
+import {
+  assertDocumentPages,
+  parseDocumentAiPages,
+  resolveDocumentTemplate,
+} from '../../documents/templates';
 import { COLLECTIONS } from '../../lib/collections';
 import { mergeAugmentedSlides } from '../../lib/augmentSlides';
 import { convertSlidesMarkdownToLexical } from '../../lib/richTextWrite';
@@ -48,6 +52,8 @@ export async function persistSlides(opts: {
           draftedRich,
         ) as Presentation['slides'])
       : (draftedRich as Presentation['slides']);
+
+  assertDocumentPages(resolveDocumentTemplate(current.documentTemplate), nextSlides);
 
   await preflightPresentationLayout(payload, {
     ...(current as unknown as Record<string, unknown>),

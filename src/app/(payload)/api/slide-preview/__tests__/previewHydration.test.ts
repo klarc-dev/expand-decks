@@ -151,6 +151,56 @@ describe('POST /api/slide-preview hydration + access', () => {
     });
   });
 
+  it('returns the carousel canvas and suppresses presentation chrome', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockImplementation(async ({ collection }: { collection: string }) =>
+      collection === 'presentations'
+        ? { id: 'p1', documentTemplate: 'linkedin-carousel' }
+        : { id: 1, name: 'Klarc', logo: { filename: 'logo.png' } },
+    );
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Portrait' },
+        fields: {
+          organisation: 1,
+          'footer.enabled': true,
+          'footer.left': 'Klarc',
+        },
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.canvas).toMatchObject({ width: 1080, height: 1350, aspectRatio: '4/5' });
+    expect(body.chrome).not.toHaveProperty('footer');
+    expect(body.chrome).not.toHaveProperty('logoUrl');
+  });
+
+  it('returns the selected one-page template canvas geometry', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'visual-publication' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Square message' },
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).canvas).toMatchObject({
+      width: 1080,
+      height: 1080,
+      aspectRatio: '1/1',
+      orientation: 'square',
+    });
+  });
+
   it('fails explicitly when the persisted template is unknown', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
     findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'unknown' });
@@ -159,5 +209,24 @@ describe('POST /api/slide-preview hydration + access', () => {
 
     expect(res.status).toBe(422);
     expect((await res.json()).error).toContain('Template de document inconnu');
+  });
+
+  it('rejects a structurally invalid report before rendering its page preview', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'standard-report' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Invalid first page' },
+        blockTypes: ['statement', 'agenda', 'statement', 'stats', 'table', 'cta'],
+        slideIndex: 0,
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(422);
+    expect((await res.json()).error).toContain('page 1');
   });
 });

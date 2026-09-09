@@ -17,7 +17,11 @@ import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
 import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
-import { documentTemplateField, payloadBlocksForTemplate } from '../documents/payload';
+import {
+  documentTemplateField,
+  payloadBlocksForTemplate,
+  payloadBlockSlugsForTemplate,
+} from '../documents/payload';
 import { resolvePrimaryArtifactHref } from '../documents/artifacts';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { afterPresentationChange } from '../hooks/afterPresentationChange';
@@ -130,7 +134,9 @@ export const Presentations: CollectionConfig = {
           : 0;
         if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
           return Response.json(
-            { error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.' },
+            {
+              error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.',
+            },
             { status: 429 },
           );
         }
@@ -259,8 +265,21 @@ export const Presentations: CollectionConfig = {
             : previous?.documentTemplate,
         );
         const pages = Object.hasOwn(record, 'slides') ? record.slides : previous?.slides;
-        if (pages !== undefined) assertDocumentPages(template, pages);
+        // Authors must be able to save the aggregate before the ID-based draft
+        // workflow can populate it. Once at least one page exists, enforce the
+        // complete template contract at the write boundary; the build boundary
+        // revalidates even empty documents and therefore cannot emit artifacts
+        // for an incomplete standardized template.
+        if (pages !== undefined && (!Array.isArray(pages) || pages.length > 0)) {
+          assertDocumentPages(template, pages);
+        }
         record.documentTemplate = template.id;
+        if (!template.chrome.footer) {
+          record.footer = {
+            ...((record.footer as Record<string, unknown> | undefined) ?? {}),
+            enabled: false,
+          };
+        }
         return data;
       },
       // Standardized footer: no free text. Whatever the client submits (admin
@@ -333,12 +352,16 @@ export const Presentations: CollectionConfig = {
             {
               name: 'slides',
               type: 'blocks',
-              label: 'Diapositives',
+              label: 'Pages',
               admin: {
                 description:
-                  'Une diapositive par bloc. Choisissez un type de bloc pour ajouter une slide.',
+                  'Une page par bloc. Les layouts proposés dépendent du template de document.',
               },
               blocks: payloadBlocksForTemplate('presentation'),
+              filterOptions: ({ data }) =>
+                payloadBlockSlugsForTemplate(
+                  (data as { documentTemplate?: unknown } | undefined)?.documentTemplate,
+                ),
             },
           ],
         },
@@ -510,7 +533,9 @@ export const Presentations: CollectionConfig = {
               type: 'text',
               hasMany: true,
               label: 'Tags',
-              admin: { description: 'Mots-clés libres pour classer la présentation' },
+              admin: {
+                description: 'Mots-clés libres pour classer la présentation',
+              },
             },
             {
               name: 'language',
@@ -531,6 +556,8 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description:
                   'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche, {page} / {total} à droite.',
+                condition: (_data, siblingData) =>
+                  resolveDocumentTemplate(siblingData?.documentTemplate).chrome.footer,
               },
               fields: [
                 {
@@ -547,20 +574,29 @@ export const Presentations: CollectionConfig = {
                       type: 'text',
                       defaultValue: '{org.name}',
                       label: 'Gauche',
-                      admin: { readOnly: true, description: 'Standardisé : {org.name}.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : {org.name}.',
+                      },
                     },
                     {
                       name: 'center',
                       type: 'text',
                       label: 'Centre',
-                      admin: { readOnly: true, description: 'Standardisé : vide.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : vide.',
+                      },
                     },
                     {
                       name: 'right',
                       type: 'text',
                       defaultValue: '{page} / {total}',
                       label: 'Droite',
-                      admin: { readOnly: true, description: 'Standardisé : {page} / {total}.' },
+                      admin: {
+                        readOnly: true,
+                        description: 'Standardisé : {page} / {total}.',
+                      },
                     },
                   ],
                 },
