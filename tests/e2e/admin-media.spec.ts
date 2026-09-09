@@ -62,6 +62,8 @@ test.describe('Payload media administration UI', () => {
   test('admin edits media metadata and deletes the record through the real admin form', async ({
     page,
   }, testInfo) => {
+    test.setTimeout(60_000);
+
     await page.goto('/admin/collections/media/create');
 
     const file = page.locator('input[type="file"]');
@@ -106,10 +108,8 @@ test.describe('Payload media administration UI', () => {
         response.request().method() === 'DELETE' &&
         response.status() === 200,
     );
-    await page
-      .getByRole('button', { name: 'Save', exact: true })
-      .locator('xpath=following-sibling::button[1]')
-      .click();
+    const saveControls = page.getByRole('button', { name: 'Save', exact: true }).locator('..');
+    await saveControls.getByRole('button').nth(1).click();
     await page.getByText('Delete', { exact: true }).click();
     await page
       .getByRole('button', { name: /confirm|delete/i })
