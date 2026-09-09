@@ -108,8 +108,10 @@ test.describe('Payload media administration UI', () => {
         response.request().method() === 'DELETE' &&
         response.status() === 200,
     );
-    const saveControls = page.getByRole('button', { name: 'Save', exact: true }).locator('..');
-    await saveControls.getByRole('button').nth(1).click();
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .locator('xpath=following::button[1]')
+      .click();
     await page.getByText('Delete', { exact: true }).click();
     await page
       .getByRole('button', { name: /confirm|delete/i })
