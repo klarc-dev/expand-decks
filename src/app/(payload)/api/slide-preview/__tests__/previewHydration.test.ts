@@ -179,6 +179,33 @@ describe('POST /api/slide-preview hydration + access', () => {
     expect(body.chrome).not.toHaveProperty('logoUrl');
   });
 
+  it('keeps the sales-sheet footer while suppressing its redundant page number', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'sales-sheet' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'statement', title: 'Commercial offer' },
+        fields: {
+          'footer.enabled': true,
+          'footer.left': 'Klarc',
+          'footer.center': 'Confidential',
+          'footer.right': '{page} / {total}',
+          'slides.0.blockType': 'statement',
+        },
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).chrome.footer).toEqual({
+      left: 'Klarc',
+      center: 'Confidential',
+      right: '',
+    });
+  });
+
   it('returns the selected one-page template canvas geometry', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
     findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'visual-publication' });

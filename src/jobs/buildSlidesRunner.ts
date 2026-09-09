@@ -29,6 +29,7 @@ import { documentExportPlan } from '../documents/exportPlan';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
+  applyPageNumberChrome,
   buildFooterHeadmatter,
   buildFooterLayer,
   buildLogoLayer,
@@ -287,14 +288,17 @@ export async function preflightPresentationLayout(
     date: new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR'),
     total: candidate.slides.length,
   };
-  const resolvedFooter = footer
-    ? {
-        ...footer,
-        left: resolveVarsWith(footer.left ?? '', vars),
-        center: resolveVarsWith(footer.center ?? '', vars),
-        right: resolveVarsWith(footer.right ?? '', vars),
-      }
-    : footer;
+  const resolvedFooter = applyPageNumberChrome(
+    footer
+      ? {
+          ...footer,
+          left: resolveVarsWith(footer.left ?? '', vars),
+          center: resolveVarsWith(footer.center ?? '', vars),
+          right: resolveVarsWith(footer.right ?? '', vars),
+        }
+      : footer,
+    template.chrome.pageNumbers,
+  );
   const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
   const themedHeadmatter = buildHeadmatter(baseHeadmatter, brand, language);
   const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
@@ -598,14 +602,17 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
 
     // Pre-resolve static tokens in footer templates; {page}/{total} stay live in
     // the Vue layer (they need per-slide nav state).
-    const resolvedFooter = footer
-      ? {
-          ...footer,
-          left: resolveVarsWith(footer.left ?? '', vars),
-          center: resolveVarsWith(footer.center ?? '', vars),
-          right: resolveVarsWith(footer.right ?? '', vars),
-        }
-      : footer;
+    const resolvedFooter = applyPageNumberChrome(
+      footer
+        ? {
+            ...footer,
+            left: resolveVarsWith(footer.left ?? '', vars),
+            center: resolveVarsWith(footer.center ?? '', vars),
+            right: resolveVarsWith(footer.right ?? '', vars),
+          }
+        : footer,
+      template.chrome.pageNumbers,
+    );
 
     const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
     const themedHeadmatter = buildHeadmatter(
