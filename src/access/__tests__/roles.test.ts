@@ -6,8 +6,10 @@ import {
   isAdmin,
   isAdminOrAuthor,
   isLoggedIn,
+  isOrganisationAuthor,
   isOrganisationMember,
   isOwnOrganisation,
+  isOwnOrganisationAuthor,
   userIsOrganisationMember,
   userOrganisationIds,
 } from '../roles';
@@ -31,6 +33,7 @@ const access = (user: TestUser) =>
 
 const admin: TestUser = { id: 'a1', role: ROLES.admin };
 const author: TestUser = { id: 'u1', role: ROLES.author, organisations: [7, 9] };
+const viewer: TestUser = { id: 'v1', role: ROLES.viewer, organisations: [7] };
 const orphan: TestUser = { id: 'u2', role: ROLES.author };
 
 describe('userOrganisationIds', () => {
@@ -105,6 +108,15 @@ describe('isOwnOrganisation — gates the organisations collection', () => {
   });
 });
 
+describe('isOwnOrganisationAuthor — organisation write access', () => {
+  it('allows authors and admins but keeps viewers read-only', () => {
+    expect(isOwnOrganisationAuthor(access(author))).toEqual({ id: { in: [7, 9] } });
+    expect(isOwnOrganisationAuthor(access(admin))).toBe(true);
+    expect(isOwnOrganisationAuthor(access(viewer))).toBe(false);
+    expect(isOwnOrganisationAuthor(access(orphan))).toBe(false);
+  });
+});
+
 describe('userIsOrganisationMember — imperative guard for custom endpoints', () => {
   it('matches ids across string/number and populated shapes', () => {
     expect(userIsOrganisationMember(author as never, 7)).toBe(true);
@@ -124,6 +136,20 @@ describe('userIsOrganisationMember — imperative guard for custom endpoints', (
   });
 });
 
+describe('isOrganisationAuthor — organisation-scoped write access', () => {
+  it('allows admins and scopes authors to their organisations', () => {
+    expect(isOrganisationAuthor({ req: { user: admin } } as never)).toBe(true);
+    expect(isOrganisationAuthor({ req: { user: author } } as never)).toEqual({
+      organisation: { in: [7, 9] },
+    });
+  });
+
+  it('keeps viewers and anonymous users read-only', () => {
+    expect(isOrganisationAuthor({ req: { user: viewer } } as never)).toBe(false);
+    expect(isOrganisationAuthor({ req: { user: null } } as never)).toBe(false);
+  });
+});
+
 // Regression guard: pin the Presentations collection to the exact access fns.
 // Reference-equality catches any future flip (e.g. someone loosening read off
 // the org-scoped policy).
@@ -136,8 +162,8 @@ describe('Presentations.access — wiring lock', () => {
     expect(Presentations.access?.read).toBe(isOrganisationMember);
   });
 
-  it('update is gated by isOrganisationMember', () => {
-    expect(Presentations.access?.update).toBe(isOrganisationMember);
+  it('update is gated by isOrganisationAuthor', () => {
+    expect(Presentations.access?.update).toBe(isOrganisationAuthor);
   });
 
   it('delete is gated by isAdmin', () => {

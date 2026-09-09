@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { userIsOrganisationMember } from '@/access/roles';
+import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { authenticateRequest } from '@/lib/authenticateRequest';
 import { COLLECTIONS } from '@/lib/collections';
 import { slideMutationSchema } from '@/lib/deckCrudContract';
@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
 
   if (!userIsOrganisationMember(user, presentation.organisation))
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  if (!userIsAdminOrAuthor(user))
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
   const slides = [...(Array.isArray(presentation.slides) ? presentation.slides : [])];

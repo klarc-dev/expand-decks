@@ -8,7 +8,12 @@ import type {
 } from 'payload';
 import { APIError } from 'payload';
 
-import { isAdminOrAuthor, userIsAdmin, userOrganisationIds } from '../access/roles';
+import {
+  isAdminOrAuthor,
+  userIsAdmin,
+  userIsAdminOrAuthor,
+  userOrganisationIds,
+} from '../access/roles';
 import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
 import { beforeKnowledgeDocumentDelete } from '../hooks/knowledgeLifecycle';
 import { KNOWLEDGE_INGEST_TASK } from '../jobs/knowledgeIngest';
@@ -131,6 +136,11 @@ export const canAccessKnowledgeDocuments: Access = async ({ req }) => {
   return { 'knowledgeBase.organisation': { in: ids } };
 };
 
+export const canMutateKnowledgeDocuments: Access = async ({ req }) => {
+  if (!userIsAdminOrAuthor(req.user)) return false;
+  return canAccessKnowledgeDocuments({ req } as Parameters<Access>[0]);
+};
+
 /**
  * Browsers disagree on the MIME type of `.md` / `.txt` uploads (some send
  * `application/octet-stream`), which would trip the generated upload validator
@@ -178,8 +188,8 @@ export const KnowledgeDocuments: CollectionConfig = {
   access: {
     create: isAdminOrAuthor,
     read: canAccessKnowledgeDocuments,
-    update: canAccessKnowledgeDocuments,
-    delete: canAccessKnowledgeDocuments,
+    update: canMutateKnowledgeDocuments,
+    delete: canMutateKnowledgeDocuments,
   },
   upload: {
     // Distinct from the deck media directory, but under the same host volume
@@ -200,6 +210,9 @@ export const KnowledgeDocuments: CollectionConfig = {
       handler: async (req: PayloadRequest) => {
         // fallow-ignore-next-line code-duplication -- Payload endpoint auth/route guard convention
         if (!req.user) return Response.json({ error: 'Non authentifié' }, { status: 401 });
+        if (!userIsAdminOrAuthor(req.user)) {
+          return Response.json({ error: 'Accès refusé' }, { status: 403 });
+        }
         const id = req.routeParams?.id as string | undefined;
         if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
 

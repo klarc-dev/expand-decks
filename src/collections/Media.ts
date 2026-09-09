@@ -1,6 +1,6 @@
 import type { Access, CollectionConfig, Where } from 'payload';
 
-import { isAdmin, isLoggedIn, userIsAdmin, userOrganisationIds } from '../access/roles';
+import { isAdmin, userIsAdmin, userOrganisationIds } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 
 export const canReadMedia: Access = async ({ req }) => {
@@ -18,11 +18,17 @@ export const canReadMedia: Access = async ({ req }) => {
   return scoped;
 };
 
+export const canCreateMedia: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (userIsAdmin(user)) return true;
+  return user.role === 'author';
+};
+
 export const Media: CollectionConfig = {
   slug: COLLECTIONS.media,
   labels: { singular: 'M\u00e9dia', plural: 'M\u00e9dias' },
   access: {
-    create: isLoggedIn,
+    create: canCreateMedia,
     read: canReadMedia,
     update: isAdmin,
     delete: isAdmin,

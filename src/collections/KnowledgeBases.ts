@@ -2,6 +2,7 @@ import { APIError, type CollectionConfig, type FieldHook } from 'payload';
 
 import {
   isAdminOrAuthor,
+  isOrganisationAuthor,
   isOrganisationMember,
   userOrganisationIds,
   userIsOrganisationMember,
@@ -24,8 +25,8 @@ export const KnowledgeBases: CollectionConfig = {
   access: {
     create: isAdminOrAuthor,
     read: isOrganisationMember,
-    update: isOrganisationMember,
-    delete: isOrganisationMember,
+    update: isOrganisationAuthor,
+    delete: isOrganisationAuthor,
   },
   hooks: {
     beforeDelete: [beforeKnowledgeBaseDelete],

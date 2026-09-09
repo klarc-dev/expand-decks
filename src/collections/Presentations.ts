@@ -5,7 +5,9 @@ import type { CollectionConfig, PayloadRequest } from 'payload';
 import {
   isAdmin,
   isAdminOrAuthor,
+  isOrganisationAuthor,
   isOrganisationMember,
+  userIsAdminOrAuthor,
   userIsOrganisationMember,
 } from '../access/roles';
 import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
@@ -82,7 +84,7 @@ export const Presentations: CollectionConfig = {
   access: {
     create: isAdminOrAuthor,
     read: isOrganisationMember,
-    update: isOrganisationMember,
+    update: isOrganisationAuthor,
     delete: isAdmin,
   },
   endpoints: [
@@ -120,6 +122,9 @@ export const Presentations: CollectionConfig = {
 
         // Authorize the write before spending a Chromium process.
         if (!userIsOrganisationMember(user, presentation.organisation)) {
+          return Response.json({ error: 'Accès refusé' }, { status: 403 });
+        }
+        if (!userIsAdminOrAuthor(user)) {
           return Response.json({ error: 'Accès refusé' }, { status: 403 });
         }
 

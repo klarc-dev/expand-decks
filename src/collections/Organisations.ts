@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload';
 
-import { isAdmin, isOwnOrganisation } from '../access/roles';
+import { isAdmin, isOwnOrganisation, isOwnOrganisationAuthor } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
 import { afterOrganisationChange } from '../hooks/afterOrganisationChange';
 
@@ -35,7 +35,7 @@ export const Organisations: CollectionConfig = {
     // otherwise an author would strand an org nobody belongs to.
     create: isAdmin,
     read: isOwnOrganisation,
-    update: isOwnOrganisation,
+    update: isOwnOrganisationAuthor,
     delete: isAdmin,
   },
   hooks: {

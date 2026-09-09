@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
-import { ROLES, userIsOrganisationMember } from '@/access/roles';
+import { ROLES, userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { agentDraftCommandSchema } from '@/lib/agentDraftContract';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
@@ -94,6 +94,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
   if (!parsed.success) return NextResponse.json({ error: 'Action invalide' }, { status: 400 });
   const auth = await authorize(req, runId);
   if ('response' in auth) return auth.response;
+  if (!userIsAdminOrAuthor(auth.user)) {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  }
 
   if (parsed.data.action === 'cancel') {
     const run = await auth.workflow.createRun({ runId, resourceId: String(auth.presentationId) });

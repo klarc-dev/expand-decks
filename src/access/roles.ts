@@ -48,6 +48,20 @@ export const isAdmin: Access = ({ req: { user } }) => userIsAdmin(user);
 
 export const isAdminOrAuthor: Access = ({ req: { user } }) => userIsAdminOrAuthor(user);
 
+/**
+ * Organisation-scoped mutation policy for authoring collections. Admins are
+ * unrestricted; authors are narrowed to their organisations; viewers are
+ * read-only even when they belong to the document's organisation.
+ */
+export const isOrganisationAuthor: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (userIsAdmin(user)) return true;
+  if (!userIsAdminOrAuthor(user)) return false;
+  const ids = userOrganisationIds(user);
+  if (ids.length === 0) return false;
+  return { organisation: { in: ids } } satisfies Where;
+};
+
 export const isLoggedIn: Access = ({ req: { user } }) => Boolean(user);
 
 export const isAdminField: FieldAccess = ({ req: { user } }) => userIsAdmin(user);
@@ -70,6 +84,16 @@ export const isOrganisationMember: Access = ({ req: { user } }) => {
 export const isOwnOrganisation: Access = ({ req: { user } }) => {
   if (!user) return false;
   if (userIsAdmin(user)) return true;
+  const ids = userOrganisationIds(user);
+  if (ids.length === 0) return false;
+  return { id: { in: ids } } satisfies Where;
+};
+
+/** Author-only mutation policy for the Organisations collection itself. */
+export const isOwnOrganisationAuthor: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (userIsAdmin(user)) return true;
+  if (!userIsAdminOrAuthor(user)) return false;
   const ids = userOrganisationIds(user);
   if (ids.length === 0) return false;
   return { id: { in: ids } } satisfies Where;

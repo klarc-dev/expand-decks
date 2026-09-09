@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { userIsOrganisationMember } from '@/access/roles';
+import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { reviseSlide } from '@/agents/reviseSlide';
 import { authenticateRequest } from '@/lib/authenticateRequest';
 import { COLLECTIONS } from '@/lib/collections';
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (!userIsOrganisationMember(user, presentation.organisation)) {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  }
+  if (!userIsAdminOrAuthor(user)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
 

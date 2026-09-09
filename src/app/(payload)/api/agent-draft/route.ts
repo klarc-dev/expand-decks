@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
-import { userIsOrganisationMember } from '@/access/roles';
+import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
   const parsed = agentDraftStartSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
-      { error: 'Requête invalide', issues: parsed.error.issues.map((issue) => issue.message) },
+      {
+        error: 'Requête invalide',
+        issues: parsed.error.issues.map((issue) => issue.message),
+      },
       { status: 400 },
     );
   }
@@ -34,7 +37,10 @@ export async function POST(req: NextRequest) {
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
   try {
     const requestedPolicy = parsed.data.sourcePolicy ?? legacySourcePolicy(parsed.data.sourceIds);
-    const resolved = await resolveSourcePolicy(requestedPolicy, { payload, user });
+    const resolved = await resolveSourcePolicy(requestedPolicy, {
+      payload,
+      user,
+    });
     sourcePolicy = resolved.policy.mode;
     sourceIds = resolved.sources.map((source) => source.id);
   } catch (error) {
@@ -62,6 +68,9 @@ export async function POST(req: NextRequest) {
   if (!presentation)
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
   if (!userIsOrganisationMember(user, presentation.organisation)) {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  }
+  if (!userIsAdminOrAuthor(user)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
   const existing = await payload.find({
@@ -140,7 +149,10 @@ export async function POST(req: NextRequest) {
   try {
     const job = await payload.jobs.queue({
       task: AGENT_DRAFT_TASK,
-      input: { agentRunId: String(run.id), presentationId: String(presentationId) },
+      input: {
+        agentRunId: String(run.id),
+        presentationId: String(presentationId),
+      },
     });
     await payload.update({
       collection: COLLECTIONS.agentRuns,

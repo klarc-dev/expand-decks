@@ -3,7 +3,7 @@ import { getPayload } from 'payload';
 import config from '@payload-config';
 import { z } from 'zod';
 
-import { userIsOrganisationMember } from '@/access/roles';
+import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { mastra } from '@/agents/mastra';
 import { COLLECTIONS } from '@/lib/collections';
 
@@ -45,6 +45,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
   }
   if (!userIsOrganisationMember(user, presentation.organisation)) {
+    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  }
+  if (!userIsAdminOrAuthor(user)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
   if (!presentation.draftTraceId) {
