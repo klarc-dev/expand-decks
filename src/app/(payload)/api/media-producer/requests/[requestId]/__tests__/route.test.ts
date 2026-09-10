@@ -118,6 +118,7 @@ describe('GET /api/media-producer/requests/:requestId', () => {
           title: 'A document',
           language: 'fr',
           organisation: 3,
+          documentTemplate: 'linkedin-carousel',
           currentMediaProductionRequest: 5,
           slides: storedRequest.pages.map((page) => page.block),
         };
@@ -191,6 +192,7 @@ describe('GET /api/media-producer/requests/:requestId', () => {
           title: 'A document',
           language: 'fr',
           organisation: 3,
+          documentTemplate: 'linkedin-carousel',
           currentMediaProductionRequest: 99,
           slides: storedRequest.pages.map((page) => page.block),
         };

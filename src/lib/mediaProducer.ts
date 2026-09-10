@@ -480,8 +480,10 @@ export function mediaProducerImageRole(
 export function mediaProducerDocumentTemplate(
   format: MediaProducerRequest['intended_format'],
 ): 'visual-publication' | 'linkedin-carousel' | undefined {
+  if (format === LINKEDIN_DOCUMENT_CAROUSEL || format === LINKEDIN_MULTI_IMAGE) {
+    return 'linkedin-carousel';
+  }
   if (format === LINKEDIN_IMAGE) return 'visual-publication';
-  if (format === LINKEDIN_MULTI_IMAGE) return 'linkedin-carousel';
   return undefined;
 }
 

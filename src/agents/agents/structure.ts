@@ -41,8 +41,29 @@ function requestedSlideRange(brief: string): { min: number; max: number } | null
   return { min, max };
 }
 
+function templateNarrativeArc(template: DocumentTemplateDefinition): string {
+  if (template.id === PRESENTATION_DOCUMENT_TEMPLATE.id) {
+    return `Arc du document :
+- Première page = "cover".
+- Tôt : pose le problème que le public possède (la pertinence / "so what") AVANT toute solution.
+- Cœur : segmente l'idée maîtresse ; alterne les layouts, place un "section" entre deux grands groupes.
+- Dernière page = "cta".`;
+  }
+
+  if (template.pageCount.max === 1) {
+    return `Arc du document :
+- Le document tient sur une page : concentre le message, sa preuve et l'action attendue dans l'un des layouts autorisés.
+- Ne planifie ni couverture séparée, ni intercalaire, ni page finale séparée.`;
+  }
+
+  return `Arc du document :
+- Respecte exactement les règles structurelles et les layouts autorisés du template.
+- Tôt : pose le problème que le public possède (la pertinence / "so what") AVANT toute solution.
+- Cœur : segmente l'idée maîtresse sans ajouter de couverture, d'intercalaire ou de conclusion non autorisés.`;
+}
+
 function structureInstructions(template: DocumentTemplateDefinition): string {
-  return `Tu planifies la structure d'une présentation de formation de niveau expert à partir d'un dossier (pas d'un brief brut).
+  return `Tu planifies la structure d'un document de niveau expert à partir d'un dossier (pas d'un brief brut).
 
 Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
 
@@ -58,11 +79,7 @@ Règles de contenu :
 - « Approche claire », « dispositif robuste », « enjeu essentiel », « vision globale », « il est important de » et les formules analogues ne couvrent aucun point clé.
 - Les sources ne forment pas une slide autonome, mais l'intention doit indiquer quelle affirmation centrale doit recevoir une footnote.
 
-Arc du deck (sparkline) :
-- Première diapositive = "cover".
-- Tôt : pose le problème que le public possède (la pertinence / "so what") AVANT toute solution.
-- Cœur : segmente l'idée maîtresse ; alterne les layouts, place un "section" entre deux grands groupes.
-- Dernière diapositive = "cta".
+${templateNarrativeArc(template)}
 
 Couverture (impératif) : CHAQUE point clé du dossier doit être porté par au moins une diapositive.
 Les références/sources ne sont pas du contenu visible : ne planifie jamais une diapositive ou une intention "Sources" / "Références".`;

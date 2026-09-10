@@ -147,6 +147,11 @@ describe('structure() slide count target', () => {
       expect(result.stubs).toEqual([
         { blockType: 'statement', title: 'One clear message', intent: 'Explain' },
       ]);
+      const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
+      expect(instructions).toContain('Le document tient sur une page');
+      expect(instructions).toContain('Ne planifie ni couverture séparée');
+      expect(instructions).not.toContain('Première page = "cover"');
+      expect(instructions).not.toContain('Dernière page = "cta"');
     },
   );
 

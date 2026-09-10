@@ -324,6 +324,7 @@ describe('media producer contract', () => {
           title: 'A document',
           language: 'fr',
           organisation: { id: 7 },
+          documentTemplate: 'linkedin-carousel',
           slides: [
             { ...page(1).block, id: 'payload-row-id' },
             { ...page(2).block, id: 'payload-row-id-2' },
@@ -332,6 +333,18 @@ describe('media producer contract', () => {
         request,
       ),
     ).toBe(true);
+    expect(
+      presentationMatchesMediaRequest(
+        {
+          title: 'A document',
+          language: 'fr',
+          organisation: { id: 7 },
+          documentTemplate: 'presentation',
+          slides: [page(1).block, page(2).block],
+        },
+        request,
+      ),
+    ).toBe(false);
     expect(
       presentationMatchesMediaRequest(
         {
