@@ -91,6 +91,8 @@ describe('writeSlide invariants', () => {
     expect(call.instructions).toContain('transformer une demande de sujet en contenu à enseigner');
     expect(call.instructions).toContain('connaissances générales établies');
     expect(call.instructions).toContain('N’ajoute aucun fait propre à l’auteur');
+    expect(call.instructions).toContain("Une limite factuelle guide ce que tu n'écris pas");
+    expect(call.instructions).toContain('ce qui reste à confirmer');
     expect(call.instructions).toContain('directement du dossier');
     expect(call.instructions).toContain('résultat final destiné au public');
     expect(call.instructions).toContain('Ne décris jamais ce qu’il faudrait écrire');

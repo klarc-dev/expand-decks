@@ -30,6 +30,16 @@ import type { DeckDossier } from '../schemas';
 import { researchSources } from './research';
 
 const MAX_COVERAGE_RETRIES = 2;
+const DEFAULT_PRESENTATION_RANGE: SlideCountRange = { min: 5, max: 10 };
+
+function defaultSlideRange(
+  template: DocumentTemplateDefinition,
+  brief: string,
+): SlideCountRange | null {
+  if (template.id !== PRESENTATION_DOCUMENT_TEMPLATE.id) return null;
+  return parseSlideBySlideBrief(brief) ? null : DEFAULT_PRESENTATION_RANGE;
+}
+
 function requestedSlideRange(brief: string): { min: number; max: number } | null {
   const match = brief.match(
     /\b(\d{1,2})\s*(?:(?:[–—-]|à|to)\s*(\d{1,2}))?\s+(?:slide|slides|diapositive|diapositives)\b/i,
@@ -290,7 +300,8 @@ export async function structureWithProvenance(
 ): Promise<StructureResult> {
   const requestedRange = slideCountRange
     ? slideCountRangeSchema.parse(slideCountRange)
-    : requestedSlideRange(dossier.rawBrief);
+    : (requestedSlideRange(dossier.rawBrief) ??
+      (revisionContext ? null : defaultSlideRange(template, dossier.rawBrief)));
   const range = structuralSlideRange(requestedRange, template);
   const schema = outlineSchemaForRange(range, template);
   if (revisionContext && !revisionChangesStructure(dossier.rawBrief)) {

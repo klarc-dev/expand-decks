@@ -34,6 +34,8 @@ Tu extrais :
 
 Règles du dossier :
 - Préserve le périmètre, la terminologie, le statut épistémique et le point de vue du brief et des sources.
+- Pour une demande d'explication, développe un petit nombre de points clés qui couvrent directement le sujet et le public ; ne transforme pas chaque nuance, précaution ou sous-thème possible en point clé autonome.
+- L'absence d'un détail propre à l'auteur n'est pas un contenu à enseigner. Sauf demande explicite d'audit, n'ajoute ni avertissement, ni réserve répétée, ni point clé sur ce que le brief ne précise pas ; formule simplement les connaissances générales comme telles.
 - Ne transforme pas une explication en plaidoyer, une incertitude en certitude ni une corrélation en causalité.
 - N'invente aucun fait propre à l’auteur, chiffre, exemple présenté comme réel, citation, source, consensus, causalité ou recommandation personnalisée. Les connaissances générales établies nécessaires pour expliquer le sujet demandé sont autorisées.
 - Calibre le dossier sur les acquis du public et privilégie les distinctions, conditions, limites, exceptions, conséquences et arbitrages utiles.

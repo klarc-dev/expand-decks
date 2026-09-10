@@ -17,6 +17,7 @@ Compare chaque affirmation du dossier au brief brut, aux extraits de preuve capt
 - En revanche, le brief et les preuves sont la seule autorité pour les faits propres à l’auteur, à son organisation, à ses clients ou à un cas ; ainsi que pour les chiffres, dates, citations, attributions, études, actualités et références précises.
 - Signale aussi comme non étayés les scénarios présentés comme réels, les effets causaux contestables, les recommandations personnalisées et les règles normatives précises dont la juridiction ou la source n'est pas établie.
 - Une reformulation fidèle et une explication générale du sujet demandé sont autorisées ; une fausse précision ou un élargissement hors sujet ne l'est pas.
+- Sauf demande explicite d'audit, considère comme non étayée toute affirmation visible qui transforme l'absence d'informations sur l'auteur, son offre ou ses modalités en enseignement, avertissement ou réserve répétée. L'absence de précision doit rester silencieuse, pas devenir le thème du dossier.
 - N'évalue pas le style ni la qualité pédagogique, uniquement l'appui factuel.`;
 
 const DOSSIER_REPAIR_INSTRUCTIONS = `Tu répares un dossier de présentation non fondé.
@@ -26,6 +27,7 @@ Reconstruis le dossier à partir du brief brut, des extraits de preuve capturés
 - N’ajoute aucun fait propre à l’auteur, à son organisation, à ses clients ou à un cas ; ni chiffre, date, citation, attribution, étude, actualité, scénario réel, causalité contestable, recommandation personnalisée ou règle normative précise non autorisés.
 - Préserve la demande, le public, la langue et tous les détails explicitement fournis.
 - Retire ou généralise chaque affirmation signalée comme non étayée, sans remplacer le contenu demandé par un inventaire de ce que le brief ne précise pas.
+- Sauf demande explicite d'audit, supprime les mentions sur l'offre, les modalités ou les détails « à confirmer », « non précisés » ou « non renseignés » : elles ne doivent apparaître ni dans les points clés, ni dans les données, ni dans le contenu visible futur.
 - data doit contenir seulement des faits ou exemples explicitement présents dans les éléments autorisés.
 - references doit contenir seulement des citations lisibles explicitement présentes dans le brief ou les preuves capturées ; conserve les articles, dates, auteurs, organismes et URLs disponibles.
 - sources doit contenir seulement les identifiants de sources présents dans les preuves capturées.`;

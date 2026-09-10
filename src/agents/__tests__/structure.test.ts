@@ -576,6 +576,25 @@ describe('structure() parser — brief with fewer than 3 S-markers falls to LLM'
     expect(stubs.at(-1)?.blockType).toBe('cta');
   });
 
+  it('uses a concise default range when a presentation brief gives no count', async () => {
+    const makeSlides = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        blockType: 'statement',
+        title: `Slide ${index + 1}`,
+        intent: `Intent ${index + 1}`,
+      }));
+    mockedGenerateStructured.mockResolvedValue({ slides: makeSlides(8) });
+
+    const stubs = await structure(baseDossier('Explique le rôle et les prestations d’un avocat'));
+    const call = mockedGenerateStructured.mock.calls[0]![0];
+
+    expect(call.prompt).toContain('entre 5 et 10 diapositives');
+    expect(call.schema.safeParse({ slides: makeSlides(4) }).success).toBe(false);
+    expect(call.schema.safeParse({ slides: makeSlides(10) }).success).toBe(true);
+    expect(call.schema.safeParse({ slides: makeSlides(11) }).success).toBe(false);
+    expect(stubs).toHaveLength(8);
+  });
+
   it.each([
     ['Create a concise 5–6 slide deck for executives', 5, 6],
     ['Deck expert de 5 à 7 diapositives pour dirigeants', 5, 7],

@@ -68,6 +68,7 @@ describe('groundDossier', () => {
     expect(auditCall.instructions).toContain('connaissances générales établies');
     expect(auditCall.instructions).toContain('faits propres à l’auteur');
     expect(auditCall.instructions).toContain('ne constitue pas une invention');
+    expect(auditCall.instructions).toContain("L'absence de précision doit rester silencieuse");
   });
 
   it('uses additional authorized facts when the caller supplies them', async () => {
