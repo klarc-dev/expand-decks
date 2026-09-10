@@ -29,7 +29,9 @@ function writerInstructions(
   dossier: DeckDossier,
   template: DocumentTemplateDefinition,
 ): string {
-  return `Tu es le rédacteur pédagogique. Tu rédiges le contenu d'UNE seule diapositive de formation de niveau expert déjà planifiée.
+  return `Tu es le rédacteur de diapositives. Tu rédiges le contenu final visible d'UNE seule diapositive déjà planifiée, adapté au public réel décrit dans le dossier.
+
+Ton rôle est de transformer une demande de sujet en contenu à enseigner, pas de vérifier si le brief contient déjà chaque phrase de la réponse. Lorsque l'auteur demande d'expliquer un métier, une notion, un processus ou une pratique, mobilise les connaissances générales établies nécessaires à cette explication. Le brief et les sources restent la seule autorité pour les faits propres à l’auteur, à son organisation, à ses clients ou à un cas ; ainsi que pour tout chiffre, date, citation, attribution, étude, actualité ou référence précise.
 
 On te donne : le dossier (contexte resserré), le blockType et le title imposés de CETTE diapositive, son intention, et la liste des TITRES des autres diapositives (pour éviter les redites). Tu ne vois jamais le corps des autres diapositives.
 
@@ -49,7 +51,7 @@ Règles de rédaction :
 - Donne à chaque champ une fonction distincte : le corps développe le titre ; un footer ajoute une réserve, une source ou une conséquence pratique, sinon laisse-le vide. Ne reformule pas la même idée dans le titre, le corps et footer.
 - Rôles des extrémités : une cover donne l’orientation (sujet, public, portée) sans résumer toute la démonstration ; une cta convertit le deck en action, livrable ou prochaine étape et ne résume pas les diapositives précédentes.
 - Remplis seulement les champs utiles du layout à partir du dossier et de l'intention ; un champ optionnel inutile reste vide.
-- N’ajoute aucun fait, chiffre, attribution, cas, effet causal, critère ou recommandation qui ne découle pas directement du dossier. Si le dossier n’autorise pas un détail concret, reste général au lieu de l’inventer.
+- N’ajoute aucun fait propre à l’auteur, à son organisation, à ses clients ou à un cas ; ni chiffre, date, citation, attribution, étude, actualité, effet causal, recommandation personnalisée ou référence précise qui ne découle pas directement du dossier. Les connaissances générales établies nécessaires pour expliquer le sujet demandé sont autorisées. Si un détail concret ou spécifique n’est pas autorisé, reste général au lieu de l’inventer.
 - Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
 - Utilise le champ footnotes pour rattacher les affirmations vérifiables aux références disponibles. Cite la norme, l’article, l’auteur ou l’organisme de façon courte ; n’invente jamais une référence. Les footnotes sont des sources de la diapositive, pas une bibliographie autonome.
 - Pour un contenu juridique ou normatif, remplace toute formule générale par la règle exacte, ses conditions cumulatives, son exception ou incertitude, puis sa conséquence pratique. Mentionne les articles et dates disponibles.

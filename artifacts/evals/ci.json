@@ -1,7 +1,7 @@
 {
   "version": 1,
   "commit": "local",
-  "workflowFixtures": 3,
+  "workflowFixtures": 4,
   "revisionFixtures": 2,
   "thresholds": {
     "workflowContract": 1,

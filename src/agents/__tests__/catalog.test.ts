@@ -75,7 +75,7 @@ describe('RUBRIC_PROMPT', () => {
       'une fonction pédagogique',
       'règle, conditions, exceptions, conséquences',
       'mise en application',
-      'niveau expert',
+      'niveau d’exigence est expert',
       'statut épistémique',
       'corrélation en causalité',
     ]) {

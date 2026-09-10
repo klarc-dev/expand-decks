@@ -8,7 +8,7 @@ const allIds = [...workflowDatasetV1, ...revisionDatasetV1].map((item) => item.e
 
 describe('versioned production evaluation datasets', () => {
   it('validates bilingual, explicit, and multi-turn fixtures', () => {
-    expect(workflowDatasetV1.map((item) => WorkflowFixtureSchema.parse(item))).toHaveLength(3);
+    expect(workflowDatasetV1.map((item) => WorkflowFixtureSchema.parse(item))).toHaveLength(4);
     expect(revisionDatasetV1.map((item) => RevisionFixtureSchema.parse(item))).toHaveLength(2);
     expect(workflowDatasetV1.map((item) => item.input.language)).toContain('fr');
     expect(workflowDatasetV1.map((item) => item.input.language)).toContain('en');

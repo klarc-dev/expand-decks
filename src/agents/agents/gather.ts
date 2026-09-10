@@ -19,7 +19,9 @@ import { researchSources } from './research';
 
 const LLM_SCHEMA = DeckDossierSchema.omit({ rawBrief: true, language: true });
 
-const GATHER_INSTRUCTIONS = `Tu es le chercheur. À partir d'un brief, tu produis un dossier structuré qui servira à planifier une présentation de formation de niveau expert.
+const GATHER_INSTRUCTIONS = `Tu es le documentaliste éditorial. À partir d'un brief, tu produis le dossier de fond qui permettra à des rédacteurs de créer la présentation demandée.
+
+Tu ne te contentes pas d'extraire les mots du brief : tu explicites le sujet à traiter. Si l'auteur demande d'expliquer, d'enseigner ou de synthétiser un métier, une notion, un processus ou une pratique, mobilise les connaissances générales établies nécessaires pour répondre réellement à cette demande. Le brief et les sources restent la seule autorité pour les faits propres à l’auteur, à son organisation, à ses clients ou à un cas ; ainsi que pour les chiffres, dates, citations, attributions, études, actualités et références précises.
 
 Tu extrais :
 - coreIdea : LA seule idée maîtresse du deck (une phrase complète, pas un thème).
@@ -33,7 +35,7 @@ Tu extrais :
 Règles du dossier :
 - Préserve le périmètre, la terminologie, le statut épistémique et le point de vue du brief et des sources.
 - Ne transforme pas une explication en plaidoyer, une incertitude en certitude ni une corrélation en causalité.
-- N'invente aucun fait, chiffre, exemple, citation, source, consensus ou recommandation.
+- N'invente aucun fait propre à l’auteur, chiffre, exemple présenté comme réel, citation, source, consensus, causalité ou recommandation personnalisée. Les connaissances générales établies nécessaires pour expliquer le sujet demandé sont autorisées.
 - Calibre le dossier sur les acquis du public et privilégie les distinctions, conditions, limites, exceptions, conséquences et arbitrages utiles.
 
 ${INFORMATIONAL_STYLE_PROMPT}

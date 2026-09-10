@@ -63,7 +63,7 @@ function templateNarrativeArc(template: DocumentTemplateDefinition): string {
 }
 
 function structureInstructions(template: DocumentTemplateDefinition): string {
-  return `Tu planifies la structure d'un document de niveau expert à partir d'un dossier (pas d'un brief brut).
+  return `Tu planifies la structure du document demandé à partir d'un dossier (pas d'un brief brut). Le niveau d'exigence rédactionnelle est élevé, mais la profondeur des notions doit suivre les acquis réels du public décrits dans le dossier.
 
 Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
 
@@ -74,6 +74,7 @@ ${documentStructuralRulesPrompt(template)}
 ${RUBRIC_PROMPT}
 
 Règles de contenu :
+- Si le dossier découle d'une demande d'explication, le plan doit enseigner le sujet demandé avec les connaissances générales établies contenues dans le dossier. Ne transforme jamais l'absence de détails propres à l'auteur en thème principal, sauf si le brief demande explicitement d'auditer les informations manquantes.
 - Chaque diapositive d'analyse doit avoir une fonction informationnelle précise : énoncer une règle, ordonner des conditions, distinguer deux régimes, exposer une exception ou incertitude, tirer une conséquence, ou prescrire une action.
 - Dans un dossier juridique ou normatif, mets dans title+intent les articles, dates, conditions cumulatives, distinctions de statut et formalités nécessaires. Ils ont priorité sur les résumés généraux.
 - « Approche claire », « dispositif robuste », « enjeu essentiel », « vision globale », « il est important de » et les formules analogues ne couvrent aucun point clé.

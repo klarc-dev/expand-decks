@@ -51,7 +51,23 @@ describe('groundDossier', () => {
     const repairCall = mockedGenerateStructured.mock.calls[1]![0];
     expect(repairCall.prompt).toContain('Invented doctrine');
     expect(repairCall.prompt).toContain(dossier.rawBrief);
-    expect(repairCall.instructions).toContain('N’ajoute aucune connaissance externe');
+    expect(repairCall.instructions).toContain('fait propre à l’auteur');
+    expect(repairCall.instructions).toContain('connaissances générales établies');
+  });
+
+  it('treats established explanatory knowledge as authorized while protecting case-specific facts', async () => {
+    mockedGenerateStructured.mockResolvedValueOnce({
+      supported: true,
+      unsupportedClaims: [],
+      reason: 'The dossier uses ordinary domain knowledge to answer the requested explanation.',
+    });
+
+    await groundDossier(dossier, []);
+
+    const auditCall = mockedGenerateStructured.mock.calls[0]![0];
+    expect(auditCall.instructions).toContain('connaissances générales établies');
+    expect(auditCall.instructions).toContain('faits propres à l’auteur');
+    expect(auditCall.instructions).toContain('ne constitue pas une invention');
   });
 
   it('uses additional authorized facts when the caller supplies them', async () => {

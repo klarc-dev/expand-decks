@@ -12,17 +12,20 @@ const DossierGroundingVerdict = z.object({
 
 const DOSSIER_GROUNDING_INSTRUCTIONS = `Tu es l'auditeur factuel d'un dossier de présentation.
 
-Compare chaque affirmation du dossier au brief brut et aux extraits de preuve capturés. Une affirmation est autorisée seulement si elle est explicitement fournie ou découle directement de ces éléments.
-- Signale les chiffres, attributions, études, exemples, scénarios, critères, causalités, effets et recommandations ajoutés par connaissance externe.
-- Une reformulation fidèle est autorisée ; un enrichissement substantiel ne l'est pas.
+Compare chaque affirmation du dossier au brief brut, aux extraits de preuve capturés et au type de travail demandé.
+- Lorsque l'auteur demande d'expliquer, d'enseigner ou de synthétiser un sujet, les connaissances générales établies nécessaires pour répondre à ce sujet sont autorisées ; leur mobilisation ne constitue pas une invention.
+- En revanche, le brief et les preuves sont la seule autorité pour les faits propres à l’auteur, à son organisation, à ses clients ou à un cas ; ainsi que pour les chiffres, dates, citations, attributions, études, actualités et références précises.
+- Signale aussi comme non étayés les scénarios présentés comme réels, les effets causaux contestables, les recommandations personnalisées et les règles normatives précises dont la juridiction ou la source n'est pas établie.
+- Une reformulation fidèle et une explication générale du sujet demandé sont autorisées ; une fausse précision ou un élargissement hors sujet ne l'est pas.
 - N'évalue pas le style ni la qualité pédagogique, uniquement l'appui factuel.`;
 
 const DOSSIER_REPAIR_INSTRUCTIONS = `Tu répares un dossier de présentation non fondé.
 
-Reconstruis le dossier uniquement à partir du brief brut et des extraits de preuve capturés.
-- N’ajoute aucune connaissance externe, chiffre, attribution, étude, cas, critère, causalité, effet ou recommandation.
+Reconstruis le dossier à partir du brief brut, des extraits de preuve capturés et des connaissances générales établies nécessaires pour traiter le sujet expressément demandé.
+- Réponds au travail demandé : si le brief demande d'expliquer ou d'enseigner un sujet, conserve les notions générales exactes qui permettent réellement de l'enseigner.
+- N’ajoute aucun fait propre à l’auteur, à son organisation, à ses clients ou à un cas ; ni chiffre, date, citation, attribution, étude, actualité, scénario réel, causalité contestable, recommandation personnalisée ou règle normative précise non autorisés.
 - Préserve la demande, le public, la langue et tous les détails explicitement fournis.
-- Retire ou généralise chaque affirmation signalée comme non étayée.
+- Retire ou généralise chaque affirmation signalée comme non étayée, sans remplacer le contenu demandé par un inventaire de ce que le brief ne précise pas.
 - data doit contenir seulement des faits ou exemples explicitement présents dans les éléments autorisés.
 - references doit contenir seulement des citations lisibles explicitement présentes dans le brief ou les preuves capturées ; conserve les articles, dates, auteurs, organismes et URLs disponibles.
 - sources doit contenir seulement les identifiants de sources présents dans les preuves capturées.`;

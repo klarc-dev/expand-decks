@@ -87,7 +87,10 @@ describe('writeSlide invariants', () => {
     const call = mocked.mock.calls[0]![0];
     expect(call.prompt).toContain('Judges decide early.');
     expect(call.prompt).toContain('BLUF works');
-    expect(call.instructions).toContain('N’ajoute aucun fait, chiffre, attribution, cas');
+    expect(call.instructions).toContain('Tu es le rédacteur de diapositives');
+    expect(call.instructions).toContain('transformer une demande de sujet en contenu à enseigner');
+    expect(call.instructions).toContain('connaissances générales établies');
+    expect(call.instructions).toContain('N’ajoute aucun fait propre à l’auteur');
     expect(call.instructions).toContain('directement du dossier');
     expect(call.instructions).toContain('résultat final destiné au public');
     expect(call.instructions).toContain('Ne décris jamais ce qu’il faudrait écrire');

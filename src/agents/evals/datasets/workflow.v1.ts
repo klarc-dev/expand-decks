@@ -69,6 +69,44 @@ export const workflowDatasetV1 = [
     },
   },
   {
+    externalId: 'lawyer-role-fr-001',
+    input: {
+      brief:
+        "Je suis avocat en droit des contrats et je dois former mon équipe commerciale pour lui expliquer le rôle et les prestations d'un avocat ; j'exerce en contrats commerciaux et innovation.",
+      language: 'fr',
+      sourceIds: [],
+      visual: false,
+      approvalRequired: false,
+    },
+    groundTruth: {
+      minSlides: 5,
+      maxSlides: 10,
+      requiredBlockTypes: ['cover', 'cta'],
+      requiredConcepts: [
+        ['conseil', 'conseiller'],
+        ['rédaction', 'rédiger', 'négociation', 'négocier'],
+        ['prévention', 'risque', 'sécuriser'],
+        ['contentieux', 'litige', 'défense'],
+        ['contrats commerciaux'],
+        ['innovation'],
+      ],
+      allowedFacts: [
+        "Un avocat peut conseiller son client en amont d'une décision ou d'une opération.",
+        'Les prestations contractuelles peuvent comprendre la rédaction, la revue et la négociation de contrats.',
+        "L'analyse juridique peut identifier des risques, clarifier les obligations et proposer des options de sécurisation.",
+        "Un avocat peut assister ou représenter son client lorsqu'un différend ou un contentieux survient.",
+        "Le brief indique que l'auteur exerce en droit des contrats, notamment en contrats commerciaux et innovation.",
+        "Pour une équipe commerciale, le rôle de l'avocat peut être expliqué par les moments où elle le sollicite, les informations qu'elle lui transmet et les livrables qu'elle reçoit.",
+      ],
+      forbiddenClaims: [
+        'prestations restant à préciser',
+        'aucun catalogue de services identifiable',
+        'ne permet pas de déduire les modalités des prestations',
+        "le détail des prestations n'est pas renseigné",
+      ],
+    },
+  },
+  {
     externalId: 'explicit-en-001',
     input: {
       brief: `S1 — Decision quality
