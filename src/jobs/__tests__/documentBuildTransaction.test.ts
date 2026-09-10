@@ -101,6 +101,10 @@ function payloadFor(templateId: keyof typeof slidesByTemplate) {
       if (collection === 'presentations') return presentation;
       throw new Error(`Unexpected collection ${collection}`);
     }),
+    update: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+      Object.assign(presentation, data);
+      return presentation;
+    }),
     create: vi.fn(async () => ({ id: mediaId++ })),
     delete: vi.fn(async () => ({})),
     db: {

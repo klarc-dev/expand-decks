@@ -66,7 +66,10 @@ import {
   MediaProducerConstraintError,
 } from '../lib/mediaProducerArtifact';
 import { parseLayoutViolations, SlideLayoutValidationError } from '../lib/slideLayoutValidation';
-import { patchPresentationBuildMetadata } from './patchPresentationBuildMetadata';
+import {
+  patchPresentationBuildArtifacts,
+  patchPresentationBuildMetadata,
+} from './patchPresentationBuildMetadata';
 import { buildSlidevEnv, buildSlidevExportArgs } from './slidevExportArgs';
 
 const execFile = promisify(execFileCb);
@@ -672,7 +675,10 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       }),
       workdir,
     );
-    if (slides.length > 0) {
+    const needsCoverImage = exportPlan.images.some(
+      (artifact) => artifact.repeat !== 'per-page' && (artifact.pageIndex ?? 0) === 0,
+    );
+    if (slides.length > 0 && needsCoverImage) {
       await runSlidev(
         buildSlidevExportArgs({
           output: COVER_DIR,
@@ -749,7 +755,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     }
 
     const outputs: ArtifactOutputs = {};
-    const pdfBuffer = readFileSync(join(workdir, ARTIFACTS.pdf));
+    const pdfBuffer = readFileSync(join(/* turbopackIgnore: true */ workdir, ARTIFACTS.pdf));
     const measuredPdf = producerNeedsPdf ? await measurePdfArtifact(pdfBuffer, 'pending') : null;
     if (producerBinding?.request.intended_format === LINKEDIN_DOCUMENT_CAROUSEL && measuredPdf) {
       assertPdfConstraints(measuredPdf, producerBinding.request.constraints.delivery_pdf);
@@ -980,7 +986,9 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
 
     const spaTargetDir = spaDir(slug);
     rmSync(spaTargetDir, { recursive: true, force: true });
-    cpSync(join(workdir, ARTIFACTS.dist), spaTargetDir, { recursive: true });
+    cpSync(join(/* turbopackIgnore: true */ workdir, ARTIFACTS.dist), spaTargetDir, {
+      recursive: true,
+    });
     for (const artifact of exportPlan.web) {
       outputs[artifact.key] = { url: spaUrl(slug) };
     }
@@ -1026,7 +1034,12 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       }
     }
 
-    await patchPresentationBuildMetadata(req.payload, presentationId, patchData);
+    await patchPresentationBuildArtifacts(
+      req.payload,
+      presentationId,
+      patchData,
+      (presentation as { updatedAt?: unknown }).updatedAt,
+    );
 
     const currentArtifactFileIds = new Set(artifactFileIds(artifactPatch.artifacts));
     for (const previousFileId of previousArtifactFileIds) {
@@ -1037,9 +1050,13 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           id: previousFileId,
           overrideAccess: true,
         })
-        .catch((err) =>
-          req.payload.logger.warn(`Failed to delete old artifact ${previousFileId}: ${err}`),
-        );
+        .catch((err: unknown) => {
+          const status =
+            (err as { status?: number; statusCode?: number }).statusCode ??
+            (err as { status?: number }).status;
+          if (status === 404) return;
+          req.payload.logger.warn(`Failed to delete old artifact ${previousFileId}: ${err}`);
+        });
     }
 
     req.payload.logger.info(
