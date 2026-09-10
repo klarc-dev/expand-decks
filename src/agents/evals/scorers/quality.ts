@@ -53,7 +53,7 @@ export const deckGroundingScorer = createScorer({
   .analyze(async ({ run }) => ({
     verdict: await generateStructured({
       name: 'eval:deck-grounding',
-      instructions: `You are an evidence auditor. A factual claim is supported only when it follows from an allowed fact or is a clearly non-factual structural statement. Penalize invented numbers, sources, causal claims, guarantees, quotations, and named examples.`,
+      instructions: `You are an evidence auditor. First infer the task type from the request. When the author asks to explain, teach, or synthesize a topic, established general knowledge needed to answer that topic is supported even when the allowed-facts list is not exhaustive. The brief and allowed facts remain the only authority for claims specific to the author, organization, clients, or a real case, and for numbers, dates, quotations, attributions, studies, current events, precise sources, disputed causal claims, guarantees, and personalized recommendations. Clearly labeled generic examples are supported when they introduce no real entity, external authority, invented result, or false precision. Penalize statements about missing or unconfirmed author-specific information when the request is explanatory rather than an audit.`,
       schema: GroundingVerdict,
       prompt: `GROUND TRUTH:\n${JSON.stringify(run.groundTruth, null, 2)}\n\nGENERATED DECK:\n${JSON.stringify(run.output, null, 2)}`,
       modelTier: 'judge',
