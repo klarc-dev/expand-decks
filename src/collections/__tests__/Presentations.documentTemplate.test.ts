@@ -1,10 +1,28 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Presentations } from '../Presentations';
 
 const beforeValidate = Presentations.hooks?.beforeValidate?.[0];
+const beforeDelete = Presentations.hooks?.beforeDelete?.[0];
 
 describe('Presentations document template contract', () => {
+  it('deletes durable agent runs before deleting their presentation', async () => {
+    const remove = vi.fn().mockResolvedValue({ docs: [] });
+
+    await beforeDelete?.({
+      id: 24,
+      req: { context: {}, payload: { delete: remove } },
+    } as never);
+
+    expect(remove).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'agent-runs',
+        where: { presentation: { equals: 24 } },
+        overrideAccess: true,
+      }),
+    );
+  });
+
   it('stamps legacy records with the presentation template without changing slides', async () => {
     const slides = [{ blockType: 'cover', title: 'Existing cover' }];
     const data = { slides };

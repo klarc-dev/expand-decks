@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-import type { CollectionConfig, PayloadRequest } from 'payload';
+import type { CollectionBeforeDeleteHook, CollectionConfig, PayloadRequest } from 'payload';
 
 import {
   isAdmin,
@@ -60,6 +60,18 @@ async function uniqueSlugFromTitle(req: PayloadRequest, title: string): Promise<
   }
 
   throw new Error('Impossible de générer un identifiant unique pour cette présentation.');
+}
+
+async function beforePresentationDelete({ id, req }: Parameters<CollectionBeforeDeleteHook>[0]) {
+  // Payload relationships default to ON DELETE SET NULL. Agent runs require a
+  // presentation, so remove their durable ledgers first instead of letting the
+  // database attempt to null a NOT NULL foreign key.
+  await req.payload.delete({
+    collection: COLLECTIONS.agentRuns,
+    where: { presentation: { equals: id } },
+    overrideAccess: true,
+    req,
+  });
 }
 
 export const Presentations: CollectionConfig = {
@@ -252,6 +264,7 @@ export const Presentations: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeDelete: [beforePresentationDelete],
     beforeValidate: [
       ({ data, originalDoc }) => {
         if (!data || typeof data !== 'object') return data;
