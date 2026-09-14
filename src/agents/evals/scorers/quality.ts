@@ -25,7 +25,11 @@ export const deckQualityScorer = createScorer({
 
 ${RUBRIC_PROMPT}
 
-The final score must reflect complete requested-concept coverage, coherent progression, non-redundancy, an actionable conclusion, requested language, and audience level.`,
+The final score must reflect complete requested-concept coverage, coherent progression, non-redundancy, an actionable conclusion, requested language, and audience level.
+
+Apply the same evidence boundary as the grounding scorer when judging fidelity: established general knowledge and clearly labeled generic examples needed to explain the requested subject are not scope drift merely because the allowed-facts list is non-exhaustive. Penalize only additions that introduce a real entity, false precision, disputed causal claim, guarantee, precise external authority, or personalized recommendation not supported by the request. Judge whether examples teach the requested distinction, not whether every generic premise appears verbatim in the brief.
+
+Derive the final score from the four numeric dimensions rather than applying an extra hidden grounding penalty already covered by the separate deck-grounding scorer. Use their arithmetic mean as the default; depart materially only when the requested language, audience level, required format, or a hard requirement fails. Do not score below that dimensional mean because of stylistic observations that are already reflected in progression or non-redundancy.`,
       schema: DeckQualityVerdict,
       prompt: `REQUEST AND EXPECTATIONS:\n${JSON.stringify(
         { input: run.input, groundTruth: run.groundTruth },
