@@ -24,6 +24,7 @@ import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
 import { knowledgeIngestTask } from './jobs/knowledgeIngest';
 import { backfillStaleKnowledgeDocuments } from './jobs/knowledgeReindexBackfill';
+import { startStalledJobSweep } from './jobs/requeueStalledJobs';
 import { COLLECTIONS } from './lib/collections';
 import {
   SERVER_URL,
@@ -135,6 +136,10 @@ export default buildConfig({
     } catch (err) {
       payload.logger.error({ err }, '[knowledge] Failed to backfill stale documents');
     }
+    // Workers replaced mid-run (deploys, OOM kills) leave jobs flagged
+    // `processing`, which the per-deck concurrency key turns into a permanent
+    // block. The owner process releases such jobs at boot and periodically.
+    startStalledJobSweep(payload as never);
   },
   db: postgresAdapter({
     // Schema push is opt-in (PAYLOAD_DB_PUSH=1). Off by default so maintenance
