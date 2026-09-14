@@ -32,6 +32,35 @@ export function extractDeckOutput(value: unknown): DeckEvalOutput {
   );
 }
 
+type DeckSlides = NonNullable<DeckEvalOutput['slides']>;
+
+/**
+ * The requested output language must have travelled through the workflow:
+ * the dossier's resolved language is what every localized agent wrote in.
+ */
+function languageMatches(deck: DeckEvalOutput, input?: DeckEvalInputLike): boolean {
+  if (typeof input?.language !== 'string' || deck.dossier?.language === undefined) return true;
+  return deck.dossier.language === input.language;
+}
+
+function slideCountWithin(count: number, groundTruth?: Partial<DeckGroundTruth>): boolean {
+  return count >= (groundTruth?.minSlides ?? 3) && count <= (groundTruth?.maxSlides ?? 40);
+}
+
+function framedByCoverAndCta(slides: DeckSlides): boolean {
+  return slides[0]?.blockType === 'cover' && slides.at(-1)?.blockType === 'cta';
+}
+
+function hasRequiredBlockTypes(slides: DeckSlides, groundTruth?: Partial<DeckGroundTruth>) {
+  const types = new Set(slides.map((slide) => String(slide.blockType)));
+  return (groundTruth?.requiredBlockTypes ?? []).every((type) => types.has(type));
+}
+
+function hasMarkdown(deck: DeckEvalOutput): boolean {
+  const markdown = deck.markdown ?? deck.md;
+  return typeof markdown === 'string' && markdown.length > 0;
+}
+
 export function deckContractScore(
   value: unknown,
   groundTruth?: Partial<DeckGroundTruth>,
@@ -40,25 +69,14 @@ export function deckContractScore(
   const deck = extractDeckOutput(value);
   const slides = deck.slides;
   if (!Array.isArray(slides)) return 0;
-  // The requested output language must have travelled through the workflow:
-  // the dossier's resolved language is what every localized agent wrote in.
-  if (
-    typeof input?.language === 'string' &&
-    deck.dossier?.language !== undefined &&
-    deck.dossier.language !== input.language
-  ) {
-    return 0;
-  }
-  if (slides.length < (groundTruth?.minSlides ?? 3)) return 0;
-  if (slides.length > (groundTruth?.maxSlides ?? 40)) return 0;
-  if (slides[0]?.blockType !== 'cover') return 0;
-  if (slides.at(-1)?.blockType !== 'cta') return 0;
-  const markdown = deck.markdown ?? deck.md;
-  if (typeof markdown !== 'string' || markdown.length === 0) return 0;
-  if (deck.evidence !== undefined && !Array.isArray(deck.evidence)) return 0;
-  const types = new Set(slides.map((slide) => String(slide.blockType)));
-  if ((groundTruth?.requiredBlockTypes ?? []).some((type) => !types.has(type))) return 0;
-  return 1;
+  const valid =
+    languageMatches(deck, input) &&
+    slideCountWithin(slides.length, groundTruth) &&
+    framedByCoverAndCta(slides) &&
+    hasMarkdown(deck) &&
+    (deck.evidence === undefined || Array.isArray(deck.evidence)) &&
+    hasRequiredBlockTypes(slides, groundTruth);
+  return valid ? 1 : 0;
 }
 
 export const deckContractGate = createScorer({

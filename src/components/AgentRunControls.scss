@@ -18,16 +18,16 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
 
-    li {
-      color: var(--theme-elevation-500);
-      overflow-wrap: anywhere;
+  &__progress li {
+    color: var(--theme-elevation-500);
+    overflow-wrap: anywhere;
+  }
 
-      &[data-reached='true'] {
-        color: var(--theme-text);
-        font-weight: 600;
-      }
-    }
+  &__progress li[data-reached='true'] {
+    color: var(--theme-text);
+    font-weight: 600;
   }
 
   &__journal,

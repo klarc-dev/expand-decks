@@ -16,6 +16,7 @@
     "generate:importmap": "payload generate:importmap",
     "jobs:run": "payload jobs:run --queue default",
     "deck:seed": "tsx --env-file-if-exists=.env scripts/run-seed.ts",
+    "deck:seed:klarc-prospects": "tsx --env-file-if-exists=.env scripts/seed-klarc-prospects.ts",
     "deck:build": "tsx --env-file-if-exists=.env scripts/run-build.ts",
     "deck:dump": "tsx --env-file-if-exists=.env scripts/dump-slides-md.ts",
     "documents:generate": "tsx --env-file-if-exists=.env scripts/generate-documents.ts",
