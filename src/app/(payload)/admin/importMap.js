@@ -16,7 +16,8 @@ import { default as default_0c595d5827677db4d426c8dda5793141 } from '../../../co
 import { default as default_841f3d8d064dfe798baf7710ad67fba0 } from '../../../components/SlidePreview'
 import { default as default_134c410202d5b098d475cc919d49bc22 } from '../../../components/SlideRowLabel'
 import { default as default_0485d70ecd0925de7ff80d9fd8de19b6 } from '../../../components/TableEditor'
-import { default as default_55b275c29aa5758b3a877e29a997f50b } from '../../../components/AgentDraftButton'
+import { default as default_381bf71fd4b7387066ebf0bc51366b33 } from '../../../components/AgentExternalSourcesField'
+import { default as default_1bea05d269169743e2b5ec20de8cfe7d } from '../../../components/AgentRunControls'
 import { default as default_49d2b627e93b48e36f9059279bd151a7 } from '../../../components/BuildStatusField'
 import { default as default_374fa86aa013d2dd5771ee365c473717 } from '../../../components/ExportMenuItem'
 import { default as default_e7730d3df9cf19d0cf35158220fe0b1e } from '../../../components/KnowledgeRetryButton'
@@ -45,7 +46,8 @@ export const importMap = {
   "/components/SlidePreview#default": default_841f3d8d064dfe798baf7710ad67fba0,
   "/components/SlideRowLabel#default": default_134c410202d5b098d475cc919d49bc22,
   "/components/TableEditor#default": default_0485d70ecd0925de7ff80d9fd8de19b6,
-  "/components/AgentDraftButton#default": default_55b275c29aa5758b3a877e29a997f50b,
+  "/components/AgentExternalSourcesField#default": default_381bf71fd4b7387066ebf0bc51366b33,
+  "/components/AgentRunControls#default": default_1bea05d269169743e2b5ec20de8cfe7d,
   "/components/BuildStatusField#default": default_49d2b627e93b48e36f9059279bd151a7,
   "/components/ExportMenuItem#default": default_374fa86aa013d2dd5771ee365c473717,
   "/components/KnowledgeRetryButton#default": default_e7730d3df9cf19d0cf35158220fe0b1e,

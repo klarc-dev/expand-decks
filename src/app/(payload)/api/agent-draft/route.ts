@@ -9,6 +9,7 @@ import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { resolveDocumentTemplate } from '@/documents/templates';
 import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
+import { DEFAULT_AGENT_MODEL, verifyAgentModel } from '@/lib/agentModel';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
 import { legacySourcePolicy } from '@/lib/sources/policy';
@@ -17,6 +18,15 @@ import { SourcePolicyError, TooManySourcesError, UnknownSourceError } from '@/li
 import { DRAFT_STATUS } from '@/lib/status';
 
 const ACTIVE = ['queued', 'running', 'suspended', 'waiting'] as const;
+const KNOWLEDGE_PREFIX = 'knowledge_';
+
+/** `knowledge_<id>` source ids map back to the relationship stored on the presentation. */
+function knowledgeBaseIds(sourceIds: readonly string[]): number[] {
+  return sourceIds
+    .filter((id) => id.startsWith(KNOWLEDGE_PREFIX))
+    .map((id) => Number(id.slice(KNOWLEDGE_PREFIX.length)))
+    .filter((id) => Number.isInteger(id));
+}
 
 // This route intentionally coordinates authentication, validation, and workflow startup at one boundary.
 // fallow-ignore-next-line complexity
@@ -36,7 +46,17 @@ export async function POST(req: NextRequest) {
     );
   }
   const { presentationId, brief, mode, visual, approvalRequired, slideCountRange } = parsed.data;
-  const model = parsed.data.model || 'high';
+  const model = parsed.data.model || DEFAULT_AGENT_MODEL;
+  if (model !== DEFAULT_AGENT_MODEL) {
+    try {
+      await verifyAgentModel(model);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Modèle indisponible' },
+        { status: 422 },
+      );
+    }
+  }
   let sourceIds: string[];
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
   try {
@@ -160,15 +180,20 @@ export async function POST(req: NextRequest) {
     data: {
       latestAgentRun: run.id,
       agentBrief: brief,
+      agentSlideCountMin: slideCountRange?.min ?? null,
+      agentSlideCountMax: slideCountRange?.max ?? null,
+      agentKnowledgeBases: knowledgeBaseIds(sourceIds),
+      agentExternalSources: sourceIds.filter((id) => !id.startsWith(KNOWLEDGE_PREFIX)),
+      agentMode: mode,
+      agentModel: model,
+      agentVisualCritique: visual,
+      agentApprovalRequired: approvalRequired,
       draftRunId: runId,
       draftRequestId: requestId,
       draftTraceId: traceId,
       draftStatus: DRAFT_STATUS.gathering,
-      draftSources: sourceIds,
-      draftEvidence: [],
-      draftEvents: [event],
     },
-    user,
+    overrideAccess: true,
     context: { [CTX.skipBuildQueue]: true },
   });
 
@@ -200,11 +225,8 @@ export async function POST(req: NextRequest) {
     await payload.update({
       collection: COLLECTIONS.presentations,
       id: presentationId,
-      data: {
-        draftStatus: DRAFT_STATUS.failed,
-        draftEvents: [event, { ts: Date.now(), phase: 'failed', detail: 'Queue failed' }],
-      },
-      user,
+      data: { draftStatus: DRAFT_STATUS.failed },
+      overrideAccess: true,
       context: { [CTX.skipBuildQueue]: true },
     });
     throw error;

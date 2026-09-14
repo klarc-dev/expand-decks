@@ -363,10 +363,7 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       events,
     });
     const status = PHASE_STATUS[durablePhase];
-    await mirrorPresentation(payload, ledger, {
-      ...(status ? { draftStatus: status } : {}),
-      draftEvents: events,
-    });
+    if (status) await mirrorPresentation(payload, ledger, { draftStatus: status });
   };
 
   try {
@@ -392,16 +389,12 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
         suspendedAt: new Date().toISOString(),
         heartbeatAt: new Date().toISOString(),
       });
-      await mirrorPresentation(payload, ledger, {
-        draftStatus: DRAFT_STATUS.validating,
-        draftEvents: [...events, { ts: Date.now(), phase: 'approval', detail: state.suspended }],
-      });
+      await mirrorPresentation(payload, ledger, { draftStatus: DRAFT_STATUS.validating });
       return { success: true, runId: ledger.mastraRunId, suspended: true };
     }
 
     const deck = await consumeResult(workflowResult);
     await finalizeSuccess(payload, ledger, deck);
-    const usedSources = [...new Set((deck.evidence ?? []).map((item) => item.sourceId))];
     await patchRun(payload, ledger, {
       status: 'succeeded',
       phase: 'complete',
@@ -414,9 +407,6 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
     await mirrorPresentation(payload, ledger, {
       agentBrief: ledger.brief,
       draftStatus: DRAFT_STATUS.done,
-      draftSources: usedSources,
-      draftEvidence: deck.evidence ?? [],
-      draftEvents: [...events, { ts: Date.now(), phase: 'done' }],
     });
     return { success: true, runId: ledger.mastraRunId, suspended: false };
   } catch (error) {
@@ -432,10 +422,7 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       heartbeatAt: new Date().toISOString(),
       events: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
     });
-    await mirrorPresentation(payload, ledger, {
-      draftStatus: DRAFT_STATUS.failed,
-      draftEvents: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
-    });
+    await mirrorPresentation(payload, ledger, { draftStatus: DRAFT_STATUS.failed });
     payload.logger.error(`[agent-run:${ledger.mastraRunId}] ${message}`);
     return { success: false, runId: ledger.mastraRunId, suspended: false };
   }

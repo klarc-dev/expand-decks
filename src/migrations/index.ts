@@ -28,6 +28,7 @@ import * as migration_20260909_140837 from './20260909_140837';
 import * as migration_20260909_141932 from './20260909_141932';
 import * as migration_20260909_163216_spec19_linkedin_image_formats from './20260909_163216_spec19_linkedin_image_formats';
 import * as migration_20260914_071233_agent_run_model from './20260914_071233_agent_run_model';
+import * as migration_20260914_102932_ia_native_options from './20260914_102932_ia_native_options';
 
 export const migrations = [
   {
@@ -179,5 +180,10 @@ export const migrations = [
     up: migration_20260914_071233_agent_run_model.up,
     down: migration_20260914_071233_agent_run_model.down,
     name: '20260914_071233_agent_run_model',
+  },
+  {
+    up: migration_20260914_102932_ia_native_options.up,
+    down: migration_20260914_102932_ia_native_options.down,
+    name: '20260914_102932_ia_native_options',
   },
 ];

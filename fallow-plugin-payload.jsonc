@@ -28,8 +28,11 @@
     // Icon/Logo in payload.config.ts) and wired through the generated,
     // gitignored src/app/(payload)/admin/importMap.js. Each is a single-
     // purpose admin field/button exporting exactly its wired symbol.
-    "src/components/DraftFromBriefButton.tsx",
+    "src/components/AgentRunControls.tsx",
+    "src/components/AgentExternalSourcesField.tsx",
     "src/components/BuildStatusField.tsx",
+    "src/components/ColorField.tsx",
+    "src/components/GoogleFontField.tsx",
     "src/components/GoogleLoginButton.tsx",
     "src/components/ShareUrlField.tsx",
     "src/components/SlidePreview.tsx",

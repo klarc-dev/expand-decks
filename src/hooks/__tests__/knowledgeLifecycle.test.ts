@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { beforeKnowledgeBaseDelete, beforeKnowledgeDocumentDelete } from '../knowledgeLifecycle';
+import {
+  beforeKnowledgeBaseDelete,
+  beforeKnowledgeDocumentDelete,
+  syncKnowledgeBaseReadiness,
+  syncKnowledgeReadinessAfterChange,
+} from '../knowledgeLifecycle';
 
 function vectorStore() {
   return {
@@ -91,5 +96,37 @@ describe('knowledge lifecycle deletion', () => {
 
     expect(findByID).not.toHaveBeenCalled();
     expect(store.deleteVectors).not.toHaveBeenCalled();
+  });
+});
+
+describe('knowledge base readiness', () => {
+  function payloadWith(statuses: string[]) {
+    const update = vi.fn().mockResolvedValue({});
+    const find = vi
+      .fn()
+      .mockResolvedValue({ docs: statuses.map((indexingStatus) => ({ indexingStatus })) });
+    return { update, find, payload: { find, update } };
+  }
+
+  it.each([
+    [[], 'empty'],
+    [['pending', 'indexed'], 'ready'],
+    [['failed', 'failed'], 'failed'],
+    [['pending', 'indexing'], 'unavailable'],
+  ])('derives %j as %s', async (statuses, readiness) => {
+    const state = payloadWith(statuses as string[]);
+    await syncKnowledgeBaseReadiness(state.payload as never, 7);
+    expect(state.update).toHaveBeenCalledWith(expect.objectContaining({ data: { readiness } }));
+  });
+
+  it('refreshes both bases when a document moves, even for lifecycle writes', async () => {
+    const state = payloadWith(['indexed']);
+    await syncKnowledgeReadinessAfterChange({
+      doc: { id: 12, knowledgeBase: 9 },
+      previousDoc: { id: 12, knowledgeBase: 7 },
+      req: { context: { skipIngestQueue: true }, payload: state.payload },
+    } as never);
+
+    expect(state.update.mock.calls.map(([call]) => call.id)).toEqual([9, 7]);
   });
 });

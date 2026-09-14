@@ -63,7 +63,7 @@ beforeEach(() => {
   mocks.cancelByID.mockReset();
   mocks.auth.mockResolvedValue({ user: { id: 2, role: 'admin' } });
   mocks.find.mockResolvedValue({ docs: [ledger] });
-  mocks.findByID.mockResolvedValue({ id: 1, createdBy: 2, draftEvents: [] });
+  mocks.findByID.mockResolvedValue({ id: 1, createdBy: 2 });
   mocks.getWorkflowRunById.mockResolvedValue({ status: 'running' });
   mocks.queue.mockResolvedValue({ id: 'job-2' });
   mocks.createRun.mockResolvedValue({ cancel: mocks.cancel });

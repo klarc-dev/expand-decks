@@ -28,8 +28,8 @@ function setRegistry(value: unknown) {
   __resetSourceRegistryForTests();
 }
 
-function knowledgeBase(id: number, name: string) {
-  return { id, name };
+function knowledgeBase(id: number, name: string, readiness = 'empty') {
+  return { id, name, readiness };
 }
 
 describe('GET /api/agent-sources', () => {
@@ -58,9 +58,7 @@ describe('GET /api/agent-sources', () => {
 
   it('returns accessible knowledge bases beside MCP options without secrets', async () => {
     auth.mockResolvedValue({ user });
-    find
-      .mockResolvedValueOnce({ docs: [knowledgeBase(42, 'Contrats')] })
-      .mockResolvedValueOnce({ docs: [{ knowledgeBase: 42, indexingStatus: 'indexed' }] });
+    find.mockResolvedValueOnce({ docs: [knowledgeBase(42, 'Contrats', 'ready')] });
     setRegistry([
       {
         id: 'private-mcp',
@@ -98,9 +96,7 @@ describe('GET /api/agent-sources', () => {
 
   it('keeps accessible knowledge bases when the MCP registry is malformed', async () => {
     auth.mockResolvedValue({ user });
-    find
-      .mockResolvedValueOnce({ docs: [knowledgeBase(9, 'Procédures')] })
-      .mockResolvedValueOnce({ docs: [] });
+    find.mockResolvedValueOnce({ docs: [knowledgeBase(9, 'Procédures')] });
     setRegistry('{bad json');
 
     const res = await GET(request());
@@ -114,21 +110,16 @@ describe('GET /api/agent-sources', () => {
     expect(body.error).toContain('AGENT_SOURCE_REGISTRY_JSON must be a JSON array');
   });
 
-  it('derives empty, failed, and unavailable readiness only from document/index state', async () => {
+  it('exposes the stored readiness of each base without leaking document state', async () => {
     auth.mockResolvedValue({ user });
     setRegistry([]);
-    find
-      .mockResolvedValueOnce({
-        docs: [knowledgeBase(1, 'Vide'), knowledgeBase(2, 'Échecs'), knowledgeBase(3, 'En cours')],
-      })
-      .mockResolvedValueOnce({
-        docs: [
-          { knowledgeBase: 2, indexingStatus: 'failed' },
-          { knowledgeBase: 2, indexingStatus: 'failed' },
-          { knowledgeBase: 3, indexingStatus: 'pending' },
-          { knowledgeBase: 3, indexingStatus: 'indexing' },
-        ],
-      });
+    find.mockResolvedValueOnce({
+      docs: [
+        knowledgeBase(1, 'Vide'),
+        knowledgeBase(2, 'Échecs', 'failed'),
+        knowledgeBase(3, 'En cours', 'unavailable'),
+      ],
+    });
 
     const body = await (await GET(request())).json();
 
@@ -145,19 +136,15 @@ describe('GET /api/agent-sources', () => {
   it('does not memoize knowledge bases', async () => {
     auth.mockResolvedValue({ user });
     setRegistry([]);
-    find
-      .mockResolvedValueOnce({ docs: [knowledgeBase(1, 'Initiale')] })
-      .mockResolvedValueOnce({ docs: [] })
-      .mockResolvedValueOnce({
-        docs: [knowledgeBase(1, 'Initiale'), knowledgeBase(2, 'Nouvelle')],
-      })
-      .mockResolvedValueOnce({ docs: [] });
+    find.mockResolvedValueOnce({ docs: [knowledgeBase(1, 'Initiale')] }).mockResolvedValueOnce({
+      docs: [knowledgeBase(1, 'Initiale'), knowledgeBase(2, 'Nouvelle')],
+    });
 
     expect((await (await GET(request())).json()).sources).toHaveLength(1);
     expect((await (await GET(request())).json()).sources).toEqual([
       { id: 'knowledge_1', label: 'Initiale', kind: 'knowledge', readiness: 'empty' },
       { id: 'knowledge_2', label: 'Nouvelle', kind: 'knowledge', readiness: 'empty' },
     ]);
-    expect(find).toHaveBeenCalledTimes(4);
+    expect(find).toHaveBeenCalledTimes(2);
   });
 });

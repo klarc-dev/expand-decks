@@ -217,119 +217,7 @@ describe('canonical custom admin controls', () => {
     expect(rawButtonsIn('src/components/SlidePreview.tsx')).toEqual([]);
   });
 
-  it('keeps AgentDraftButton run actions in the Payload Button owner', () => {
-    expect(rawButtonsIn('src/components/AgentDraftButton.tsx')).toEqual([]);
-  });
-
-  it('keeps AgentDraftButton progress semantics in the typed progress owner', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, '<DraftProgress')).toBe(true);
-    expect(sourceContains(path, "aria-current={current ? 'step' : undefined}")).toBe(true);
-    expect(sourceContains(path, 'className="agent-draft__actions"')).toBe(true);
-  });
-
-  it('keeps the AgentDraft journal in one localized stable-identity owner', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, 'function AgentJournal')).toBe(true);
-    expect(sourceContains(path, 'JOURNAL_STATUS_LABEL')).toBe(true);
-    expect(sourceContains(path, '<details className="agent-draft__journal">')).toBe(true);
-    expect(sourceContains(path, 'initiallyOpen')).toBe(false);
-    expect(sourceContains(path, 'aria-label="Événements du build agentique"')).toBe(true);
-    expect(sourceContains(path, 'formatDraftEventDetail')).toBe(true);
-    expect(sourceContains(path, 'formatDraftEventPhase')).toBe(true);
-    expect(sourceContains(path, 'PHASE_LABEL')).toBe(false);
-    expect(sourceContains(path, 'formatDraftEventTime')).toBe(true);
-    expect(sourceContains(path, '<time className="agent-draft__event-time"')).toBe(true);
-    expect(sourceContains(path, 'dateTime={time.dateTime}')).toBe(true);
-    expect(sourceContains(path, 'JSON.stringify(event.detail)')).toBe(false);
-    expect(sourceContains(path, 'key={`$' + '{event.ts}:$' + '{event.phase}`}')).toBe(true);
-    expect(sourceContains(path, '<li key={i}>')).toBe(false);
-    expect(sourceContains(path, 'Journal de l&apos;agent ({status})')).toBe(false);
-  });
-
-  it('keeps live AgentDraft feedback in one stable status owner', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, '<AdminPanel aria-busy={running}')).toBe(false);
-    expect(sourceContains(path, 'function DraftRunStatus')).toBe(true);
-    expect(sourceContains(path, "status === 'done'")).toBe(true);
-    expect(sourceContains(path, "formatDraftEventPhase('done')")).toBe(true);
-    expect(sourceContains(path, "formatDraftEventPhase('failed')")).toBe(true);
-    expect(sourceContains(path, "formatDraftEventPhase('cancelled')")).toBe(true);
-    expect(sourceContains(path, 'function getStatusEvent')).toBe(true);
-    expect(sourceContains(path, "event?.phase === 'done'")).toBe(true);
-    expect(sourceContains(path, "event?.phase === 'failed'")).toBe(true);
-    expect(sourceContains(path, "event?.phase === 'cancelled'")).toBe(true);
-    expect(sourceContains(path, 'const statusEvent = getStatusEvent')).toBe(true);
-    expect(sourceContains(path, 'event={statusEvent}')).toBe(true);
-    expect(sourceContains(path, 'event={last}')).toBe(false);
-    expect(sourceContains(path, 'const message = running ?')).toBe(false);
-    expect(
-      sourceContains(path, "const message = [phase, detail].filter(Boolean).join(' — ')"),
-    ).toBe(true);
-    expect(sourceContains(path, 'aria-busy=')).toBe(false);
-    expect(sourceContains(path, 'aria-live="polite"')).toBe(true);
-    expect(sourceContains(path, 'role="status"')).toBe(true);
-    expect(sourceContains(path, 'agent-draft__muted')).toBe(false);
-    expect(sourceContains(path, 'draftProgress')).toBe(false);
-  });
-
-  it('keeps AgentDraft lifecycle controls in one labeled action owner', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, 'function DraftRunActions')).toBe(true);
-    expect(sourceContains(path, '<fieldset className="agent-draft__actions">')).toBe(true);
-    expect(
-      sourceContains(path, '<legend className="sr-only">Actions du build agentique</legend>'),
-    ).toBe(true);
-    expect(sourceContains(path, 'agent-draft__action-buttons')).toBe(false);
-    expect(sourceContains('src/components/AgentDraftButton.scss', '&__action-buttons')).toBe(false);
-    expect(sourceContains(path, 'agent-draft__action-label')).toBe(false);
-    expect(sourceContains(path, '<DraftRunActions')).toBe(true);
-    expect(sourceContains(path, 'aria-atomic="true"')).toBe(true);
-    expect(sourceContains(path, '<span className="sr-only">Build agentique : </span>')).toBe(true);
-  });
-
-  it('keeps the AgentDraft progress rail readable at narrow widths', () => {
-    const styles = 'src/components/AgentDraftButton.scss';
-    expect(sourceContains(styles, 'top: 0.75em')).toBe(true);
-    expect(sourceContains(styles, 'overflow-wrap: anywhere')).toBe(true);
-    expect(sourceContains(styles, 'white-space: nowrap')).toBe(false);
-  });
-
-  it('keeps AgentDraftButton checkbox semantics in the Payload CheckboxInput owner', () => {
-    expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'checkbox')).toEqual([]);
-  });
-
-  it('keeps generation mode as the only radio-controlled choice', () => {
-    expect(rawInputsIn('src/components/AgentDraftButton.tsx', 'radio')).toHaveLength(1);
-  });
-
-  it('keeps AgentDraftButton semantic groups in one feature-local owner', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, 'function DraftFieldGroup')).toBe(true);
-    expect(sourceContains(path, 'className="agent-draft__options"')).toBe(false);
-    expect(sourceContains(path, 'className="agent-draft__sources"')).toBe(false);
-    expect(sourceContains(path, 'layout="list"')).toBe(false);
-    expect(sourceContains(path, 'agent-draft__source-list')).toBe(false);
-    expect(sourceContains('src/components/AgentDraftButton.scss', "&[data-layout='list']")).toBe(
-      false,
-    );
-  });
-
-  it('keeps AgentDraftButton source kinds and readiness in one accessible grouped owner', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, 'function SourceOptionGroups')).toBe(true);
-    expect(sourceContains(path, 'Bases de connaissances')).toBe(false);
-    expect(sourceContains(path, 'data-kind={group.kind}')).toBe(true);
-    expect(sourceContains(path, 'role="status"')).toBe(true);
-    expect(sourceContains(path, 'data-unready={unavailable || undefined}')).toBe(true);
-    expect(sourceContains(path, 'readOnly={readOnly || unavailable || (!checked && atCap)}')).toBe(
-      true,
-    );
-  });
-
   it('keeps shared panel and notice chrome in AdminSurface', () => {
-    expect(sourceContains('src/components/AgentDraftButton.tsx', 'panelStyle')).toBe(false);
-    expect(sourceContains('src/components/AgentDraftButton.tsx', 'errorBoxStyle')).toBe(false);
     expect(sourceContains('src/components/BuildStatusField.tsx', '<AdminPanel')).toBe(true);
     expect(
       sourceContains(
@@ -343,22 +231,12 @@ describe('canonical custom admin controls', () => {
     expect(
       sourceContains('src/components/adminUi/AdminSurface.scss', '.admin-panel {\n  border:'),
     ).toBe(true);
-    expect(
-      sourceContains(
-        'src/components/AgentDraftButton.scss',
-        '&__panel {\n    margin-bottom: 20px;',
-      ),
-    ).toBe(true);
     expect(sourceContains('src/components/BuildStatusField.scss', 'margin-bottom: 20px')).toBe(
       true,
     );
     expect(sourceContains('src/components/adminUi/AdminSurface.scss', 'margin-top: 12px')).toBe(
       false,
     );
-    expect(sourceContains('src/components/AgentDraftButton.tsx', 'agent-draft__save-notice')).toBe(
-      true,
-    );
-    expect(sourceContains('src/components/AgentDraftButton.tsx', 'agent-draft__error')).toBe(true);
   });
 
   it('keeps build status presentation in the Payload Pill owner', () => {
@@ -381,20 +259,6 @@ describe('canonical custom admin controls', () => {
     ).toBe(true);
     expect(sourceContains('src/components/BuildStatusField.tsx', '<AdminPanel aria-live=')).toBe(
       false,
-    );
-  });
-
-  it('makes whole-deck generation modes explicit before an author starts a run', () => {
-    const path = 'src/components/AgentDraftButton.tsx';
-    expect(sourceContains(path, 'Réviser toute la présentation')).toBe(true);
-    expect(sourceContains(path, 'Recréer toute la présentation')).toBe(true);
-    expect(sourceContains(path, 'Supprime les slides actuelles')).toBe(true);
-    expect(sourceContains(path, 'Ajouter des slides à la fin')).toBe(true);
-    expect(sourceContains(path, 'startLabel={selectedMode.actionLabel}')).toBe(true);
-    expect(sourceContains(path, 'Conserve toutes les slides actuelles')).toBe(true);
-    expect(sourceContains(path, 'agent-draft__choice-copy')).toBe(true);
-    expect(sourceContains(path, 'Les débordements sont toujours contrôlés avant publication')).toBe(
-      true,
     );
   });
 

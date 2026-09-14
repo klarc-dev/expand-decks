@@ -10,13 +10,20 @@ import {
   userIsAdminOrAuthor,
   userIsOrganisationMember,
 } from '../access/roles';
-import { BUILD_COOLDOWN_MS } from '../lib/draftConfig';
+import { BUILD_COOLDOWN_MS, MAX_SLIDES, MIN_SLIDES } from '../lib/draftConfig';
+import { DEFAULT_AGENT_MODEL, agentModelSchema } from '../lib/agentModel';
+import { MAX_SELECTED_SOURCES } from '../lib/sources/types';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMetadata';
 import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
-import { BUILD_STATUS, DRAFT_STATUS, PRESENTATION_STATUS } from '../lib/status';
+import {
+  ACTIVE_DRAFT_STATUSES,
+  BUILD_STATUS,
+  DRAFT_STATUS,
+  PRESENTATION_STATUS,
+} from '../lib/status';
 import {
   documentTemplateField,
   payloadBlocksForTemplate,
@@ -72,6 +79,31 @@ async function beforePresentationDelete({ id, req }: Parameters<CollectionBefore
     overrideAccess: true,
     req,
   });
+}
+
+/**
+ * Agent options belong to the author, but a live run reads them mid-flight:
+ * freeze them (admin renders read-only) until the run leaves its active phases.
+ */
+const agentOptionAccess = {
+  update: ({ doc }: { doc?: Record<string, unknown> }) =>
+    !ACTIVE_DRAFT_STATUSES.has(doc?.draftStatus as string),
+};
+
+/** Both bounds or neither, and min <= max. Shared by the two number fields. */
+function validateSlideCountBound(
+  _value: unknown,
+  { siblingData }: { siblingData?: Record<string, unknown> },
+): string | true {
+  const min = siblingData?.agentSlideCountMin;
+  const max = siblingData?.agentSlideCountMax;
+  const hasMin = typeof min === 'number';
+  const hasMax = typeof max === 'number';
+  if (!hasMin && !hasMax) return true;
+  if (hasMin !== hasMax) return 'Renseignez les deux bornes ou aucune.';
+  if ((min as number) > (max as number))
+    return 'Le maximum doit être supérieur ou égal au minimum.';
+  return true;
 }
 
 export const Presentations: CollectionConfig = {
@@ -356,6 +388,33 @@ export const Presentations: CollectionConfig = {
     },
     documentTemplateField,
     {
+      name: 'draftStatus',
+      type: 'select',
+      defaultValue: DRAFT_STATUS.idle,
+      label: 'Build IA',
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+      },
+      options: [
+        { label: 'En attente', value: DRAFT_STATUS.idle },
+        { label: 'Recherche', value: DRAFT_STATUS.gathering },
+        { label: 'Plan', value: DRAFT_STATUS.structuring },
+        { label: 'Rédaction', value: DRAFT_STATUS.drafting },
+        { label: 'Validation', value: DRAFT_STATUS.validating },
+        { label: 'Build visuel', value: DRAFT_STATUS.building },
+        { label: 'Terminé', value: DRAFT_STATUS.done },
+        { label: 'Échoué', value: DRAFT_STATUS.failed },
+      ],
+    },
+    {
+      name: 'latestAgentRun',
+      type: 'relationship',
+      relationTo: COLLECTIONS.agentRuns,
+      label: 'Dernier run IA',
+      admin: { readOnly: true, position: 'sidebar' },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
@@ -384,56 +443,130 @@ export const Presentations: CollectionConfig = {
             {
               name: 'agentBrief',
               type: 'textarea',
-              label: 'Brief de la présentation',
+              label: 'Brief',
+              access: agentOptionAccess,
               admin: {
-                hidden: true,
+                rows: 5,
+                placeholder: "Ex : Webinaire de 45 min pour juristes d'entreprise sur…",
+                description:
+                  'Public, objectif, points à traiter. La génération prend plusieurs minutes.',
               },
             },
             {
-              name: 'agentDraftFromBrief',
-              type: 'ui',
-              admin: {
-                components: {
-                  Field: '/components/AgentDraftButton#default',
+              type: 'row',
+              fields: [
+                {
+                  name: 'agentSlideCountMin',
+                  type: 'number',
+                  label: 'Slides minimum',
+                  min: MIN_SLIDES,
+                  max: MAX_SLIDES,
+                  access: agentOptionAccess,
+                  validate: validateSlideCountBound,
+                  admin: { step: 1, placeholder: 'Auto', width: '50%' },
                 },
-              },
-            },
-            {
-              name: 'draftStatus',
-              type: 'select',
-              defaultValue: DRAFT_STATUS.idle,
-              label: 'Statut du build agentique',
-              admin: {
-                description: "État du dernier build par l'agent IA",
-                readOnly: true,
-                hidden: true,
-              },
-              options: [
-                { label: 'En attente', value: DRAFT_STATUS.idle },
-                { label: 'Recherche', value: DRAFT_STATUS.gathering },
-                { label: 'Plan', value: DRAFT_STATUS.structuring },
-                { label: 'Rédaction', value: DRAFT_STATUS.drafting },
-                { label: 'Validation', value: DRAFT_STATUS.validating },
-                { label: 'Build visuel', value: DRAFT_STATUS.building },
-                { label: 'Terminé', value: DRAFT_STATUS.done },
-                { label: 'Échoué', value: DRAFT_STATUS.failed },
+                {
+                  name: 'agentSlideCountMax',
+                  type: 'number',
+                  label: 'Slides maximum',
+                  min: MIN_SLIDES,
+                  max: MAX_SLIDES,
+                  access: agentOptionAccess,
+                  validate: validateSlideCountBound,
+                  admin: {
+                    step: 1,
+                    placeholder: 'Auto',
+                    width: '50%',
+                    description:
+                      'Vide = automatique. Couverture et conclusion incluses ; en mode ajout, ne compte que les nouvelles slides.',
+                  },
+                },
               ],
             },
             {
-              name: 'draftEvents',
-              type: 'json',
-              label: "Journal de l'agent",
+              name: 'agentKnowledgeBases',
+              type: 'relationship',
+              relationTo: COLLECTIONS.knowledgeBases,
+              hasMany: true,
+              maxRows: MAX_SELECTED_SOURCES,
+              filterOptions: { readiness: { equals: 'ready' } },
+              label: 'Bases de connaissances',
+              access: agentOptionAccess,
               admin: {
-                description: 'Progression détaillée du dernier build agentique',
-                readOnly: true,
-                hidden: true,
+                description: 'Seules les bases contenant des documents indexés sont proposées.',
               },
             },
             {
-              name: 'latestAgentRun',
-              type: 'relationship',
-              relationTo: COLLECTIONS.agentRuns,
-              admin: { hidden: true, readOnly: true },
+              name: 'agentExternalSources',
+              type: 'text',
+              hasMany: true,
+              label: 'Sources externes',
+              access: agentOptionAccess,
+              admin: {
+                components: { Field: '/components/AgentExternalSourcesField#default' },
+              },
+            },
+            {
+              name: 'agentMode',
+              type: 'radio',
+              defaultValue: 'revise',
+              label: 'Mode',
+              access: agentOptionAccess,
+              options: [
+                { label: 'Réviser', value: 'revise' },
+                { label: 'Recréer', value: 'replace' },
+                { label: 'Ajouter à la fin', value: 'augment' },
+              ],
+              admin: {
+                layout: 'horizontal',
+                condition: (data) => Array.isArray(data?.slides) && data.slides.length > 0,
+                description:
+                  'Réviser réécrit le deck actuel ; Recréer repart du brief ; Ajouter conserve les slides et en ajoute à la fin.',
+              },
+            },
+            {
+              type: 'collapsible',
+              label: 'Options avancées',
+              admin: { initCollapsed: true },
+              fields: [
+                {
+                  name: 'agentModel',
+                  type: 'text',
+                  defaultValue: DEFAULT_AGENT_MODEL,
+                  maxLength: 128,
+                  label: 'Modèle CloudCLIProxy',
+                  access: agentOptionAccess,
+                  validate: (value: unknown) => {
+                    const parsed = agentModelSchema.safeParse(value);
+                    return parsed.success || (parsed.error.issues[0]?.message ?? 'Modèle invalide');
+                  },
+                  admin: {
+                    description:
+                      'Alias ou identifiant exposé par la gateway ; vérifié au lancement de la génération.',
+                  },
+                },
+                {
+                  name: 'agentVisualCritique',
+                  type: 'checkbox',
+                  defaultValue: true,
+                  label: 'Critique visuelle IA (plus lent, meilleur rendu)',
+                  access: agentOptionAccess,
+                },
+                {
+                  name: 'agentApprovalRequired',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  label: 'Valider le plan avant rédaction',
+                  access: agentOptionAccess,
+                },
+              ],
+            },
+            {
+              name: 'agentRun',
+              type: 'ui',
+              admin: {
+                components: { Field: '/components/AgentRunControls#default' },
+              },
             },
             {
               name: 'draftRunId',
@@ -449,26 +582,6 @@ export const Presentations: CollectionConfig = {
               name: 'draftTraceId',
               type: 'text',
               admin: { hidden: true, readOnly: true },
-            },
-            {
-              name: 'draftSources',
-              type: 'json',
-              label: 'Sources utilisées par l’agent',
-              admin: {
-                description: 'Sources sélectionnées pour le dernier build agentique',
-                readOnly: true,
-                hidden: true,
-              },
-            },
-            {
-              name: 'draftEvidence',
-              type: 'json',
-              label: 'Preuves des sources',
-              admin: {
-                description: 'Extraits de preuve collectés auprès des sources (diagnostic)',
-                readOnly: true,
-                hidden: true,
-              },
             },
           ],
         },

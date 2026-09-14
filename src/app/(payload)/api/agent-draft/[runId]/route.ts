@@ -45,7 +45,7 @@ async function authorize(req: NextRequest, runId: string) {
   const stored = await workflow.getWorkflowRunById(runId, {
     fields: ['suspendedPaths', 'resumeLabels', 'error'],
   });
-  return { payload, user, workflow, stored, ledger, presentation, presentationId };
+  return { payload, user, workflow, stored, ledger, presentationId };
 }
 
 async function queueCommand(
@@ -107,19 +107,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
     await auth.payload.update({
       collection: COLLECTIONS.agentRuns,
       id: auth.ledger.id,
-      data: { status: 'canceled', completedAt: new Date().toISOString() },
+      data: {
+        status: 'canceled',
+        completedAt: new Date().toISOString(),
+        events: [
+          ...(Array.isArray(auth.ledger.events) ? auth.ledger.events : []),
+          { ts: Date.now(), phase: 'cancelled' },
+        ].slice(-200),
+      },
       overrideAccess: true,
     });
     await auth.payload.update({
       collection: COLLECTIONS.presentations,
       id: auth.presentationId,
-      data: {
-        draftStatus: DRAFT_STATUS.failed,
-        draftEvents: [
-          ...((auth.presentation.draftEvents as unknown[]) ?? []).slice(-199),
-          { ts: Date.now(), phase: 'cancelled' },
-        ],
-      },
+      data: { draftStatus: DRAFT_STATUS.failed },
       user: auth.user,
       context: { [CTX.skipBuildQueue]: true },
     });

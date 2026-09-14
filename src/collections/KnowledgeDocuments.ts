@@ -15,7 +15,11 @@ import {
   userOrganisationIds,
 } from '../access/roles';
 import { afterKnowledgeDocumentChange } from '../hooks/afterKnowledgeDocumentChange';
-import { beforeKnowledgeDocumentDelete } from '../hooks/knowledgeLifecycle';
+import {
+  beforeKnowledgeDocumentDelete,
+  syncKnowledgeReadinessAfterChange,
+  syncKnowledgeReadinessAfterDelete,
+} from '../hooks/knowledgeLifecycle';
 import { KNOWLEDGE_INGEST_TASK } from '../jobs/knowledgeIngest';
 import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
@@ -201,7 +205,8 @@ export const KnowledgeDocuments: CollectionConfig = {
   hooks: {
     beforeValidate: [enforceKnowledgeMimeType],
     beforeDelete: [beforeKnowledgeDocumentDelete],
-    afterChange: [afterKnowledgeDocumentChange],
+    afterChange: [afterKnowledgeDocumentChange, syncKnowledgeReadinessAfterChange],
+    afterDelete: [syncKnowledgeReadinessAfterDelete],
   },
   endpoints: [
     {

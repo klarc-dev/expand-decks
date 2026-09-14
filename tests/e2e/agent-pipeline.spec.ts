@@ -15,7 +15,7 @@
  * they were used. With no registry it still covers the full content + visual
  * pipeline (just with zero sources).
  */
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { getPayload } from 'payload';
 
 import config from '../../src/payload.config';
@@ -35,6 +35,21 @@ const BRIEF =
 // past Playwright's 30s default; give the slow path real headroom.
 const PIPELINE_TIMEOUT_MS = 16 * 60 * 1000;
 const POLL_TIMEOUT_MS = 15 * 60 * 1000;
+
+/**
+ * Both source pickers are react-select (Payload's relationship control for
+ * knowledge bases, its SelectInput for externals); Payload gives each its
+ * `#field-<name>` text input.
+ */
+async function pickSources(page: Page, field: string, labels: string[]) {
+  if (labels.length === 0) return;
+  const input = page.locator(`#field-${field}`);
+  for (const label of labels) {
+    await input.click();
+    await input.pressSequentially(label);
+    await page.keyboard.press('Enter');
+  }
+}
 
 test.describe('agentic deck pipeline (live, all features enabled)', () => {
   test.skip(!live, 'Set RUN_LIVE_AGENT_E2E=1 and OPENAI_API_KEY to run the live pipeline e2e.');
@@ -88,9 +103,9 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
       createdBy: user.id,
       slides: [],
       draftStatus: DRAFT_STATUS.idle,
-      draftEvents: [],
-      draftSources: [],
-      draftEvidence: [],
+      latestAgentRun: null,
+      agentKnowledgeBases: [],
+      agentExternalSources: [],
     };
 
     const presentation = existing[0]
@@ -132,11 +147,15 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
     const sourcesRes = await page.request.get('/api/agent-sources');
     expect(sourcesRes.ok()).toBeTruthy();
     const sourcesBody = (await sourcesRes.json()) as {
-      sources: { id: string; label: string }[];
+      sources: { id: string; label: string; kind: 'knowledge' | 'external'; readiness?: string }[];
       maxSelected?: number;
     };
     const cap = sourcesBody.maxSelected ?? sourcesBody.sources.length;
-    const expectedSourceIds = sourcesBody.sources.slice(0, cap).map((s) => s.id);
+    // The relationship control only offers ready knowledge bases (filterOptions).
+    const selected = sourcesBody.sources
+      .filter((s) => s.kind === 'external' || s.readiness === 'ready')
+      .slice(0, cap);
+    const expectedSourceIds = selected.map((s) => s.id);
 
     // ── Open the presentation's IA tab ──────────────────────────────────────
     await page.goto(`/admin/collections/presentations/${presentationId}`);
@@ -146,16 +165,23 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
     await expect(brief).toBeVisible();
     await brief.fill(BRIEF);
 
+    // Select every source the server exposes so the gather/structure research path runs.
+    await pickSources(
+      page,
+      'agentKnowledgeBases',
+      selected.filter((s) => s.kind === 'knowledge').map((s) => s.label),
+    );
+    await pickSources(
+      page,
+      'agentExternalSources',
+      selected.filter((s) => s.kind === 'external').map((s) => s.label),
+    );
+
     // Visual critique is the heaviest feature and ON by default — assert it so a
     // future default flip doesn't silently downgrade this to a content-only run.
     await page.getByText('Options avancées', { exact: true }).click();
     const visualToggle = page.getByRole('checkbox', { name: /Critique visuelle/ });
     await expect(visualToggle).toBeChecked();
-
-    // Tick each configured source so the gather/structure research path runs.
-    for (const source of sourcesBody.sources.slice(0, cap)) {
-      await page.getByRole('checkbox', { name: source.label }).check();
-    }
 
     await page.getByRole('button', { name: 'Générer la présentation' }).click();
 
@@ -169,8 +195,7 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
       return res.json() as Promise<{
         draftStatus: string;
         slides?: unknown[];
-        draftSources?: string[];
-        draftEvidence?: unknown[];
+        latestAgentRun?: number | null;
       }>;
     };
 
@@ -186,13 +211,15 @@ test.describe('agentic deck pipeline (live, all features enabled)', () => {
     expect(finalDoc.draftStatus, 'pipeline should finish in done, not failed').toBe('done');
     expect(finalDoc.slides?.length ?? 0).toBeGreaterThan(0);
 
-    // Sources are persisted as build metadata; what was selected must be recorded.
-    expect([...(finalDoc.draftSources ?? [])].sort()).toEqual([...expectedSourceIds].sort());
+    // The agent-run ledger is the only record of the run: what was selected must
+    // be stored there, along with the provenance captured against those sources.
+    expect(finalDoc.latestAgentRun).toBeTruthy();
+    const runRes = await page.request.get(`/api/agent-runs/${finalDoc.latestAgentRun}?depth=0`);
+    expect(runRes.ok()).toBeTruthy();
+    const run = (await runRes.json()) as { sourceIds?: string[]; evidence?: unknown };
+    expect([...(run.sourceIds ?? [])].sort()).toEqual([...expectedSourceIds].sort());
     if (expectedSourceIds.length > 0) {
-      expect(Array.isArray(finalDoc.draftEvidence)).toBeTruthy();
+      expect(Array.isArray(run.evidence)).toBeTruthy();
     }
-
-    // The panel reflects completion to the author.
-    await expect(page.getByText('Terminé.')).toBeVisible({ timeout: 30_000 });
   });
 });

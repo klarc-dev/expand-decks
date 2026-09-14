@@ -372,10 +372,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
       status: 'succeeded',
       sourceFailures: [],
     });
-    expect(state.presentation).toMatchObject({
-      draftStatus: 'done',
-      draftSources: ['docs'],
-    });
+    expect(state.presentation.draftStatus).toBe('done');
+    expect(state.ledger).toMatchObject({ sourceIds: ['docs'] });
   });
 
   it('carries a 20–25 slide target from the API through the real workflow to persistence', async () => {
@@ -416,10 +414,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
       status: 'succeeded',
       evidence: [evidence, structureEvidence],
     });
-    expect(state.presentation).toMatchObject({
-      draftSources: ['docs'],
-      draftEvidence: [evidence, structureEvidence],
-    });
+    expect(state.presentation.draftStatus).toBe('done');
   });
 
   it('runs exclusive knowledge search through the real connector and persists verbatim provenance', async () => {
@@ -446,10 +441,10 @@ describe('exclusive source admin-to-worker acceptance', () => {
         minScore: KNOWLEDGE_MIN_SCORE,
       }),
     );
-    expect(state.presentation).toMatchObject({
-      draftStatus: 'done',
-      draftSources: ['knowledge_42'],
-      draftEvidence: [
+    expect(state.presentation.draftStatus).toBe('done');
+    expect(state.ledger).toMatchObject({
+      sourceIds: ['knowledge_42'],
+      evidence: [
         expect.objectContaining({
           sourceId: 'knowledge_42',
           excerpt: 'Clause résolutoire verbatim.',
@@ -493,10 +488,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
       sourceIds: ['docs', 'knowledge_42'],
       evidence: [evidence, knowledgeEvidence],
     });
-    expect(state.presentation).toMatchObject({
-      draftSources: ['docs', 'knowledge_42'],
-      draftEvidence: [evidence, knowledgeEvidence],
-    });
+    expect(state.presentation.draftStatus).toBe('done');
   });
 
   it('fails the real workflow when the exclusive source captures zero evidence', async () => {
@@ -569,7 +561,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
       sourceIds: ['docs'],
       sourceFailures: [failure],
     });
-    expect(state.presentation.draftEvents.at(-1)?.detail).toMatchObject({
+    expect(state.ledger?.events.at(-1)?.detail).toMatchObject({
       sourceFailures: [failure],
     });
   });
@@ -603,7 +595,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
       errorCode: 'source-unavailable',
       sourceFailures: [failure],
     });
-    expect(state.presentation.draftEvents.at(-1)?.detail).toMatchObject({
+    expect(state.ledger?.events.at(-1)?.detail).toMatchObject({
       sourceFailures: [failure],
     });
   });
@@ -655,6 +647,6 @@ describe('exclusive source admin-to-worker acceptance', () => {
       ...storedPolicy,
     });
     expect(state.openedSourceIds).not.toContain('other');
-    expect(state.presentation.draftSources).toEqual(['docs']);
+    expect(state.ledger?.sourceIds).toEqual(['docs']);
   });
 });

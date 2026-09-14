@@ -81,6 +81,24 @@ export const KnowledgeBases: CollectionConfig = {
       },
     },
     {
+      name: 'readiness',
+      type: 'select',
+      defaultValue: 'empty',
+      index: true,
+      label: 'État',
+      options: [
+        { label: 'Prête', value: 'ready' },
+        { label: 'Vide', value: 'empty' },
+        { label: 'Échec', value: 'failed' },
+        { label: 'Indisponible', value: 'unavailable' },
+      ],
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'Mise à jour automatiquement selon les documents indexés.',
+      },
+    },
+    {
       name: 'documents',
       type: 'join',
       collection: COLLECTIONS.knowledgeDocuments,
