@@ -179,6 +179,40 @@ describe('POST /api/slide-preview hydration + access', () => {
     expect(body.chrome).not.toHaveProperty('logoUrl');
   });
 
+  it('picks the white logo on dark surfaces and the colour logo on paper', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockImplementation(async ({ collection }: { collection: string }) =>
+      collection === 'presentations'
+        ? { id: 'p1', documentTemplate: 'presentation' }
+        : {
+            id: 1,
+            name: 'Klarc',
+            logo: { filename: 'logo.png' },
+            logoWhite: { filename: 'logo-white.png' },
+          },
+    );
+    const preview = async (block: Record<string, unknown>) => {
+      const res = await POST(
+        request({
+          presentationId: 'p1',
+          block,
+          fields: { organisation: 1, 'slides.0.blockType': block.blockType },
+          previewFieldPath: 'slides.0.preview',
+        }),
+      );
+      expect(res.status).toBe(200);
+      return (await res.json()).chrome as { logoUrl?: string };
+    };
+
+    // statement renders on the dark surface, twoCols on paper.
+    expect((await preview({ blockType: 'statement', title: 'Dark' })).logoUrl).toBe(
+      '/media/logo-white.png',
+    );
+    expect((await preview({ blockType: 'twoCols', title: 'Paper' })).logoUrl).toBe(
+      '/media/logo.png',
+    );
+  });
+
   it('keeps the sales-sheet footer while suppressing its redundant page number', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
     findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'sales-sheet' });

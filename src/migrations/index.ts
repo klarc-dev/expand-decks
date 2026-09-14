@@ -29,6 +29,7 @@ import * as migration_20260909_141932 from './20260909_141932';
 import * as migration_20260909_163216_spec19_linkedin_image_formats from './20260909_163216_spec19_linkedin_image_formats';
 import * as migration_20260914_071233_agent_run_model from './20260914_071233_agent_run_model';
 import * as migration_20260914_102932_ia_native_options from './20260914_102932_ia_native_options';
+import * as migration_20260914_153409_org_logo_variants from './20260914_153409_org_logo_variants';
 
 export const migrations = [
   {
@@ -185,5 +186,10 @@ export const migrations = [
     up: migration_20260914_102932_ia_native_options.up,
     down: migration_20260914_102932_ia_native_options.down,
     name: '20260914_102932_ia_native_options',
+  },
+  {
+    up: migration_20260914_153409_org_logo_variants.up,
+    down: migration_20260914_153409_org_logo_variants.down,
+    name: '20260914_153409_org_logo_variants',
   },
 ];

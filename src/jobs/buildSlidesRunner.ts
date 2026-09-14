@@ -33,6 +33,8 @@ import {
   buildFooterHeadmatter,
   buildFooterLayer,
   buildLogoLayer,
+  hasAnyLogo,
+  resolveLogoUrls,
   type FooterConfig,
 } from '../export/chrome';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
@@ -278,11 +280,7 @@ export async function preflightPresentationLayout(
   const brand = org as (OrgBrand & Record<string, unknown>) | null;
   const template = resolveDocumentTemplate(candidate.documentTemplate);
   const footer = template.chrome.footer ? (candidate.footer ?? undefined) : { enabled: false };
-  const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
-  const logoUrl =
-    template.chrome.logo && logoRel && typeof logoRel === 'object' && logoRel.filename
-      ? `/media/${logoRel.filename}`
-      : null;
+  const logos = template.chrome.logo ? resolveLogoUrls(brand) : null;
   const language = candidate.language === 'en' ? 'en' : 'fr';
   const vars: Record<string, unknown> = {
     ...candidate,
@@ -304,7 +302,7 @@ export async function preflightPresentationLayout(
   );
   const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
   const themedHeadmatter = buildHeadmatter(baseHeadmatter, brand, language);
-  const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
+  const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos);
   const slidesMd = buildSlidesMd(candidate as never, {
     headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
     vars,
@@ -318,7 +316,7 @@ export async function preflightPresentationLayout(
     themeCss: buildThemeCss(brand),
     mermaidConfigSource: buildMermaidConfigSource(brand),
     footerEnabled: Boolean(footer?.enabled),
-    logoPresent: Boolean(logoUrl),
+    logoPresent: hasAnyLogo(logos),
     mediaFilenames,
   });
 
@@ -584,11 +582,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     const footer = template.chrome.footer
       ? (presentation as { footer?: Partial<FooterConfig> }).footer
       : { enabled: false };
-    const logoRel = brand?.logo as { filename?: string } | number | null | undefined;
-    const logoUrl =
-      template.chrome.logo && logoRel && typeof logoRel === 'object' && logoRel.filename
-        ? `/media/${logoRel.filename}`
-        : null;
+    const logos = template.chrome.logo ? resolveLogoUrls(brand) : null;
 
     // Single resolution context — the SSOT for {path} variables in slide bodies
     // AND footer templates. Exposes the whole presentation, its linked org under
@@ -623,7 +617,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       brand,
       presentation.language === 'en' ? 'en' : 'fr',
     );
-    const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logoUrl);
+    const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos);
     const renderTemplate =
       producerBinding?.request.intended_format === LINKEDIN_MULTI_IMAGE
         ? { ...template, pageCount: { min: 2, max: null } }
@@ -645,14 +639,14 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       themeCss,
       mermaidConfigSource,
       footerEnabled: Boolean(footer?.enabled),
-      logoPresent: Boolean(logoUrl),
+      logoPresent: hasAnyLogo(logos),
       mediaFilenames,
     });
 
     const slides =
       (renderPresentation.slides as ({ blockType?: string } & SlideWithMedia)[] | undefined) ?? [];
     const hasMermaid = slides.some((block) => block?.blockType === 'mermaid');
-    const hasImages = Boolean(logoUrl) || slides.some(slideHasImages);
+    const hasImages = hasAnyLogo(logos) || slides.some(slideHasImages);
 
     // Use one staged workdir and run the native commands sequentially for
     // deterministic output. The export helper retains the fixed 120s CLI timeout,
@@ -684,7 +678,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           output: COVER_DIR,
           format: 'png',
           hasMermaid: slides[0]?.blockType === 'mermaid',
-          hasImages: Boolean(logoUrl) || slideHasImages(slides[0] ?? {}),
+          hasImages: hasAnyLogo(logos) || slideHasImages(slides[0] ?? {}),
           perSlide: true,
           range: '1',
         }),

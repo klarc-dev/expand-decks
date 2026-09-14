@@ -38,21 +38,74 @@ export function applyPageNumberChrome<T extends { right?: string }>(
 }
 
 /**
+ * Organisation logo variants resolved to build-relative URLs. `light` is what a
+ * light (paper) slide shows, `dark` what a dark or gradient slide shows.
+ */
+export interface LogoUrls {
+  light: string | null;
+  dark: string | null;
+}
+
+function mediaUrl(rel: unknown): string | null {
+  if (!rel || typeof rel !== 'object') return null;
+  const filename = (rel as { filename?: unknown }).filename;
+  return typeof filename === 'string' && filename ? `/media/${filename}` : null;
+}
+
+/**
+ * Pick which uploaded logo each surface shows. The colour version is the
+ * natural choice on paper and the white version on dark/gradient surfaces;
+ * each falls back to the closest legible variant so an organisation that only
+ * uploaded one logo keeps a logo on every slide (a black logo never lands on a
+ * dark surface, a white one never on paper).
+ */
+export function resolveLogoUrls(org: Record<string, unknown> | null | undefined): LogoUrls {
+  const color = mediaUrl(org?.logo);
+  const white = mediaUrl(org?.logoWhite);
+  const black = mediaUrl(org?.logoBlack);
+  return {
+    light: color ?? black,
+    dark: white ?? color,
+  };
+}
+
+/** The logo URL a slide with the given surface shows, or null when none applies. */
+export function pickLogoUrl(logos: LogoUrls | null | undefined, dark: boolean): string | null {
+  if (!logos) return null;
+  return (dark ? logos.dark : logos.light) ?? null;
+}
+
+/** True when a Slidev `class` frontmatter value marks a dark or gradient slide. */
+export function isDarkSurfaceClass(classAttr: string | null | undefined): boolean {
+  return String(classAttr ?? '')
+    .split(/\s+/)
+    .includes('k-dark');
+}
+
+export function hasAnyLogo(logos: LogoUrls | null | undefined): boolean {
+  return Boolean(logos?.light || logos?.dark);
+}
+
+/**
  * YAML-embed the footer config so the Vue layer reads it via `$slidev.configs`.
  * The left/center/right strings are expected to be ALREADY resolved for static
  * tokens by the caller (runner); the Vue layer only resolves `{page}`/`{total}`.
+ * The logo variants travel as `klarcLogo: {"light": …, "dark": …}` so the
+ * per-slide top layer can swap them on the slide's surface.
  */
 export function buildFooterHeadmatter(
   footer: Partial<FooterConfig> | null | undefined,
-  logoUrl?: string | null,
+  logos?: LogoUrls | null,
 ): string {
-  if (!footer?.enabled) return logoUrl ? `klarcLogo: ${jsonInline(logoUrl)}\n` : '';
+  const logoLine = hasAnyLogo(logos)
+    ? `klarcLogo: ${jsonInline({ light: logos?.light ?? null, dark: logos?.dark ?? null })}\n`
+    : '';
+  if (!footer?.enabled) return logoLine;
   const block = {
     left: footer.left ?? '',
     center: footer.center ?? '',
     right: footer.right ?? '',
   };
-  const logoLine = logoUrl ? `klarcLogo: ${jsonInline(logoUrl)}\n` : '';
   return `klarcFooter: ${jsonInline(block)}\n${logoLine}`;
 }
 
@@ -106,7 +159,9 @@ const right = computed(() => resolve(cfg.value?.right ?? ''))
 
 /**
  * `global-top.vue`: renders the organisation logo top-left on every slide that
- * isn't full-bleed chrome. Logo URL resolves through the build's `media` symlink.
+ * isn't full-bleed chrome, swapping the variant on the slide's surface: dark
+ * and gradient slides (class `k-dark`) show the `dark` URL, paper slides the
+ * `light` one. Logo URLs resolve through the build's `media` symlink.
  */
 export function buildLogoLayer(hasLogo: boolean): string {
   if (!hasLogo) return '';
@@ -114,7 +169,9 @@ export function buildLogoLayer(hasLogo: boolean): string {
 import { computed } from 'vue'
 import { useSlideContext } from '@slidev/client'
 const { $slidev, $frontmatter } = useSlideContext()
-const url = computed(() => $slidev?.configs?.klarcLogo)
+const logos = computed(() => $slidev?.configs?.klarcLogo)
+const dark = computed(() => String($frontmatter?.class ?? '').split(/\\s+/).includes('k-dark'))
+const url = computed(() => (dark.value ? logos.value?.dark : logos.value?.light) ?? null)
 const hidden = computed(() => $frontmatter?.hideChrome === true)
 </script>
 

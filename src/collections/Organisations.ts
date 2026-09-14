@@ -20,6 +20,14 @@ const colorField = (name: string, label: string, description: string, defaultVal
     value && HEX_RE.test(value) ? true : 'Couleur hexadécimale requise (ex. #02585C)',
 });
 
+const logoField = (name: string, label: string, description: string) => ({
+  name,
+  type: 'upload' as const,
+  relationTo: COLLECTIONS.media,
+  label,
+  admin: { description },
+});
+
 export const Organisations: CollectionConfig = {
   slug: COLLECTIONS.organisations,
   labels: { singular: 'Organisation', plural: 'Organisations' },
@@ -81,11 +89,31 @@ export const Organisations: CollectionConfig = {
       ],
     },
     {
-      name: 'logo',
-      type: 'upload',
-      relationTo: COLLECTIONS.media,
-      label: 'Logo',
-      admin: { description: 'Logo affiché en haut des diapositives (optionnel)' },
+      type: 'collapsible',
+      label: 'Logos',
+      admin: {
+        initCollapsed: false,
+        description:
+          'Le gabarit choisit la version selon le fond : logo couleur sur les diapositives claires, logo blanc sur les diapositives colorées. Chaque version est optionnelle.',
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            logoField('logo', 'Logo couleur', 'Version couleur — affichée sur fond clair'),
+            logoField(
+              'logoWhite',
+              'Logo blanc',
+              'Version blanche — affichée sur fond coloré ou sombre',
+            ),
+            logoField(
+              'logoBlack',
+              'Logo noir',
+              'Version noire — utilisée sur fond clair si la version couleur manque',
+            ),
+          ],
+        },
+      ],
     },
     {
       type: 'row',

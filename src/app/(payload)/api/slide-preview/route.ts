@@ -11,7 +11,7 @@ import {
   documentTemplateSchemas,
   resolveDocumentTemplate,
 } from '@/documents/templates';
-import { applyPageNumberChrome } from '@/export/chrome';
+import { applyPageNumberChrome, isDarkSurfaceClass } from '@/export/chrome';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
@@ -240,7 +240,12 @@ export async function POST(req: NextRequest) {
   const formFields = Object.fromEntries(
     Object.entries(hydratedFields).map(([key, value]) => [key, { value }]),
   );
-  const resolvedChrome = buildSlidePreviewChrome(formFields, previewFieldPath, preview.hideChrome);
+  const resolvedChrome = buildSlidePreviewChrome(
+    formFields,
+    previewFieldPath,
+    preview.hideChrome,
+    isDarkSurfaceClass(preview.className),
+  );
   const chrome = {
     ...resolvedChrome,
     footer: template.chrome.footer

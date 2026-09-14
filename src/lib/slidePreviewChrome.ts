@@ -1,4 +1,5 @@
 import type { SlideChrome } from '@/components/SlideFrame';
+import { pickLogoUrl, resolveLogoUrls } from '@/export/chrome';
 
 type FormFields = Record<string, { value?: unknown } | undefined>;
 
@@ -16,12 +17,10 @@ function relationshipName(value: unknown): string {
   return '';
 }
 
-function logoUrl(value: unknown): string | undefined {
+/** Same variant choice as the Slidev top layer: white on dark, colour on paper. */
+function logoUrl(value: unknown, darkSurface: boolean): string | undefined {
   if (!value || typeof value !== 'object') return undefined;
-  const logo = (value as Record<string, unknown>).logo;
-  if (!logo || typeof logo !== 'object') return undefined;
-  const filename = (logo as Record<string, unknown>).filename;
-  return typeof filename === 'string' && filename ? `/media/${filename}` : undefined;
+  return pickLogoUrl(resolveLogoUrls(value as Record<string, unknown>), darkSurface) ?? undefined;
 }
 
 function orgFonts(value: unknown): { heading: string; body: string } | undefined {
@@ -41,6 +40,7 @@ export function buildSlidePreviewChrome(
   fields: FormFields,
   previewFieldPath: string,
   hideChrome: boolean,
+  darkSurface = false,
 ): SlideChrome {
   const slideIndex = Number(previewFieldPath.match(/^slides\.(\d+)\./)?.[1] ?? 0);
   const total =
@@ -71,6 +71,6 @@ export function buildSlidePreviewChrome(
     footer,
     fonts: orgFonts(organisation),
     hidden: hideChrome,
-    logoUrl: logoUrl(organisation),
+    logoUrl: logoUrl(organisation, darkSurface),
   };
 }

@@ -33,6 +33,38 @@ describe('buildSlidePreviewChrome()', () => {
     expect(chrome.hidden).toBe(false);
   });
 
+  it('swaps to the white logo on dark surfaces and back to colour on paper', () => {
+    const fields = {
+      organisation: {
+        value: {
+          name: 'Klarc',
+          logo: { filename: 'logo.svg' },
+          logoWhite: { filename: 'logo-white.svg' },
+          logoBlack: { filename: 'logo-black.svg' },
+        },
+      },
+      'slides.0.blockType': { value: 'statement' },
+    };
+
+    expect(buildSlidePreviewChrome(fields, 'slides.0.preview', false, true).logoUrl).toBe(
+      '/media/logo-white.svg',
+    );
+    expect(buildSlidePreviewChrome(fields, 'slides.0.preview', false, false).logoUrl).toBe(
+      '/media/logo.svg',
+    );
+  });
+
+  it('falls back to the colour logo on dark surfaces when no white version exists', () => {
+    const chrome = buildSlidePreviewChrome(
+      { organisation: { value: { name: 'Klarc', logo: { filename: 'logo.svg' } } } },
+      'slides.0.preview',
+      false,
+      true,
+    );
+
+    expect(chrome.logoUrl).toBe('/media/logo.svg');
+  });
+
   it('keeps the final hideChrome behavior for cover, section, and CTA slides', () => {
     const chrome = buildSlidePreviewChrome(
       {

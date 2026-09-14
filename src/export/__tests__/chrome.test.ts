@@ -5,7 +5,57 @@ import {
   buildFooterHeadmatter,
   buildFooterLayer,
   buildLogoLayer,
+  isDarkSurfaceClass,
+  pickLogoUrl,
+  resolveLogoUrls,
 } from '../chrome';
+
+describe('resolveLogoUrls', () => {
+  it('shows the colour logo on paper and the white logo on dark surfaces', () => {
+    const logos = resolveLogoUrls({
+      logo: { filename: 'color.svg' },
+      logoWhite: { filename: 'white.svg' },
+      logoBlack: { filename: 'black.svg' },
+    });
+    expect(logos).toEqual({ light: '/media/color.svg', dark: '/media/white.svg' });
+    expect(pickLogoUrl(logos, false)).toBe('/media/color.svg');
+    expect(pickLogoUrl(logos, true)).toBe('/media/white.svg');
+  });
+
+  it('keeps the colour logo on every surface when it is the only upload', () => {
+    expect(resolveLogoUrls({ logo: { filename: 'color.svg' } })).toEqual({
+      light: '/media/color.svg',
+      dark: '/media/color.svg',
+    });
+  });
+
+  it('never puts a black logo on a dark surface or a white logo on paper', () => {
+    expect(resolveLogoUrls({ logoBlack: { filename: 'black.svg' } })).toEqual({
+      light: '/media/black.svg',
+      dark: null,
+    });
+    expect(resolveLogoUrls({ logoWhite: { filename: 'white.svg' } })).toEqual({
+      light: null,
+      dark: '/media/white.svg',
+    });
+  });
+
+  it('ignores unpopulated relationships and empty organisations', () => {
+    expect(resolveLogoUrls({ logo: 12, logoWhite: null })).toEqual({ light: null, dark: null });
+    expect(resolveLogoUrls(null)).toEqual({ light: null, dark: null });
+    expect(pickLogoUrl(null, true)).toBeNull();
+  });
+});
+
+describe('isDarkSurfaceClass', () => {
+  it('detects the k-dark token that dark and gradient surfaces carry', () => {
+    expect(isDarkSurfaceClass('relative k-dark')).toBe(true);
+    expect(isDarkSurfaceClass('relative k-dark k-gradient')).toBe(true);
+    expect(isDarkSurfaceClass('relative')).toBe(false);
+    expect(isDarkSurfaceClass('k-darker')).toBe(false);
+    expect(isDarkSurfaceClass(undefined)).toBe(false);
+  });
+});
 
 describe('applyPageNumberChrome', () => {
   it('keeps footer content but clears the numbering slot when disabled by the template', () => {
@@ -39,14 +89,27 @@ describe('buildFooterHeadmatter', () => {
     expect(json.vars).toBeUndefined();
   });
 
-  it('omits the footer block when disabled, but still emits the logo line', () => {
-    const out = buildFooterHeadmatter({ enabled: false }, '/media/logo.png');
+  it('omits the footer block when disabled, but still emits the logo variants', () => {
+    const out = buildFooterHeadmatter(
+      { enabled: false },
+      { light: '/media/logo.png', dark: '/media/logo-white.png' },
+    );
     expect(out).not.toContain('klarcFooter:');
-    expect(out).toContain('klarcLogo: "/media/logo.png"');
+    expect(out).toContain('klarcLogo: {"light":"/media/logo.png","dark":"/media/logo-white.png"}');
+  });
+
+  it('emits both the footer and the logo line when both apply', () => {
+    const out = buildFooterHeadmatter(
+      { enabled: true, left: 'Klarc', center: '', right: '' },
+      { light: '/media/logo.png', dark: null },
+    );
+    expect(out).toContain('klarcFooter:');
+    expect(out).toContain('klarcLogo: {"light":"/media/logo.png","dark":null}');
   });
 
   it('emits nothing when disabled and no logo', () => {
     expect(buildFooterHeadmatter({ enabled: false }, null)).toBe('');
+    expect(buildFooterHeadmatter({ enabled: false }, { light: null, dark: null })).toBe('');
   });
 });
 
@@ -73,9 +136,11 @@ describe('buildFooterLayer / buildLogoLayer', () => {
     expect(buildLogoLayer(false)).toBe('');
   });
 
-  it('generates a logo layer guarding on url + hideChrome', () => {
+  it('generates a logo layer that swaps the variant on the slide surface and respects hideChrome', () => {
     const layer = buildLogoLayer(true);
     expect(layer).toContain('k-slide-logo');
     expect(layer).toContain('hideChrome');
+    expect(layer).toContain("includes('k-dark')");
+    expect(layer).toContain('logos.value?.dark : logos.value?.light');
   });
 });
