@@ -62,7 +62,7 @@ export function buildSlidesMd(
   // module-level ctx never leaks into the next build (mirrors resetDefs).
   setVarDoc(options?.vars ?? null);
   try {
-    return foldSlides(presentation, headmatter, template);
+    return foldSlides(presentation, headmatter, template, options?.language ?? null);
   } finally {
     setVarDoc(null);
   }
@@ -72,6 +72,7 @@ function foldSlides(
   presentation: Presentation,
   headmatter: string,
   template: DocumentTemplateDefinition,
+  language: DeckLanguage | null,
 ): string {
   // Payload, seed scripts, migrations, and workflow output all converge here.
   // Validate once at the final render boundary so malformed or over-limit data
@@ -94,7 +95,7 @@ function foldSlides(
         (block as { footnotes?: ({ text?: string | null } | null)[] | null }).footnotes,
       );
     }
-    return renderer(block as never, contexts[i]);
+    return renderer(block as never, { ...contexts[i], language });
   });
 
   // Bake the 1-indexed page number and the deck total into each slide's

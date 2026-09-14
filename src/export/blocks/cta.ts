@@ -2,15 +2,27 @@ import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
 import { densityClass, densityFromScore, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
+import { resolveVars } from '../vars';
 import {
   defFooterSlot,
   escape,
   eyebrow as renderEyebrow,
   md,
+  safeHref,
   surfaceClass,
   wrapSlide,
   type RenderCtx,
 } from '../utils';
+
+// A button with a safe target is an <a> (clickable in the PDF and the SPA);
+// without one it stays the plain pill it always was. Variables ({org.bookingUrl})
+// are resolved before the URL is checked, so a token can be the whole target.
+function actionButton(label: string, url: string | null | undefined, cls: string): string {
+  const href = safeHref(resolveVars(url));
+  return href
+    ? `<a class="${cls}" href="${escape(href)}">${escape(label)}</a>`
+    : `<div class="${cls}">${escape(label)}</div>`;
+}
 
 export type { CtaBlockData };
 
@@ -25,10 +37,10 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
 
   const buttons: string[] = [];
   if (block.primaryAction) {
-    buttons.push(`<div class="${K.btn}">${escape(block.primaryAction)}</div>`);
+    buttons.push(actionButton(block.primaryAction, block.primaryActionUrl, K.btn));
   }
   if (block.secondaryAction) {
-    buttons.push(`<div class="${K.btnGhost}">${escape(block.secondaryAction)}</div>`);
+    buttons.push(actionButton(block.secondaryAction, block.secondaryActionUrl, K.btnGhost));
   }
   const buttonsHtml =
     buttons.length > 0

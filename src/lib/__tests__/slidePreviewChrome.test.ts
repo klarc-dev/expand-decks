@@ -79,6 +79,24 @@ describe('buildSlidePreviewChrome()', () => {
     expect(chrome.footer?.right).toBe('1 / 1');
   });
 
+  it('exposes the organisation website so the logo and footer name link to it', () => {
+    const withSite = buildSlidePreviewChrome(
+      {
+        organisation: { value: { name: 'Klarc', website: 'https://klarc.com' } },
+        'slides.0.blockType': { value: 'statement' },
+      },
+      'slides.0.preview',
+      false,
+    );
+    expect(withSite.orgUrl).toBe('https://klarc.com');
+    const withoutSite = buildSlidePreviewChrome(
+      { organisation: { value: { name: 'Klarc' } }, 'slides.0.blockType': { value: 'statement' } },
+      'slides.0.preview',
+      false,
+    );
+    expect(withoutSite.orgUrl).toBeUndefined();
+  });
+
   it('omits the footer when disabled', () => {
     const chrome = buildSlidePreviewChrome(
       {

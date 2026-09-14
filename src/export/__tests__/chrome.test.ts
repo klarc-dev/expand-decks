@@ -8,7 +8,20 @@ import {
   isDarkSurfaceClass,
   pickLogoUrl,
   resolveLogoUrls,
+  resolveOrgUrl,
 } from '../chrome';
+
+describe('resolveOrgUrl', () => {
+  it('accepts only an https website', () => {
+    expect(resolveOrgUrl({ website: 'https://klarc.com' })).toBe('https://klarc.com');
+    expect(resolveOrgUrl({ website: ' https://klarc.com/ ' })).toBe('https://klarc.com/');
+    expect(resolveOrgUrl({ website: 'http://klarc.com' })).toBeNull();
+    expect(resolveOrgUrl({ website: 'javascript:alert(1)' })).toBeNull();
+    expect(resolveOrgUrl({ website: 'https://a b' })).toBeNull();
+    expect(resolveOrgUrl({})).toBeNull();
+    expect(resolveOrgUrl(null)).toBeNull();
+  });
+});
 
 describe('resolveLogoUrls', () => {
   it('shows the colour logo on paper and the white logo on dark surfaces', () => {
@@ -111,6 +124,21 @@ describe('buildFooterHeadmatter', () => {
     expect(buildFooterHeadmatter({ enabled: false }, null)).toBe('');
     expect(buildFooterHeadmatter({ enabled: false }, { light: null, dark: null })).toBe('');
   });
+
+  it('embeds the organisation URL for the chrome links, with or without a footer', () => {
+    expect(buildFooterHeadmatter({ enabled: false }, null, 'https://klarc.com')).toBe(
+      'klarcOrgUrl: "https://klarc.com"\n',
+    );
+    const out = buildFooterHeadmatter(
+      { enabled: true, left: 'Klarc', center: '', right: '' },
+      { light: '/media/logo.png', dark: null },
+      'https://klarc.com',
+    );
+    expect(out).toContain('klarcFooter:');
+    expect(out).toContain('klarcLogo:');
+    expect(out).toContain('klarcOrgUrl: "https://klarc.com"');
+    expect(buildFooterHeadmatter({ enabled: false }, null, null)).toBe('');
+  });
 });
 
 describe('buildFooterLayer / buildLogoLayer', () => {
@@ -129,6 +157,21 @@ describe('buildFooterLayer / buildLogoLayer', () => {
     // only the page/total tokens remain in the Vue resolver
     expect(layer).toContain('page|total');
     expect(layer).not.toContain('cfg.value?.vars');
+  });
+
+  it('links the footer organisation slot and the logo to klarcOrgUrl when present', () => {
+    const footer = buildFooterLayer(true);
+    expect(footer).toContain('klarcOrgUrl');
+    expect(footer).toContain('<a v-if="orgUrl && left" :href="orgUrl">{{ left }}</a>');
+    const logo = buildLogoLayer(true);
+    expect(logo).toContain('klarcOrgUrl');
+    expect(logo).toContain(
+      '<a v-if="url && !hidden && orgUrl" :href="orgUrl" class="k-slide-logo-link"',
+    );
+    // the plain image stays for organisations without a website
+    expect(logo).toContain(
+      '<img v-else-if="url && !hidden" :src="url" class="k-slide-logo" alt="" />',
+    );
   });
 
   it('returns empty string when no footer/logo configured (file not written)', () => {

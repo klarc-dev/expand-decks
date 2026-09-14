@@ -57,8 +57,9 @@ export const statementSpec = block({
     }),
     rawField('footer', footer, optionalLimitedAi(SLIDE_LIMITS.statement.footer), {
       type: 'richText',
-      label: 'Pied de page',
-      description: 'Légende ou note en bas de la diapositive',
+      label: 'À retenir',
+      description:
+        'Message clé mis en avant dans un encadré en bas de la diapositive. Un début « Enjeu : … » devient le cartouche de l’encadré.',
       maxLength: SLIDE_LIMITS.statement.footer.max,
     }),
     rawField('variant', variant, optionalAi(z.enum(STATEMENT_VARIANTS)), {

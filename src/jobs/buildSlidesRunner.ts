@@ -35,6 +35,7 @@ import {
   buildLogoLayer,
   hasAnyLogo,
   resolveLogoUrls,
+  resolveOrgUrl,
   type FooterConfig,
 } from '../export/chrome';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
@@ -302,7 +303,7 @@ export async function preflightPresentationLayout(
   );
   const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
   const themedHeadmatter = buildHeadmatter(baseHeadmatter, brand, language);
-  const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos);
+  const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos, resolveOrgUrl(brand));
   const slidesMd = buildSlidesMd(candidate as never, {
     headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
     vars,
@@ -617,7 +618,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       brand,
       presentation.language === 'en' ? 'en' : 'fr',
     );
-    const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos);
+    const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos, resolveOrgUrl(brand));
     const renderTemplate =
       producerBinding?.request.intended_format === LINKEDIN_MULTI_IMAGE
         ? { ...template, pageCount: { min: 2, max: null } }

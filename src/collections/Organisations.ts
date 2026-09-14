@@ -20,6 +20,9 @@ const colorField = (name: string, label: string, description: string, defaultVal
     value && HEX_RE.test(value) ? true : 'Couleur hexadécimale requise (ex. #02585C)',
 });
 
+const httpsUrl = (value: string | null | undefined) =>
+  !value || /^https:\/\//.test(value) ? true : 'URL https requise (ex. https://www.exemple.fr)';
+
 const logoField = (name: string, label: string, description: string) => ({
   name,
   type: 'upload' as const,
@@ -111,6 +114,62 @@ export const Organisations: CollectionConfig = {
               'Logo noir',
               'Version noire, utilisée sur fond clair si la version couleur manque',
             ),
+          ],
+        },
+      ],
+    },
+    {
+      type: 'collapsible',
+      label: 'Coordonnées',
+      admin: {
+        initCollapsed: false,
+        description:
+          'Coordonnées publiques : elles rendent le logo et le pied de page cliquables dans le PDF et sont disponibles comme balises ({org.website}, {org.contactEmail}, {org.phone}, {org.bookingUrl}).',
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'website',
+              type: 'text',
+              label: 'Site web',
+              admin: { description: 'URL https ; cible du logo et du nom en pied de page' },
+              validate: httpsUrl,
+            },
+            {
+              name: 'bookingUrl',
+              type: 'text',
+              label: 'Prise de rendez-vous',
+              admin: {
+                description: 'URL https d’un agenda en ligne, proposée aux boutons du bloc cta',
+              },
+              validate: httpsUrl,
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'contactEmail',
+              type: 'email',
+              label: 'Email de contact',
+              admin: { description: 'Adresse générique, rendue cliquable (mailto:)' },
+            },
+            {
+              name: 'phone',
+              type: 'text',
+              label: 'Téléphone',
+              admin: { description: 'Numéro rendu cliquable (tel:)' },
+            },
+            {
+              name: 'linkedin',
+              type: 'text',
+              label: 'Page LinkedIn',
+              admin: { description: 'URL https de la page entreprise' },
+              validate: httpsUrl,
+            },
           ],
         },
       ],

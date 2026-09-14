@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildSlidesMd } from '../buildSlidesMd';
-import { md, yamlScalar, yamlQuoted } from '../utils';
+import { richTextToHTML } from '../richtext';
+import { md, telHref, yamlScalar, yamlQuoted } from '../utils';
 
 const HEADMATTER = 'theme: default';
 
@@ -81,6 +82,18 @@ describe('md() — link href XSS defense', () => {
 
   it('allows https links', () => {
     expect(md('[ok](https://example.com)')).toBe('<a href="https://example.com">ok</a>');
+  });
+
+  it('allows tel links (phone numbers must be clickable in the PDF)', () => {
+    expect(md('[call](tel:+33612345678)')).toBe('<a href="tel:+33612345678">call</a>');
+  });
+
+  it('telHref() normalises a displayed number and refuses non-numbers', () => {
+    expect(telHref('06 12 34 56 78')).toBe('tel:0612345678');
+    expect(telHref('+33 (0)5 61.00.00.00')).toBe('tel:+330561000000');
+    expect(telHref('à définir')).toBeNull();
+    expect(telHref('')).toBeNull();
+    expect(telHref(null)).toBeNull();
   });
 
   it('allows mailto links', () => {
@@ -182,5 +195,63 @@ describe('buildSlidesMd() — composed deck is injection-free across all block t
   it('still produces a parseable multi-slide deck (payloads did not break rendering)', () => {
     const fences = result.match(/^---\s*$/gm) ?? [];
     expect(fences.length).toBeGreaterThan(slides.length);
+  });
+});
+
+describe('richTextToHTML() — Lexical anchor policy', () => {
+  const link = (url: string, label: string) => ({
+    type: 'link',
+    version: 3,
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    fields: { linkType: 'custom', url, newTab: true },
+    children: [
+      { type: 'text', text: label, detail: 0, format: 0, mode: 'normal', style: '', version: 1 },
+    ],
+  });
+  const doc = (children: unknown[]) =>
+    ({
+      root: {
+        type: 'root',
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        version: 1,
+        children: [
+          {
+            type: 'paragraph',
+            direction: 'ltr',
+            format: '',
+            indent: 0,
+            version: 1,
+            textFormat: 0,
+            children,
+          },
+        ],
+      },
+    }) as never;
+
+  it('keeps https, mailto and tel anchors and strips the editor target/rel attributes', () => {
+    expect(richTextToHTML(doc([link('https://klarc.com', 'site')]))).toContain(
+      '<a href="https://klarc.com">site</a>',
+    );
+    expect(richTextToHTML(doc([link('mailto:a@b.fr', 'mail')]))).toContain(
+      '<a href="mailto:a@b.fr">mail</a>',
+    );
+    expect(richTextToHTML(doc([link('tel:+33612345678', 'tel')]))).toContain(
+      '<a href="tel:+33612345678">tel</a>',
+    );
+    expect(richTextToHTML(doc([link('https://klarc.com', 'site')]))).not.toContain('target=');
+  });
+
+  it('drops the anchor but keeps the text for a javascript: (neutralised to "#") or unknown scheme', () => {
+    const js = richTextToHTML(doc([link('javascript:alert(1)', 'click')]));
+    expect(js).toContain('click');
+    expect(js).not.toContain('<a ');
+    expect(js).not.toContain('javascript:');
+    const unknown = richTextToHTML(doc([link('vbscript:msgbox', 'x')]));
+    expect(unknown).toContain('x');
+    expect(unknown).not.toContain('<a ');
   });
 });

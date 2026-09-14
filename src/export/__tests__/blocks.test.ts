@@ -8,12 +8,13 @@ import { renderMarkdown } from '../blocks/markdown';
 import { renderMermaid } from '../blocks/mermaid';
 import { renderQuotes } from '../blocks/quotes';
 import { renderSection } from '../blocks/section';
-import { renderStatement } from '../blocks/statement';
+import { renderStatement, splitTakeaway } from '../blocks/statement';
 import { renderStats } from '../blocks/stats';
 import { renderTable } from '../blocks/table';
 import { renderTimeline } from '../blocks/timeline';
 import { renderTwoCols } from '../blocks/twoCols';
 import { escape, md, resetDefs } from '../utils';
+import { setVarDoc } from '../vars';
 
 // Minimal valid Lexical editor state (root > paragraph > text) for richText
 // fields in fixtures, matching what convertLexicalToHTML expects.
@@ -163,26 +164,45 @@ describe('renderCover()', () => {
     expect(result).not.toContain('k-btn');
   });
 
-  it('emits image-right frontmatter when image is set', () => {
+  it('renders an explicit figure column when image is set (print-safe, not CSS background)', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'With photo',
       image: { url: '/media/photo.jpg' },
     });
-    expect(result).toContain('layout: image-right');
-    expect(result).toContain('image: /media/photo.jpg');
+    expect(result).toContain('layout: cover');
+    expect(result).toContain('k-cover--split');
+    expect(result).toContain('k-cover-figure');
+    expect(result).toContain(`:src='"/media/photo.jpg"'`);
+    // No Slidev image-right layout: its CSS background-image pane renders
+    // blank in the Chromium print/export pass.
+    expect(result).not.toContain('layout: image-right');
+    expect(result).not.toContain('image: /media/photo.jpg');
     expect(result).not.toContain('k-cover--full-bleed');
     expect(result).not.toContain('p-14');
   });
 
-  it('emits image-left when imagePosition is left', () => {
+  it('prefers the staged local media path for the cover image', () => {
+    const result = renderCover({
+      blockType: 'cover',
+      title: 'With staged photo',
+      image: {
+        filename: 'photo.jpg',
+        url: 'https://slides.example/api/media/file/photo.jpg',
+      },
+    } as never);
+    expect(result).toContain(`:src='"./media/photo.jpg"'`);
+    expect(result).not.toContain('/api/media/file/photo.jpg');
+  });
+
+  it('flips the figure column left when imagePosition is left', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'With photo',
       image: { url: '/media/photo.jpg' },
       imagePosition: 'left',
     });
-    expect(result).toContain('layout: image-left');
+    expect(result).toContain('k-cover--split-left');
   });
 
   it('keeps layout: cover with a semantic full-bleed frame when no image', () => {
@@ -251,6 +271,21 @@ describe('shared adaptive card stacks', () => {
     expect(result).toContain('k-card-stack--multirow');
     expect(result).toContain('k-tight');
     expect(result).toContain('k-density-dense');
+  });
+
+  it('lays three dense quotes out as one 3-col row instead of stranding a quadrant', () => {
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Long quotes',
+      quotes: [
+        { quote: lexical('A'.repeat(180)), authorName: 'A' },
+        { quote: lexical('B'.repeat(180)), authorName: 'B' },
+        { quote: lexical('C'.repeat(180)), authorName: 'C' },
+      ],
+    });
+
+    expect(result).toContain('k-grid-3');
+    expect(result).not.toContain('k-grid-2');
   });
 });
 
@@ -350,6 +385,45 @@ describe('renderStatement() — variant dispatch (U8)', () => {
     expect(result).toContain('Source note');
     expect(result).toContain('k-caption');
     expect(result).not.toContain('k-foot');
+  });
+
+  it('renders the footer as a takeaway box whose cartouche is the "Label :" lead', () => {
+    const result = renderStatement({
+      blockType: 'statement',
+      title: 'Statement',
+      footer: lexical('L’enjeu : examiner ensemble les conséquences.'),
+    });
+    expect(result).toContain('k-takeaway');
+    expect(result).toContain('<span class="k-takeaway-label">L’enjeu</span>');
+    expect(result).toContain('<p>examiner ensemble les conséquences.</p>');
+    expect(result).not.toContain('<p>L’enjeu');
+  });
+
+  it('falls back to a localized cartouche when the footer has no lead', () => {
+    const fr = renderStatement({
+      blockType: 'statement',
+      title: 'Statement',
+      footer: lexical('Décider à partir d’une lecture commune.'),
+    });
+    expect(fr).toContain('<span class="k-takeaway-label">À retenir</span>');
+    expect(fr).toContain('<p>Décider à partir d’une lecture commune.</p>');
+    const en = renderStatement(
+      { blockType: 'statement', title: 'Statement', footer: lexical('Decide from one reading.') },
+      { language: 'en' },
+    );
+    expect(en).toContain('<span class="k-takeaway-label">Key takeaway</span>');
+  });
+
+  it('never turns a time or a URL opener into a cartouche', () => {
+    expect(splitTakeaway('<p>10:30 kick-off</p>').label).toBe('À retenir');
+    expect(splitTakeaway('<p>https://example.org/x</p>').label).toBe('À retenir');
+    expect(splitTakeaway('<p><strong>Note</strong> : text</p>').label).toBe('À retenir');
+    expect(splitTakeaway('<p>Note : text</p>')).toEqual({ label: 'Note', html: '<p>text</p>' });
+  });
+
+  it('omits the takeaway box when there is no footer', () => {
+    const result = renderStatement({ blockType: 'statement', title: 'Statement' });
+    expect(result).not.toContain('k-takeaway');
   });
 
   it('reserves a footer slot inside the full-height statement hero frame', () => {
@@ -542,6 +616,118 @@ describe('renderCardGrid()', () => {
     expect(result).toContain('k-content-main--stretch');
   });
 
+  it('renders intervenants as a shared person-card strip below the cards', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+      intervenants: [
+        {
+          user: {
+            id: 1,
+            name: 'Joachim Brindeau',
+            title: 'Avocat',
+          },
+        },
+      ],
+    });
+    expect(result).toContain('k-cardgrid-people');
+    expect(result).toContain('k-person-card');
+    expect(result).toContain('Joachim Brindeau');
+    expect(result).toContain('Avocat');
+    // Initials fallback when no avatar media is linked.
+    expect(result).toContain('k-person-initials');
+    expect(result).toContain('JB');
+    // The strip reads after the card grid: discreet footer, not a fourth card.
+    expect(result.indexOf('k-card-stack')).toBeLessThan(result.indexOf('k-cardgrid-people'));
+  });
+
+  it('renders each contact detail of an intervenant as its own clickable link', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+      intervenants: [
+        {
+          user: {
+            id: 1,
+            name: 'Joachim Brindeau',
+            title: 'Avocat',
+            email: 'joachim@klarc.com',
+            phone: '06 12 34 56 78',
+            linkedin: 'https://www.linkedin.com/in/joachim',
+          },
+        },
+      ],
+    });
+    // The name links to the email; the contact line repeats email, phone, LinkedIn.
+    expect(result).toContain(
+      '<div class="k-person-name"><a href="mailto:joachim@klarc.com">Joachim Brindeau</a></div>',
+    );
+    expect(result).toContain(
+      '<a class="k-person-link" href="mailto:joachim@klarc.com">joachim@klarc.com</a>',
+    );
+    expect(result).toContain('<a class="k-person-link" href="tel:0612345678">06 12 34 56 78</a>');
+    expect(result).toContain(
+      '<a class="k-person-link" href="https://www.linkedin.com/in/joachim">LinkedIn</a>',
+    );
+  });
+
+  it('keeps the plain card and drops unsafe contact targets when details are missing or invalid', () => {
+    const plain = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+      intervenants: [{ user: { id: 1, name: 'Sans Contact', title: 'Avocat' } }],
+    });
+    expect(plain).not.toContain('k-person-contact');
+    expect(plain).not.toContain('<a ');
+    const unsafe = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+      intervenants: [
+        {
+          user: {
+            id: 1,
+            name: 'Mauvais Liens',
+            phone: 'à définir',
+            linkedin: 'javascript:alert(1)',
+          },
+        },
+      ],
+    });
+    expect(unsafe).not.toContain('k-person-contact');
+    expect(unsafe).not.toContain('javascript:');
+  });
+
+  it('omits the person strip when intervenants are absent or unresolved', () => {
+    const absent = renderCardGrid({ blockType: 'cardGrid', title: 'Grid', cards: oneCard });
+    expect(absent).not.toContain('k-cardgrid-people');
+    const unresolved = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Grid',
+      cards: oneCard,
+      intervenants: [{ user: 42 }],
+    });
+    expect(unresolved).not.toContain('k-cardgrid-people');
+  });
+
+  it('promotes the person strip to a prominent grid when there are no cards', () => {
+    const result = renderCardGrid({
+      blockType: 'cardGrid',
+      title: 'Vos contacts',
+      intervenants: [
+        { user: { id: 1, name: 'Joachim Brindeau', title: 'Avocat' } },
+        { user: { id: 2, name: 'Lucien Trouette', title: 'Conseil en Propriété Industrielle' } },
+      ],
+    });
+    expect(result).toContain('k-cardgrid-people--grid');
+    // People are the slide's content: centered, not stretched.
+    expect(result).toContain('k-content-main--center');
+    expect(result).not.toContain('k-card-stack');
+  });
+
   it('omits the lead band when no sidebarText is provided', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',
@@ -702,6 +888,56 @@ describe('renderCta()', () => {
     expect(result).toContain('k-btn');
     expect(result).toContain('Get in touch');
     expect(result).toContain('k-btn-ghost');
+  });
+
+  it('renders an action with a safe URL as a link and one without as a plain pill', () => {
+    const result = renderCta({
+      blockType: 'cta',
+      title: 'Parlons-en',
+      primaryAction: 'Prendre rendez-vous',
+      primaryActionUrl: 'https://cal.klarc.com/team',
+      secondaryAction: 'Nous écrire',
+    });
+    expect(result).toContain(
+      '<a class="k-btn" href="https://cal.klarc.com/team">Prendre rendez-vous</a>',
+    );
+    expect(result).toContain('<div class="k-btn-ghost">Nous écrire</div>');
+  });
+
+  it('accepts mailto: and tel: targets and refuses unsafe schemes', () => {
+    const result = renderCta({
+      blockType: 'cta',
+      title: 'Contact',
+      primaryAction: 'Écrire',
+      primaryActionUrl: 'mailto:contact@klarc.com',
+      secondaryAction: 'Appeler',
+      secondaryActionUrl: 'tel:+33561000000',
+    });
+    expect(result).toContain('<a class="k-btn" href="mailto:contact@klarc.com">Écrire</a>');
+    expect(result).toContain('<a class="k-btn-ghost" href="tel:+33561000000">Appeler</a>');
+    const unsafe = renderCta({
+      blockType: 'cta',
+      title: 'Contact',
+      primaryAction: 'Cliquer',
+      primaryActionUrl: 'javascript:alert(1)',
+    });
+    expect(unsafe).toContain('<div class="k-btn">Cliquer</div>');
+    expect(unsafe).not.toContain('javascript:');
+  });
+
+  it('resolves a {org.bookingUrl} variable before linking the button', () => {
+    setVarDoc({ org: { bookingUrl: 'https://cal.klarc.com/team' } });
+    try {
+      const result = renderCta({
+        blockType: 'cta',
+        title: 'Parlons-en',
+        primaryAction: 'Prendre rendez-vous',
+        primaryActionUrl: '{org.bookingUrl}',
+      });
+      expect(result).toContain('href="https://cal.klarc.com/team"');
+    } finally {
+      setVarDoc(null);
+    }
   });
 
   it('renders subtitle and footer note (closing slide mode)', () => {

@@ -302,6 +302,30 @@
   color: var(--fg-muted); /* solid #C7D6D6 ≈ 8:1 — was rgba .72 (AA fail) */
 }
 
+/* Links ---------------------------------------- */
+/* Slidev's reset leaves <a> indistinguishable from text, so nobody reading the
+   exported PDF knows a word is clickable. Every content link gets the accent
+   underline in the current tone; buttons, person names, chrome and the footnote
+   band opt out below with their own treatment. */
+.slidev-layout a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-rule);
+  text-decoration-thickness: 0.09em;
+  text-underline-offset: 0.16em;
+}
+.k-dark a,
+.slidev-layout .k-dark a {
+  text-decoration-color: color-mix(in srgb, var(--accent-rule) 80%, #fff 20%);
+}
+.slidev-layout .k-btn,
+.slidev-layout .k-btn-ghost,
+.slidev-layout .k-person-name a,
+.slidev-layout .k-slide-footer a,
+.slidev-layout .k-slide-logo-link {
+  text-decoration: none;
+}
+
 /* Components ----------------------------------- */
 .k-eyebrow {
   display: inline-flex;
@@ -1290,6 +1314,65 @@
   margin-top: 2.4rem;
 }
 
+/* Takeaway — the statement footer promoted to the slide's key message: a
+   tinted box on a rose accent with a cartouche label ("L’enjeu", "À retenir")
+   ahead of the text. Overrides the muted footnote tokens of .k-caption so it
+   reads at body size in the foreground colour on both grounds. */
+.k-takeaway {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+  max-width: 54rem;
+  padding: 1.1rem 1.4rem;
+  border-left: 4px solid var(--accent-rule);
+  border-radius: var(--k-radius-chip);
+  background: var(--k-teal-50);
+  color: var(--fg);
+  font-size: calc(var(--t-lead) * 0.92);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-align: left;
+}
+.k-hero--center .k-takeaway {
+  margin-left: auto;
+  margin-right: auto;
+}
+.k-takeaway-label {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.15rem;
+  padding: 0.24rem 0.65rem;
+  border-radius: var(--k-radius-chip);
+  background: var(--k-rose-soft);
+  color: var(--k-teal-700);
+  font-size: var(--t-small);
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.k-takeaway-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.k-hero.k-density-compact .k-takeaway,
+.k-hero.k-density-dense .k-takeaway {
+  margin-top: calc(2.4rem * var(--density-space));
+  padding: calc(1.1rem * var(--density-space)) calc(1.4rem * var(--density-space));
+  font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
+  line-height: calc(1.45 * var(--density-leading));
+}
+.k-dark .k-takeaway {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.k-dark .k-takeaway-label {
+  background: var(--accent-rule);
+  color: var(--k-teal-900);
+}
+
 /* Status pill (U10) — matrix-table status cells; replaces inline emoji. */
 .k-pill {
   display: inline-flex;
@@ -1430,6 +1513,65 @@
 }
 .k-cardgrid-lead strong {
   color: var(--fg);
+}
+/* Discreet contact strip under the grid — reuses the shared person-card
+   anatomy from the cover intervenants band. flex:none keeps the card stack as
+   the only flexible row so the strip never collides with the slide footer. */
+.k-cardgrid-body--with-people {
+  justify-content: center;
+  gap: 1.6rem;
+}
+.k-cardgrid-body--with-people > .k-card-stack {
+  flex: 0 0 auto;
+}
+.k-cardgrid-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  flex: none;
+  margin-top: 0.15rem;
+}
+.k-cardgrid-people .k-person-card {
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  min-width: min(15rem, 100%);
+  padding: 0.5rem 0.8rem;
+}
+.k-cardgrid-people .k-person-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+/* Prominent variant — a cards-free cardGrid whose people ARE the content
+   (contacts slide). 2-up grid of large person cards, left-aligned with the
+   lead band so header, intro and grid share one margin. */
+.k-cardgrid-people--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 1.5rem;
+  width: min(54rem, 100%);
+  margin: 0;
+}
+.k-cardgrid-people--grid .k-person-card {
+  grid-template-columns: 5rem minmax(0, 1fr);
+  min-width: 0;
+  padding: 1.7rem 1.8rem;
+  gap: 1.2rem;
+}
+.k-cardgrid-people--grid .k-person-avatar {
+  width: 5rem;
+  height: 5rem;
+  font-size: 1.65rem;
+}
+.k-cardgrid-people--grid .k-person-name {
+  font-size: var(--t-lead);
+}
+.k-cardgrid-people--grid .k-person-title {
+  font-size: var(--t-body);
+  /* Long professional titles must read in full on the contacts slide. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 .k-card-scale-md.k-grid-3.k-card-stack--grid .k-card h3 {
   font-size: var(--t-lead);
@@ -1708,6 +1850,53 @@
   position: absolute;
   inset: 0;
 }
+/* Cover with image: explicit two-column grid owning an <img> figure column.
+   Slidev's image-right/-left layouts paint the image as a CSS background,
+   which Chromium's page.pdf print pass drops — an <img> element prints
+   reliably. The figure bleeds to the slide edges via negative margins that
+   cancel the k-cover safe-area padding on its side. */
+.k-cover--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: 2.5rem;
+  padding-right: 0;
+}
+.k-cover--split .k-cover-main {
+  min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
+}
+/* The def-footer (when present) auto-places into column 1, row 2 under the
+   copy column; the figure spans both rows so it always bleeds full height. */
+.k-cover-figure {
+  position: relative;
+  overflow: hidden;
+  margin-top: calc(-1 * var(--header-top));
+  margin-bottom: calc(-1 * var(--content-bottom));
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.k-cover--split-left {
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+  padding-right: var(--content-inset);
+  padding-left: 0;
+}
+.k-cover--split-left .k-cover-figure {
+  grid-column: 1;
+}
+.k-cover--split-left .k-cover-main {
+  grid-column: 2;
+  grid-row: 1;
+}
+.k-cover-figure-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 .k-cover-main {
   flex: 1;
   display: flex;
@@ -1799,6 +1988,34 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Contact line — email, phone, LinkedIn as separate links so each carries its
+   own PDF annotation. Single line, dot-separated, ellipsised like the title. */
+.k-person-contact {
+  margin-top: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.7rem;
+  row-gap: 0.12rem;
+  font-size: var(--t-micro);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  min-width: 0;
+}
+.k-person-link {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--k-teal);
+  text-decoration-color: color-mix(in srgb, var(--k-teal) 45%, transparent);
+}
+.k-dark .k-person-link {
+  color: #fff;
+  text-decoration-color: rgba(255, 255, 255, 0.45);
+}
 .k-cover-footer {
   display: flex;
   align-items: end;
@@ -1886,6 +2103,27 @@
   opacity: 0.9;
   pointer-events: none;
   z-index: 5;
+}
+/* Logo wrapped in a link to the organisation site: the anchor takes the logo's
+   place so the PDF annotation covers the logo box, and the image sits static
+   inside it. */
+.k-slide-logo-link {
+  position: absolute;
+  top: 1.4rem;
+  left: 3.5rem;
+  height: 26px;
+  display: block;
+  pointer-events: auto;
+  z-index: 6;
+}
+.k-slide-logo-link .k-slide-logo {
+  position: static;
+  display: block;
+  height: 100%;
+}
+.k-slide-footer a {
+  color: inherit;
+  pointer-events: auto;
 }
 
 /* CTA-specific text classes — replace inline styles -------------- */

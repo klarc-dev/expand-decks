@@ -40,6 +40,21 @@ function parsePreviewFrontmatter(markdown: string): PreviewFrontmatter {
 }
 
 /**
+ * Preview runs the renderer's HTML through React (dangerouslySetInnerHTML),
+ * where Vue bindings are inert attributes. Renderers emit `:src='"url"'` so
+ * Slidev's build does not rewrite media URLs into source imports (see
+ * authenticated-media-embedding); for the DOM preview we unwrap the binding
+ * back to a plain src. `./media/...` staged paths are served by the admin at
+ * `/media/...`.
+ */
+function unwrapVueBoundSrc(html: string): string {
+  return html.replace(
+    /:src='"([^"]*)"'/g,
+    (_m, url: string) => `src="${url.startsWith('./') ? url.slice(1) : url}"`,
+  );
+}
+
+/**
  * Render a single slide block to preview HTML + layout name, node-free.
  *
  * Strips the per-slide frontmatter (---\nlayout: ...\n---) leaving only the
@@ -80,7 +95,7 @@ export function renderBlockPreview(
   const parsed = parsePreviewFrontmatter(md);
   return {
     className: parsed.className,
-    html: parsed.body,
+    html: unwrapVueBoundSrc(parsed.body),
     hideChrome: parsed.hideChrome,
     image: parsed.image,
     layout: parsed.layout,

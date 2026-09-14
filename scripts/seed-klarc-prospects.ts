@@ -3,272 +3,264 @@ import type { Presentation } from '../src/payload-types';
 import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite';
 import { runPayloadScript } from './lib/payloadScript';
 
-// Editorial authority: KLARC_base_information_IA.md v1.2 and the approved
-// 2026-09-14 prospect plan. No client claims or historical metrics are reused.
+// Editorial authority: KLARC_base_information_IA.md (version with Chloé
+// Liebgott) and the approved 2026-09-14 plan v2 (client-centric, 12 pages).
+// AI drafting: gpt-6-astra. Testimonials are faithful extracts from the
+// delivered historical deck; the extract containing a historical entity name
+// and the "120 structures" figure are excluded on purpose.
 const title = 'KLARC — Présentation clients';
+const LOGO_FILENAME = 'klarc-logomark-on-white.svg';
 const slides = [
+  // Page 1 — cover
   {
     blockType: 'cover',
-    eyebrow: 'KLARC · TOULOUSE / LYON',
-    title: 'Avocats et Conseils en Propriété Industrielle',
+    eyebrow: 'TOULOUSE · LYON',
+    title: 'KLARC : Avocats et Conseils en Propriété Industrielle',
     subtitle:
-      'Conseil et contentieux pour les entreprises.\n\nProtection, financement et organisation de l’innovation.',
+      'Conseil et contentieux pour les entreprises innovantes, à Toulouse, à Lyon et partout en France.',
   },
+  // Page 2 — 4 situations client, grille 2x2 numérotée
   {
     blockType: 'cardGrid',
-    eyebrow: 'VOS ENJEUX',
-    title: 'Préserver vos droits et vos possibilités d’action',
-    sidebarText:
-      'Dirigeants, directions juridiques, financières et scientifiques : un accompagnement adapté à votre situation.',
-    columns: '3',
+    eyebrow: 'VOTRE SITUATION',
+    title: 'Les situations que vous rencontrez',
+    columns: '2',
     cards: [
       {
         number: '01',
-        title: 'Conclure des accords adaptés',
+        title: 'Vous négociez un contrat déterminant pour votre activité',
         description:
-          'Clarifier les engagements, répartir les responsabilités et anticiper les désaccords.',
+          'Répartition des risques, garanties, propriété des résultats, conditions de sortie : nous analysons les clauses, mesurons leurs conséquences et conduisons la négociation à vos côtés.',
       },
       {
         number: '02',
-        title: 'Conserver la valeur de vos actifs',
+        title: 'Vous vous apprêtez à divulguer une innovation',
         description:
-          'Protéger les créations et les technologies ; organiser leur exploitation et leur transmission.',
+          'Levée de fonds, partenariat, salon ou publication : avant toute divulgation, nous vérifions les protections disponibles, organisons la confidentialité et arrêtons avec vous la stratégie de dépôt.',
       },
       {
         number: '03',
-        title: 'Faire valoir vos droits',
+        title: 'Vous sollicitez un financement ou un dispositif fiscal',
         description:
-          'Prévenir un différend, négocier une issue ou défendre vos intérêts en contentieux.',
+          'CIR, CII, statut JEI, subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un éventuel examen de l’administration.',
+      },
+      {
+        number: '04',
+        title: 'Vous êtes confronté à un différend ou à un contrôle',
+        description:
+          'Réclamation, assignation ou avis de vérification : nous analysons les pièces, identifions les délais qui courent et définissons avec vous la stratégie de réponse et de défense.',
       },
     ],
   },
+  // Page 3 — contraste problème / réponse
   {
     blockType: 'twoCols',
-    eyebrow: 'DROIT DES AFFAIRES · CONSEIL ET CONTENTIEUX',
-    title: 'Conseiller et défendre votre entreprise',
+    eyebrow: 'LE CONSTAT',
+    title: 'Le problème des expertises dispersées',
     intro:
-      '**Organiser la vie de la société**\n\n\nCréation, statuts et pactes d’associés.\n\nGouvernance et conseil aux dirigeants.\n\nRestructurations et fusions-acquisitions, selon la mission.',
+      'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement. Consulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
     leftFooter:
-      'Une intervention autonome ou coordonnée avec la propriété intellectuelle et le droit fiscal.',
+      'L’enjeu : examiner ensemble les conséquences juridiques, techniques et financières de vos choix.',
     rightCards: [
       {
-        title: 'Rédiger et négocier',
+        title: 'Une seule équipe',
         description:
-          'Contrats commerciaux, distribution, concurrence, partenariats et conditions générales.',
+          'Au sein d’une même société pluriprofessionnelle d’exercice (SPE), avocats, Conseils en Propriété Industrielle, scientifiques et intervenants en financement examinent ensemble les questions que soulève votre projet.',
       },
       {
-        title: 'Prévenir et traiter les différends',
+        title: 'Un même dossier partagé',
         description:
-          'Impayés, inexécutions, ruptures de relations commerciales : assistance, négociation et contentieux.',
+          'Les intervenants travaillent à partir des mêmes pièces, hypothèses et échéances, dans le respect des règles de confidentialité applicables.',
       },
     ],
   },
-  {
-    blockType: 'cardGrid',
-    eyebrow: 'PROPRIÉTÉ INTELLECTUELLE',
-    title: 'Protéger vos actifs et organiser leur exploitation',
-    sidebarText:
-      'Identifier les titulaires, examiner les droits de tiers, négocier les licences et défendre les droits.',
-    columns: '3',
-    cards: [
-      {
-        number: '01',
-        title: 'Inventions et brevets',
-        description:
-          'Brevetabilité, rédaction et dépôt, suivi des titres et liberté d’exploitation.',
-      },
-      {
-        number: '02',
-        title: 'Marques et créations',
-        description:
-          'Disponibilité, dépôts, surveillance, oppositions et protection des créations.',
-      },
-      {
-        number: '03',
-        title: 'Logiciels et savoir-faire',
-        description:
-          'Logiciels, bases de données et secrets d’affaires : titularité, preuve et confidentialité.',
-      },
-    ],
-  },
-  {
-    blockType: 'cardGrid',
-    eyebrow: 'FINANCEMENT ET FISCALITÉ',
-    title: 'Financer les projets, étayer leur traitement fiscal',
-    sidebarText:
-      'Les aides dépendent des financeurs ; les régimes fiscaux s’appliquent sous conditions. Aucun résultat n’est garanti.',
-    columns: '3',
-    cards: [
-      {
-        number: '01',
-        title: 'Aides et financements',
-        description:
-          'Identifier les ressources, préparer les dossiers et organiser le calendrier des démarches.',
-      },
-      {
-        number: '02',
-        title: 'Fiscalité de l’innovation',
-        description:
-          'CIR, CII, JEI, IP Box : examiner les conditions, les dépenses et les justificatifs.',
-      },
-      {
-        number: '03',
-        title: 'Contrôle et contentieux',
-        description:
-          'Analyser les demandes, préparer les réponses et défendre la position de l’entreprise.',
-      },
-    ],
-  },
-  {
-    blockType: 'cardGrid',
-    eyebrow: 'RECHERCHE ET DÉVELOPPEMENT (R&D)',
-    title: 'Rendre vos projets de R&D plus faciles à piloter',
-    sidebarText:
-      'Un appui scientifique et organisationnel complémentaire aux interventions juridiques et financières.',
-    columns: '3',
-    cards: [
-      {
-        number: '01',
-        title: 'Des priorités explicites',
-        description:
-          'Qualifier les projets, comparer les options et définir les critères de poursuite.',
-      },
-      {
-        number: '02',
-        title: 'Des décisions mieux suivies',
-        description:
-          'Préciser les responsabilités, les jalons et les modalités de revue des travaux.',
-      },
-      {
-        number: '03',
-        title: 'Une documentation exploitable',
-        description:
-          'Relier hypothèses, essais, résultats et dépenses ; conserver les preuves utiles.',
-      },
-    ],
-  },
-  {
-    blockType: 'twoCols',
-    eyebrow: 'EXEMPLE ILLUSTRATIF · HORS DOSSIER CLIENT',
-    title: 'Une collaboration R&D engage plus qu’un contrat',
-    intro:
-      '**Une entreprise et un partenaire développent une technologie.**\n\n\nLeurs choix contractuels dépendent des apports, des travaux scientifiques et des usages futurs.',
-    leftFooter:
-      'Droit, propriété industrielle, science et fiscalité : des analyses à coordonner lorsque le projet le nécessite.',
-    rightCards: [
-      {
-        title: 'Quels apports ? Quels propriétaires ?',
-        description:
-          'Distinguer les connaissances antérieures et les résultats ; définir leur titularité.',
-      },
-      {
-        title: 'Quels usages ? Quelles preuves ?',
-        description: 'Fixer les droits d’exploitation ; documenter les travaux et les dépenses.',
-      },
-    ],
-  },
+  // Page 4 — 4 temps d'action
   {
     blockType: 'timeline',
-    eyebrow: 'MODALITÉS D’ACCOMPAGNEMENT',
-    title: 'Une mission définie à partir de votre situation',
+    eyebrow: 'SUR VOTRE DOSSIER',
+    title: 'Ce que nous faisons sur votre dossier',
     steps: [
-      { label: 'Qualifier', description: 'Besoin, parties, documents et échéances.' },
       {
-        label: 'Convenir',
-        description: 'Interlocuteur principal, périmètre et honoraires ; lettre de mission.',
+        label: 'Analyser votre situation',
+        description:
+          'Examiner vos pièces, vos objectifs et vos échéances ; identifier les risques, les options et les points à trancher.',
       },
-      { label: 'Conduire', description: 'Travaux et échanges avec les professionnels concernés.' },
       {
-        label: 'Remettre et suivre',
-        description: 'Actes, analyses ou préconisations ; suivi convenu.',
+        label: 'Conseiller une stratégie',
+        description:
+          'Vous recommander une voie et en expliquer les effets juridiques, fiscaux et opérationnels ; arbitrer les choix avec vous.',
+      },
+      {
+        label: 'Formaliser vos décisions',
+        description:
+          'Rédiger les actes, négocier les clauses, déposer les titres et réunir les justificatifs qui sécurisent vos choix.',
+      },
+      {
+        label: 'Représenter et défendre vos droits',
+        description:
+          'Préparer les réponses, les pièces et les écritures ; vous représenter en cas de négociation, de différend ou de contrôle.',
       },
     ],
-    footer: 'Une intervention ponctuelle ou transversale, selon les enjeux du dossier.',
+    footer:
+      'Les actions et les livrables sont définis selon votre situation et le périmètre de la mission.',
   },
+  // Page 5 — cœur avocat
   {
     blockType: 'cardGrid',
-    eyebrow: 'UN MÊME CABINET · DES QUALITÉS DISTINCTES',
-    title: 'Réunir les compétences utiles à votre dossier',
+    eyebrow: 'SITUATIONS 01 ET 04 · L’ACCOMPAGNEMENT JURIDIQUE',
+    title: 'Conseiller, rédiger et défendre',
+    columns: '3',
+    cards: [
+      {
+        title: 'Vos contrats et accords',
+        description:
+          'Rédiger et négocier vos contrats commerciaux, partenariats et accords de confidentialité ; préciser les obligations, les responsabilités et les conditions de sortie.',
+      },
+      {
+        title: 'La vie de votre société',
+        description:
+          'Rédiger vos statuts et pactes ; conseiller les associés et dirigeants sur la gouvernance, préparer les décisions sociales et accompagner les restructurations.',
+      },
+      {
+        title: 'Vos différends et contrôles',
+        description:
+          'Examiner les voies de résolution, préparer le précontentieux et conduire le contentieux ; vous assister et défendre vos droits lors d’un contrôle fiscal.',
+      },
+    ],
+  },
+  // Page 6 — propriété intellectuelle
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'SITUATION 02 · VOTRE PROPRIÉTÉ INTELLECTUELLE',
+    title: 'Protéger et exploiter vos actifs immatériels',
     sidebarText:
-      'Une société pluriprofessionnelle d’exercice (SPE), à Toulouse et Lyon. Les profils de l’équipe figurent en annexe.',
+      'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
+    columns: '3',
+    cards: [
+      {
+        title: 'Vos brevets et inventions',
+        description:
+          'Examiner la brevetabilité et la titularité de vos inventions ; rédiger et déposer vos demandes de brevet, suivre les procédures et négocier les accords d’exploitation.',
+      },
+      {
+        title: 'Vos marques, dessins et modèles',
+        description:
+          'Examiner les antériorités et les territoires utiles ; déposer vos marques, dessins et modèles, suivre les titres et défendre vos droits.',
+      },
+      {
+        title: 'Vos logiciels et savoir-faire',
+        description:
+          'Vérifier la titularité des droits, documenter les contributions et organiser la confidentialité ; rédiger et négocier les licences, défendre vos droits en cas d’atteinte.',
+      },
+    ],
+  },
+  // Page 7 — financement et fiscalité de l'innovation
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'SITUATION 03 · VOS PROJETS D’INNOVATION',
+    title: 'Financer, étayer et organiser vos projets d’innovation',
+    columns: '3',
+    cards: [
+      {
+        title: 'Vos aides et financements',
+        description:
+          'Examiner les dispositifs adaptés à votre projet, leurs critères et leurs contraintes ; préparer les demandes et suivre les obligations liées aux financements obtenus.',
+      },
+      {
+        title: 'Votre fiscalité de l’innovation',
+        description:
+          'CIR, CII, JEI et IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
+      },
+      {
+        title: 'Votre organisation et vos preuves de R&D',
+        description:
+          'Structurer vos projets, leurs jalons et leurs responsables ; documenter l’état de l’art, les travaux et les résultats pour relier les preuves aux dépenses en cas de contrôle.',
+      },
+    ],
+    footnotes: [
+      {
+        text: 'L’éligibilité aux dispositifs dépend notamment de l’examen des pièces ; les décisions relèvent de l’administration et des financeurs.',
+      },
+    ],
+  },
+  // Page 8 — engagements de fonctionnement, grille 2x2 numérotée
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'NOS ENGAGEMENTS DE FONCTIONNEMENT',
+    title: 'Comment nous travaillons avec vous',
     columns: '2',
     cards: [
       {
-        title: 'Avocats et Conseils en Propriété Industrielle',
+        number: '01',
+        title: 'Un interlocuteur principal unique',
         description:
-          'Conseil, actes, négociation, protection des droits et contentieux, dans le champ de chaque profession.',
+          'Vous identifiez dès le départ la personne qui coordonne votre dossier, suit les échéances et rassemble les contributions des intervenants.',
       },
       {
-        title: 'Compétences complémentaires',
+        number: '02',
+        title: 'Une mission et des honoraires cadrés',
         description:
-          'Juriste en propriété intellectuelle, équipe scientifique, fiscalité et financement : un appui mobilisé selon la mission.',
+          'Avant de commencer, nous définissons avec vous le périmètre, les modalités d’intervention et les honoraires dans une lettre de mission.',
+      },
+      {
+        number: '03',
+        title: 'Des points d’étape réguliers',
+        description:
+          'Nous convenons avec vous du rythme des échanges pour suivre les actions, signaler les difficultés et examiner les décisions à prendre.',
+      },
+      {
+        number: '04',
+        title: 'Un accès direct aux spécialistes',
+        description:
+          'Vous échangez directement avec les professionnels qui interviennent sur votre dossier pour traiter les questions juridiques, techniques ou financières.',
       },
     ],
   },
+  // Page 9 — témoignages (extraits fidèles du deck historique livré)
+  {
+    blockType: 'quotes',
+    eyebrow: 'TÉMOIGNAGES',
+    title: 'Ils nous font confiance',
+    quotes: [
+      {
+        quote:
+          'EspeRare Foundation a collaboré avec Klarc sur un projet de licence sur un dispositif médical en développement, la collaboration est au TOP, je recommande cette équipe réactive et dynamique qui nous a apporté du soutien dans plusieurs domaines […]',
+        authorName: 'Florence Porte-Thome',
+        authorRole: 'Co-fondatrice et Directrice R&D, EspeRare Foundation',
+      },
+      {
+        quote:
+          'Le service Klarc aux petits soins. Les avocats que j’ai eus sur différents domaines en droit du digital et en propriété intellectuelle sont professionnels, réactifs et efficaces dans leur accompagnement juridique !',
+        authorName: 'Marc Girard',
+        authorRole: 'Président, Tillin',
+      },
+      {
+        quote:
+          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème. Une belle équipe !',
+        authorName: 'Kristof Descotes',
+        authorRole: 'Althea',
+      },
+    ],
+  },
+  // Page 10 — vos contacts (shared person-card grid; people wired at seed time)
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'VOS INTERLOCUTEURS',
+    title: 'Vos contacts',
+    sidebarText:
+      'Une équipe resserrée, des interlocuteurs identifiés : chaque mission est suivie par les personnes qui la conduisent.',
+  },
+  // Page 11 — cta
   {
     blockType: 'cta',
-    eyebrow: 'PARLONS DE VOTRE SITUATION',
-    title: 'Quel sujet souhaitez-vous examiner ?',
+    eyebrow: 'UN PREMIER ÉCHANGE',
+    title: 'Parlons de votre situation',
     subtitle:
-      'Un contrat, un actif à protéger, un différend, une question fiscale ou un projet à financer.\n\n[Réserver un premier échange](https://cal.klarc.com/team/meeting?user=team&duration=30) · [klarc.com](https://klarc.com)',
+      'Nous vous proposons un premier échange de 30 minutes pour examiner un contrat, un actif, un différend, une question fiscale ou un financement, et préciser les points à approfondir.',
+    primaryAction: 'Prendre rendez-vous : cal.klarc.com',
+    secondaryAction: 'klarc.com',
     footerNote:
-      '**Toulouse · siège** — 15 rue d’Alsace-Lorraine, 31000 Toulouse\n[toulouse@klarc.com](mailto:toulouse@klarc.com)\n\n**Lyon · établissement** — 3 rue de Genève, 69006 Lyon\n[lyon@klarc.com](mailto:lyon@klarc.com)',
-  },
-  {
-    blockType: 'cardGrid',
-    eyebrow: 'ANNEXE · ÉQUIPE 1/2',
-    title: 'Droit et propriété industrielle',
-    columns: '2',
-    cards: [
-      {
-        title: 'Joachim Brindeau',
-        description:
-          '**Avocat en droit des affaires**\n\nContrats, partenariats, licences et précontentieux. Parcours en biotechnologies, droit des affaires et propriété intellectuelle.',
-      },
-      {
-        title: 'Benjamin Visser',
-        description:
-          '**Avocat fiscaliste**\n\nFiscalité des entreprises et de l’innovation, contrôles et contentieux. Formation d’ingénieur, en finance et en droit des affaires.',
-      },
-      {
-        title: 'Lucien Trouette',
-        description:
-          '**Conseil en Propriété Industrielle, mention Brevets**\n\nInventions, brevets et liberté d’exploitation. Parcours en biochimie structurale et formation au CEIPI.',
-      },
-      {
-        title: 'Valentine Clédière',
-        description:
-          '**Juriste en propriété intellectuelle**\n\nMarques, logiciels, bases de données et gestion des droits. Master en propriété intellectuelle, Université Toulouse Capitole.',
-      },
-    ],
-  },
-  {
-    blockType: 'cardGrid',
-    eyebrow: 'ANNEXE · ÉQUIPE 2/2',
-    title: 'Science, fiscalité et financement',
-    columns: '2',
-    cards: [
-      {
-        title: 'Carine Doyharçabal',
-        description:
-          '**Docteure, responsable opérationnelle**\n\nGénétique quantitative, expérience statistique et managériale. Conduite de missions, encadrement et structuration de la R&D.',
-      },
-      {
-        title: 'Chloé Liebgott',
-        description:
-          '**Docteure de Toulouse INP, rédactrice scientifique**\n\nDans l’équipe de Carine. Recherches à Toxalim et à l’IPREM ; analyse de données, rédaction et coordination R&D.',
-      },
-      {
-        title: 'Samuel Bélé',
-        description:
-          '**Responsable de mission**\n\nAncien inspecteur des finances publiques. Fiscalité de l’innovation, justificatifs de CIR et CII, contrôles et financements publics.',
-      },
-      {
-        title: 'Elisa Vibert',
-        description:
-          '**Consultante en financement de l’innovation**\n\nAnalyse économique et dossiers d’aides, de subventions et d’appels à projets. Formation en management stratégique, TSM.',
-      },
-    ],
+      '**Toulouse** · 15 rue d’Alsace-Lorraine, 31000 · +33 (0)5 61 38 53 52 · toulouse@klarc.com\n\n**Lyon** · 3 rue de Genève, 69006 · +33 (0)5 25 63 09 36 · lyon@klarc.com',
   },
 ];
 
@@ -304,11 +296,10 @@ await runPayloadScript(async (payload) => {
   // Original mark on a neutral plaque: the teal mark otherwise disappears on
   // native cover/CTA teal surfaces. No renderer or shared stylesheet changes.
   {
-    const filename = 'klarc-logomark-on-white.svg';
     const prior = (
       await payload.find({
         collection: 'media',
-        where: { filename: { equals: filename } },
+        where: { filename: { equals: LOGO_FILENAME } },
         limit: 1,
         overrideAccess: true,
       })
@@ -318,7 +309,7 @@ await runPayloadScript(async (payload) => {
       (await payload.create({
         collection: 'media',
         data: { alt: 'Logomark officiel KLARC' },
-        filePath: join(process.cwd(), 'scripts/seed-assets/klarc-prospects', filename),
+        filePath: join(process.cwd(), 'scripts/seed-assets/klarc-prospects', LOGO_FILENAME),
         overrideAccess: true,
       }));
     await payload.update({
@@ -330,6 +321,74 @@ await runPayloadScript(async (payload) => {
     });
   }
   const richSlides = await convertSlidesMarkdownToLexical(structuredClone(slides), payload);
+  // Contacts: idempotent upsert by email, then wire the page 10 cardGrid
+  // `intervenants` relationship rows (the contacts grid). No avatars — the shared person card falls
+  // back to initials. Carine's title follows KLARC_base_information_IA.md.
+  const people = {
+    joachim: { email: 'joachim@klarc.com', name: 'Joachim Brindeau', title: 'Avocat' },
+    lucien: {
+      email: 'lucien@klarc.com',
+      name: 'Lucien Trouette',
+      title: 'Conseil en Propriété Industrielle',
+    },
+    benjamin: { email: 'benjamin@klarc.com', name: 'Benjamin Visser', title: 'Avocat' },
+    carine: {
+      email: 'carine@klarc.com',
+      name: 'Carine Doyharçabal',
+      title: 'Docteure en génétique quantitative, responsable opérationnelle',
+    },
+  } as const;
+  const userIds = new Map<string, number | string>();
+  for (const [key, referent] of Object.entries(people)) {
+    const found = (
+      await payload.find({
+        collection: 'users',
+        where: { email: { equals: referent.email } },
+        limit: 1,
+        overrideAccess: true,
+      })
+    ).docs[0];
+    const user = found
+      ? await payload.update({
+          collection: 'users',
+          id: found.id,
+          data: { name: referent.name, title: referent.title },
+          overrideAccess: true,
+        })
+      : await payload.create({
+          collection: 'users',
+          data: {
+            email: referent.email,
+            password: crypto.randomUUID(),
+            name: referent.name,
+            title: referent.title,
+            membershipStatus: 'active',
+            role: 'viewer',
+          },
+          overrideAccess: true,
+        });
+    userIds.set(key, user.id);
+  }
+  const wire = (page: number, keys: (keyof typeof people)[]) => {
+    (richSlides[page - 1] as Record<string, unknown>).intervenants = keys.map((key) => ({
+      user: userIds.get(key),
+    }));
+  };
+  wire(10, ['joachim', 'benjamin', 'lucien', 'carine']);
+  // Plan v2 page 1: logomark on its white plaque as the cover's right column.
+  {
+    const logoDoc = (
+      await payload.find({
+        collection: 'media',
+        where: { filename: { equals: LOGO_FILENAME } },
+        limit: 1,
+        overrideAccess: true,
+      })
+    ).docs[0];
+    if (!logoDoc) throw new Error('Logomark media missing before slide wiring');
+    (richSlides[0] as Record<string, unknown>).image = logoDoc.id;
+    (richSlides[0] as Record<string, unknown>).imagePosition = 'right';
+  }
   const data = {
     title,
     organisation: org[0].id,
@@ -374,7 +433,7 @@ await runPayloadScript(async (payload) => {
     depth: 0,
     overrideAccess: true,
   });
-  if (verified.slides?.length !== 12) throw new Error('Expected 12 persisted slides');
+  if (verified.slides?.length !== 11) throw new Error('Expected 11 persisted slides');
   console.log(
     JSON.stringify({
       id: verified.id,

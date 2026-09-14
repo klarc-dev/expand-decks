@@ -8,6 +8,8 @@ export type SlideChrome = {
   footer?: { left: string; center: string; right: string };
   hidden?: boolean;
   logoUrl?: string;
+  /** Organisation website; wraps the logo and the footer's left slot in a link. */
+  orgUrl?: string;
   fonts?: { heading: string; body: string };
 };
 
@@ -117,10 +119,22 @@ function SlideChromeLayer({ chrome }: { chrome?: SlideChrome }) {
     <>
       {/* The preview intentionally mirrors Slidev's raw logo markup and sizing. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {chrome.logoUrl ? <img className="k-slide-logo" src={chrome.logoUrl} alt="" /> : null}
+      {chrome.logoUrl && chrome.orgUrl ? (
+        <a className="k-slide-logo-link" href={chrome.orgUrl} aria-label="Site web">
+          <img className="k-slide-logo" src={chrome.logoUrl} alt="" />
+        </a>
+      ) : chrome.logoUrl ? (
+        <img className="k-slide-logo" src={chrome.logoUrl} alt="" />
+      ) : null}
       {chrome.footer ? (
         <footer className="k-slide-footer">
-          <span>{chrome.footer.left}</span>
+          <span>
+            {chrome.orgUrl && chrome.footer.left ? (
+              <a href={chrome.orgUrl}>{chrome.footer.left}</a>
+            ) : (
+              chrome.footer.left
+            )}
+          </span>
           <span>{chrome.footer.center}</span>
           <span className="page">{chrome.footer.right}</span>
         </footer>

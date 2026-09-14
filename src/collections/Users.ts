@@ -145,6 +145,32 @@ export const Users: CollectionConfig = {
       admin: { description: 'Image affichée sur les cartes intervenants' },
     },
     {
+      type: 'row',
+      fields: [
+        {
+          name: 'phone',
+          type: 'text',
+          label: 'Téléphone',
+          admin: {
+            description:
+              'Numéro affiché sur les cartes intervenants, cliquable (tel:) dans le PDF exporté',
+          },
+        },
+        {
+          name: 'linkedin',
+          type: 'text',
+          label: 'Profil LinkedIn',
+          admin: {
+            description: 'URL https du profil, ajoutée comme lien sur les cartes intervenants',
+          },
+          validate: (value: string | null | undefined) =>
+            !value || /^https:\/\//.test(value)
+              ? true
+              : 'URL https requise (ex. https://www.linkedin.com/in/…)',
+        },
+      ],
+    },
+    {
       name: 'organisations',
       type: 'relationship',
       relationTo: COLLECTIONS.organisations,

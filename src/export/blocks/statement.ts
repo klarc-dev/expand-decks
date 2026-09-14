@@ -19,6 +19,32 @@ const VARIANT_LAYOUT: Record<
   split: { align: 'split', scale: 'title' },
 };
 
+/** Default cartouche label when the footer carries no "Label : …" prefix. */
+const TAKEAWAY_LABEL: Record<'fr' | 'en', string> = {
+  fr: 'À retenir',
+  en: 'Key takeaway',
+};
+
+// A short plain-text lead followed by a colon at the start of the first
+// paragraph: `<p>L’enjeu : examiner…</p>`. Tags, entities and digits in the
+// lead are rejected so a URL, a time ("10:30") or an emphasised opener never
+// becomes a cartouche.
+const TAKEAWAY_LEAD_RE = /^(\s*(?:<div[^>]*>\s*)?<p(?:\s[^>]*)?>)\s*([^<>&:\d]{2,40}?)\s*:\s+/;
+
+/**
+ * Split the footer HTML into a cartouche label and the remaining text. The
+ * lead of a "Label : text" footer becomes the label; otherwise the localized
+ * default applies and the footer text is kept whole.
+ */
+export function splitTakeaway(
+  footerHtml: string,
+  language?: 'fr' | 'en' | null,
+): { label: string; html: string } {
+  const m = footerHtml.match(TAKEAWAY_LEAD_RE);
+  if (m) return { label: m[2]!, html: footerHtml.replace(TAKEAWAY_LEAD_RE, '$1') };
+  return { label: TAKEAWAY_LABEL[language ?? 'fr'], html: footerHtml };
+}
+
 export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): string {
   // The block's explicit variant wins; otherwise rotate by the index
   // buildSlidesMd assigns, so unset statements still vary (KTD6b — the
@@ -31,10 +57,13 @@ export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): str
   const layout = VARIANT_LAYOUT[variant];
   const bodyHtml = richTextToHTML(block.body);
   const footerHtml = richTextToHTML(block.footer);
+  const takeaway = footerHtml ? splitTakeaway(footerHtml, ctx?.language) : null;
+  // The takeaway box is padded and set at body size, so its text weighs more
+  // than the old footnote line did.
   const density = densityFromScore(
     block.title.length * (layout.scale === 'display' ? 2.2 : 1.5) +
       visibleText(bodyHtml).length +
-      visibleText(footerHtml).length * 0.6,
+      visibleText(footerHtml).length * 0.8,
     { compact: 250, dense: 480 },
   );
 
@@ -42,7 +71,8 @@ export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): str
     eyebrow: block.eyebrow,
     title: block.title,
     body: bodyHtml || undefined,
-    caption: footerHtml || undefined,
+    caption: takeaway?.html,
+    captionLabel: takeaway?.label,
     scale: layout.scale,
     align: layout.align,
     accentRule: layout.accentRule,

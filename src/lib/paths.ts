@@ -21,7 +21,10 @@ export const ARTIFACTS = {
   pdf: 'slides.pdf',
   dist: 'dist',
   footerLayer: 'slide-bottom.vue',
-  logoLayer: 'global-top.vue',
+  // Per-slide layer (like the footer): a GLOBAL top layer reads the deck-level
+  // frontmatter in a single-pass export, so it ignored `hideChrome` (logo drawn
+  // on the cover) and the slide's surface (black logo on a dark slide).
+  logoLayer: 'slide-top.vue',
   mermaidSetupSrc: 'mermaid-setup.ts',
   mermaidSetupDest: 'mermaid.ts',
   mermaidRendererSrc: 'mermaid-renderer.ts',

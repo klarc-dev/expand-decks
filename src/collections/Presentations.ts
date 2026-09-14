@@ -718,7 +718,7 @@ export const Presentations: CollectionConfig = {
               label: 'Pied de page',
               admin: {
                 description:
-                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche, {page} / {total} à droite.',
+                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche (lien vers le site web de l’organisation s’il est renseigné), {page} / {total} à droite.',
                 condition: (_data, siblingData) =>
                   resolveDocumentTemplate(siblingData?.documentTemplate).chrome.footer,
               },

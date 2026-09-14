@@ -30,6 +30,7 @@ import * as migration_20260909_163216_spec19_linkedin_image_formats from './2026
 import * as migration_20260914_071233_agent_run_model from './20260914_071233_agent_run_model';
 import * as migration_20260914_102932_ia_native_options from './20260914_102932_ia_native_options';
 import * as migration_20260914_153409_org_logo_variants from './20260914_153409_org_logo_variants';
+import * as migration_20260914_163506_contact_links from './20260914_163506_contact_links';
 
 export const migrations = [
   {
@@ -191,5 +192,10 @@ export const migrations = [
     up: migration_20260914_153409_org_logo_variants.up,
     down: migration_20260914_153409_org_logo_variants.down,
     name: '20260914_153409_org_logo_variants',
+  },
+  {
+    up: migration_20260914_163506_contact_links.up,
+    down: migration_20260914_163506_contact_links.down,
+    name: '20260914_163506_contact_links',
   },
 ];

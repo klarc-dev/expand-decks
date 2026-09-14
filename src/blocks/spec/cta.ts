@@ -20,6 +20,10 @@ const title = limitedString(SLIDE_LIMITS.common.title);
 const subtitle = optionalLimitedRichTextRender(SLIDE_LIMITS.cta.subtitle);
 const primaryAction = optionalLimitedRender(SLIDE_LIMITS.cta.action);
 const secondaryAction = optionalLimitedRender(SLIDE_LIMITS.cta.action);
+// Button targets: https, mailto: or tel:. Rendered as <a href> so the exported
+// PDF carries a clickable annotation; a button without URL stays a plain pill.
+const primaryActionUrl = optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl);
+const secondaryActionUrl = optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl);
 const footerNote = optionalLimitedRichTextRender(SLIDE_LIMITS.cta.footerNote);
 
 export const ctaSpec = block({
@@ -48,6 +52,17 @@ export const ctaSpec = block({
       }),
     ),
     rawField(
+      'primaryActionUrl',
+      primaryActionUrl,
+      optionalLimitedAi(SLIDE_LIMITS.cta.actionUrl),
+      limitedTextPayload(SLIDE_LIMITS.cta.actionUrl, {
+        type: 'text',
+        label: 'Lien de l’action principale',
+        description:
+          'URL https, mailto: ou tel: ; rend le bouton cliquable dans le PDF (ex. {org.bookingUrl})',
+      }),
+    ),
+    rawField(
       'secondaryAction',
       secondaryAction,
       optionalLimitedAi(SLIDE_LIMITS.cta.action),
@@ -55,6 +70,16 @@ export const ctaSpec = block({
         type: 'text',
         label: 'Action secondaire',
         description: 'Texte du lien secondaire (optionnel)',
+      }),
+    ),
+    rawField(
+      'secondaryActionUrl',
+      secondaryActionUrl,
+      optionalLimitedAi(SLIDE_LIMITS.cta.actionUrl),
+      limitedTextPayload(SLIDE_LIMITS.cta.actionUrl, {
+        type: 'text',
+        label: 'Lien de l’action secondaire',
+        description: 'URL https, mailto: ou tel: ; rend le lien secondaire cliquable dans le PDF',
       }),
     ),
     rawField('footerNote', footerNote, optionalLimitedAi(SLIDE_LIMITS.cta.footerNote), {
@@ -72,6 +97,7 @@ export const ctaSpec = block({
     lines: [
       'eyebrow, title (obligatoire), subtitle',
       'primaryAction / secondaryAction: libellés de boutons',
+      'primaryActionUrl / secondaryActionUrl: cible du bouton (https, mailto: ou tel:), uniquement une coordonnée fournie dans le contexte ou le brief, jamais inventée',
       'footerNote: petit texte en bas',
     ],
   },
@@ -83,7 +109,9 @@ export const ctaRenderSchema = z.object({
   title,
   subtitle,
   primaryAction,
+  primaryActionUrl,
   secondaryAction,
+  secondaryActionUrl,
   footerNote,
 });
 

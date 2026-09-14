@@ -31,7 +31,13 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
     return `<div class="${K.card} ${K.quoteCard}">\n  <div class="${K.quote}">\n    ${q.quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
   });
 
-  const cols = dense ? Math.min(quotes.length, 2) || 1 : quotes.length || 1;
+  // Mirror cardGrid's balanced-grid rule: three quotes in a 2-col dense grid
+  // strand an empty quadrant, so an odd 3 always lays out as one 3-col row.
+  const cols = dense
+    ? quotes.length === 3
+      ? 3
+      : Math.min(quotes.length, 2) || 1
+    : quotes.length || 1;
   const stack = cardStack(quoteCards, {
     layout: 'grid',
     cols,

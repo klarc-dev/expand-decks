@@ -1,5 +1,5 @@
 import type { SlideChrome } from '@/components/SlideFrame';
-import { pickLogoUrl, resolveLogoUrls } from '@/export/chrome';
+import { pickLogoUrl, resolveLogoUrls, resolveOrgUrl } from '@/export/chrome';
 
 type FormFields = Record<string, { value?: unknown } | undefined>;
 
@@ -72,5 +72,11 @@ export function buildSlidePreviewChrome(
     fonts: orgFonts(organisation),
     hidden: hideChrome,
     logoUrl: logoUrl(organisation, darkSurface),
+    orgUrl:
+      resolveOrgUrl(
+        organisation && typeof organisation === 'object'
+          ? (organisation as Record<string, unknown>)
+          : null,
+      ) ?? undefined,
   };
 }

@@ -1,5 +1,7 @@
 import type { CardGridBlockData } from '../../blocks/spec/cardGrid';
+import { K } from '../classNames';
 import { cardScaleClass, densityFromScore, type SlideDensity, visibleText } from '../density';
+import { renderPeopleStrip } from '../people';
 import { richTextToHTML } from '../richtext';
 import { card, cardStack, contentFrame, slideHeader, wrapSlide, type RenderCtx } from '../utils';
 
@@ -54,16 +56,26 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
     density,
   });
   const lead = leadHtml ? `<div class="k-cardgrid-lead">\n${leadHtml}\n</div>` : '';
-  const main =
-    lead || stack.html
-      ? `<div class="k-cardgrid-body">\n${lead}${lead && stack.html ? '\n' : ''}${stack.html}\n</div>`
-      : '';
+  // Shared person-card strip. With cards present it reads as a discreet
+  // contact band under the grid; without cards the people ARE the content, so
+  // a modifier promotes the strip to a prominent grid that fills the slide.
+  const peopleProminent = cardList.length === 0;
+  const people = renderPeopleStrip(
+    block.intervenants,
+    peopleProminent ? `${K.cardGridPeople} ${K.cardGridPeopleGrid}` : K.cardGridPeople,
+  );
+  const parts = [lead, stack.html, people].filter(Boolean);
+  // With cards AND a people strip, center the whole group so leftover height
+  // splits above/below it instead of pooling between the cards and the strip.
+  const bodyCls =
+    stack.html && people ? 'k-cardgrid-body k-cardgrid-body--with-people' : 'k-cardgrid-body';
+  const main = parts.length ? `<div class="${bodyCls}">\n${parts.join('\n')}\n</div>` : '';
   const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, density });
   const body = contentFrame(main, {
     header,
     crowded: stack.crowded,
     density,
-    mainAlign: 'stretch',
+    mainAlign: peopleProminent && people ? 'center' : 'stretch',
   });
 
   return wrapSlide({ surface: ctx?.surface, body });

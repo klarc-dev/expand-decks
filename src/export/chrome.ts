@@ -87,6 +87,18 @@ export function hasAnyLogo(logos: LogoUrls | null | undefined): boolean {
 }
 
 /**
+ * The organisation's public website, or null. Only an https URL qualifies: it
+ * becomes the href of the logo and of the footer's organisation name, so the
+ * exported PDF carries a clickable annotation on every slide that shows chrome.
+ */
+export function resolveOrgUrl(org: Record<string, unknown> | null | undefined): string | null {
+  const website = org?.website;
+  return typeof website === 'string' && /^https:\/\/\S+$/i.test(website.trim())
+    ? website.trim()
+    : null;
+}
+
+/**
  * YAML-embed the footer config so the Vue layer reads it via `$slidev.configs`.
  * The left/center/right strings are expected to be ALREADY resolved for static
  * tokens by the caller (runner); the Vue layer only resolves `{page}`/`{total}`.
@@ -96,17 +108,19 @@ export function hasAnyLogo(logos: LogoUrls | null | undefined): boolean {
 export function buildFooterHeadmatter(
   footer: Partial<FooterConfig> | null | undefined,
   logos?: LogoUrls | null,
+  orgUrl?: string | null,
 ): string {
   const logoLine = hasAnyLogo(logos)
     ? `klarcLogo: ${jsonInline({ light: logos?.light ?? null, dark: logos?.dark ?? null })}\n`
     : '';
-  if (!footer?.enabled) return logoLine;
+  const urlLine = orgUrl ? `klarcOrgUrl: ${jsonInline(orgUrl)}\n` : '';
+  if (!footer?.enabled) return `${logoLine}${urlLine}`;
   const block = {
     left: footer.left ?? '',
     center: footer.center ?? '',
     right: footer.right ?? '',
   };
-  return `klarcFooter: ${jsonInline(block)}\n${logoLine}`;
+  return `klarcFooter: ${jsonInline(block)}\n${logoLine}${urlLine}`;
 }
 
 /** JSON on one line — safe as a YAML scalar (YAML is a JSON superset). */
@@ -133,6 +147,7 @@ import { computed } from 'vue'
 import { useSlideContext } from '@slidev/client'
 const { $slidev, $frontmatter } = useSlideContext()
 const cfg = computed(() => $slidev?.configs?.klarcFooter)
+const orgUrl = computed(() => $slidev?.configs?.klarcOrgUrl ?? null)
 const hidden = computed(() => $frontmatter?.hideChrome === true)
 const dark = computed(() => String($frontmatter?.class ?? '').split(/\\s+/).includes('k-dark'))
 function resolve(t: string): string {
@@ -149,7 +164,7 @@ const right = computed(() => resolve(cfg.value?.right ?? ''))
 
 <template>
   <footer v-if="cfg && !hidden" class="k-slide-footer" :class="{ 'k-slide-footer--dark': dark }">
-    <span>{{ left }}</span>
+    <span><a v-if="orgUrl && left" :href="orgUrl">{{ left }}</a><template v-else>{{ left }}</template></span>
     <span>{{ center }}</span>
     <span class="page">{{ right }}</span>
   </footer>
@@ -158,10 +173,11 @@ const right = computed(() => resolve(cfg.value?.right ?? ''))
 }
 
 /**
- * `global-top.vue`: renders the organisation logo top-left on every slide that
+ * `slide-top.vue`: renders the organisation logo top-left on every slide that
  * isn't full-bleed chrome, swapping the variant on the slide's surface: dark
  * and gradient slides (class `k-dark`) show the `dark` URL, paper slides the
- * `light` one. Logo URLs resolve through the build's `media` symlink.
+ * `light` one. Logo URLs resolve through the build's `media` symlink. With a
+ * `klarcOrgUrl` config the logo is wrapped in a link to the organisation site.
  */
 export function buildLogoLayer(hasLogo: boolean): string {
   if (!hasLogo) return '';
@@ -170,13 +186,17 @@ import { computed } from 'vue'
 import { useSlideContext } from '@slidev/client'
 const { $slidev, $frontmatter } = useSlideContext()
 const logos = computed(() => $slidev?.configs?.klarcLogo)
+const orgUrl = computed(() => $slidev?.configs?.klarcOrgUrl ?? null)
 const dark = computed(() => String($frontmatter?.class ?? '').split(/\\s+/).includes('k-dark'))
 const url = computed(() => (dark.value ? logos.value?.dark : logos.value?.light) ?? null)
 const hidden = computed(() => $frontmatter?.hideChrome === true)
 </script>
 
 <template>
-  <img v-if="url && !hidden" :src="url" class="k-slide-logo" alt="" />
+  <a v-if="url && !hidden && orgUrl" :href="orgUrl" class="k-slide-logo-link" aria-label="Site web">
+    <img :src="url" class="k-slide-logo" alt="" />
+  </a>
+  <img v-else-if="url && !hidden" :src="url" class="k-slide-logo" alt="" />
 </template>
 `;
 }

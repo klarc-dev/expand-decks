@@ -46,7 +46,8 @@ const RULES = `Règles :
 - Si une cible de nombre de diapositives est fournie séparément, respecte sa plage en priorité (cover et cta inclus dans le décompte)
 - Sinon, si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
 - Sans cible ni nombre dans le brief, génère entre 8 et 15 diapositives selon la complexité du brief
-- Les textes doivent être concis et factuels`;
+- Les textes doivent être concis et factuels
+- Liens : dans un champ texte, [libellé](url) avec https, mailto: ou tel: rend le libellé cliquable dans le PDF ; utilise-les pour une source citée ou une coordonnée (site, email, téléphone, prise de rendez-vous) fournie dans le contexte ou le brief, jamais pour une URL inventée`;
 
 /** Optional knobs for prompt assembly (reserved for future tuning). */
 export interface BuildSystemPromptOptions {

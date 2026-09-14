@@ -74,6 +74,8 @@ const coverUserRelationship = z.union([
       name: optionalRender(z.string()),
       email: optionalRender(z.string()),
       title: optionalRender(z.string()),
+      phone: optionalRender(z.string()),
+      linkedin: optionalRender(z.string()),
       avatar: optionalRender(coverMediaRelationship),
     })
     .passthrough(),
@@ -94,7 +96,11 @@ const coverRenderSchema = z.object({
   title: z.string(),
   subtitle: optionalRichTextRender(),
   intervenants: coverIntervenants,
-  image: z.object({ url: z.string() }).nullable().optional(),
+  image: z
+    .object({ url: z.string(), filename: z.string().nullable().optional() })
+    .passthrough()
+    .nullable()
+    .optional(),
   imagePosition: optionalRender(z.enum(['right', 'left'])),
 });
 
@@ -149,6 +155,7 @@ const cardGridRenderSchema = z.object({
     )
     .nullable()
     .optional(),
+  intervenants: coverIntervenants,
 });
 
 type DerivedCardGrid = InferRender<typeof cardGridRenderSchema>;

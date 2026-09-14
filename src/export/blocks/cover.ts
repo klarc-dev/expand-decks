@@ -1,153 +1,65 @@
 import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
 import { densityClass, densityFromScore, visibleText } from '../density';
+import { renderPeopleStrip, vueBoundSrc } from '../people';
 import { richTextToHTML } from '../richtext';
-import {
-  defFooterSlot,
-  escape,
-  eyebrow as renderEyebrow,
-  md,
-  wrapSlide,
-  type RenderCtx,
-  type SlideImage,
-} from '../utils';
+import { defFooterSlot, eyebrow as renderEyebrow, md, wrapSlide, type RenderCtx } from '../utils';
 
 export type { CoverBlockData };
 
-type PersonCard = {
-  avatarUrl?: string;
-  initials: string;
-  name: string;
-  title?: string;
-};
-
-function vueBoundSrc(url: string): string {
-  return `:src='${JSON.stringify(url)}'`;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
-}
-
-function asNonEmptyString(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
-}
-
-function avatarUrl(value: unknown): string | undefined {
-  const avatar = asRecord(value);
-  if (!avatar) return undefined;
-
-  const sizes = asRecord(avatar.sizes);
-  const thumbnail = asRecord(sizes?.thumbnail);
-  const card = asRecord(sizes?.card);
-  const localMediaUrl = (media: Record<string, unknown> | null): string | null => {
-    const filename = asNonEmptyString(media?.filename);
-    return filename ? `./media/${filename}` : null;
-  };
-  return (
-    localMediaUrl(thumbnail) ??
-    localMediaUrl(card) ??
-    localMediaUrl(avatar) ??
-    asNonEmptyString(thumbnail?.url) ??
-    asNonEmptyString(card?.url) ??
-    asNonEmptyString(avatar.thumbnailURL) ??
-    asNonEmptyString(avatar.url) ??
-    undefined
-  );
-}
-
-function initialsFor(label: string): string {
-  const parts = label
-    .replace(/@.*/, '')
-    .split(/[\s._-]+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const initials = parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
-  return initials || '•';
-}
-
-function userToPerson(user: unknown): PersonCard | null {
-  const record = asRecord(user);
-  // Unresolved relationship IDs are intentionally ignored. The build runner
-  // hydrates relationships; admin preview resolves selected users separately.
-  if (!record) return null;
-
-  const email = asNonEmptyString(record.email);
-  const name = asNonEmptyString(record.name) ?? email?.split('@')[0] ?? 'Intervenant';
-  const title = asNonEmptyString(record.title) ?? undefined;
-
-  return {
-    avatarUrl: avatarUrl(record.avatar),
-    initials: initialsFor(name),
-    name,
-    title,
-  };
-}
-
-function renderPeople(block: CoverBlockData): string {
-  const rows = block.intervenants ?? [];
-  const people = rows
-    .map((row) => userToPerson(asRecord(row)?.user))
-    .filter((person): person is PersonCard => Boolean(person));
-
-  if (people.length === 0) return '';
-
-  const cards = people
-    .map((person) => {
-      const avatar = person.avatarUrl
-        ? `<img class="${K.personAvatar}" ${vueBoundSrc(person.avatarUrl)} alt="" />`
-        : `<span class="${K.personAvatar} ${K.personInitials}" aria-hidden="true">${escape(person.initials)}</span>`;
-      const title = person.title
-        ? `\n      <div class="${K.personTitle}">${escape(person.title)}</div>`
-        : '';
-      return `<div class="${K.personCard}">
-    ${avatar}
-    <div class="${K.personBody}">
-      <div class="${K.personName}">${escape(person.name)}</div>${title}
-    </div>
-  </div>`;
-    })
-    .join('\n');
-
-  return `\n      <div class="${K.coverPeople}" aria-label="Intervenants">\n${cards}\n      </div>`;
-}
-
 export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
-  const image: SlideImage | null = block.image?.url
-    ? { url: block.image.url, position: block.imagePosition ?? 'right' }
-    : null;
+  // Prefer the staged local media path over the hydrated Payload API URL: the
+  // Slidev export browser has no authenticated session (see
+  // authenticated-media-embedding); stageBuildDir copies /media/<filename>
+  // into the workdir's public/ dir from the frontmatter reference.
+  const imageFilename =
+    typeof (block.image as Record<string, unknown> | undefined)?.filename === 'string'
+      ? ((block.image as Record<string, unknown>).filename as string)
+      : null;
+  const imageUrl = imageFilename ? `./media/${imageFilename}` : (block.image?.url ?? null);
+  const imagePosition = block.imagePosition ?? 'right';
 
   const eyebrow = renderEyebrow(block.eyebrow, 'k-eyebrow--cover', { indent: '      ' });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
-  const people = renderPeople(block);
+  const people = renderPeopleStrip(block.intervenants, K.coverPeople);
   const density = densityFromScore(
-    block.title.length * (image ? 2.5 : 1.7) +
+    block.title.length * (imageUrl ? 2.5 : 1.7) +
       visibleText(subtitleHtml).length +
       (block.intervenants?.length ?? 0) * 70,
-    { compact: image ? 180 : 260, dense: image ? 320 : 440 },
+    { compact: imageUrl ? 180 : 260, dense: imageUrl ? 320 : 440 },
   );
 
-  // With image: half-slide layout (Slidev image-right/-left supplies the other
-  // half), so the cover fills the content slot. Without an image the cover goes
-  // full-bleed over the whole slide. Both behaviours are CSS-owned (k-cover sets
-  // height:100%; k-cover--full-bleed adds the absolute inset overlay).
-  const wrapperClass = [K.cover, image ? '' : K.coverFullBleed, densityClass(density)]
+  // With image: split layout — the image renders as an explicit <img> column
+  // inside the slide body. Slidev's built-in image-right/-left layouts paint the
+  // picture as a CSS background-image, which the Chromium print/export pass
+  // drops (page.pdf renders the pane blank), so the cover owns its own figure
+  // column instead. Without an image the cover goes full-bleed over the whole
+  // slide. Both behaviours are CSS-owned (k-cover sets height:100%;
+  // k-cover--split adds the two-column grid; k-cover--full-bleed adds the
+  // absolute inset overlay).
+  const wrapperClass = [
+    K.cover,
+    imageUrl ? K.coverSplit : K.coverFullBleed,
+    imageUrl && imagePosition === 'left' ? K.coverSplitLeft : '',
+    densityClass(density),
+  ]
     .filter(Boolean)
     .join(' ');
+
+  const figure = imageUrl
+    ? `\n  <div class="${K.coverFigure}" aria-hidden="true"><img class="${K.coverFigureImg}" ${vueBoundSrc(imageUrl)} alt="" /></div>`
+    : '';
 
   const body = `<div class="${wrapperClass}">
   <div class="${K.coverMain}">
     <div class="${K.coverCopy}">${eyebrow}
       <h1 class="${K.coverTitle} ${K.heroBig}">${md(block.title)}</h1>${subtitle}${people}
     </div>
-  </div>
+  </div>${figure}
   ${defFooterSlot()}
 </div>`;
 
-  return wrapSlide({ layout: 'cover', surface: 'gradient', hideChrome: true, image, body });
+  return wrapSlide({ layout: 'cover', surface: 'gradient', hideChrome: true, body });
 }

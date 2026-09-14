@@ -6,6 +6,7 @@ const HTML_ENTITIES: Record<string, string> = {
   "'": '&#39;',
 };
 
+import type { DeckLanguage } from '../agents/language';
 import { K } from './classNames';
 import { densityClass, type SlideDensity } from './density';
 import { resolveVars } from './vars';
@@ -114,14 +115,27 @@ function consumeDefFooter(): string {
 // Allow only safe link targets. Browsers ignore leading control chars/whitespace
 // in href, so `\njavascript:` still executes — strip control chars and lowercase
 // before testing the scheme, then emit the original (already entity-escaped) URL.
-function safeHref(raw: string): string | null {
+// Shared by md() links, Lexical anchors (richtext.ts) and every renderer that
+// turns authored data (CTA actions, contact details) into an <a href>.
+export function safeHref(raw: string | null | undefined): string | null {
+  if (!raw) return null;
   const probe = raw
     .trim()
     .replace(/[\x00-\x1f]/g, '')
     .toLowerCase();
-  if (/^(https?:|mailto:)/.test(probe)) return raw;
+  if (!probe || probe === '#') return null;
+  if (/^(https?:|mailto:|tel:)/.test(probe)) return raw;
   if (!/^[a-z][a-z0-9+.-]*:/.test(probe)) return raw;
   return null;
+}
+
+/** `tel:` target for a displayed phone number, or null when no digits remain. */
+export function telHref(phone: string | null | undefined): string | null {
+  const digits = (phone ?? '').replace(/[^\d+]/g, '');
+  if (digits.replace(/\D/g, '').length < 6) return null;
+  // Keep a single leading "+" for international numbers; drop any other "+".
+  const normalized = (digits.startsWith('+') ? '+' : '') + digits.replace(/\+/g, '');
+  return `tel:${normalized}`;
 }
 
 // Collect {{def:...}} literals from an HTML string into the slide-scoped
@@ -194,7 +208,7 @@ export type WrapSlideOptions = {
 /**
  * Wrap a slide body with frontmatter (layout, class, hideChrome flag) and
  * append the slide-scoped def-footer. The brand header / page indicator are
- * rendered globally by global-top.vue / global-bottom.vue; this helper only
+ * rendered per slide by slide-top.vue / slide-bottom.vue; this helper only
  * sets the `hideChrome: true` frontmatter flag for full-bleed slides.
  *
  * When `image.url` is set, the layout is overridden to Slidev's built-in
@@ -239,7 +253,13 @@ ${bodyWithFooter}`;
  * `section` titles, which the agenda block falls back to when its own `items`
  * are empty (auto-plan from the deck structure).
  */
-export type RenderCtx = { surface?: Surface | null; variantIndex?: number; sections?: string[] };
+export type RenderCtx = {
+  surface?: Surface | null;
+  variantIndex?: number;
+  sections?: string[];
+  /** Deck output language; drives the localized labels a renderer emits. */
+  language?: DeckLanguage | null;
+};
 
 /**
  * Slide header: eyebrow + title at the shared `--header-top` baseline, optional
@@ -382,6 +402,19 @@ export function contentFrame(
 }
 
 /**
+ * In-flow hero caption. With a label it renders as a takeaway box: a tinted
+ * cartouche carrying the label (e.g. "L’enjeu", "À retenir") ahead of the
+ * caption text, so the closing message of a statement reads as the slide's
+ * key point instead of a footnote.
+ */
+function heroCaption(captionHtml: string, label?: string): string {
+  if (!label) {
+    return `\n\n<div class="${K.caption} ${K.heroCaption}">\n  ${captionHtml}\n</div>`;
+  }
+  return `\n\n<div class="${K.caption} ${K.heroCaption} ${K.takeaway}">\n  <span class="${K.takeawayLabel}">${escape(label)}</span>\n  <div class="${K.takeawayText}">\n    ${captionHtml}\n  </div>\n</div>`;
+}
+
+/**
  * Emphasis surface for the `statement` block's variant dispatch (U8) — the only
  * consumer (KTD6c). `align` × `scale` × `accentRule` are driven by statement's
  * four variants; stats/section/cta compose slideHeader + wrapSlide directly.
@@ -393,6 +426,7 @@ export function heroFrame(opts: {
   title: string;
   body?: string; // already-converted HTML
   caption?: string; // in-flow footer caption HTML
+  captionLabel?: string; // cartouche text; turns the caption into a takeaway box
   scale: 'hero' | 'display' | 'title';
   align: 'center' | 'left' | 'split';
   surface?: Surface | null;
@@ -401,9 +435,7 @@ export function heroFrame(opts: {
 }): string {
   const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
-  const caption = opts.caption
-    ? `\n\n<div class="${K.caption} ${K.heroCaption}">\n  ${opts.caption}\n</div>`
-    : '';
+  const caption = opts.caption ? heroCaption(opts.caption, opts.captionLabel) : '';
   const sharedDensityClass = densityClass(opts.density ?? 'comfortable');
   const heading = `<h1 class="${[K.heroTitle, sharedDensityClass].filter(Boolean).join(' ')}">\n${md(opts.title)}\n</h1>`;
 
