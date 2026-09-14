@@ -12,6 +12,9 @@ export const agentModelSchema = z
 
 export const DEFAULT_AGENT_MODEL = 'high';
 
+/** Deadline for the gateway capability probe. */
+const MODEL_PROBE_TIMEOUT_MS = 15_000;
+
 const agentModelStorage = new AsyncLocalStorage<string>();
 
 export function activeAgentModel(): string | undefined {
@@ -53,34 +56,43 @@ export async function verifyAgentModel(modelInput: unknown): Promise<ModelVerifi
   const apiKey = process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY || '';
   if (!apiKey) throw new Error('Clé CloudCLIProxy absente');
 
-  const response = await forceNonStreamFetch(`${baseURL.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      messages: [{ role: 'user', content: 'Call the verify tool exactly once.' }],
-      tools: [
-        {
-          type: 'function',
-          function: {
-            name: 'verify',
-            description: 'Confirm tool calling support.',
-            parameters: {
-              type: 'object',
-              additionalProperties: false,
-              properties: { ok: { type: 'boolean', const: true } },
-              required: ['ok'],
+  let response: Response;
+  try {
+    response = await forceNonStreamFetch(`${baseURL.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      // A hung gateway must not pin the caller's request thread.
+      signal: AbortSignal.timeout(MODEL_PROBE_TIMEOUT_MS),
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        stream: false,
+        messages: [{ role: 'user', content: 'Call the verify tool exactly once.' }],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'verify',
+              description: 'Confirm tool calling support.',
+              parameters: {
+                type: 'object',
+                additionalProperties: false,
+                properties: { ok: { type: 'boolean', const: true } },
+                required: ['ok'],
+              },
             },
           },
-        },
-      ],
-      tool_choice: { type: 'function', function: { name: 'verify' } },
-    }),
-  });
+        ],
+        tool_choice: { type: 'function', function: { name: 'verify' } },
+      }),
+    });
+  } catch (error) {
+    throw new Error(
+      `Le modèle « ${model} » n'a pas répondu via CloudCLIProxy : ${error instanceof Error ? error.message : 'erreur réseau'}`,
+    );
+  }
 
   const payload = (await response.json().catch(() => null)) as ChatCompletionProbe | null;
   if (!response.ok) {

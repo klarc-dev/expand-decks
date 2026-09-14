@@ -379,13 +379,21 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       executeWorkflow(payload, ledger, presentationId, mirror, registerCancel),
     );
 
-    const state = workflowResult as { status?: string; suspended?: unknown };
+    // Mastra returns both the approval payload (`suspendPayload`: what
+    // `approvalStep.suspend()` handed over) and the suspended step paths
+    // (`suspended`, e.g. [['approval']]). The admin renders the payload; the
+    // paths are only a fallback for runs that stored nothing readable.
+    const state = workflowResult as {
+      status?: string;
+      suspendPayload?: unknown;
+      suspended?: unknown;
+    };
     if (state.status === 'suspended') {
       await patchRun(payload, ledger, {
         status: 'suspended',
         phase: 'approval',
         suspendedStep: 'approval',
-        suspendPayload: state.suspended,
+        suspendPayload: state.suspendPayload ?? state.suspended,
         suspendedAt: new Date().toISOString(),
         heartbeatAt: new Date().toISOString(),
       });

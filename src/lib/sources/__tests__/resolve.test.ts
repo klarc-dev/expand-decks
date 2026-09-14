@@ -1,13 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { MAX_SELECTED_SOURCES } from '../../draftConfig';
 import { __resetSourceRegistryForTests, SOURCE_REGISTRY_ENV } from '../registry';
 import { normalizeSourceIds, resolveSourcePolicy, resolveSources } from '../resolve';
-import {
-  MAX_SELECTED_SOURCES,
-  SourcePolicyError,
-  TooManySourcesError,
-  UnknownSourceError,
-} from '../types';
+import { SourcePolicyError, TooManySourcesError, UnknownSourceError } from '../types';
 
 const previous = process.env[SOURCE_REGISTRY_ENV];
 

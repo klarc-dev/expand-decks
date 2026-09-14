@@ -31,6 +31,15 @@ export const slideCountRangeSchema = z
 
 export type SlideCountRange = z.infer<typeof slideCountRangeSchema>;
 
+/**
+ * Shortest brief the durable run accepts. Shared by the request schema, the
+ * `agentBrief` field and the admin start button so all three agree.
+ */
+export const MIN_BRIEF_CHARS = 10;
+
+/** Sources (knowledge bases + externals) one run may combine. */
+export const MAX_SELECTED_SOURCES = 8;
+
 /** Chars of per-slide intent kept when parsing an explicit `S1 — …` brief. */
 export const INTENT_MAX = 1600;
 

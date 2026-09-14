@@ -88,6 +88,42 @@ describe('composite deck workflow MCP tool', () => {
     });
   });
 
+  it('refuses a deck update while an agent run owns the deck', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(ok({ id: 42, draftStatus: 'drafting' }));
+    vi.stubGlobal('fetch', fetchSpy);
+    vi.stubEnv('DECK_API_URL', 'https://decks.example');
+    vi.stubEnv('DECK_API_KEY', 'secret');
+
+    await expect(
+      deckMcpTools.deck.execute?.(
+        { command: { action: 'update', deckId: 42, data: { title: 'New' } } },
+        {} as never,
+      ),
+    ).rejects.toThrow(/running agent build/);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates a deck that no run owns', async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(ok({ id: 42, draftStatus: 'done' }))
+      .mockResolvedValueOnce(ok({ id: 42, title: 'New' }));
+    vi.stubGlobal('fetch', fetchSpy);
+    vi.stubEnv('DECK_API_URL', 'https://decks.example');
+    vi.stubEnv('DECK_API_KEY', 'secret');
+
+    await expect(
+      deckMcpTools.deck.execute?.(
+        { command: { action: 'update', deckId: 42, data: { title: 'New' } } },
+        {} as never,
+      ),
+    ).resolves.toMatchObject({ title: 'New' });
+    expect(fetchSpy).toHaveBeenLastCalledWith(
+      'https://decks.example/api/presentations/42',
+      expect.objectContaining({ method: 'PATCH', body: '{"title":"New"}' }),
+    );
+  });
+
   it('surfaces API failures instead of returning false success', async () => {
     vi.stubGlobal(
       'fetch',

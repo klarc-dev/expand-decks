@@ -41,6 +41,11 @@ export const afterKnowledgeDocumentChange: CollectionAfterChangeHook = async ({
     }
   }
 
+  // This nested write re-fires `syncKnowledgeReadinessAfterChange`, so a file
+  // change recomputes readiness twice. A context flag cannot suppress the inner
+  // pass: `createLocalReq` merges `context` into the *shared* `req.context`, so
+  // the flag would survive into the outer hook and silence the authoritative
+  // sync too. Two idempotent recomputations per upload is the cheaper trade.
   await req.payload.update({
     collection: 'knowledge-documents',
     id: doc.id,

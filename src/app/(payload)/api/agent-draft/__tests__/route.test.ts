@@ -165,6 +165,52 @@ describe('agent draft source policy API', () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
+  it('refuses a knowledge base that is not indexed before the run row exists', async () => {
+    mocks.find.mockResolvedValue({ docs: [{ id: 42, name: 'Contrats', readiness: 'empty' }] });
+
+    const response = await POST(
+      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_42'] } }),
+    );
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toContain('Contrats');
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
+
+  it('accepts a ready knowledge base', async () => {
+    mocks.find.mockImplementation(async ({ collection }: { collection: string }) =>
+      collection === 'knowledge-bases'
+        ? { docs: [{ id: 42, name: 'Contrats', readiness: 'ready' }] }
+        : { docs: [] },
+    );
+
+    const response = await POST(
+      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_42'] } }),
+    );
+
+    expect(response.status).toBe(202);
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ sourceIds: ['knowledge_42'] }),
+      }),
+    );
+  });
+
+  it('fails the run row when mirroring the options onto the presentation is rejected', async () => {
+    mocks.update.mockRejectedValueOnce(new Error('ValidationError'));
+
+    await expect(POST(request(base))).rejects.toThrow('ValidationError');
+
+    expect(mocks.queue).not.toHaveBeenCalled();
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'agent-runs',
+        data: expect.objectContaining({ status: 'failed', errorCode: 'start-failed' }),
+      }),
+    );
+  });
+
   it('normalizes and persists a valid exclusive policy', async () => {
     const response = await POST(
       request({

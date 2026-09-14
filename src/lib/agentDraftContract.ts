@@ -1,12 +1,12 @@
 import { AGENT_TIME_TRAVEL_STEPS } from '@/jobs/agentRunLifecycle';
 
 import { z } from 'zod';
-import { slideCountRangeSchema } from './draftConfig';
+import { MIN_BRIEF_CHARS, slideCountRangeSchema } from './draftConfig';
 import { agentModelSchema } from './agentModel';
 
 export const agentDraftStartSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
-  brief: z.string().trim().min(10).max(20_000),
+  brief: z.string().trim().min(MIN_BRIEF_CHARS).max(20_000),
   mode: z.enum(['replace', 'augment', 'revise']).default('replace'),
   model: agentModelSchema.optional(),
   visual: z.boolean().default(true),

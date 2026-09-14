@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MIN_BRIEF_CHARS } from '../../lib/draftConfig';
 import { Presentations } from '../Presentations';
 
 function hasFieldOfType(type: string, label: string): boolean {
@@ -55,6 +56,37 @@ function findField(name: string): Record<string, unknown> | undefined {
 }
 
 describe('Presentations IA tab', () => {
+  it('keeps a base that drifted off ready selectable so the document stays saveable', () => {
+    const filter = findField('agentKnowledgeBases')!.filterOptions as (args: unknown) => unknown;
+    const ready = { readiness: { equals: 'ready' } };
+    expect(filter({ data: {} })).toEqual(ready);
+    expect(filter({ data: { agentKnowledgeBases: [] } })).toEqual(ready);
+    expect(
+      filter({
+        data: {
+          agentKnowledgeBases: [4, { id: 5 }, { relationTo: 'knowledge-bases', value: 6 }, null],
+        },
+      }),
+    ).toEqual({ or: [ready, { id: { in: [4, 5, 6] } }] });
+  });
+
+  it('locks the run pointers against admin and REST saves', () => {
+    for (const name of [
+      'draftStatus',
+      'latestAgentRun',
+      'draftRunId',
+      'draftRequestId',
+      'draftTraceId',
+    ]) {
+      const access = findField(name)?.access as { update: () => boolean } | undefined;
+      expect(access?.update(), `${name} must be run-owned`).toBe(false);
+    }
+  });
+
+  it('requires a brief the start request would accept', () => {
+    expect(findField('agentBrief')).toMatchObject({ minLength: MIN_BRIEF_CHARS });
+  });
+
   it('exposes the brief and the run options as native fields', () => {
     expect(findField('agentBrief')).toMatchObject({
       type: 'textarea',

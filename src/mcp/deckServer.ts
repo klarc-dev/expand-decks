@@ -6,6 +6,7 @@ import { WRITABLE_SLIDE_SCHEMA } from '@/blocks/spec';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
 import { slideRevisionSchema } from '@/lib/deckCrudContract';
 import { MEDIA_PRODUCER_REQUEST_SCHEMA } from '@/lib/mediaProducer';
+import { ACTIVE_DRAFT_STATUSES } from '@/lib/status';
 import { AGENT_TIME_TRAVEL_STEPS } from '@/jobs/agentRunLifecycle';
 
 const id = z.union([z.string().min(1).max(128), z.number()]);
@@ -90,6 +91,23 @@ async function request(path: string, options: { method?: string; body?: unknown 
   return data;
 }
 
+/**
+ * Agent option fields are frozen server-side while a run owns the deck, and a
+ * PATCH that touches them would be silently stripped (HTTP 200, nothing
+ * changed). Fail loudly instead of reporting a write that never happened.
+ */
+async function updateDeck(deckId: number | string, data: Record<string, unknown>) {
+  const current = (await request(`/api/presentations/${deckId}?depth=0`)) as {
+    draftStatus?: string;
+  };
+  if (ACTIVE_DRAFT_STATUSES.has(current.draftStatus ?? '')) {
+    throw new Error(
+      `Deck ${deckId} is owned by a running agent build (draftStatus=${current.draftStatus}); cancel or await it before updating.`,
+    );
+  }
+  return request(`/api/presentations/${deckId}`, { method: 'PATCH', body: data });
+}
+
 export const deckMcpTools = {
   deck: createTool({
     id: 'deck',
@@ -106,10 +124,7 @@ export const deckMcpTools = {
           return request('/api/presentations', { body: data });
         }
         case 'update':
-          return request(`/api/presentations/${input.deckId}`, {
-            method: 'PATCH',
-            body: input.data,
-          });
+          return updateDeck(input.deckId, input.data);
         case 'delete':
           return request(`/api/presentations/${input.deckId}`, { method: 'DELETE' });
         case 'build':

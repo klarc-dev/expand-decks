@@ -5,7 +5,6 @@ import { z } from 'zod';
 
 export const SOURCE_ID_MAX = 80;
 export const SOURCE_LABEL_MAX = 160;
-export const MAX_SELECTED_SOURCES = 8;
 export const DEFAULT_SOURCE_TIMEOUT_MS = 30_000;
 
 export const SourceIdSchema = z
@@ -68,10 +67,14 @@ export const HttpSourceDescriptorSchema = baseSource.extend({
     ),
 });
 
+/** Derived from the base's indexed documents; mirrored on its descriptor. */
+const KnowledgeSourceReadinessSchema = z.enum(['ready', 'empty', 'failed', 'unavailable']);
+
 const KnowledgeSourceDescriptorSchema = baseSource.extend({
   transport: z.literal('knowledge'),
   knowledgeBaseId: z.union([z.string().min(1), z.number().int().positive()]),
   indexName: z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
+  readiness: KnowledgeSourceReadinessSchema.optional(),
 });
 
 export const SourceDescriptorSchema = z.discriminatedUnion('transport', [
@@ -89,7 +92,7 @@ export type HttpSourceDescriptor = z.infer<typeof HttpSourceDescriptorSchema>;
 export type KnowledgeSourceDescriptor = z.infer<typeof KnowledgeSourceDescriptorSchema>;
 export type SourceDescriptor = z.infer<typeof SourceDescriptorSchema>;
 export type SourceKind = 'knowledge' | 'external';
-export type KnowledgeSourceReadiness = 'ready' | 'empty' | 'failed' | 'unavailable';
+export type KnowledgeSourceReadiness = z.infer<typeof KnowledgeSourceReadinessSchema>;
 export type SourceOption = {
   id: SourceId;
   label: string;

@@ -38,16 +38,18 @@ const POLL_TIMEOUT_MS = 15 * 60 * 1000;
 
 /**
  * Both source pickers are react-select (Payload's relationship control for
- * knowledge bases, its SelectInput for externals); Payload gives each its
- * `#field-<name>` text input.
+ * knowledge bases, its SelectInput for externals). `#field-<name>` is the field
+ * WRAPPER, not a control — type into the combobox inside it, and click the
+ * option rather than pressing Enter so the async option list has to be there.
  */
 async function pickSources(page: Page, field: string, labels: string[]) {
   if (labels.length === 0) return;
-  const input = page.locator(`#field-${field}`);
+  const wrapper = page.locator(`#field-${field}`);
+  const input = wrapper.getByRole('combobox');
   for (const label of labels) {
     await input.click();
     await input.pressSequentially(label);
-    await page.keyboard.press('Enter');
+    await wrapper.getByRole('option', { name: label }).first().click();
   }
 }
 

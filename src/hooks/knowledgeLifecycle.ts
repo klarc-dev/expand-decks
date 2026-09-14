@@ -100,18 +100,19 @@ export async function syncKnowledgeBaseReadiness(
     where: { knowledgeBase: { equals: baseId } },
     depth: 0,
     pagination: false,
+    select: { indexingStatus: true },
     overrideAccess: true,
     req,
   });
 
+  // No `context` flag: `overrideAccess` already authorises the write, and
+  // `payload.update` would merge the flag into the shared `req.context`,
+  // leaking trusted-lifecycle privileges into the rest of the request.
   await payload.update({
     collection: COLLECTIONS.knowledgeBases,
     id: baseId,
-    // Bases have no afterChange hook, so this write cannot re-enter the
-    // document lifecycle; the context flag keeps that true if one is added.
     data: { readiness: knowledgeReadiness(documents.docs as { indexingStatus?: string }[]) },
     overrideAccess: true,
-    context: { [CTX.trustedKnowledgeLifecycle]: true },
     req,
   });
 }
@@ -138,6 +139,9 @@ export const syncKnowledgeReadinessAfterDelete: CollectionAfterDeleteHook = asyn
   doc,
   req,
 }) => {
+  // The base is being torn down: recomputing its readiness per document would
+  // add 2N queries for a row that is about to disappear.
+  if (req.context?.[CTX.skipDocumentVectorPurge]) return doc;
   const baseId = relationId(doc.knowledgeBase as never);
   if (baseId !== undefined) await syncKnowledgeBaseReadiness(req.payload, baseId, req);
   return doc;

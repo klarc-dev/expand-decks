@@ -1,11 +1,7 @@
 import { z } from 'zod';
 
-import {
-  MAX_SELECTED_SOURCES,
-  SourceIdSchema,
-  SourcePolicyError,
-  type SourcePolicy,
-} from './types';
+import { MAX_SELECTED_SOURCES } from '../draftConfig';
+import { SourceIdSchema, SourcePolicyError, type SourcePolicy } from './types';
 
 export const SourcePolicySchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('none'), sourceIds: z.array(SourceIdSchema).max(0).default([]) }),

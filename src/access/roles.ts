@@ -5,7 +5,7 @@ export const ROLES = { admin: 'admin', author: 'author', viewer: 'viewer' } as c
 type RoleUser = Partial<NonNullable<PayloadRequest['user']>> | null | undefined;
 
 /** Narrow a relationship value (bare id or populated doc) to its id. */
-const relationshipId = (value: unknown): string | number | undefined => {
+export const relationshipId = (value: unknown): string | number | undefined => {
   if (typeof value === 'string' || typeof value === 'number') return value;
   if (value && typeof value === 'object') {
     const id = (value as { id?: unknown }).id;

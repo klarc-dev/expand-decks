@@ -18,7 +18,13 @@ import {
 } from '@/components/agentDraftJournal';
 import { adminGet, adminPost } from '@/lib/adminFetch';
 import { sourcePolicyForSelection } from '@/lib/adminSourcePolicy';
-import { MAX_SLIDES, MIN_SLIDES, slideCountRangeSchema } from '@/lib/draftConfig';
+import {
+  MAX_SELECTED_SOURCES,
+  MAX_SLIDES,
+  MIN_BRIEF_CHARS,
+  MIN_SLIDES,
+  slideCountRangeSchema,
+} from '@/lib/draftConfig';
 import type { SlideCountRange } from '@/lib/draftConfig';
 
 import './AgentRunControls.scss';
@@ -100,8 +106,12 @@ export function sourceIdsFromFields(knowledgeBases: unknown, external: unknown):
   return [...bases, ...externals];
 }
 
+/** Ledger phases with no rail step of their own. */
+const PHASE_STEP: Record<string, string> = { approval: 'structure', persist: 'assemble' };
+
 function ProgressRail({ phase }: { phase: string | undefined }) {
-  const index = STEPS.findIndex((step) => step.key === phase);
+  const key = phase ? (PHASE_STEP[phase] ?? phase) : undefined;
+  const index = STEPS.findIndex((step) => step.key === key);
   return (
     <ol aria-label="Progression de la génération" className="agent-run__progress">
       {STEPS.map((step, position) => (
@@ -251,13 +261,14 @@ function RunActions({
 function RunJournal({ events }: { events: RunEvent[] }) {
   if (events.length === 0) return null;
   return (
-    <Collapsible header="Journal de l'agent" initCollapsed>
+    <Collapsible header="Journal de l’agent" initCollapsed>
       <ol aria-label="Événements de la génération" className="agent-run__journal">
-        {events.map((event) => {
+        {events.map((event, index) => {
           const time = formatDraftEventTime(event.ts);
           const detail = formatDraftEventDetail(event);
           return (
-            <li key={`${event.ts}:${event.phase}`}>
+            // Phases repeat within a millisecond, so the position completes the key.
+            <li key={`${index}:${event.ts}:${event.phase}`}>
               {time && <time dateTime={time.dateTime}>{time.label}</time>}{' '}
               {formatDraftEventPhase(event.phase)}
               {detail ? ` — ${detail}` : ''}
@@ -266,6 +277,48 @@ function RunJournal({ events }: { events: RunEvent[] }) {
         })}
       </ol>
     </Collapsible>
+  );
+}
+
+type RunView = {
+  active: boolean;
+  awaitingApproval: boolean;
+  events: RunEvent[];
+  outcome: { error?: true; text: string } | null;
+  outline: PlanItem[];
+  stale: boolean;
+  status: string;
+};
+
+/** Everything the UI derives from the polled ledger record. */
+function runView(run: DurableRun | null): RunView {
+  const status = run?.status ?? '';
+  return {
+    active: status === 'queued' || status === 'running',
+    // Only a suspended run accepts a resume; 'waiting' 409s on the command route.
+    awaitingApproval: status === 'suspended',
+    events: Array.isArray(run?.events) ? run.events : [],
+    // Toasts only fire on a transition; a reload must still show why a run ended.
+    outcome:
+      status === 'failed' || status === 'canceled' ? terminalToast(status, run?.error) : null,
+    outline: approvalOutline(run?.suspended),
+    stale: status === 'stale',
+    status,
+  };
+}
+
+function RunBanners({ error, view }: { error?: string; view: RunView }) {
+  return (
+    <>
+      {error && <Banner type="error">{error}</Banner>}
+      {view.stale && (
+        <Banner type="error">Le worker a été interrompu. Redémarrez la génération.</Banner>
+      )}
+      {view.outcome && (
+        <Banner type={view.status === 'failed' ? 'error' : 'info'}>{view.outcome.text}</Banner>
+      )}
+      {view.awaitingApproval && <ApprovalBanner outline={view.outline} />}
+    </>
   );
 }
 
@@ -288,14 +341,15 @@ const AgentRunControls: React.FC = () => {
   const request = runRequestFromFields(fields as FormFields);
   const { brief, startMode } = request;
   const { error: rangeError, range } = request.slideCount;
+  const blockingError =
+    rangeError ??
+    (request.sourceIds.length > MAX_SELECTED_SOURCES
+      ? `Sélectionnez au maximum ${MAX_SELECTED_SOURCES} sources, bases et sources externes confondues.`
+      : undefined);
   const runId = startedRunId || request.draftRunId;
 
-  const status = run?.status ?? '';
-  const active = status === 'queued' || status === 'running';
-  const awaitingApproval = status === 'suspended' || status === 'waiting';
-  const stale = status === 'stale';
-  const outline = approvalOutline(run?.suspended);
-  const events = Array.isArray(run?.events) ? run.events : [];
+  const view = runView(run);
+  const { active, awaitingApproval, events, outline } = view;
 
   const refresh = useCallback(
     async (currentRunId: string) => {
@@ -352,6 +406,10 @@ const AgentRunControls: React.FC = () => {
       statusRef.current = 'queued';
       setRun({ status: 'queued', events: [] });
       if (typeof data.runId === 'string') setStartedRunId(data.runId);
+      // The server just wrote the run pointers and froze the options; without a
+      // refresh the open form still holds the pre-run values and a save would
+      // clobber them.
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur réseau. Réessayez.');
     } finally {
@@ -373,6 +431,7 @@ const AgentRunControls: React.FC = () => {
       }
       statusRef.current = action === 'cancel' ? 'canceled' : 'queued';
       await refresh(runId);
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erreur réseau. Réessayez.');
     } finally {
@@ -389,21 +448,19 @@ const AgentRunControls: React.FC = () => {
 
   return (
     <div className="agent-run">
-      {rangeError && <Banner type="error">{rangeError}</Banner>}
-      {stale && <Banner type="error">Le worker a été interrompu. Redémarrez la génération.</Banner>}
-      {awaitingApproval && <ApprovalBanner outline={outline} />}
+      <RunBanners error={blockingError} view={view} />
 
       <RunActions
         active={active}
         awaitingApproval={awaitingApproval}
         canApprove={outline.length > 0}
-        canStart={Boolean(brief.trim()) && !rangeError && !active && !pending}
+        canStart={brief.trim().length >= MIN_BRIEF_CHARS && !blockingError && !active && !pending}
         onCancel={() => void command('cancel')}
         onRestart={() => void command('restart')}
         onResume={(approved) => void command('resume', approved)}
         onStart={() => void start()}
         pending={pending}
-        stale={stale}
+        stale={view.stale}
         startLabel={startLabelForMode(startMode)}
       />
 

@@ -52,7 +52,8 @@ const MAX_KNOWLEDGE_FILE_BYTES = 25 * 1024 * 1024;
 const PDF_MAGIC = Buffer.from('%PDF-');
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 
-const trustedLifecycleWrite: FieldAccess = ({ req }) =>
+/** Lifecycle-owned fields: only trusted hooks (or `overrideAccess`) may write them. */
+export const trustedLifecycleWrite: FieldAccess = ({ req }) =>
   req.context?.[CTX.trustedKnowledgeLifecycle] === true;
 
 function isTrustedLifecycle(req: PayloadRequest): boolean {

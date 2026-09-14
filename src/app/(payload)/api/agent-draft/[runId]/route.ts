@@ -117,11 +117,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
       },
       overrideAccess: true,
     });
+    // `draftStatus` is run-owned (field access denies every update), and this
+    // handler already authorised the caller above.
     await auth.payload.update({
       collection: COLLECTIONS.presentations,
       id: auth.presentationId,
       data: { draftStatus: DRAFT_STATUS.failed },
-      user: auth.user,
+      overrideAccess: true,
       context: { [CTX.skipBuildQueue]: true },
     });
     return NextResponse.json({ runId, status: 'canceled' });

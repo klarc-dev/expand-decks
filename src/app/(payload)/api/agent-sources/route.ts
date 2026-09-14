@@ -3,8 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
+import { MAX_SELECTED_SOURCES } from '@/lib/draftConfig';
 import { listKnowledgeSourceOptions, listMcpSourceOptions } from '@/lib/sources/registry';
-import { MAX_SELECTED_SOURCES, SourceConfigError } from '@/lib/sources/types';
+import { SourceConfigError } from '@/lib/sources/types';
 
 export async function GET(req: NextRequest) {
   const payload = await getPayload({ config });

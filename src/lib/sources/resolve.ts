@@ -1,7 +1,7 @@
+import { MAX_SELECTED_SOURCES } from '../draftConfig';
 import { listSourceDescriptors } from './registry';
 import { normalizeSourcePolicy } from './policy';
 import {
-  MAX_SELECTED_SOURCES,
   SourceIdSchema,
   TooManySourcesError,
   UnknownSourceError,

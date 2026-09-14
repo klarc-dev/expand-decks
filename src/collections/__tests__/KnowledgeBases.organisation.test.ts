@@ -45,6 +45,31 @@ describe('knowledge base organisation ownership', () => {
     ).toBe(12);
     await expect(async () => run(11, null)).rejects.toThrow(/organisation/i);
   });
+  it('lets a user-less lifecycle write through when the organisation is unchanged', async () => {
+    const hook = organisationField().hooks!.beforeValidate![0]!;
+    // The ingest cron runs with `req.user === null`, and Payload replays the
+    // stored organisation into every update: the readiness sync must not 403.
+    for (const value of [undefined, 11, { id: 11 }]) {
+      expect(
+        await hook({
+          value,
+          operation: 'update',
+          originalDoc: { organisation: 11 },
+          req: { user: null },
+        } as never),
+      ).toEqual(value ?? 11);
+    }
+    // Changing the organisation still demands membership, user or not.
+    await expect(async () =>
+      hook({
+        value: 12,
+        operation: 'update',
+        originalDoc: { organisation: 11 },
+        req: { user: null },
+      } as never),
+    ).rejects.toThrow(/organisation/i);
+  });
+
   it('limits the selector to memberships while retaining the global admin exception', async () => {
     const filter = organisationField().filterOptions as (args: unknown) => unknown;
     expect(filter).toBeTypeOf('function');

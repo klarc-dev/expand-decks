@@ -31,6 +31,7 @@ function knowledgeBaseIds(sourceIds: readonly string[]): number[] {
 // This route intentionally coordinates authentication, validation, and workflow startup at one boundary.
 // fallow-ignore-next-line complexity
 export async function POST(req: NextRequest) {
+  // fallow-ignore-next-line code-duplication -- route auth shape is framework-local and intentionally explicit.
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: req.headers });
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
@@ -47,18 +48,9 @@ export async function POST(req: NextRequest) {
   }
   const { presentationId, brief, mode, visual, approvalRequired, slideCountRange } = parsed.data;
   const model = parsed.data.model || DEFAULT_AGENT_MODEL;
-  if (model !== DEFAULT_AGENT_MODEL) {
-    try {
-      await verifyAgentModel(model);
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Modèle indisponible' },
-        { status: 422 },
-      );
-    }
-  }
   let sourceIds: string[];
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
+  let notReady: string[] = [];
   try {
     const requestedPolicy = parsed.data.sourcePolicy ?? legacySourcePolicy(parsed.data.sourceIds);
     const resolved = await resolveSourcePolicy(requestedPolicy, {
@@ -67,6 +59,12 @@ export async function POST(req: NextRequest) {
     });
     sourcePolicy = resolved.policy.mode;
     sourceIds = resolved.sources.map((source) => source.id);
+    // A base whose documents are not indexed would make the run research
+    // nothing: refuse before the ledger row exists, so no orphan `queued` run
+    // blocks the next start with a 409.
+    notReady = resolved.sources
+      .filter((source) => source.transport === 'knowledge' && source.readiness !== 'ready')
+      .map((source) => source.label);
   } catch (error) {
     if (error instanceof UnknownSourceError) {
       return NextResponse.json(
@@ -83,6 +81,15 @@ export async function POST(req: NextRequest) {
     throw error;
   }
 
+  if (notReady.length > 0) {
+    return NextResponse.json(
+      {
+        error: `Base(s) de connaissances pas encore indexée(s) : ${notReady.join(', ')}. Attendez la fin de l’indexation.`,
+      },
+      { status: 400 },
+    );
+  }
+
   const presentation = await payload.findByID({
     collection: COLLECTIONS.presentations,
     id: presentationId,
@@ -91,6 +98,7 @@ export async function POST(req: NextRequest) {
   });
   if (!presentation)
     return NextResponse.json({ error: 'Présentation introuvable' }, { status: 404 });
+  // fallow-ignore-next-line code-duplication -- route auth shape is framework-local and intentionally explicit.
   if (!userIsOrganisationMember(user, presentation.organisation)) {
     return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
   }
@@ -130,6 +138,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Un build agentique est déjà en cours' }, { status: 409 });
   }
 
+  // Probing the gateway costs an outbound LLM round-trip, so it runs only once
+  // the caller is authorised for this presentation and no run is already active.
+  if (model !== DEFAULT_AGENT_MODEL) {
+    try {
+      await verifyAgentModel(model);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Modèle indisponible' },
+        { status: 422 },
+      );
+    }
+  }
+
+  const deckHasSlides = Array.isArray(presentation.slides) && presentation.slides.length > 0;
   const runId = randomUUID();
   const requestId = req.headers.get('x-request-id')?.slice(0, 128) || randomUUID();
   const traceId = randomBytes(16).toString('hex');
@@ -174,30 +196,31 @@ export async function POST(req: NextRequest) {
     },
     user,
   });
-  await payload.update({
-    collection: COLLECTIONS.presentations,
-    id: presentationId,
-    data: {
-      latestAgentRun: run.id,
-      agentBrief: brief,
-      agentSlideCountMin: slideCountRange?.min ?? null,
-      agentSlideCountMax: slideCountRange?.max ?? null,
-      agentKnowledgeBases: knowledgeBaseIds(sourceIds),
-      agentExternalSources: sourceIds.filter((id) => !id.startsWith(KNOWLEDGE_PREFIX)),
-      agentMode: mode,
-      agentModel: model,
-      agentVisualCritique: visual,
-      agentApprovalRequired: approvalRequired,
-      draftRunId: runId,
-      draftRequestId: requestId,
-      draftTraceId: traceId,
-      draftStatus: DRAFT_STATUS.gathering,
-    },
-    overrideAccess: true,
-    context: { [CTX.skipBuildQueue]: true },
-  });
-
   try {
+    await payload.update({
+      collection: COLLECTIONS.presentations,
+      id: presentationId,
+      data: {
+        latestAgentRun: run.id,
+        agentBrief: brief,
+        agentSlideCountMin: slideCountRange?.min ?? null,
+        agentSlideCountMax: slideCountRange?.max ?? null,
+        agentKnowledgeBases: knowledgeBaseIds(sourceIds),
+        agentExternalSources: sourceIds.filter((id) => !id.startsWith(KNOWLEDGE_PREFIX)),
+        // An empty deck always starts in 'replace'; persisting that coercion would
+        // silently turn the author's stored mode destructive for the next run.
+        ...(deckHasSlides ? { agentMode: mode } : {}),
+        agentModel: model,
+        agentVisualCritique: visual,
+        agentApprovalRequired: approvalRequired,
+        draftRunId: runId,
+        draftRequestId: requestId,
+        draftTraceId: traceId,
+        draftStatus: DRAFT_STATUS.gathering,
+      },
+      overrideAccess: true,
+      context: { [CTX.skipBuildQueue]: true },
+    });
     const job = await payload.jobs.queue({
       task: AGENT_DRAFT_TASK,
       input: {
@@ -217,7 +240,7 @@ export async function POST(req: NextRequest) {
       id: run.id,
       data: {
         status: 'failed',
-        errorCode: 'queue-failed',
+        errorCode: 'start-failed',
         errorSummary: String(error).slice(0, 2_000),
       },
       overrideAccess: true,

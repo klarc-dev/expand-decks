@@ -101,6 +101,7 @@ function knowledgeDescriptor(base: KnowledgeBaseSourceRecord): KnowledgeSourceDe
     transport: 'knowledge' as const,
     knowledgeBaseId: base.id,
     indexName: knowledgeIndexName(base.id),
+    readiness: base.readiness ?? 'empty',
     allowedTools: ['search'],
     timeoutMs: DEFAULT_SOURCE_TIMEOUT_MS,
     failureMode: 'strict' as const,

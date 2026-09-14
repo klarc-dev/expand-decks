@@ -27,7 +27,7 @@ const payload = vi.hoisted(() => ({
       collection === 'agent-runs' && state.ledger
         ? [state.ledger]
         : collection === 'knowledge-bases'
-          ? [{ id: 42, name: 'Contrats' }]
+          ? [{ id: 42, name: 'Contrats', readiness: 'ready' }]
           : [],
   })),
   findByID: vi.fn(async ({ collection }: { collection: string }) =>

@@ -7,12 +7,18 @@ import {
   isAdminOrAuthor,
   isOrganisationAuthor,
   isOrganisationMember,
+  relationshipId,
   userIsAdminOrAuthor,
   userIsOrganisationMember,
 } from '../access/roles';
-import { BUILD_COOLDOWN_MS, MAX_SLIDES, MIN_SLIDES } from '../lib/draftConfig';
+import {
+  BUILD_COOLDOWN_MS,
+  MAX_SELECTED_SOURCES,
+  MAX_SLIDES,
+  MIN_BRIEF_CHARS,
+  MIN_SLIDES,
+} from '../lib/draftConfig';
 import { DEFAULT_AGENT_MODEL, agentModelSchema } from '../lib/agentModel';
-import { MAX_SELECTED_SOURCES } from '../lib/sources/types';
 import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
 import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMetadata';
 import { isValidSlug, slugFromTitle } from '../lib/slug';
@@ -88,6 +94,28 @@ async function beforePresentationDelete({ id, req }: Parameters<CollectionBefore
 const agentOptionAccess = {
   update: ({ doc }: { doc?: Record<string, unknown> }) =>
     !ACTIVE_DRAFT_STATUSES.has(doc?.draftStatus as string),
+};
+
+/**
+ * Fields the durable run owns. Writable only by `overrideAccess` writers (the
+ * agent-draft routes and the run worker), never by an admin or REST save — a
+ * mid-run form submit would otherwise reset the pointer to the live run.
+ */
+const runPointerAccess = { update: () => false };
+
+/**
+ * Ready bases, plus whatever this document already stores. Payload enforces
+ * `filterOptions` server-side on every write carrying the value, so a base that
+ * drifts off `ready` (a reindex, a failed document) would otherwise make the
+ * presentation unsaveable until indexing finishes.
+ */
+const readyOrSelectedKnowledgeBases = ({ data }: { data?: Record<string, unknown> }) => {
+  const ready = { readiness: { equals: 'ready' } };
+  const selected = (Array.isArray(data?.agentKnowledgeBases) ? data.agentKnowledgeBases : [])
+    .map((entry) => relationshipId((entry as { value?: unknown })?.value ?? entry))
+    .filter((id): id is number | string => id !== undefined);
+  // Payload rejects an empty `in`, so only union a non-empty selection.
+  return selected.length > 0 ? { or: [ready, { id: { in: selected } }] } : ready;
 };
 
 /** Both bounds or neither, and min <= max. Shared by the two number fields. */
@@ -392,6 +420,7 @@ export const Presentations: CollectionConfig = {
       type: 'select',
       defaultValue: DRAFT_STATUS.idle,
       label: 'Build IA',
+      access: runPointerAccess,
       admin: {
         readOnly: true,
         position: 'sidebar',
@@ -412,6 +441,7 @@ export const Presentations: CollectionConfig = {
       type: 'relationship',
       relationTo: COLLECTIONS.agentRuns,
       label: 'Dernier run IA',
+      access: runPointerAccess,
       admin: { readOnly: true, position: 'sidebar' },
     },
     {
@@ -444,6 +474,9 @@ export const Presentations: CollectionConfig = {
               name: 'agentBrief',
               type: 'textarea',
               label: 'Brief',
+              // Only enforced on a non-empty value: the field stays optional
+              // until a run is started, which requires the same floor.
+              minLength: MIN_BRIEF_CHARS,
               access: agentOptionAccess,
               admin: {
                 rows: 5,
@@ -489,7 +522,7 @@ export const Presentations: CollectionConfig = {
               relationTo: COLLECTIONS.knowledgeBases,
               hasMany: true,
               maxRows: MAX_SELECTED_SOURCES,
-              filterOptions: { readiness: { equals: 'ready' } },
+              filterOptions: readyOrSelectedKnowledgeBases,
               label: 'Bases de connaissances',
               access: agentOptionAccess,
               admin: {
@@ -500,6 +533,7 @@ export const Presentations: CollectionConfig = {
               name: 'agentExternalSources',
               type: 'text',
               hasMany: true,
+              maxRows: MAX_SELECTED_SOURCES,
               label: 'Sources externes',
               access: agentOptionAccess,
               admin: {
@@ -571,16 +605,19 @@ export const Presentations: CollectionConfig = {
             {
               name: 'draftRunId',
               type: 'text',
+              access: runPointerAccess,
               admin: { hidden: true, readOnly: true },
             },
             {
               name: 'draftRequestId',
               type: 'text',
+              access: runPointerAccess,
               admin: { hidden: true, readOnly: true },
             },
             {
               name: 'draftTraceId',
               type: 'text',
+              access: runPointerAccess,
               admin: { hidden: true, readOnly: true },
             },
           ],

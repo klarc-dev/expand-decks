@@ -113,6 +113,45 @@ describe('durable slide count range propagation', () => {
   });
 });
 
+describe('approval suspension', () => {
+  it('stores the Mastra suspend payload, not the suspended step paths', async () => {
+    mocks.stream.mockReturnValue({
+      fullStream: { async *[Symbol.asyncIterator]() {} },
+      result: Promise.resolve({
+        status: 'suspended',
+        suspended: [['approval']],
+        suspendPayload: { reason: 'approval', outline: [{ title: 'T', intent: 'I' }] },
+      }),
+    });
+    const { payload, update } = fixture(null);
+
+    expect(await runAgentCommand(payload, 7)).toMatchObject({ suspended: true });
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'agent-runs',
+        data: expect.objectContaining({
+          status: 'suspended',
+          suspendPayload: { reason: 'approval', outline: [{ title: 'T', intent: 'I' }] },
+        }),
+      }),
+    );
+  });
+
+  it('falls back to the suspended paths when the workflow carries no payload', async () => {
+    const { payload, update } = fixture(null);
+
+    await runAgentCommand(payload, 7);
+
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection: 'agent-runs',
+        data: expect.objectContaining({ suspendPayload: {} }),
+      }),
+    );
+  });
+});
+
 describe('normalizeWorkflowPhase', () => {
   it('ignores Mastra mapping step ids that are not durable agent phases', () => {
     expect(normalizeWorkflowPhase('mapping_deckWorkflow_0')).toBeUndefined();
