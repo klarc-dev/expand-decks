@@ -4,7 +4,7 @@
  * Idempotent: upserts one media doc per logomark variant (by filename) and the
  * "klarc" organisation (by name, case-insensitive), then points the org's
  * `logo` (colour), `logoWhite` and `logoBlack` at those media docs. Safe to
- * re-run — reuses existing media/org instead of duplicating, and never
+ * re-run: reuses existing media/org instead of duplicating, and never
  * overwrites a logo variant the org already has.
  *
  * Run from the slides/ repo root with DATABASE_URL exported:
@@ -94,7 +94,7 @@ async function main() {
         overrideAccess: true,
       });
       console.log(
-        `Updated organisation "${org.name}" (id ${org.id}) — set ${JSON.stringify(missing)}.`,
+        `Updated organisation "${org.name}" (id ${org.id}), set ${JSON.stringify(missing)}.`,
       );
     }
   } else {

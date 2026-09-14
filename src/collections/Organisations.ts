@@ -100,16 +100,16 @@ export const Organisations: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            logoField('logo', 'Logo couleur', 'Version couleur — affichée sur fond clair'),
+            logoField('logo', 'Logo couleur', 'Version couleur, affichée sur fond clair'),
             logoField(
               'logoWhite',
               'Logo blanc',
-              'Version blanche — affichée sur fond coloré ou sombre',
+              'Version blanche, affichée sur fond coloré ou sombre',
             ),
             logoField(
               'logoBlack',
               'Logo noir',
-              'Version noire — utilisée sur fond clair si la version couleur manque',
+              'Version noire, utilisée sur fond clair si la version couleur manque',
             ),
           ],
         },
