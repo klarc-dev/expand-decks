@@ -1,6 +1,8 @@
 import { RequestContext } from '@mastra/core/request-context';
 import { z } from 'zod';
 
+import type { DeckLanguage } from './language';
+
 export const DECK_PHASES = ['gather', 'structure', 'draft', 'validate', 'visual', 'fonts'] as const;
 
 export const DeckRequestContextSchema = z.object({
@@ -10,6 +12,8 @@ export const DeckRequestContextSchema = z.object({
   userId: z.string().min(1).max(128).optional(),
   organizationId: z.string().min(1).max(128).optional(),
   model: z.string().min(1).max(128).optional(),
+  /** Output language every localized agent must write in (see registry.ts). */
+  language: z.enum(['fr', 'en']).optional(),
   phase: z.enum(DECK_PHASES),
 });
 
@@ -36,6 +40,29 @@ export function childRequestContext(
     userId: parent.get('userId'),
     organizationId: parent.get('organizationId'),
     model: parent.get('model'),
+    language: parent.get('language'),
     phase,
   });
+}
+
+/** Loosely typed so it can be handed to any Mastra primitive regardless of its declared schema. */
+export type LanguageRequestContext = RequestContext<any>;
+
+/**
+ * Copy `parent` (or start empty) and pin the output language. The dossier's
+ * resolved language is authoritative downstream, so a phase always sets it
+ * explicitly rather than trusting whatever the caller's context carried.
+ */
+export function withDeckLanguage(
+  parent: RequestContext<any> | undefined,
+  language: DeckLanguage,
+): LanguageRequestContext {
+  const context = new RequestContext<any>();
+  if (parent) {
+    for (const [key, value] of parent.entries() as Iterable<[string, unknown]>) {
+      context.setRaw(key, value);
+    }
+  }
+  context.set('language', language);
+  return context;
 }

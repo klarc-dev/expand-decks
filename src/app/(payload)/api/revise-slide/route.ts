@@ -7,6 +7,7 @@ import { currentSlideContext } from '@/lib/currentDeckContext';
 import { slideRevisionSchema } from '@/lib/deckCrudContract';
 import { replaceSlideAt } from '@/lib/replaceSlideAt';
 import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
+import { resolveDocumentTemplate } from '@/documents/templates';
 import type { Presentation } from '@/payload-types';
 
 export async function POST(req: NextRequest) {
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
       instruction,
       language: presentation.language,
       slide: readable,
+      template: resolveDocumentTemplate(presentation.documentTemplate),
     });
     const [revisedRich] = await convertSlidesMarkdownToLexical([revised], payload);
     if (!revisedRich) {

@@ -13,6 +13,8 @@ import {
   type SourceFailure,
   type SourcePolicy,
 } from '../../lib/sources/types';
+import type { RequestContext } from '@mastra/core/request-context';
+
 import { researchWithSources } from '../model';
 
 export type ResearchResult = {
@@ -71,6 +73,7 @@ export async function researchSources(
     prompt: string;
     abortSignal?: AbortSignal;
     userId?: string;
+    requestContext?: RequestContext<any>;
   },
 ): Promise<ResearchResult> {
   const { policy, sources } = await resolveResearchPolicy(sourcePolicy, opts.userId);
@@ -100,6 +103,7 @@ export async function researchSources(
       toolsets,
       timeoutMs: Math.max(...sources.map((source) => source.timeoutMs)),
       toolCallConcurrency: Math.min(...sources.map((source) => source.toolCallConcurrency)),
+      requestContext: opts.requestContext,
       abortSignal: opts.abortSignal,
     });
     const evidence = recorder.snapshot();

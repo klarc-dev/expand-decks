@@ -21,22 +21,21 @@ export const deckQualityScorer = createScorer({
   .analyze(async ({ run }) => ({
     verdict: await generateStructured({
       name: 'eval:deck-quality',
-      instructions: `Judge the WHOLE deck, not isolated slides.
+      instructions: `Tu juges le deck ENTIER, pas des diapositives isolées.
 
 ${RUBRIC_PROMPT}
 
-The final score must reflect complete requested-concept coverage, coherent progression, non-redundancy, an actionable conclusion, requested language, and audience level.
+Le score final doit refléter la couverture complète des notions demandées, une progression cohérente, l'absence de redondance, une conclusion actionnable, la langue demandée et le niveau du public.
 
-Apply the same evidence boundary as the grounding scorer when judging fidelity: established general knowledge and clearly labeled generic examples needed to explain the requested subject are not scope drift merely because the allowed-facts list is non-exhaustive. Penalize only additions that introduce a real entity, false precision, disputed causal claim, guarantee, precise external authority, or personalized recommendation not supported by the request. Judge whether examples teach the requested distinction, not whether every generic premise appears verbatim in the brief.
+Applique la même frontière de preuve que le juge de fondement pour évaluer la fidélité : les connaissances générales établies et les exemples génériques clairement signalés, nécessaires pour expliquer le sujet demandé, ne constituent pas une dérive de périmètre au seul motif que la liste des faits autorisés n'est pas exhaustive. Pénalise uniquement les ajouts qui introduisent une entité réelle, une fausse précision, un lien causal contesté, une garantie, une autorité externe précise ou une recommandation personnalisée que la demande n'étaye pas. Juge si les exemples enseignent la distinction demandée, pas si chaque prémisse générique figure mot pour mot dans le brief.
 
-Derive the final score from the four numeric dimensions rather than applying an extra hidden grounding penalty already covered by the separate deck-grounding scorer. Use their arithmetic mean as the default; depart materially only when the requested language, audience level, required format, or a hard requirement fails. Do not score below that dimensional mean because of stylistic observations that are already reflected in progression or non-redundancy.`,
+Déduis le score final des quatre dimensions numériques, sans appliquer de pénalité de fondement cachée déjà couverte par le juge de fondement séparé. Utilise leur moyenne arithmétique par défaut ; ne t'en écarte sensiblement que si la langue demandée, le niveau du public, le format requis ou une exigence impérative fait défaut. Ne note pas sous cette moyenne dimensionnelle pour des observations stylistiques déjà reflétées dans la progression ou la non-redondance.`,
       schema: DeckQualityVerdict,
       prompt: `REQUEST AND EXPECTATIONS:\n${JSON.stringify(
         { input: run.input, groundTruth: run.groundTruth },
         null,
         2,
       )}\n\nGENERATED DECK:\n${JSON.stringify(run.output, null, 2)}`,
-      modelTier: 'judge',
     }),
   }))
   .generateScore(({ results }) => results.analyzeStepResult.verdict.score)
@@ -57,10 +56,9 @@ export const deckGroundingScorer = createScorer({
   .analyze(async ({ run }) => ({
     verdict: await generateStructured({
       name: 'eval:deck-grounding',
-      instructions: `You are an evidence auditor. First infer the task type from the request. When the author asks to explain, teach, or synthesize a topic, established general knowledge needed to answer that topic is supported even when the allowed-facts list is not exhaustive. The brief and allowed facts remain the only authority for claims specific to the author, organization, clients, or a real case, and for numbers, dates, quotations, attributions, studies, current events, precise sources, disputed causal claims, guarantees, and personalized recommendations. Clearly labeled generic examples are supported when they introduce no real entity, external authority, invented result, or false precision. Penalize statements about missing or unconfirmed author-specific information when the request is explanatory rather than an audit.`,
+      instructions: `Tu es l'auditeur des preuves. Déduis d'abord le type de tâche à partir de la demande. Lorsque l'auteur demande d'expliquer, d'enseigner ou de synthétiser un sujet, les connaissances générales établies nécessaires pour y répondre sont étayées même si la liste des faits autorisés n'est pas exhaustive. Le brief et les faits autorisés restent la seule autorité pour les affirmations propres à l'auteur, à son organisation, à ses clients ou à un cas réel, ainsi que pour les chiffres, dates, citations, attributions, études, actualités, sources précises, liens causaux contestés, garanties et recommandations personnalisées. Les exemples génériques clairement signalés sont étayés lorsqu'ils n'introduisent aucune entité réelle, autorité externe, résultat inventé ou fausse précision. Pénalise les affirmations sur des informations propres à l'auteur manquantes ou non confirmées lorsque la demande est explicative et non un audit.`,
       schema: GroundingVerdict,
       prompt: `GROUND TRUTH:\n${JSON.stringify(run.groundTruth, null, 2)}\n\nGENERATED DECK:\n${JSON.stringify(run.output, null, 2)}`,
-      modelTier: 'judge',
     }),
   }))
   .generateScore(({ results }) => results.analyzeStepResult.verdict.supportedRatio)

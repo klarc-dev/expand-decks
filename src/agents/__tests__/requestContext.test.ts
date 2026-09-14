@@ -4,6 +4,7 @@ import {
   childRequestContext,
   createDeckRequestContext,
   DeckRequestContextSchema,
+  withDeckLanguage,
 } from '../requestContext';
 
 describe('deck request context', () => {
@@ -33,5 +34,33 @@ describe('deck request context', () => {
     expect(parent.get('phase')).toBe('gather');
     expect(draft.get('phase')).toBe('draft');
     expect(visual.get('phase')).toBe('visual');
+  });
+
+  it('propagates the output language to child phases', () => {
+    const parent = createDeckRequestContext({
+      requestId: 'request-1',
+      presentationId: 'presentation-1',
+      runId: 'run-1',
+      language: 'en',
+      phase: 'gather',
+    });
+    expect(childRequestContext(parent, 'draft').get('language')).toBe('en');
+  });
+
+  it('pins the resolved language on a copy without mutating the caller context', () => {
+    const parent = createDeckRequestContext({
+      requestId: 'request-1',
+      presentationId: 'presentation-1',
+      runId: 'run-1',
+      model: 'high',
+      language: 'en',
+      phase: 'gather',
+    });
+    const pinned = withDeckLanguage(parent, 'fr');
+    expect(pinned.get('language')).toBe('fr');
+    expect(pinned.get('model')).toBe('high');
+    expect(pinned.get('requestId')).toBe('request-1');
+    expect(parent.get('language')).toBe('en');
+    expect(withDeckLanguage(undefined, 'en').get('language')).toBe('en');
   });
 });

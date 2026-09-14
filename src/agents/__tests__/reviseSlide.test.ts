@@ -35,7 +35,8 @@ describe('reviseSlide', () => {
     expect(call.prompt).toContain('Original comparison');
     expect(call.prompt).toContain('Shorten the copy');
     expect(call.instructions).toContain('UNE seule diapositive');
-    expect(call.instructions).toContain('Required output language: English');
+    expect(call.instructions).not.toContain('Required output language');
+    expect(call.requestContext?.get('language')).toBe('en');
   });
 
   it('forbids replacing the requested result with instructions about how to produce it', async () => {
@@ -56,8 +57,8 @@ describe('reviseSlide', () => {
     });
 
     const call = mockedGenerateStructured.mock.calls[0]![0];
-    expect(call.instructions).toContain('final audience-facing slide');
-    expect(call.instructions).toContain('Never describe what should be written');
+    expect(call.instructions).toContain('diapositive finale destinée au public');
+    expect(call.instructions).toContain("Ne décris jamais ce qu'il faudrait écrire");
     expect(
       call.validate?.({
         title: 'Add a slide with an example',

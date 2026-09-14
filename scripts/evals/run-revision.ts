@@ -44,14 +44,13 @@ for (const fixture of revisionDatasetV1) {
   const verdict = await generateStructured({
     name: 'eval:revision-quality',
     instructions:
-      'Judge whether the final deck performs the requested revision while preserving unrelated facts, examples, and structure. Score both dimensions independently from 0 to 1.',
+      'Juge si le deck final exécute la révision demandée tout en préservant les faits, exemples et la structure non concernés. Note les deux dimensions indépendamment, de 0 à 1.',
     schema: Verdict,
     prompt: buildRevisionJudgePrompt({
       expectations: fixture.groundTruth,
       initial,
       final: previous,
     }),
-    modelTier: 'judge',
   });
   itemResults.push({ externalId: fixture.externalId, verdict });
 }

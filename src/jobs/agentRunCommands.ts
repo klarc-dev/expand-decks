@@ -219,6 +219,7 @@ async function executeWorkflow(
     userId: String(idOf(ledger.createdBy) ?? ''),
     organizationId: idOf(ledger.organisation)?.toString(),
     model: ledger.model || 'high',
+    language: ledger.language,
     phase: 'gather',
   }) as never;
 

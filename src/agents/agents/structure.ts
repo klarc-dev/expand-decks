@@ -21,7 +21,9 @@ import {
 } from '../../documents/templates';
 import { INTENT_MAX, slideCountRangeSchema, type SlideCountRange } from '../../lib/draftConfig';
 import type { Evidence, SourceFailure, SourcePolicy } from '../../lib/sources/types';
-import { languageInstruction } from '../language';
+import { withDeckLanguage } from '../requestContext';
+import type { RequestContext } from '@mastra/core/request-context';
+
 import { generateStructured } from '../model';
 import { buildStructureSystemPrompt } from '../prompts/catalog';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
@@ -297,7 +299,9 @@ export async function structureWithProvenance(
   userId?: string,
   slideCountRange?: SlideCountRange,
   template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
+  requestContext?: RequestContext<any>,
 ): Promise<StructureResult> {
+  const context = withDeckLanguage(requestContext, dossier.language);
   const requestedRange = slideCountRange
     ? slideCountRangeSchema.parse(slideCountRange)
     : (requestedSlideRange(dossier.rawBrief) ??
@@ -333,12 +337,12 @@ export async function structureWithProvenance(
   for (let attempt = 0; ; attempt++) {
     const generated = await generateStructured({
       name: 'structure',
-      instructions: `${structureInstructions(template)}\n\n${languageInstruction(dossier.language)}`,
+      instructions: structureInstructions(template),
       schema,
       prompt,
       validate: findInformationalStyleViolations,
       maxValidationRepairs: 3,
-      modelTier: 'research',
+      requestContext: context,
       abortSignal,
     });
     const slides = finalizeOutline(generated.slides, template);
@@ -358,6 +362,7 @@ export async function structureWithProvenance(
         prompt: `${dossierPrompt(dossier)}\n\n---\nPOINTS NON COUVERTS :\n${uncovered.map((p) => `- ${p}`).join('\n')}`,
         abortSignal,
         userId,
+        requestContext: context,
       });
       sourceNotes = research.notes;
       evidence.push(...research.evidence);

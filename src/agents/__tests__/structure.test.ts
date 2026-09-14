@@ -241,11 +241,13 @@ describe('structure() explicit-brief fast-path', () => {
 
     await structure(baseDossier('brief libre'));
 
-    const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
+    const call = mockedGenerateStructured.mock.calls[0]![0];
+    const instructions = call.instructions;
     expect(instructions).toContain('Commence TOUJOURS par un bloc "cover"');
     expect(instructions).toContain('**statement**');
     expect(instructions).toContain('**table**');
-    expect(instructions).toContain('Langue de sortie imposée : français');
+    expect(instructions).not.toContain('Langue de sortie imposée');
+    expect(call.requestContext?.get('language')).toBe('fr');
   });
 
   it('includes the existing deck when planning a revision', async () => {

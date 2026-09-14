@@ -25,12 +25,16 @@ describe('gather prompt scope', () => {
 
     await gather('Brief libre', undefined, 'en');
 
-    const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
+    const call = mockedGenerateStructured.mock.calls[0]![0];
+    const instructions = call.instructions;
     expect(instructions).toContain('Tu extrais');
     expect(instructions).not.toContain('Layouts disponibles');
     expect(instructions).not.toContain('UNE FONCTION PAR DIAPOSITIVE');
     expect(instructions).not.toContain('CHARGE COGNITIVE');
     expect(instructions).not.toContain('Commence TOUJOURS');
-    expect(instructions).toContain('Required output language: English');
+    // The output language is carried by the request context, not concatenated
+    // into the phase prompt: the localized agent adds the policy itself.
+    expect(instructions).not.toContain('Required output language');
+    expect(call.requestContext?.get('language')).toBe('en');
   });
 });

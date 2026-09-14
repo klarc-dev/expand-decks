@@ -185,7 +185,6 @@ describe('generateStructured determinism', () => {
       instructions: 'Judge it',
       schema: z.object({ ok: z.boolean() }),
       prompt: 'go',
-      modelTier: 'judge',
       maxRepairs: 0,
     });
 
@@ -207,7 +206,6 @@ describe('generateStructured determinism', () => {
       instructions: 'Write it',
       schema: z.object({ ok: z.boolean() }),
       prompt: 'go',
-      modelTier: 'draft',
       agentRole: 'writer',
       maxRepairs: 0,
     });
@@ -235,7 +233,6 @@ describe('generateStructured determinism', () => {
         instructions: 'Judge it',
         schema: z.object({ ok: z.boolean() }),
         prompt: 'go',
-        modelTier: 'judge',
         maxRepairs: 1,
       }),
     ).resolves.toEqual({ ok: true });

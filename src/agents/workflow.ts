@@ -153,11 +153,18 @@ const gatherStep = createStep({
       inputData.language,
       abortSignal,
       requestContext?.get('userId'),
+      requestContext,
     );
     const init = getInitData() as DeckWorkflowInput;
     const groundedDossier = init.revisionContext
       ? dossier
-      : await groundDossier(dossier, evidence, abortSignal, inputData.groundingFacts ?? []);
+      : await groundDossier(
+          dossier,
+          evidence,
+          abortSignal,
+          inputData.groundingFacts ?? [],
+          requestContext,
+        );
     return {
       dossier: groundedDossier,
       evidence: validateGrounding(groundedDossier, evidence),
@@ -193,6 +200,7 @@ const structureStep = createStep({
       requestContext?.get('userId'),
       init.slideCountRange,
       template,
+      requestContext,
     );
     return {
       dossier: inputData.dossier,
@@ -234,7 +242,7 @@ const draftStep = createStep({
   id: 'draft',
   inputSchema: writerJob,
   outputSchema: slideT,
-  execute: async ({ inputData, abortSignal }) =>
+  execute: async ({ inputData, abortSignal, requestContext }) =>
     (await writeSlide(
       inputData.stub,
       inputData.dossier,
@@ -242,6 +250,7 @@ const draftStep = createStep({
       inputData.revisionContext,
       abortSignal,
       resolveDocumentTemplate(inputData.documentTemplate),
+      requestContext,
     )) as SlideBlock,
 });
 
@@ -254,7 +263,7 @@ const validateStep = createStep({
   id: 'validate',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData, getInitData, abortSignal, writer }) => {
+  execute: async ({ inputData, getInitData, abortSignal, writer, requestContext }) => {
     const { stubs, dossier, titles } = inputData;
     const template = resolveDocumentTemplate((getInitData() as DeckWorkflowInput).documentTemplate);
     const scored = await mapWithConcurrency(inputData.slides, WRITER_CONCURRENCY, (slide) =>
@@ -285,6 +294,7 @@ const validateStep = createStep({
         inputData.revisionContext,
         abortSignal,
         template,
+        requestContext,
       )) as SlideBlock;
     });
 
@@ -301,7 +311,7 @@ const visualStep = createStep({
   id: 'visual',
   inputSchema: bundle,
   outputSchema: bundle,
-  execute: async ({ inputData, getInitData, abortSignal, writer }) => {
+  execute: async ({ inputData, getInitData, abortSignal, writer, requestContext }) => {
     const init = getInitData() as DeckWorkflowInput;
     const template = resolveDocumentTemplate(init.documentTemplate);
     const title = init.title ?? inputData.dossier.coreIdea;
@@ -359,6 +369,7 @@ const visualStep = createStep({
           inputData.revisionContext,
           abortSignal,
           template,
+          requestContext,
         )) as SlideBlock;
       });
 

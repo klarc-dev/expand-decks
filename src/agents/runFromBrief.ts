@@ -4,6 +4,7 @@
  */
 import { resolveTargetLanguage } from './language';
 import { mastra } from './mastra';
+import { withDeckLanguage } from './requestContext';
 import { legacySourcePolicy, normalizeSourcePolicy } from '../lib/sources/policy';
 import type { SourcePolicy } from '../lib/sources/types';
 import type { DeckWorkflowOutput } from './workflow';
@@ -22,16 +23,18 @@ export async function runDeckFromBrief(
   const sourcePolicy = opts.sourcePolicy
     ? normalizeSourcePolicy(opts.sourcePolicy)
     : legacySourcePolicy(opts.sourceIds);
+  const language = resolveTargetLanguage(opts.language, brief);
   const run = await mastra.getWorkflow('deckWorkflow').createRun();
   const result = await run.start({
     inputData: {
       documentTemplate: opts.documentTemplate ?? 'presentation',
       brief,
-      language: resolveTargetLanguage(opts.language, brief),
+      language,
       sourcePolicy,
       visual: opts.visual === true,
       approvalRequired: false,
     },
+    requestContext: withDeckLanguage(undefined, language),
   });
   if (result.status !== 'success') {
     throw new Error(

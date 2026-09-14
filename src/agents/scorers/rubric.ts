@@ -63,7 +63,6 @@ async function judge(
     instructions: JUDGE_INSTRUCTIONS,
     schema: RubricVerdict,
     prompt: `Diapositive (JSON) :\n${JSON.stringify(slide, null, 2)}`,
-    modelTier: 'judge',
     abortSignal,
   });
 }

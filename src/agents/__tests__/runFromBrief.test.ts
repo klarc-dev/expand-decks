@@ -29,7 +29,12 @@ describe('runDeckFromBrief workflow input', () => {
         visual: true,
         approvalRequired: false,
       },
+      requestContext: expect.anything(),
     });
+    const { requestContext } = (mocks.start.mock.calls as unknown[][])[0]![0] as {
+      requestContext: { get: (key: string) => unknown };
+    };
+    expect(requestContext.get('language')).toBe('en');
   });
 
   it('preserves legacy non-empty sourceIds by deriving multiple-source policy', async () => {

@@ -28,6 +28,7 @@ import {
   agentForInvocation,
   agentForRole,
   instructionsForAgent,
+  tierForAgent,
   type DeckAgentRole,
 } from './registry';
 import { StylePolicyError } from './prompts/style';
@@ -154,7 +155,7 @@ export async function researchWithSources({
 
   const res = await withTransientRetry(name, abortSignal, () =>
     agent.generate(prompt as never, {
-      instructions: instructionsForAgent(agent, instructions),
+      instructions: instructionsForAgent(agent, instructions, effectiveRequestContext),
       toolsets: toolsets as never,
       toolChoice: 'required',
       maxSteps,
@@ -278,7 +279,6 @@ export async function generateStructured<T>({
   maxRepairs = 2,
   validate,
   maxValidationRepairs = 1,
-  modelTier = 'draft',
   agentRole,
   requestContext,
   abortSignal,
@@ -294,8 +294,11 @@ export async function generateStructured<T>({
   /** Optional semantic/deterministic validation after schema validation succeeds. */
   validate?: (value: T) => string[];
   maxValidationRepairs?: number;
-  modelTier?: AgentModelTier;
-  /** Explicit registered role; required when the invocation name is not canonical. */
+  /**
+   * Explicit registered role; required when the invocation name is not
+   * canonical. The agent decides the model tier (see registry.ts) and hence the
+   * sampling policy — there is deliberately no per-call tier override.
+   */
   agentRole?: DeckAgentRole;
   /** Durable per-run context; carries the selected CloudCLIProxy model. */
   requestContext?: RequestContext<any>;
@@ -307,12 +310,13 @@ export async function generateStructured<T>({
     (model ? new RequestContext<{ model: string }>([['model', model]]) : undefined);
   const emit = createTool({
     id: 'emit',
-    description: 'Emit the final structured result. Call this exactly once.',
+    description: 'Émet le résultat structuré final. Appelle cet outil exactement une fois.',
     inputSchema: schema,
     execute: async () => ({ ok: true }),
   });
 
   const agent = agentRole ? agentForRole(agentRole) : agentForInvocation(name);
+  const modelTier = tierForAgent(agent);
 
   // Build the user turn: plain string, or a content-parts message when images
   // are present (AI SDK v5 image part shape).
@@ -349,7 +353,8 @@ export async function generateStructured<T>({
       agent.generate(buildInput(userPrompt) as never, {
         instructions: instructionsForAgent(
           agent,
-          `${instructions}\n\nYou MUST call the \`emit\` tool exactly once with the result. Do not write prose.`,
+          `${instructions}\n\nTu DOIS appeler l'outil \`emit\` exactement une fois avec le résultat. N'écris aucune prose.`,
+          effectiveRequestContext,
         ),
         clientTools: { emit },
         toolChoice: { type: 'tool', toolName: 'emit' },

@@ -11,9 +11,11 @@
  */
 import { aiSchemaOf } from '../../blocks/spec/dsl';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
+import type { RequestContext } from '@mastra/core/request-context';
+
 import { buildWriterLayoutPrompt } from '../prompts/catalog';
-import { languageInstruction } from '../language';
 import { generateStructured } from '../model';
+import { withDeckLanguage } from '../requestContext';
 import { RUBRIC_PROMPT } from '../prompts/rubric';
 import { findFinalSlideViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
@@ -40,8 +42,6 @@ ${buildWriterLayoutPrompt(blockType, template)}
 Contraintes du support : ${template.agent.guidance}
 
 ${RUBRIC_PROMPT}
-
-${languageInstruction(dossier.language)}
 
 Tu dois livrer le résultat final destiné au public, jamais commenter le travail de rédaction. Exécute l'intention : si elle demande un exemple, écris l'exemple lui-même avec les faits autorisés, l'analyse et la conclusion ; si elle demande une comparaison, écris la comparaison. Ne décris jamais ce qu’il faudrait écrire, ajouter, créer ou montrer dans une diapositive.
 
@@ -123,6 +123,7 @@ export async function writeSlide(
   revisionContext?: string,
   abortSignal?: AbortSignal,
   template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
+  requestContext?: RequestContext<any>,
 ): Promise<Record<string, unknown>> {
   const existingSlide = existingSlideForStub(revisionContext, stub, template);
   if (existingSlide) return existingSlide;
@@ -162,6 +163,7 @@ export async function writeSlide(
     prompt,
     validate: findFinalSlideViolations,
     maxValidationRepairs: 3,
+    requestContext: withDeckLanguage(requestContext, dossier.language),
     abortSignal,
   });
 

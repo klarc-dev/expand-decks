@@ -41,4 +41,12 @@ describe('production deck scorer input normalization', () => {
     expect(extractDeckOutput(scorerRun.output)).toEqual(validDeck);
     expect(deckContractScore(scorerRun.output)).toBe(1);
   });
+
+  it('fails the gate when the deck was written in a language other than the requested one', () => {
+    const englishDeck = { ...validDeck, dossier: { language: 'en' } };
+    expect(deckContractScore(englishDeck, undefined, { language: 'en' })).toBe(1);
+    expect(deckContractScore(englishDeck, undefined, { language: 'fr' })).toBe(0);
+    // Legacy outputs without a dossier are not penalized.
+    expect(deckContractScore(validDeck, undefined, { language: 'fr' })).toBe(1);
+  });
 });

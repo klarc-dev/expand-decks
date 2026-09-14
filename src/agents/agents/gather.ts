@@ -10,9 +10,12 @@
  * The LLM call uses a schema WITHOUT rawBrief (the model doesn't produce it).
  * rawBrief is injected after the call so the returned DeckDossier is complete.
  */
+import type { RequestContext } from '@mastra/core/request-context';
+
 import type { Evidence, SourcePolicy } from '../../lib/sources/types';
 import { generateStructured } from '../model';
-import { languageInstruction, resolveTargetLanguage, type DeckLanguage } from '../language';
+import { resolveTargetLanguage, type DeckLanguage } from '../language';
+import { withDeckLanguage } from '../requestContext';
 import { findInformationalStyleViolations, INFORMATIONAL_STYLE_PROMPT } from '../prompts/style';
 import { DeckDossierSchema, type DeckDossier } from '../schemas';
 import { researchSources } from './research';
@@ -65,15 +68,19 @@ export async function gather(
   requestedLanguage?: DeckLanguage,
   abortSignal?: AbortSignal,
   userId?: string,
+  requestContext?: RequestContext<any>,
 ): Promise<GatherResult> {
   const language = resolveTargetLanguage(requestedLanguage, brief);
-  const localePolicy = languageInstruction(language);
+  // The output language travels in the request context: every localized agent
+  // (registry.ts) folds it into its own instructions.
+  const context = withDeckLanguage(requestContext, language);
   const { notes, evidence, failures } = await researchSources(sourcePolicy, {
     name: 'gather:research',
-    instructions: `${RESEARCH_INSTRUCTIONS}\n\n${localePolicy}`,
+    instructions: RESEARCH_INSTRUCTIONS,
     prompt: brief,
     abortSignal,
     userId,
+    requestContext: context,
   });
 
   const prompt = notes
@@ -82,12 +89,12 @@ export async function gather(
 
   const dossier = await generateStructured({
     name: 'gather',
-    instructions: `${GATHER_INSTRUCTIONS}\n\n${localePolicy}`,
+    instructions: GATHER_INSTRUCTIONS,
     schema: LLM_SCHEMA,
     prompt,
     validate: findInformationalStyleViolations,
     maxValidationRepairs: 3,
-    modelTier: 'research',
+    requestContext: context,
     abortSignal,
   });
   return {

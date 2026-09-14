@@ -1,7 +1,9 @@
+import type { RequestContext } from '@mastra/core/request-context';
 import { z } from 'zod';
 
 import type { Evidence } from '../lib/sources/types';
 import { generateStructured } from './model';
+import { withDeckLanguage } from './requestContext';
 import { DeckDossierSchema, type DeckDossier } from './schemas';
 
 const DossierGroundingVerdict = z.object({
@@ -43,14 +45,19 @@ export async function groundDossier(
   evidence: readonly Evidence[],
   abortSignal?: AbortSignal,
   additionalFacts: readonly string[] = [],
+  requestContext?: RequestContext<any>,
 ): Promise<DeckDossier> {
+  const context = withDeckLanguage(requestContext, dossier.language);
   const authorized = `BRIEF BRUT :\n${dossier.rawBrief}\n\nFAITS AUTORISÉS SUPPLÉMENTAIRES :\n${additionalFacts.length ? additionalFacts.map((fact) => `- ${fact}`).join('\n') : '(aucun)'}\n\nPREUVES CAPTURÉES :\n${evidenceText(evidence)}`;
   const verdict = await generateStructured({
     name: 'gather:grounding-audit',
     instructions: DOSSIER_GROUNDING_INSTRUCTIONS,
     schema: DossierGroundingVerdict,
     prompt: `${authorized}\n\nDOSSIER À AUDITER :\n${JSON.stringify(dossier, null, 2)}`,
-    modelTier: 'judge',
+    // The audit is a verdict, not dossier production: it runs under the judge
+    // role (pinned sampling, judge tier) rather than the gatherer that wrote it.
+    agentRole: 'rubric',
+    requestContext: context,
     abortSignal,
   });
   if (verdict.supported) return dossier;
@@ -60,8 +67,10 @@ export async function groundDossier(
     instructions: DOSSIER_REPAIR_INSTRUCTIONS,
     schema: DeckDossierSchema,
     prompt: `${authorized}\n\nDOSSIER NON FONDÉ :\n${JSON.stringify(dossier, null, 2)}\n\nAFFIRMATIONS À RETIRER OU GÉNÉRALISER :\n${verdict.unsupportedClaims.map((claim) => `- ${claim}`).join('\n')}\n\nMOTIF DE L'AUDIT : ${verdict.reason}`,
-    modelTier: 'research',
-    agentRole: 'research',
+    // Rebuilding a dossier from authorized material is the gatherer's job; the
+    // researcher role is for tool-driven source queries, which the repair has none of.
+    agentRole: 'gather',
+    requestContext: context,
     abortSignal,
   });
 }

@@ -50,7 +50,6 @@ async function judgeVisual(input: VisualInput): Promise<z.infer<typeof VisualVer
     schema: VisualVerdict,
     prompt: `Évalue le rendu visuel de cette diapositive (type: ${input.slide.blockType}, titre: ${String(input.slide.title ?? '')}).`,
     images: [input.image],
-    modelTier: 'visual',
     abortSignal: input.abortSignal,
   });
 }

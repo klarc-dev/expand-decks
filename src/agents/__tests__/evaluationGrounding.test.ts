@@ -27,12 +27,12 @@ describe('deck grounding scorer instructions', () => {
     } as never);
 
     const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
-    expect(instructions).toContain('established general knowledge');
+    expect(instructions).toContain('connaissances générales établies');
     expect(instructions).toContain(
-      'is supported even when the allowed-facts list is not exhaustive',
+      "sont étayées même si la liste des faits autorisés n'est pas exhaustive",
     );
-    expect(instructions).toContain('claims specific to the author');
-    expect(instructions).toContain('missing or unconfirmed author-specific information');
+    expect(instructions).toContain("affirmations propres à l'auteur");
+    expect(instructions).toContain("informations propres à l'auteur manquantes ou non confirmées");
   });
 
   it('keeps quality scoring orthogonal to explanatory grounding', async () => {
@@ -52,9 +52,9 @@ describe('deck grounding scorer instructions', () => {
     } as never);
 
     const instructions = mockedGenerateStructured.mock.calls[0]![0].instructions;
-    expect(instructions).toContain('established general knowledge');
-    expect(instructions).toContain('clearly labeled generic examples');
-    expect(instructions).toContain('separate deck-grounding scorer');
-    expect(instructions).toContain('arithmetic mean');
+    expect(instructions).toContain('connaissances générales établies');
+    expect(instructions).toContain('exemples génériques clairement signalés');
+    expect(instructions).toContain('juge de fondement séparé');
+    expect(instructions).toContain('moyenne arithmétique');
   });
 });

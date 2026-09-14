@@ -7,7 +7,11 @@ export type DeckEvalOutput = {
   markdown?: string;
   md?: string;
   evidence?: unknown[];
+  dossier?: { language?: unknown };
 };
+
+/** The subset of the eval input the contract gate checks against. */
+export type DeckEvalInputLike = { language?: unknown };
 
 export function extractDeckOutput(value: unknown): DeckEvalOutput {
   const output = value as DeckEvalOutput & {
@@ -28,10 +32,23 @@ export function extractDeckOutput(value: unknown): DeckEvalOutput {
   );
 }
 
-export function deckContractScore(value: unknown, groundTruth?: Partial<DeckGroundTruth>): 0 | 1 {
+export function deckContractScore(
+  value: unknown,
+  groundTruth?: Partial<DeckGroundTruth>,
+  input?: DeckEvalInputLike,
+): 0 | 1 {
   const deck = extractDeckOutput(value);
   const slides = deck.slides;
   if (!Array.isArray(slides)) return 0;
+  // The requested output language must have travelled through the workflow:
+  // the dossier's resolved language is what every localized agent wrote in.
+  if (
+    typeof input?.language === 'string' &&
+    deck.dossier?.language !== undefined &&
+    deck.dossier.language !== input.language
+  ) {
+    return 0;
+  }
   if (slides.length < (groundTruth?.minSlides ?? 3)) return 0;
   if (slides.length > (groundTruth?.maxSlides ?? 40)) return 0;
   if (slides[0]?.blockType !== 'cover') return 0;
@@ -49,5 +66,9 @@ export const deckContractGate = createScorer({
   name: 'Deck output contract',
   description: 'Hard gate for workflow completion and structural invariants.',
 }).generateScore(({ run }) =>
-  deckContractScore(run.output ?? run, run.groundTruth as Partial<DeckGroundTruth>),
+  deckContractScore(
+    run.output ?? run,
+    run.groundTruth as Partial<DeckGroundTruth>,
+    run.input as DeckEvalInputLike | undefined,
+  ),
 );

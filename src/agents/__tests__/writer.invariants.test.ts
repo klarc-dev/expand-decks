@@ -112,14 +112,16 @@ describe('writeSlide invariants', () => {
 
     await writeSlide(stub, dossier, []);
 
-    const instructions = mocked.mock.calls[0]![0].instructions;
+    const call = mocked.mock.calls[0]![0];
+    const instructions = call.instructions;
     expect(instructions).toContain('**statement**');
     expect(instructions).not.toContain('**cover**');
     expect(instructions).not.toContain('**table**');
     expect(instructions).not.toContain('Commence TOUJOURS');
     expect(instructions).not.toContain('Termine TOUJOURS');
     expect(instructions).not.toContain('nombre de diapositives');
-    expect(instructions).toContain('Required output language: English');
+    expect(instructions).not.toContain('Required output language');
+    expect(call.requestContext?.get('language')).toBe(dossier.language);
   });
 
   it('assigns cover and CTA distinct roles instead of repeating the thesis across the deck', async () => {
