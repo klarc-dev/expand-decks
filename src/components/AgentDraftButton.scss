@@ -79,6 +79,17 @@
     margin: 0;
   }
 
+  &__model-row {
+    display: flex;
+    align-items: center;
+    gap: var(--base);
+
+    > .admin-text-field {
+      flex: 1;
+      min-width: 12rem;
+    }
+  }
+
   &__option-help {
     flex-basis: 100%;
     margin: -6px 0 0;

@@ -11,6 +11,7 @@ import { mastra } from '../mastra';
 import {
   gatherAgent,
   researchAgent,
+  resolveDeckAgentModel,
   revisionAgent,
   rubricAgent,
   structureAgent,
@@ -39,7 +40,12 @@ describe('Mastra deck agent registry', () => {
   });
 
   it('configures research roles with the dedicated research model tier', () => {
-    expect(modelForTierMock.mock.calls.filter(([tier]) => tier === 'research')).toHaveLength(2);
+    expect(resolveDeckAgentModel('research')).toBe('research');
+    expect(modelForTierMock).toHaveBeenCalledWith('research');
+  });
+
+  it('honors a per-run model before the phase tier', () => {
+    expect(resolveDeckAgentModel('research', { get: () => 'custom-model' })).toBe('custom-model');
   });
 
   it('makes the final-output contract part of every role', async () => {

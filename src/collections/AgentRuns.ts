@@ -123,6 +123,7 @@ export const AgentRuns: CollectionConfig = {
       required: true,
       options: ['replace', 'augment', 'revise'],
     },
+    { name: 'model', type: 'text', required: true, defaultValue: 'high', maxLength: 128 },
     { name: 'brief', type: 'textarea', required: true, maxLength: 20_000 },
     { name: 'language', type: 'select', required: true, options: ['fr', 'en'] },
     { name: 'visual', type: 'checkbox', defaultValue: true },

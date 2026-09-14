@@ -103,7 +103,7 @@ async function finalizeSuccess(
   const organisationId = idOf(run.organisation);
   if (organisationId) {
     try {
-      const fontPair = await chooseFontPairForBrief(run.brief);
+      const fontPair = await chooseFontPairForBrief(run.brief, run.model || 'high');
       await payload.update({
         collection: COLLECTIONS.organisations,
         id: organisationId,
@@ -205,7 +205,12 @@ async function executeWorkflow(
     traceId: ledger.traceId,
     hideInput: true,
     hideOutput: true,
-    tags: ['deck-build', ledger.mode, ledger.visual === false ? 'no-visual' : 'visual'],
+    tags: [
+      'deck-build',
+      ledger.mode,
+      `model:${ledger.model || 'high'}`,
+      ledger.visual === false ? 'no-visual' : 'visual',
+    ],
   };
   const requestContext = createDeckRequestContext({
     requestId: ledger.requestId,
@@ -213,6 +218,7 @@ async function executeWorkflow(
     runId: ledger.mastraRunId,
     userId: String(idOf(ledger.createdBy) ?? ''),
     organizationId: idOf(ledger.organisation)?.toString(),
+    model: ledger.model || 'high',
     phase: 'gather',
   }) as never;
 

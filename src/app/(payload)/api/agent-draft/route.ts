@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const { presentationId, brief, mode, visual, approvalRequired, slideCountRange } = parsed.data;
+  const model = parsed.data.model || 'high';
   let sourceIds: string[];
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
   try {
@@ -130,6 +131,7 @@ export async function POST(req: NextRequest) {
       phase: 'gather',
       command: 'start',
       mode,
+      model,
       brief,
       language: presentation.language,
       visual,
@@ -141,6 +143,7 @@ export async function POST(req: NextRequest) {
         presentationId: String(presentationId),
         brief,
         mode,
+        model,
         visual,
         sourcePolicy,
         sourceIds,

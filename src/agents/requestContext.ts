@@ -9,6 +9,7 @@ export const DeckRequestContextSchema = z.object({
   runId: z.string().min(1).max(128),
   userId: z.string().min(1).max(128).optional(),
   organizationId: z.string().min(1).max(128).optional(),
+  model: z.string().min(1).max(128).optional(),
   phase: z.enum(DECK_PHASES),
 });
 
@@ -34,6 +35,7 @@ export function childRequestContext(
     runId: parent.get('runId')!,
     userId: parent.get('userId'),
     organizationId: parent.get('organizationId'),
+    model: parent.get('model'),
     phase,
   });
 }

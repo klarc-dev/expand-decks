@@ -1,11 +1,21 @@
 import { Agent } from '@mastra/core/agent';
 
+import { activeAgentModel } from '@/lib/agentModel';
 import { cloudCLIProxy, modelForTier, type AgentModelTier } from '../lib/ai';
 
 const FINAL_OUTPUT_INSTRUCTION =
   "Produis directement le résultat final demandé. Ne décris jamais le travail à effectuer, ce qu'il faudrait ajouter, ni la manière de produire le résultat.";
 
 const REGISTERED_INSTRUCTIONS = new WeakMap<object, string>();
+
+export function resolveDeckAgentModel(
+  modelTier: AgentModelTier,
+  requestContext?: { get: (key: 'model') => string | undefined },
+) {
+  return cloudCLIProxy(
+    requestContext?.get('model') || activeAgentModel() || modelForTier(modelTier),
+  );
+}
 
 function createDeckAgent(config: {
   id: string;
@@ -19,7 +29,7 @@ function createDeckAgent(config: {
     id: config.id,
     name: config.name,
     description: config.description,
-    model: cloudCLIProxy(modelForTier(config.modelTier)),
+    model: ({ requestContext }) => resolveDeckAgentModel(config.modelTier, requestContext),
     instructions,
   });
   REGISTERED_INSTRUCTIONS.set(agent, instructions);

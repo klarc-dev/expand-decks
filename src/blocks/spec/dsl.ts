@@ -259,7 +259,7 @@ export interface PromptMeta {
   lines: string[];
 }
 
-function fieldLimitSuffix(field: FieldSpec): string | undefined {
+function fieldLimitSuffix(field: FieldSpec, path: string): string | undefined {
   const payload = field.payload;
   const maxLength = payload?.maxLength ?? field.factoryArgs?.maxLength;
   const rowRange =
@@ -268,18 +268,48 @@ function fieldLimitSuffix(field: FieldSpec): string | undefined {
           .filter((value): value is number => value !== undefined)
           .join('–')
       : undefined;
-  if (rowRange) return `${field.name}: ${rowRange} éléments`;
-  if (maxLength !== undefined) return `${field.name}: ${maxLength} caractères max`;
+  if (rowRange) return `${path}: ${rowRange} éléments`;
+  if (maxLength !== undefined) return `${path}: ${maxLength} caractères max`;
   return undefined;
+}
+
+/**
+ * Emit the length/row budget of one field, then of every field NESTED inside it.
+ *
+ * Nested limits are not cosmetic. A writer told only `cards: 2–8 éléments` has
+ * no budget for `cards[].description`, overshoots the item's `maxLength`, and
+ * the whole draft then burns its schema-repair attempts on a length it was
+ * never given — observed live as a workflow failing on `cards.2.description`.
+ * Array items therefore surface as `cards[].description: N caractères max`.
+ *
+ * Composite factories (`cardTitleDesc`) carry their children's limits in
+ * `factoryArgs` rather than as fields, so they are expanded by name here.
+ */
+function fieldLimitLines(field: FieldSpec, prefix = ''): string[] {
+  if (field.factory === 'preview') return [];
+
+  const path = `${prefix}${field.name}`;
+  const own = fieldLimitSuffix(field, path);
+  const lines = own ? [own] : [];
+
+  const { titleMaxLength, descriptionMaxLength } = field.factoryArgs ?? {};
+  if (titleMaxLength !== undefined) lines.push(`${prefix}title: ${titleMaxLength} caractères max`);
+  if (descriptionMaxLength !== undefined) {
+    lines.push(`${prefix}description: ${descriptionMaxLength} caractères max`);
+  }
+
+  const nested = field.payload?.fields ?? [];
+  const nestedPrefix = field.payload?.type === 'array' ? `${path}[].` : `${path}.`;
+  return [...lines, ...nested.flatMap((child) => fieldLimitLines(child, nestedPrefix))];
 }
 
 export function promptLinesOf(spec: BlockSpec): string[] {
   const authored = spec.promptMeta?.lines ?? [];
-  const limits = spec.fields.flatMap((field) => {
-    if (field.ai === false || field.factory === 'preview') return [];
-    const suffix = fieldLimitSuffix(field);
-    return suffix ? [suffix] : [];
-  });
+  // A non-draftable top-level field stays invisible to the writer. Nested
+  // fields are not filtered: inside a draftable array they are part of the
+  // item the writer must emit, even when the child itself carries `ai: false`
+  // (composite factories declare their limits, not an AI schema).
+  const limits = spec.fields.flatMap((field) => (field.ai === false ? [] : fieldLimitLines(field)));
   return [...authored, ...limits];
 }
 

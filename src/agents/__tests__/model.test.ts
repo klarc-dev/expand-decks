@@ -303,6 +303,55 @@ describe('generateStructured schema repair', () => {
       }),
     ).resolves.toEqual({ action: 'fits' });
   });
+
+  it('deterministically bounds a length-only violation after the normal repair budget', async () => {
+    // The gateway may ignore the requested cut repeatedly. Once the normal
+    // repair turns are exhausted, the structured boundary must still return a
+    // schema-valid label rather than discard the whole deck.
+    generateMock.mockResolvedValue({
+      finishReason: 'tool-calls',
+      toolCalls: [
+        {
+          payload: {
+            toolName: 'emit',
+            args: {
+              action: 'Planifier immédiatement une expérimentation sur une équipe volontaire',
+            },
+          },
+        },
+      ],
+    });
+
+    const result = await generateStructured({
+      name: 'writer:cta',
+      instructions: 'Write it',
+      schema: z.object({ action: z.string().max(50) }),
+      prompt: 'go',
+    });
+
+    expect(result.action).toBe('Planifier immédiatement une expérimentation sur');
+    expect(result.action.length).toBeLessThanOrEqual(50);
+    expect(generateMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not extend the budget for a structural violation', async () => {
+    // A wrong type means the model misread the layout; re-asking rarely
+    // converges, so that budget stays small.
+    generateMock.mockResolvedValue({
+      finishReason: 'tool-calls',
+      toolCalls: [{ payload: { toolName: 'emit', args: { action: 42 } } }],
+    });
+
+    await expect(
+      generateStructured({
+        name: 'writer:cta',
+        instructions: 'Write it',
+        schema: z.object({ action: z.string().max(50) }),
+        prompt: 'go',
+      }),
+    ).rejects.toBeDefined();
+    expect(generateMock).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('researchWithSources', () => {

@@ -5,18 +5,20 @@ export function agentRunFingerprint(input: {
   presentationId: string;
   brief: string;
   mode: string;
+  model?: string;
   visual: boolean;
   sourcePolicy?: string;
   sourceIds: readonly string[];
   approvalRequired: boolean;
   slideCountRange?: SlideCountRange | null;
 }): string {
-  const { slideCountRange, ...legacyInput } = input;
+  const { slideCountRange, model, ...legacyInput } = input;
   const sourcePolicy = input.sourcePolicy ?? (input.sourceIds.length === 0 ? 'none' : 'multiple');
   return createHash('sha256')
     .update(
       JSON.stringify({
         ...legacyInput,
+        ...(model ? { model } : {}),
         sourcePolicy,
         sourceIds: [...input.sourceIds].sort(),
         ...(slideCountRange

@@ -1,3 +1,4 @@
+import { RequestContext } from '@mastra/core/request-context';
 import { z } from 'zod';
 
 import { GoogleFontsUnavailableError, LOCAL_FONTS, listGoogleFonts } from '@/lib/googleFonts';
@@ -16,7 +17,7 @@ const FontPairSchema = z.object({
  * the catalog cannot be loaded — a deck built with stub typography is a silent
  * regression, so the build fails visibly instead.
  */
-export async function chooseFontPairForBrief(brief: string): Promise<FontPair> {
+export async function chooseFontPairForBrief(brief: string, model?: string): Promise<FontPair> {
   const catalog = await listGoogleFonts({ sort: 'popularity' });
   const families = [...LOCAL_FONTS, ...catalog]
     .map((f) => f.family)
@@ -28,6 +29,9 @@ export async function chooseFontPairForBrief(brief: string): Promise<FontPair> {
     );
   }
 
+  const requestContext = model
+    ? new RequestContext<{ model: string }>([['model', model]])
+    : undefined;
   const result = await generateStructured({
     name: 'font-pair',
     instructions: `Tu es directeur artistique typographique. Choisis une paire de familles Google Fonts pour une présentation professionnelle.
@@ -53,6 +57,7 @@ ${families.join(', ')}`,
       return errors;
     },
     maxValidationRepairs: 2,
+    requestContext,
   });
 
   return result;

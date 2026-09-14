@@ -1,9 +1,12 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 /**
- * AI provider wired to CloudCLIProxy's OpenAI-compatible endpoint. The proxy's
- * default model is GPT-6 Astra. Deployment-wide and per-phase environment
- * overrides remain available for explicit model selection.
+ * AI provider wired to CloudCLIProxy's OpenAI-compatible endpoint. The default
+ * model is the proxy's stable `high` alias rather than a concrete model id: a
+ * pinned id (previously `gpt-6-astra`) can enter a days-long per-credential
+ * cooldown upstream, which surfaces as a 429 naming the failing provider and
+ * takes drafting down until someone edits an env var. Deployment-wide and
+ * per-phase environment overrides remain available for explicit selection.
  *
  * Structured-output callers use tool calling instead of `json_schema`, which
  * keeps the contract portable across OpenAI-compatible proxies.
@@ -26,7 +29,7 @@ const MODEL_ENV: Record<AgentModelTier, string> = {
 };
 
 export function modelForTier(tier: AgentModelTier): string {
-  return process.env[MODEL_ENV[tier]] || process.env.OPENAI_MODEL || 'gpt-6-astra';
+  return process.env[MODEL_ENV[tier]] || process.env.OPENAI_MODEL || 'high';
 }
 
 export const DRAFT_MODEL = modelForTier('draft');

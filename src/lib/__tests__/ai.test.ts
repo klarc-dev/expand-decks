@@ -5,11 +5,11 @@ import { forceNonStreamFetch, modelForTier } from '../ai';
 describe('model routing', () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it('defaults every phase to GPT-6 Astra while retaining explicit overrides', () => {
+  it('defaults every phase to the stable `high` alias while retaining explicit overrides', () => {
     vi.stubEnv('OPENAI_MODEL', '');
     for (const tier of ['research', 'draft', 'judge', 'visual'] as const) {
       vi.stubEnv(`OPENAI_${tier.toUpperCase()}_MODEL`, '');
-      expect(modelForTier(tier)).toBe('gpt-6-astra');
+      expect(modelForTier(tier)).toBe('high');
     }
     vi.stubEnv('OPENAI_MODEL', 'custom-default');
     expect(modelForTier('research')).toBe('custom-default');

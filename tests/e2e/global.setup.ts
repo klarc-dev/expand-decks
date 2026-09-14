@@ -452,6 +452,7 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
       phase: 'complete',
       command: 'start',
       mode: 'replace',
+      model: 'high',
       brief: 'Deterministic E2E agent run',
       language: 'fr',
       visual: false,

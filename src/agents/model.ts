@@ -16,6 +16,8 @@
  * runtime — the Mastra-native replacement for `src/lib/ai.ts` `draftObject`.
  */
 import type { OutputProcessor } from '@mastra/core/processors';
+import { RequestContext } from '@mastra/core/request-context';
+import { activeAgentModel } from '@/lib/agentModel';
 import { createTool } from '@mastra/core/tools';
 import type { z } from 'zod';
 
@@ -108,6 +110,7 @@ export async function researchWithSources({
   maxSteps = DEFAULT_RESEARCH_MAX_STEPS,
   toolCallConcurrency = 2,
   onToolResult,
+  requestContext,
   abortSignal,
 }: {
   name: string;
@@ -117,6 +120,7 @@ export async function researchWithSources({
   timeoutMs?: number;
   maxSteps?: number;
   toolCallConcurrency?: number;
+  requestContext?: RequestContext<any>;
   abortSignal?: AbortSignal;
   onToolResult?: (result: {
     toolName: string;
@@ -125,6 +129,10 @@ export async function researchWithSources({
     result: unknown;
   }) => void;
 }): Promise<string> {
+  const model = activeAgentModel();
+  const effectiveRequestContext =
+    requestContext ||
+    (model ? new RequestContext<{ model: string }>([['model', model]]) : undefined);
   const sourceBoundary: OutputProcessor = {
     id: 'source-tool-boundary',
     processToolResult({ toolName, toolCallId, args, result, messageList }) {
@@ -152,6 +160,7 @@ export async function researchWithSources({
       maxSteps,
       toolCallConcurrency,
       outputProcessors: [sourceBoundary],
+      requestContext: effectiveRequestContext,
       abortSignal: combineAbortSignals(abortSignal, timeoutMs),
     }),
   );
@@ -185,6 +194,54 @@ const samplingFor = (tier: AgentModelTier, attempt: number) =>
         modelSettings: { temperature: 0, seed: JUDGE_SEED + attempt },
       } as const)
     : undefined;
+
+/** Length-only schema errors are eligible for deterministic bounding after repairs. */
+const isLengthOnly = (issues: readonly z.core.$ZodIssue[]) =>
+  issues.every((issue) => issue.code === 'too_big');
+
+function valueAtPath(value: unknown, path: PropertyKey[]): unknown {
+  return path.reduce<unknown>((current, key) => {
+    if (current === null || typeof current !== 'object') return undefined;
+    return (current as Record<PropertyKey, unknown>)[key];
+  }, value);
+}
+
+function setAtPath(value: unknown, path: PropertyKey[], replacement: unknown): boolean {
+  if (path.length === 0) return false;
+  const parent = valueAtPath(value, path.slice(0, -1));
+  if (parent === null || typeof parent !== 'object') return false;
+  (parent as Record<PropertyKey, unknown>)[path.at(-1)!] = replacement;
+  return true;
+}
+
+/** Cut prose at a word boundary where possible; never append beyond the schema limit. */
+function boundString(value: string, maximum: number): string {
+  if (value.length <= maximum) return value;
+  const hardCut = value.slice(0, maximum).trimEnd();
+  const lastSpace = hardCut.lastIndexOf(' ');
+  return lastSpace > 0 ? hardCut.slice(0, lastSpace).trimEnd() : hardCut;
+}
+
+/**
+ * Deterministic last resort for output that is valid except for string lengths.
+ * Returns null unless every issue can be corrected and the full schema accepts
+ * the corrected object; no structural error is ever coerced.
+ */
+function boundLengthOnlyOutput<T>(
+  args: unknown,
+  issues: readonly z.core.$ZodIssue[],
+  schema: z.ZodType<T>,
+): T | null {
+  if (!isLengthOnly(issues)) return null;
+  const corrected = structuredClone(args);
+  for (const issue of issues) {
+    const actual = valueAtPath(corrected, issue.path);
+    if (typeof actual !== 'string' || typeof issue.maximum !== 'number') return null;
+    if (!setAtPath(corrected, issue.path, boundString(actual, issue.maximum))) return null;
+  }
+  const parsed = schema.safeParse(corrected);
+  return parsed.success ? parsed.data : null;
+}
 
 /**
  * Describe one schema violation for the repair turn.
@@ -223,6 +280,7 @@ export async function generateStructured<T>({
   maxValidationRepairs = 1,
   modelTier = 'draft',
   agentRole,
+  requestContext,
   abortSignal,
 }: {
   name: string;
@@ -239,8 +297,14 @@ export async function generateStructured<T>({
   modelTier?: AgentModelTier;
   /** Explicit registered role; required when the invocation name is not canonical. */
   agentRole?: DeckAgentRole;
+  /** Durable per-run context; carries the selected CloudCLIProxy model. */
+  requestContext?: RequestContext<any>;
   abortSignal?: AbortSignal;
 }): Promise<T> {
+  const model = activeAgentModel();
+  const effectiveRequestContext =
+    requestContext ||
+    (model ? new RequestContext<{ model: string }>([['model', model]]) : undefined);
   const emit = createTool({
     id: 'emit',
     description: 'Emit the final structured result. Call this exactly once.',
@@ -290,6 +354,7 @@ export async function generateStructured<T>({
         clientTools: { emit },
         toolChoice: { type: 'tool', toolName: 'emit' },
         maxSteps: 1,
+        requestContext: effectiveRequestContext,
         ...samplingFor(modelTier, attempt),
         abortSignal: combineAbortSignals(abortSignal, timeoutMs),
       }),
@@ -305,7 +370,11 @@ export async function generateStructured<T>({
 
     const parsed = schema.safeParse(args);
     if (!parsed.success) {
-      if (schemaRepairs >= maxRepairs) throw parsed.error;
+      if (schemaRepairs >= maxRepairs) {
+        const bounded = boundLengthOnlyOutput(args, parsed.error.issues, schema);
+        if (bounded !== null) return bounded;
+        throw parsed.error;
+      }
       schemaRepairs++;
       userPrompt = `${prompt}\n\n---\nLa sortie précédente a échoué la validation du schéma :\n${parsed.error.issues
         .map((issue) => describeIssue(issue, args))

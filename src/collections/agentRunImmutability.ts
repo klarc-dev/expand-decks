@@ -9,6 +9,7 @@ export const AGENT_RUN_IMMUTABLE_FIELDS = [
   'requestId',
   'traceId',
   'mode',
+  'model',
   'brief',
   'language',
   'visual',

@@ -1,6 +1,8 @@
 import type { Payload, TaskConfig, TaskHandlerArgs } from 'payload';
 
 import { runAgentCommand } from './agentRunCommands';
+import { COLLECTIONS } from '@/lib/collections';
+import { withAgentModel } from '@/lib/agentModel';
 
 export const AGENT_DRAFT_TASK = 'agentDraft' as const;
 
@@ -12,7 +14,18 @@ export async function runAgentDraftTask({
   req: Pick<TaskHandlerArgs<'buildSlides'>['req'], 'payload'>;
 }) {
   const agentRunId = String((input as { agentRunId: string }).agentRunId);
-  return { output: await runAgentCommand(req.payload as Payload, agentRunId) };
+  const payload = req.payload as Payload;
+  const ledger = await payload.findByID({
+    collection: COLLECTIONS.agentRuns,
+    id: agentRunId,
+    depth: 0,
+    overrideAccess: true,
+  });
+  return {
+    output: await withAgentModel(ledger.model || 'high', () =>
+      runAgentCommand(payload, agentRunId),
+    ),
+  };
 }
 
 export const agentDraftTask = {

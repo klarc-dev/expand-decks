@@ -14,6 +14,7 @@ import {
 import { MAX_SLIDES, MIN_SLIDES, slideCountRangeSchema } from '@/lib/draftConfig';
 
 import { AdminNotice } from '@/components/adminUi/AdminSurface';
+import { AdminTextField } from '@/components/adminUi/AdminTextField';
 import {
   formatDraftEventDetail,
   formatDraftEventPhase,
@@ -34,6 +35,7 @@ import './AgentDraftButton.scss';
 
 type DraftEvent = { ts: number; phase: string; detail?: unknown };
 type DraftMode = 'replace' | 'augment' | 'revise';
+type ModelStatus = 'idle' | 'verifying' | 'verified' | 'failed';
 type SourceOption = BrowserSourceOption;
 
 type DraftModeOption = {
@@ -500,6 +502,10 @@ const AgentDraftButton: React.FC = () => {
   const [mode, setMode] = useState<DraftMode>('revise');
   const selectedMode = DRAFT_MODE_OPTIONS.find((option) => option.value === mode)!;
   const [visual, setVisual] = useState(true);
+  const [model, setModel] = useState('high');
+  const [verifiedModel, setVerifiedModel] = useState('');
+  const [modelStatus, setModelStatus] = useState<ModelStatus>('idle');
+  const [modelMessage, setModelMessage] = useState('');
   const [approvalRequired, setApprovalRequired] = useState(false);
   const [hasSlides, setHasSlides] = useState(false);
   const [initializing, setInitializing] = useState(true);
@@ -616,8 +622,36 @@ const AgentDraftButton: React.FC = () => {
     [maxSources],
   );
 
+  const handleVerifyModel = useCallback(async () => {
+    const candidate = model.trim();
+    if (!candidate || modelStatus === 'verifying') return;
+    setModelStatus('verifying');
+    setModelMessage('');
+    try {
+      const { ok, data } = await adminPost('/api/agent-model', { model: candidate });
+      if (!ok || data.ok !== true) throw new Error(data.error || 'Modèle indisponible');
+      setModel(candidate);
+      setVerifiedModel(candidate);
+      setModelStatus('verified');
+      setModelMessage(
+        `Connexion et appel d’outil validés${data.resolvedModel ? ` via ${data.resolvedModel}` : ''}.`,
+      );
+    } catch (err) {
+      setVerifiedModel('');
+      setModelStatus('failed');
+      setModelMessage(err instanceof Error ? err.message : 'Modèle indisponible');
+    }
+  }, [model, modelStatus]);
+
   const handleStart = useCallback(async () => {
-    if (!brief.trim() || !id || commandRef.current) return;
+    if (
+      !brief.trim() ||
+      !id ||
+      commandRef.current ||
+      modelStatus === 'failed' ||
+      (model.trim() !== 'high' && (modelStatus !== 'verified' || verifiedModel !== model.trim()))
+    )
+      return;
     const { range: slideCountRange, error: rangeError } = validateSlideCountRange(
       slideCountMin,
       slideCountMax,
@@ -638,6 +672,7 @@ const AgentDraftButton: React.FC = () => {
         presentationId: String(id),
         brief,
         mode: hasSlides ? mode : 'replace',
+        model: model.trim(),
         visual,
         sourcePolicy: sourcePolicyForSelection(selectedSources),
         approvalRequired,
@@ -666,6 +701,9 @@ const AgentDraftButton: React.FC = () => {
     brief,
     id,
     mode,
+    model,
+    modelStatus,
+    verifiedModel,
     selectedSources,
     visual,
     startPolling,
@@ -783,6 +821,51 @@ const AgentDraftButton: React.FC = () => {
       )}
       <details className="agent-draft__advanced">
         <summary>Options avancées</summary>
+        <DraftFieldGroup label="Modèle CloudCLIProxy">
+          <div className="agent-draft__model-row">
+            <AdminTextField
+              label="Nom du modèle"
+              labelVisibility="screen-reader"
+              margin="none"
+              path="agent-model"
+              inputProps={{
+                autoComplete: 'off',
+                disabled: running || pending || initializing || modelStatus === 'verifying',
+                maxLength: 128,
+                onChange: (event) => {
+                  setModel(event.target.value);
+                  setVerifiedModel('');
+                  setModelStatus('idle');
+                  setModelMessage('');
+                },
+                placeholder: 'high',
+                spellCheck: false,
+                value: model,
+              }}
+            />
+            <Button
+              buttonStyle="secondary"
+              disabled={
+                running || pending || initializing || modelStatus === 'verifying' || !model.trim()
+              }
+              margin={false}
+              onClick={handleVerifyModel}
+              size="small"
+              type="button"
+            >
+              {modelStatus === 'verifying' ? 'Vérification…' : 'Vérifier'}
+            </Button>
+          </div>
+          <p className="agent-draft__option-help">
+            Saisissez un alias ou un identifiant exposé par la gateway. La vérification exécute un
+            véritable appel d’outil avant d’autoriser la génération.
+          </p>
+          {modelMessage && (
+            <AdminNotice variant={modelStatus === 'verified' ? 'hint' : 'error'}>
+              {modelMessage}
+            </AdminNotice>
+          )}
+        </DraftFieldGroup>
         <DraftFieldGroup label="Options du build">
           <CheckboxInput
             checked={visual}
@@ -833,7 +916,14 @@ const AgentDraftButton: React.FC = () => {
         canApprove={outline.length > 0}
         pending={pending}
         canStart={
-          !running && !pending && !initializing && !slideCountError && Boolean(brief.trim())
+          !running &&
+          !pending &&
+          !initializing &&
+          !slideCountError &&
+          modelStatus !== 'failed' &&
+          (model.trim() === 'high' ||
+            (modelStatus === 'verified' && verifiedModel === model.trim())) &&
+          Boolean(brief.trim())
         }
         durableStatus={durableStatus}
         event={statusEvent}
