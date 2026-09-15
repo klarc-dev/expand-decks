@@ -168,9 +168,9 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     );
   });
 
-  it('keeps secondary pills white with primary-color text and dot on either surface', () => {
+  it('keeps secondary pills white with brand-pink text and dot on either surface', () => {
     const secondary = css.match(/\.k-eyebrow\.k-eyebrow--secondary\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(secondary).toContain('color: var(--k-teal)');
+    expect(secondary).toContain('color: var(--k-rose)');
     expect(secondary).toContain('background: #fff');
     expect(secondary).toContain('border-color: #fff');
     expect(css).not.toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{/);

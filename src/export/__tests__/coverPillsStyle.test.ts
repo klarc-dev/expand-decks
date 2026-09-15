@@ -35,7 +35,7 @@ it('wraps title pills on both surfaces with loaded Gilroy and shared preview/exp
           blockType: 'cover' as const,
           title: 'KLARC : Avocats et Conseils',
           pills: texts.map((text) => ({ text })),
-          pillVariant: 'secondary' as const,
+          pillVariant: 'primary' as const,
         };
         const html = renderCover(block).replace(/^---\n[\s\S]*?\n---\n*/, '');
         expect(renderBlockPreview(block)!.html).toBe(html);
@@ -71,8 +71,8 @@ it('wraps title pills on both surfaces with loaded Gilroy and shared preview/exp
           expect(metric.right).toBeLessThanOrEqual(1280);
           expect(metric.bottom).toBeLessThanOrEqual(720);
           expect(metric.font).toBe('Gilroy');
-          expect(metric.color).toBe('rgb(2, 88, 92)');
-          expect(metric.background).toBe('rgb(255, 255, 255)');
+          expect(metric.color).toBe('rgb(247, 246, 242)');
+          expect(metric.background).toBe('rgb(2, 88, 92)');
         }
         expect(await page.evaluate(() => document.fonts.check('600 16px Gilroy'))).toBe(true);
         if (texts.length === 2) await page.screenshot({ path: `/tmp/cover-pills-${surface}.png` });
