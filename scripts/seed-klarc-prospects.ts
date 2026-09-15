@@ -91,6 +91,11 @@ const slides = [
       'L’enjeu : examiner ensemble les conséquences juridiques, techniques et financières de vos choix.',
     rightCards: [
       {
+        title: 'Des professions réglementées',
+        description:
+          'Avocats et Conseils en Propriété Industrielle interviennent dans le respect des obligations déontologiques propres à leurs professions : secret professionnel, indépendance et prévention des conflits d’intérêts.',
+      },
+      {
         title: 'Une seule équipe',
         description:
           'Au sein d’une même société pluriprofessionnelle d’exercice (SPE), avocats en droit des affaires, Conseils en Propriété Industrielle, avocat fiscaliste et équipe scientifique examinent ensemble les questions que soulève votre projet.',
@@ -99,11 +104,6 @@ const slides = [
         title: 'Un même dossier partagé',
         description:
           'Les intervenants travaillent à partir des mêmes pièces, hypothèses et échéances, dans le respect des règles de confidentialité applicables.',
-      },
-      {
-        title: 'Des professions réglementées',
-        description:
-          'Avocats et Conseils en Propriété Industrielle interviennent dans le respect des obligations déontologiques propres à leurs professions : secret professionnel, indépendance et prévention des conflits d’intérêts.',
       },
       {
         title: 'Une cohérence par construction',
