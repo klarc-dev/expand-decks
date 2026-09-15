@@ -213,8 +213,8 @@ const slides = [
     eyebrow: '03 · Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
     lead: 'Fiscalité de l’entreprise et de ses dirigeants, avec une expertise dédiée à l’innovation.',
-    intro: 'Conseil et défense face aux enjeux fiscaux.',
-    leftFooter: 'Dossier documenté avec l’équipe scientifique.',
+    intro: undefined,
+    leftFooter: undefined,
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
@@ -229,12 +229,12 @@ const slides = [
       {
         title: 'Vos régimes de faveur',
         description:
-          'Statut JEI[^3], régime IP Box et exonérations : vérifier les conditions, les revenus concernés et les obligations à respecter.',
+          'JEI[^3], IP Box et exonérations : vérifier les conditions, revenus concernés et obligations à respecter.',
       },
       {
         title: 'Vos contrôles et contentieux fiscaux',
         description:
-          'Vous assister lors du contrôle, répondre aux rectifications et exercer les recours.',
+          'Vous assister au contrôle, répondre aux rectifications et exercer les recours.',
       },
     ],
     footnotes: [
