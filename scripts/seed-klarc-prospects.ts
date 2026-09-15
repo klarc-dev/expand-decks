@@ -502,6 +502,7 @@ await runPayloadScript(async (payload) => {
     const user = userIds.get(key);
     if (!user) throw new Error(`Missing resolved account for ${key}`);
     const slide = richSlides[page - 1] as Record<string, unknown>;
+    slide.leftUserHeading = 'Représenté par';
     slide.leftUser = user;
     // Same expertise line as the person's row on the contacts grid.
     slide.leftUserDescription = people[key].description;

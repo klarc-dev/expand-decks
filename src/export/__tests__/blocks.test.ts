@@ -543,6 +543,7 @@ describe('renderTwoCols()', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'Votre interlocutrice',
+      leftUserHeading: 'Représenté par',
       leftUser: {
         id: 42,
         name: 'Anne Martin',
@@ -556,6 +557,7 @@ describe('renderTwoCols()', () => {
     } as never);
 
     expect(result).toContain('k-two-cols-user');
+    expect(result).toContain('<div class="k-two-cols-user-heading">Représenté par</div>');
     expect(result).toContain('k-person-card');
     expect(result).toContain(`:src='"./media/anne.png"'`);
     expect(result).toContain('Anne Martin');

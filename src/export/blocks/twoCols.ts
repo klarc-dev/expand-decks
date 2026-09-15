@@ -7,6 +7,7 @@ import {
   card,
   cardStack,
   contentFrame,
+  escape,
   slideHeader,
   splitTakeaway,
   takeawayBox,
@@ -47,8 +48,13 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
     leftUserRecord && leftUserDescription
       ? { ...leftUserRecord, description: leftUserDescription }
       : leftUserRecord;
+  const leftUserHeading = block.leftUserHeading?.trim();
   const leftUser = leftPerson
-    ? `\n<div class="k-two-cols-user">\n${personCard(leftPerson)}\n</div>`
+    ? `\n<div class="k-two-cols-user">${
+        leftUserHeading
+          ? `\n<div class="k-two-cols-user-heading">${escape(leftUserHeading)}</div>`
+          : ''
+      }\n${personCard(leftPerson)}\n</div>`
     : '';
 
   const leftBody =

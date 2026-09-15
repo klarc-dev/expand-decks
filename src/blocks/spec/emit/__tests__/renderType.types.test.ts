@@ -124,6 +124,7 @@ const twoColsRenderSchema = z.object({
   intro: optionalRichTextRender(),
   leftFooter: optionalRichTextRender(),
   leftUser: optionalRender(userRelationship),
+  leftUserHeading: optionalRender(z.string()),
   leftUserDescription: optionalRender(z.string()),
   rightCards: z
     .array(

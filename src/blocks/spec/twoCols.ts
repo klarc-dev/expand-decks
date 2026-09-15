@@ -40,6 +40,7 @@ const rightCards = optionalRender(
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
 const leftUser = optionalRender(userRelationship);
+const leftUserHeading = optionalLimitedRender(SLIDE_LIMITS.twoCols.leftUserHeading);
 const leftUserDescription = optionalLimitedRender(SLIDE_LIMITS.twoCols.leftUserDescription);
 
 export const twoColsSpec = block({
@@ -70,6 +71,16 @@ export const twoColsSpec = block({
         type: 'richText',
         label: 'Pied gauche',
         description: 'Texte ou statistique en bas de la colonne gauche',
+      }),
+    ),
+    rawField(
+      'leftUserHeading',
+      leftUserHeading,
+      false,
+      limitedTextPayload(SLIDE_LIMITS.twoCols.leftUserHeading, {
+        type: 'text',
+        label: 'Titre au-dessus de la carte utilisateur',
+        description: 'Titre optionnel affiché immédiatement au-dessus de la carte utilisateur',
       }),
     ),
     rawField('leftUser', leftUser, false, {
@@ -137,6 +148,7 @@ export const twoColsRenderSchema = z.object({
   lead: leadRender(),
   intro,
   leftFooter,
+  leftUserHeading,
   leftUser,
   leftUserDescription,
   rightCards,
