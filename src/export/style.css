@@ -2744,10 +2744,10 @@
   max-width: 31rem;
 }
 .k-two-cols-user {
-  width: 100%;
+  width: min(100%, 25rem);
 }
 .k-two-cols-user-heading {
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.3rem;
   font-family: var(--k-font-heading);
   font-size: var(--t-body);
   font-weight: 600;

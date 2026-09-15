@@ -500,8 +500,18 @@ await runPayloadScript(async (payload) => {
       description: people[key].description,
     }));
   };
-  // The four expertise slides carry no person card: the contacts grid (page 10)
-  // is the single place where the referents appear.
+  const wireLeftUser = (page: number, key: keyof typeof people) => {
+    const user = userIds.get(key);
+    if (!user) throw new Error(`Missing resolved account for ${key}`);
+    const slide = richSlides[page - 1] as Record<string, unknown>;
+    slide.leftUserHeading = 'Représenté par';
+    slide.leftUser = user;
+    slide.leftUserDescription = people[key].description;
+  };
+  wireLeftUser(5, 'joachim');
+  wireLeftUser(6, 'lucien');
+  wireLeftUser(7, 'benjamin');
+  wireLeftUser(8, 'carine');
   wire(10, ['joachim', 'lucien', 'benjamin', 'carine']);
   const data = {
     title,

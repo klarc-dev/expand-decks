@@ -39,6 +39,7 @@ import * as migration_20260915_123452_cover_pill_variant from './20260915_123452
 import * as migration_20260915_124551 from './20260915_124551';
 import * as migration_20260915_125015_quote_author_company from './20260915_125015_quote_author_company';
 import * as migration_20260915_143541_two_cols_left_user_description from './20260915_143541_two_cols_left_user_description';
+import * as migration_20260915_152850_add_two_cols_left_user_heading from './20260915_152850_add_two_cols_left_user_heading';
 
 export const migrations = [
   {
@@ -245,5 +246,10 @@ export const migrations = [
     up: migration_20260915_143541_two_cols_left_user_description.up,
     down: migration_20260915_143541_two_cols_left_user_description.down,
     name: '20260915_143541_two_cols_left_user_description',
+  },
+  {
+    up: migration_20260915_152850_add_two_cols_left_user_heading.up,
+    down: migration_20260915_152850_add_two_cols_left_user_heading.down,
+    name: '20260915_152850_add_two_cols_left_user_heading',
   },
 ];
