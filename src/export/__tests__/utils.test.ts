@@ -47,6 +47,11 @@ describe('slideHeader()', () => {
     expect(h).toContain('T');
   });
 
+  it('adds a secondary-color accent line after the heading group', () => {
+    const h = slideHeader({ eyebrow: 'TAG', title: 'Title', lead: '<p>Subtext</p>' });
+    expect(h).toMatch(/Subtext[\s\S]*k-header-accent/);
+  });
+
   it('places a sidebar in the semantic split header when provided', () => {
     const h = slideHeader({ title: 'T', sidebar: '<aside>side</aside>' });
     expect(h).toContain('k-content-header--split');

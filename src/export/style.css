@@ -1610,6 +1610,20 @@
 .k-content-header--center h2 {
   margin-inline: auto;
 }
+.k-header-accent {
+  width: clamp(4rem, 9vw, 7rem);
+  height: 0.18rem;
+  margin-top: 1rem;
+  background: var(--accent-rule);
+  border-radius: 999px;
+}
+.k-content-header--center .k-header-accent {
+  margin-inline: auto;
+}
+.k-content.k-density-compact .k-header-accent,
+.k-content.k-density-dense .k-header-accent {
+  margin-top: calc(1rem * var(--density-space));
+}
 .k-content.k-density-compact .k-header-lead,
 .k-content.k-density-dense .k-header-lead {
   margin-top: calc(0.7rem * var(--density-space));

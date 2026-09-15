@@ -20,6 +20,15 @@ describe('content-slide heading measure', () => {
     expect(rule).toMatch(/text-wrap:\s*pretty/);
   });
 
+  it('styles the heading accent as a restrained secondary-color rule', () => {
+    const rule = css.match(/\.k-header-accent\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    expect(rule).toMatch(/width:\s*clamp\(/);
+    expect(rule).toMatch(/height:\s*0\.18rem/);
+    expect(rule).toMatch(/background:\s*var\(--accent-rule\)/);
+    expect(rule).toMatch(/border-radius:\s*999px/);
+  });
+
   it('centers constrained title measures in centered headers', () => {
     expect(css).toMatch(
       /\.k-content-header--center h1,\s*\.k-content-header--center h2\s*\{[^}]*margin-inline:\s*auto/,

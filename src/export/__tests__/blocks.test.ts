@@ -958,13 +958,13 @@ describe('renderQuotes()', () => {
       const seed = readFileSync('scripts/seed-klarc-prospects.ts', 'utf8');
       const quotes = [
         ...seed.matchAll(
-          /quote:\s*"([^"]+)",\s*authorName: "([^"]+)",\s*(?:authorRole: "([^"]+)",\s*)?authorCompany: "([^"]+)"/g,
+          /quote:\s*(['"])(.*?)\1,\s*authorName:\s*(['"])(.*?)\3,\s*(?:authorRole:\s*(['"])(.*?)\5,\s*)?authorCompany:\s*(['"])(.*?)\7/g,
         ),
       ].map((m) => ({
-        quote: lexical(m[1]!),
-        authorName: m[2]!,
-        authorRole: m[3],
-        authorCompany: m[4]!,
+        quote: lexical(m[2]!),
+        authorName: m[4]!,
+        authorRole: m[6],
+        authorCompany: m[8]!,
       }));
       expect(quotes).toHaveLength(3);
       const css = readFileSync('src/export/style.css', 'utf8').replace(

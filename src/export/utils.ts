@@ -336,20 +336,21 @@ export function slideHeader(opts: {
   const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
   const headingDensity = densityClass(opts.density ?? 'comfortable');
   const heading = `<h2 class="${[sizeClass, headingDensity].filter(Boolean).join(' ')}">${md(opts.title)}</h2>`;
-  // Unified content header: pill + title + description, identical on every
-  // content template so the deck reads as one system.
+  // Unified content header: pill + title + description + accent, identical on
+  // every content template so the deck reads as one system.
   const lead = opts.lead ? `\n  <div class="${K.headerLead}">${opts.lead}</div>` : '';
+  const accent = `\n  <div class="${K.headerAccent}" aria-hidden="true"></div>`;
+  const headingGroup = `${eb}\n    ${heading}${lead}${accent}`;
   if (opts.sidebar) {
     return `<header class="${K.contentHeader} ${K.contentHeaderSplit}">
-  <div>${eb}
-    ${heading}${lead}
+  <div>${headingGroup}
   </div>
   ${opts.sidebar}
 </header>`;
   }
   const alignClass = opts.align === 'center' ? ` ${K.contentHeaderCenter}` : '';
   return `<header class="${K.contentHeader}${alignClass}">${eb}
-  ${heading}${lead}
+  ${heading}${lead}${accent}
 </header>`;
 }
 

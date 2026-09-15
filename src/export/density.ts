@@ -1,3 +1,5 @@
+import { SLIDE_LIMITS } from '../blocks/spec/limits';
+
 export type SlideDensity = 'comfortable' | 'compact' | 'dense';
 
 /** Convert rendered HTML/rich text to a stable approximation of visible copy. */
