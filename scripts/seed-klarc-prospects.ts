@@ -8,8 +8,26 @@ import { runPayloadScript } from './lib/payloadScript';
 // AI drafting: gpt-6-astra. Testimonials are faithful extracts from the
 // delivered historical deck; the extract containing a historical entity name
 // and the "120 structures" figure are excluded on purpose.
-const title = 'KLARC — Présentation clients';
-const LOGO_FILENAME = 'klarc-logomark-on-white.svg';
+const title = 'KLARC : Présentation clients';
+// Earlier seeds saved the deck under this title; matched so a rerun renames
+// instead of duplicating.
+const LEGACY_TITLE = 'KLARC — Présentation clients';
+// Brand logomark variants (public/brand): colour on paper, white on the teal
+// cover/CTA surfaces, black as the paper fallback. Rendered small, top-left,
+// by the per-slide header layer on every page including the cover.
+const LOGO_VARIANTS = [
+  { field: 'logo', filename: 'klarc-logomark.svg', alt: 'Logo klarc' },
+  {
+    field: 'logoWhite',
+    filename: 'klarc-logomark-white.svg',
+    alt: 'Logo klarc (blanc)',
+  },
+  {
+    field: 'logoBlack',
+    filename: 'klarc-logomark-black.svg',
+    alt: 'Logo klarc (noir)',
+  },
+] as const;
 const slides = [
   // Page 1 — cover
   {
@@ -24,6 +42,8 @@ const slides = [
     blockType: 'cardGrid',
     eyebrow: 'VOTRE SITUATION',
     title: 'Les situations que vous rencontrez',
+    sidebarText:
+      'Quatre situations fréquentes où une décision juridique, technique ou financière engage votre activité.',
     columns: '2',
     cards: [
       {
@@ -57,6 +77,7 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: 'LE CONSTAT',
     title: 'Le problème des expertises dispersées',
+    lead: 'Pourquoi une seule équipe examine l’ensemble de votre dossier.',
     intro:
       'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement. Consulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
     leftFooter:
@@ -72,13 +93,24 @@ const slides = [
         description:
           'Les intervenants travaillent à partir des mêmes pièces, hypothèses et échéances, dans le respect des règles de confidentialité applicables.',
       },
+      {
+        title: 'Des professions réglementées',
+        description:
+          'Avocats et Conseils en Propriété Industrielle interviennent dans le respect des obligations déontologiques propres à leurs professions : secret professionnel, indépendance et prévention des conflits d’intérêts.',
+      },
+      {
+        title: 'Une cohérence par construction',
+        description:
+          'Les dimensions juridiques, techniques et fiscales de votre projet sont examinées au sein d’une même structure, pour construire une stratégie commune.',
+      },
     ],
   },
   // Page 4 — 4 temps d'action
   {
     blockType: 'timeline',
     eyebrow: 'SUR VOTRE DOSSIER',
-    title: 'Ce que nous faisons sur votre dossier',
+    title: 'Comment nous répondons à vos besoins',
+    lead: 'Quatre temps, de l’analyse de votre situation à la défense de vos droits.',
     steps: [
       {
         label: 'Analyser votre situation',
@@ -106,37 +138,51 @@ const slides = [
   },
   // Page 5 — cœur avocat
   {
-    blockType: 'cardGrid',
-    eyebrow: 'SITUATIONS 01 ET 04 · L’ACCOMPAGNEMENT JURIDIQUE',
+    blockType: 'table',
+    eyebrow: 'SITUATIONS 01 ET 04 · CONSEIL ET CONTENTIEUX',
     title: 'Conseiller, rédiger et défendre',
-    columns: '3',
-    cards: [
+    lead: 'Contrats, vie de la société et différends : ce que l’avocat prend en charge sur votre dossier.',
+    tableVariant: 'reference',
+    columns: [{ header: 'Vos besoins' }, { header: 'Notre intervention' }],
+    rows: [
       {
-        title: 'Vos contrats et accords',
-        description:
-          'Rédiger et négocier vos contrats commerciaux, partenariats et accords de confidentialité ; préciser les obligations, les responsabilités et les conditions de sortie.',
+        cells: [
+          { value: 'Vos contrats et accords' },
+          {
+            value:
+              'Rédiger et négocier vos contrats commerciaux, partenariats et accords de confidentialité ; préciser les obligations, les responsabilités et les conditions de sortie.',
+          },
+        ],
       },
       {
-        title: 'La vie de votre société',
-        description:
-          'Rédiger vos statuts et pactes ; conseiller les associés et dirigeants sur la gouvernance, préparer les décisions sociales et accompagner les restructurations.',
+        cells: [
+          { value: 'La vie de votre société' },
+          {
+            value:
+              'Rédiger vos statuts et pactes ; conseiller les associés et dirigeants sur la gouvernance, préparer les décisions sociales et accompagner les restructurations.',
+          },
+        ],
       },
       {
-        title: 'Vos différends et contrôles',
-        description:
-          'Examiner les voies de résolution, préparer le précontentieux et conduire le contentieux ; vous assister et défendre vos droits lors d’un contrôle fiscal.',
+        cells: [
+          { value: 'Vos différends et contrôles' },
+          {
+            value:
+              'Examiner les voies de résolution, préparer le précontentieux et conduire le contentieux ; vous assister et défendre vos droits lors d’un contrôle fiscal.',
+          },
+        ],
       },
     ],
   },
   // Page 6 — propriété intellectuelle
   {
-    blockType: 'cardGrid',
-    eyebrow: 'SITUATION 02 · VOTRE PROPRIÉTÉ INTELLECTUELLE',
+    blockType: 'twoCols',
+    eyebrow: 'SITUATION 02 · VOS ACTIFS IMMATÉRIELS',
     title: 'Protéger et exploiter vos actifs immatériels',
-    sidebarText:
+    lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
+    intro:
       'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
-    columns: '3',
-    cards: [
+    rightCards: [
       {
         title: 'Vos brevets et inventions',
         description:
@@ -148,33 +194,52 @@ const slides = [
           'Examiner les antériorités et les territoires utiles ; déposer vos marques, dessins et modèles, suivre les titres et défendre vos droits.',
       },
       {
-        title: 'Vos logiciels et savoir-faire',
+        title: 'Vos logiciels',
         description:
-          'Vérifier la titularité des droits, documenter les contributions et organiser la confidentialité ; rédiger et négocier les licences, défendre vos droits en cas d’atteinte.',
+          'Vérifier la titularité des droits et documenter les contributions ; rédiger et négocier les licences, défendre vos droits en cas d’atteinte.',
+      },
+      {
+        title: 'Vos savoir-faire',
+        description:
+          'Identifier les informations confidentielles, documenter vos savoir-faire et organiser leur protection ; encadrer leur communication et leur exploitation par contrat.',
       },
     ],
   },
   // Page 7 — financement et fiscalité de l'innovation
   {
-    blockType: 'cardGrid',
+    blockType: 'table',
     eyebrow: 'SITUATION 03 · VOS PROJETS D’INNOVATION',
     title: 'Financer, étayer et organiser vos projets d’innovation',
-    columns: '3',
-    cards: [
+    lead: 'Aides, fiscalité de l’innovation et preuves de R&D examinés dans une même démarche.',
+    tableVariant: 'reference',
+    columns: [{ header: 'Vos besoins' }, { header: 'Notre intervention' }],
+    rows: [
       {
-        title: 'Vos aides et financements',
-        description:
-          'Examiner les dispositifs adaptés à votre projet, leurs critères et leurs contraintes ; préparer les demandes et suivre les obligations liées aux financements obtenus.',
+        cells: [
+          { value: 'Vos aides et financements' },
+          {
+            value:
+              'Examiner les dispositifs adaptés à votre projet, leurs critères et leurs contraintes ; préparer les demandes et suivre les obligations liées aux financements obtenus.',
+          },
+        ],
       },
       {
-        title: 'Votre fiscalité de l’innovation',
-        description:
-          'CIR, CII, JEI et IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
+        cells: [
+          { value: 'Votre fiscalité de l’innovation' },
+          {
+            value:
+              'CIR, CII, JEI et IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
+          },
+        ],
       },
       {
-        title: 'Votre organisation et vos preuves de R&D',
-        description:
-          'Structurer vos projets, leurs jalons et leurs responsables ; documenter l’état de l’art, les travaux et les résultats pour relier les preuves aux dépenses en cas de contrôle.',
+        cells: [
+          { value: 'Votre organisation et vos preuves de R&D' },
+          {
+            value:
+              'Structurer vos projets, leurs jalons et leurs responsables ; documenter l’état de l’art, les travaux et les résultats pour relier les preuves aux dépenses en cas de contrôle.',
+          },
+        ],
       },
     ],
     footnotes: [
@@ -188,6 +253,7 @@ const slides = [
     blockType: 'cardGrid',
     eyebrow: 'NOS ENGAGEMENTS DE FONCTIONNEMENT',
     title: 'Comment nous travaillons avec vous',
+    sidebarText: 'Quatre engagements de fonctionnement, valables pour chaque mission.',
     columns: '2',
     cards: [
       {
@@ -221,6 +287,7 @@ const slides = [
     blockType: 'quotes',
     eyebrow: 'TÉMOIGNAGES',
     title: 'Ils nous font confiance',
+    lead: 'Extraits de témoignages de clients accompagnés par le cabinet, reproduits avec leur attribution.',
     quotes: [
       {
         quote:
@@ -257,10 +324,14 @@ const slides = [
     title: 'Parlons de votre situation',
     subtitle:
       'Nous vous proposons un premier échange de 30 minutes pour examiner un contrat, un actif, un différend, une question fiscale ou un financement, et préciser les points à approfondir.',
-    primaryAction: 'Prendre rendez-vous : cal.klarc.com',
+    // Buttons and office details carry their own targets so the exported PDF
+    // is clickable: booking page, site, and one tel:/mailto: per office.
+    primaryAction: 'Prendre rendez-vous',
+    primaryActionUrl: '{org.bookingUrl}',
     secondaryAction: 'klarc.com',
+    secondaryActionUrl: '{org.website}',
     footerNote:
-      '**Toulouse** · 15 rue d’Alsace-Lorraine, 31000 · +33 (0)5 61 38 53 52 · toulouse@klarc.com\n\n**Lyon** · 3 rue de Genève, 69006 · +33 (0)5 25 63 09 36 · lyon@klarc.com',
+      '**Toulouse** · 15 rue d’Alsace-Lorraine, 31000 · [+33 (0)5 61 38 53 52](tel:+33561385352) · [toulouse@klarc.com](mailto:toulouse@klarc.com)\n\n**Lyon** · 3 rue de Genève, 69006 · [+33 (0)5 25 63 09 36](tel:+33525630936) · [lyon@klarc.com](mailto:lyon@klarc.com)',
   },
 ];
 
@@ -283,8 +354,8 @@ await runPayloadScript(async (payload) => {
           secondary: '#F5A3B0',
           ink: '#0F2A2B',
           paper: '#FAFBFB',
-          headingFont: 'Gilroy',
-          bodyFont: 'Roboto',
+          headingFont: 'Newsreader',
+          bodyFont: 'IBM Plex Sans',
         },
         overrideAccess: true,
         context: { skipBuildQueue: true },
@@ -293,81 +364,66 @@ await runPayloadScript(async (payload) => {
   }
   if (org.length !== 1 || org[0].primary !== '#02585C')
     throw new Error('Expected verified Klarc brand not found');
-  // Original mark on a neutral plaque: the teal mark otherwise disappears on
-  // native cover/CTA teal surfaces. No renderer or shared stylesheet changes.
-  {
+  // One media doc per logo variant, idempotent by alt (Payload renames an
+  // upload whose filename already exists on disk, so filename is not stable).
+  const logos: Record<string, number | string> = {};
+  for (const variant of LOGO_VARIANTS) {
     const prior = (
       await payload.find({
         collection: 'media',
-        where: { filename: { equals: LOGO_FILENAME } },
+        where: { alt: { equals: variant.alt } },
         limit: 1,
         overrideAccess: true,
       })
     ).docs[0];
-    const logo =
+    const doc =
       prior ??
       (await payload.create({
         collection: 'media',
-        data: { alt: 'Logomark officiel KLARC' },
-        filePath: join(process.cwd(), 'scripts/seed-assets/klarc-prospects', LOGO_FILENAME),
+        data: { alt: variant.alt },
+        filePath: join(process.cwd(), 'public/brand', variant.filename),
         overrideAccess: true,
       }));
-    await payload.update({
-      collection: 'organisations',
-      id: org[0].id,
-      data: { logo: logo.id },
-      overrideAccess: true,
-      context: { skipBuildQueue: true },
-    });
+    logos[variant.field] = doc.id;
   }
+  await payload.update({
+    collection: 'organisations',
+    id: org[0].id,
+    data: {
+      ...logos,
+      // Public contact details: link the logo and footer name to the site,
+      // feed {org.bookingUrl}/{org.website} to the closing slide's buttons.
+      website: 'https://klarc.com',
+      // Same families as klarc.com (Elementor heading/body variables), both
+      // served by Google Fonts in the export and the admin preview.
+      headingFont: 'Newsreader',
+      bodyFont: 'IBM Plex Sans',
+      bookingUrl: 'https://cal.klarc.com/team/meeting?user=team&duration=30',
+      contactEmail: 'toulouse@klarc.com',
+      phone: '+33 (0)5 61 38 53 52',
+    },
+    overrideAccess: true,
+    context: { skipBuildQueue: true },
+  });
   const richSlides = await convertSlidesMarkdownToLexical(structuredClone(slides), payload);
-  // Contacts: idempotent upsert by email, then wire the page 10 cardGrid
-  // `intervenants` relationship rows (the contacts grid). No avatars — the shared person card falls
-  // back to initials. Carine's title follows KLARC_base_information_IA.md.
+  // Resolve existing canonical accounts only; a deck seed must not migrate,
+  // delete or manufacture login identities. Preserve their names and portraits.
   const people = {
-    joachim: { email: 'joachim@klarc.com', name: 'Joachim Brindeau', title: 'Avocat' },
-    lucien: {
-      email: 'lucien@klarc.com',
-      name: 'Lucien Trouette',
-      title: 'Conseil en Propriété Industrielle',
-    },
-    benjamin: { email: 'benjamin@klarc.com', name: 'Benjamin Visser', title: 'Avocat' },
-    carine: {
-      email: 'carine@klarc.com',
-      name: 'Carine Doyharçabal',
-      title: 'Docteure en génétique quantitative, responsable opérationnelle',
-    },
+    joachim: 'joachim.brindeau@klarc.com',
+    lucien: 'lucien.trouette@klarc.com',
+    benjamin: 'benjamin.visser@klarc.com',
+    carine: 'carine.doyharcabal@klarc.com',
   } as const;
   const userIds = new Map<string, number | string>();
-  for (const [key, referent] of Object.entries(people)) {
-    const found = (
-      await payload.find({
-        collection: 'users',
-        where: { email: { equals: referent.email } },
-        limit: 1,
-        overrideAccess: true,
-      })
-    ).docs[0];
-    const user = found
-      ? await payload.update({
-          collection: 'users',
-          id: found.id,
-          data: { name: referent.name, title: referent.title },
-          overrideAccess: true,
-        })
-      : await payload.create({
-          collection: 'users',
-          data: {
-            email: referent.email,
-            password: crypto.randomUUID(),
-            name: referent.name,
-            title: referent.title,
-            membershipStatus: 'active',
-            role: 'viewer',
-          },
-          overrideAccess: true,
-        });
-    userIds.set(key, user.id);
+  for (const [key, email] of Object.entries(people)) {
+    const { docs } = await payload.find({
+      collection: 'users',
+      where: { email: { equals: email } },
+      limit: 2,
+      overrideAccess: true,
+    });
+    if (docs.length !== 1) throw new Error(`Expected one existing account for ${email}`);
+    userIds.set(key, docs[0].id);
   }
   const wire = (page: number, keys: (keyof typeof people)[]) => {
     (richSlides[page - 1] as Record<string, unknown>).intervenants = keys.map((key) => ({
@@ -375,20 +431,6 @@ await runPayloadScript(async (payload) => {
     }));
   };
   wire(10, ['joachim', 'benjamin', 'lucien', 'carine']);
-  // Plan v2 page 1: logomark on its white plaque as the cover's right column.
-  {
-    const logoDoc = (
-      await payload.find({
-        collection: 'media',
-        where: { filename: { equals: LOGO_FILENAME } },
-        limit: 1,
-        overrideAccess: true,
-      })
-    ).docs[0];
-    if (!logoDoc) throw new Error('Logomark media missing before slide wiring');
-    (richSlides[0] as Record<string, unknown>).image = logoDoc.id;
-    (richSlides[0] as Record<string, unknown>).imagePosition = 'right';
-  }
   const data = {
     title,
     organisation: org[0].id,
@@ -407,7 +449,7 @@ await runPayloadScript(async (payload) => {
   const existing = (
     await payload.find({
       collection: 'presentations',
-      where: { title: { equals: title } },
+      where: { title: { in: [title, LEGACY_TITLE] } },
       limit: 2,
       overrideAccess: true,
     })
