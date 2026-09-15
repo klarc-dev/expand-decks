@@ -151,6 +151,40 @@ describe('POST /api/slide-preview hydration + access', () => {
     });
   });
 
+  it('returns layout compatibility limited to the document template', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'visual-publication' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: {
+          blockType: 'statement',
+          title: 'Compatibility',
+          body: {
+            root: { children: [{ type: 'paragraph', children: [{ text: 'Supporting copy' }] }] },
+          },
+        },
+        fields: {},
+        previewFieldPath: 'slides.0.preview',
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.compatibility.map((result: { layout: string }) => result.layout)).toEqual([
+      'statement',
+      'cardGrid',
+      'stats',
+      'quotes',
+      'cta',
+    ]);
+    expect(body.compatibility[0]).toMatchObject({
+      classification: 'compatible',
+      layout: 'statement',
+    });
+  });
+
   it('returns the carousel canvas and suppresses presentation chrome', async () => {
     auth.mockResolvedValue({ user: { id: 'u1' } });
     findByID.mockImplementation(async ({ collection }: { collection: string }) =>

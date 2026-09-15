@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getPayload } from 'payload';
 import config from '@payload-config';
 
+import { slideLayoutCompatibilityForTemplate } from '@/blocks/spec/slideLayoutCompatibilityForTemplate';
 import { renderBlockPreview } from '@/export/preview';
 import { buildPreviewRenderContext } from '@/export/renderContext';
 import type { SlideBlock } from '@/export/renderers';
@@ -253,7 +254,13 @@ export async function POST(req: NextRequest) {
       : undefined,
     logoUrl: template.chrome.logo ? resolvedChrome.logoUrl : undefined,
   };
-  const response = setPreviewResponse(cacheKey, { canvas: template.canvas, chrome, preview });
+  const compatibility = slideLayoutCompatibilityForTemplate(parsedBlock.data, template.id);
+  const response = setPreviewResponse(cacheKey, {
+    canvas: template.canvas,
+    chrome,
+    compatibility,
+    preview,
+  });
 
   return noStoreJson(response);
 }
