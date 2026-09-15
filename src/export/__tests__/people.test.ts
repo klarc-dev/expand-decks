@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { renderPeopleStrip, userToPerson } from '../people';
+import { personCard, renderPeopleStrip, userToPerson } from '../people';
 
 const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
 const rule = (selector: string) => {
@@ -11,6 +11,51 @@ const rule = (selector: string) => {
 };
 
 describe('shared person cards', () => {
+  it('emits one inline Tabler outline SVG per authored channel, with readable link names', () => {
+    const html = personCard({
+      initials: 'AM',
+      name: 'Anne Martin',
+      email: 'anne@example.com',
+      phone: '+33 6 12 34 56 78',
+      linkedin: 'https://linkedin.com/in/anne',
+      website: 'https://example.com/about?a=1&b=2',
+    });
+    for (const icon of ['mail', 'phone', 'brand-linkedin', 'world']) {
+      expect(html).toContain(`tabler-icon-${icon}`);
+    }
+    expect(html.match(/<svg /g)).toHaveLength(4);
+    expect(html.match(/stroke="currentColor"/g)).toHaveLength(4);
+    expect(html.match(/stroke-width="1.75"/g)).toHaveLength(4);
+    expect(html.match(/aria-hidden="true" focusable="false"/g)).toHaveLength(4);
+    for (const text of [
+      'anne@example.com',
+      '+33 6 12 34 56 78',
+      'LinkedIn',
+      'https://example.com/about?a=1&amp;b=2',
+    ]) {
+      expect(html).toContain(`<span>${text}</span></a>`);
+    }
+    expect(html).toContain('href="https://example.com/about?a=1&amp;b=2"');
+    expect(html).not.toMatch(/<use|<script|<image/);
+    expect(rule('.k-person-link > svg')).toContain('flex: none');
+    expect(rule('.k-person-link > svg')).toContain('color: inherit');
+  });
+
+  it('never infers a personal site from organisation, email or LinkedIn', () => {
+    const person = userToPerson({
+      name: 'Anne',
+      email: 'anne@example.com',
+      linkedin: 'https://linkedin.com/in/anne',
+      organisation: { website: 'https://example.com' },
+    })!;
+    expect(person.website).toBeUndefined();
+    expect(personCard(person)).not.toContain('tabler-icon-world');
+    for (const website of ['', 'javascript:alert(1)', 'mailto:anne@example.com', '//example.com']) {
+      expect(personCard({ initials: 'AM', name: 'Anne', website })).not.toContain(
+        'k-person-contact',
+      );
+    }
+  });
   it('retains the photo and independently actionable name, email, phone and profile', () => {
     const html = renderPeopleStrip(
       [

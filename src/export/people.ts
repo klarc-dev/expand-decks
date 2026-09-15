@@ -1,3 +1,6 @@
+import { IconBrandLinkedin, IconMail, IconPhone, IconWorld } from '@tabler/icons-react';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { K } from './classNames';
 import { escape, safeHref, telHref } from './utils';
 
@@ -15,6 +18,8 @@ export type PersonCard = {
   email?: string;
   phone?: string;
   linkedin?: string;
+  /** Explicit helper input only: Users has no website field. Never infer from email/org. */
+  website?: string;
 };
 
 export function vueBoundSrc(url: string): string {
@@ -95,25 +100,54 @@ type IntervenantRows = ({ user?: unknown } | null | undefined)[] | null | undefi
  * PDF carries a mailto:/tel:/https annotation per item. Returns '' when the
  * person has no contact detail.
  */
+// Pre-render library SVGs once: no icon font, network fetch or React runtime in
+// the generated Slidev/PDF. All contact channels share Tabler's outline family.
+const contactIcons = {
+  email: IconMail,
+  phone: IconPhone,
+  linkedin: IconBrandLinkedin,
+  website: IconWorld,
+};
+const contactSvg = Object.fromEntries(
+  Object.entries(contactIcons).map(([kind, icon]) => [
+    kind,
+    renderToStaticMarkup(
+      createElement(icon, {
+        size: 18,
+        stroke: 1.75,
+        'aria-hidden': true,
+        focusable: 'false',
+      }),
+    ),
+  ]),
+);
+
+function contactLink(kind: keyof typeof contactIcons, href: string, text: string): string {
+  return `<a class="${K.personLink}" href="${escape(href)}">${contactSvg[kind]}<span>${escape(text)}</span></a>`;
+}
+
 function personContacts(person: PersonCard): string {
   const items: string[] = [];
   const mailto = person.email ? safeHref(`mailto:${person.email}`) : null;
   if (mailto && person.email) {
-    items.push(`<a class="${K.personLink}" href="${escape(mailto)}">${escape(person.email)}</a>`);
+    items.push(contactLink('email', mailto, person.email));
   }
   const tel = telHref(person.phone);
   if (tel && person.phone) {
-    items.push(`<a class="${K.personLink}" href="${escape(tel)}">${escape(person.phone)}</a>`);
+    items.push(contactLink('phone', tel, person.phone));
   }
   const linkedin = safeHref(person.linkedin);
   if (linkedin) {
-    items.push(`<a class="${K.personLink}" href="${escape(linkedin)}">LinkedIn</a>`);
+    items.push(contactLink('linkedin', linkedin, 'LinkedIn'));
   }
+  const website =
+    person.website && /^https?:\/\/\S+$/i.test(person.website) ? safeHref(person.website) : null;
+  if (website) items.push(contactLink('website', website, website));
   if (items.length === 0) return '';
   return `\n      <div class="${K.personContact}">${items.join('')}</div>`;
 }
 
-function personCard(person: PersonCard): string {
+export function personCard(person: PersonCard): string {
   const avatar = person.avatarUrl
     ? `<img class="${K.personAvatar}" ${vueBoundSrc(person.avatarUrl)} alt="" />`
     : `<span class="${K.personAvatar} ${K.personInitials}" aria-hidden="true">${escape(person.initials)}</span>`;

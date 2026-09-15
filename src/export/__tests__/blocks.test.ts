@@ -681,12 +681,10 @@ describe('renderCardGrid()', () => {
     expect(result).toContain(
       '<div class="k-person-name"><a href="mailto:joachim@klarc.com">Joachim Brindeau</a></div>',
     );
+    expect(result).toContain('<a class="k-person-link" href="mailto:joachim@klarc.com"><svg');
+    expect(result).toContain('<span>06 12 34 56 78</span></a>');
     expect(result).toContain(
-      '<a class="k-person-link" href="mailto:joachim@klarc.com">joachim@klarc.com</a>',
-    );
-    expect(result).toContain('<a class="k-person-link" href="tel:0612345678">06 12 34 56 78</a>');
-    expect(result).toContain(
-      '<a class="k-person-link" href="https://www.linkedin.com/in/joachim">LinkedIn</a>',
+      '<a class="k-person-link" href="https://www.linkedin.com/in/joachim"><svg',
     );
   });
 

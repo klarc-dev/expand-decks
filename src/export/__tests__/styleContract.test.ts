@@ -157,6 +157,34 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-card-scale-md\.k-grid-3/);
   });
 
+  it('uses the old dense/new comfortable midpoint only for numbered two-column descriptions', () => {
+    const numberedBody = css.match(
+      /\.k-card-scale-md\.k-grid-2\.k-card-stack--grid \.k-card:has\(> \.k-num\) p\s*\{([^}]*)\}/,
+    )?.[1];
+    expect(numberedBody).toMatch(/font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/);
+    expect(numberedBody).toMatch(/line-height:\s*1\.45/);
+    // Preserve ordinary copy, unnumbered wide cards, and the density ladder.
+    expect(css).toMatch(/\.k-card p\s*\{[^}]*font-size:\s*var\(--t-body\)/);
+    expect(css).toMatch(
+      /\.k-card-scale-md\.k-grid-2\.k-card-stack--grid \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 1\.12\)/,
+    );
+    expect(css).toMatch(
+      /\.k-card-scale-sm \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.9\)/,
+    );
+    expect(css).toMatch(
+      /\.k-card-scale-xs \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.78\)/,
+    );
+  });
+
+  it('reclaims vertical space only in comfortable numbered two-column multirow cards', () => {
+    const scope = String.raw`\.k-card-scale-md\.k-grid-2\.k-card-stack--grid\.k-card-stack--multirow > \.k-card:has\(> \.k-num\)`;
+    const card = css.match(new RegExp(`${scope}\\s*\\{([^}]*)\\}`))?.[1];
+    const heading = css.match(new RegExp(`${scope} h3\\s*\\{([^}]*)\\}`))?.[1];
+    expect(card).toMatch(/padding-block:\s*0\.5rem/);
+    expect(heading).toMatch(/line-height:\s*1\.15/);
+    expect(`${card}${heading}`).not.toMatch(/font-size|overflow|(?:^|;)\s*height:|line-clamp/);
+  });
+
   it('gives multi-row comparable grids equal-height tracks through the shared stack', () => {
     expect(css).toMatch(/\.k-card-stack--multirow\s*\{[\s\S]*grid-auto-rows:\s*minmax\(0, 1fr\)/);
     expect(css).toMatch(/\.k-card-stack--multirow\s*>\s*\.k-card\s*\{[\s\S]*height:\s*100%/);

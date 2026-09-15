@@ -64,6 +64,7 @@
     "@payloadcms/richtext-lexical": "3.88.0",
     "@payloadcms/translations": "3.88.0",
     "@payloadcms/ui": "3.88.0",
+    "@tabler/icons-react": "^3.46.0",
     "gray-matter": "^4.0.3",
     "mammoth": "1.12.2",
     "mermaid": "11.17.2",
