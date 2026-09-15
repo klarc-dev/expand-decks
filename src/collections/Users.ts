@@ -37,7 +37,9 @@ const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
     const account = accounts.docs[0];
     if (!account?.picture) return user;
 
-    const response = await fetch(account.picture);
+    // Google hands out a 96px thumbnail (`=s96-c`); ask for 400px so the
+    // portrait stays sharp on speaker cards in the exported PDF.
+    const response = await fetch(account.picture.replace(/=s\d+-c$/, '=s400-c'));
     if (!response.ok) throw new Error(`Google avatar request failed (${response.status})`);
 
     const mimetype = response.headers.get('content-type')?.split(';')[0]?.trim() ?? '';
