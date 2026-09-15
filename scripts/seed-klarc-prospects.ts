@@ -33,7 +33,7 @@ const slides = [
   {
     blockType: 'cover',
     pills: [{ text: 'Toulouse' }, { text: 'Lyon' }],
-    pillVariant: 'secondary',
+    pillVariant: 'primary',
     title: '[Klarc] : Avocats et Conseils en Propriété Industrielle',
     subtitle:
       'Conseil et contentieux pour les entreprises innovantes, à Toulouse, à Lyon et partout en France.',
