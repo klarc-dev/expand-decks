@@ -11,6 +11,26 @@ const rule = (selector: string) => {
 };
 
 describe('shared person cards', () => {
+  it('keeps equal padding on every side in each person-card variant', () => {
+    for (const selector of [
+      '.k-person-card',
+      '.k-cardgrid-people .k-person-card',
+      '.k-cardgrid-people--grid .k-person-card',
+    ]) {
+      expect(rule(selector)).toMatch(/padding: \d*\.?\d+rem;/);
+    }
+  });
+
+  it('stretches the content column and anchors contact icons to its bottom', () => {
+    expect(rule('.k-person-body')).toContain('display: flex');
+    expect(rule('.k-person-body')).toContain('flex-direction: column');
+    expect(rule('.k-person-body')).toContain('align-self: stretch');
+    for (const selector of ['.k-person-contact', '.k-cardgrid-people--grid .k-person-contact']) {
+      expect(rule(selector)).toContain('margin-top: auto');
+      expect(rule(selector)).toMatch(/padding-top: [\d.]+rem/);
+    }
+  });
+
   it('emits one accessible icon-only Tabler link per authored channel', () => {
     const html = personCard({
       initials: 'AM',
