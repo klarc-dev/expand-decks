@@ -424,7 +424,8 @@
 /* Slidev's reset leaves <a> indistinguishable from text, so nobody reading the
    exported PDF knows a word is clickable. Every content link gets the accent
    underline in the current tone; buttons, person names, chrome and the footnote
-   band opt out below with their own treatment. */
+   band opt out below with their own treatment. The hover color is owned here so
+   Slidev's theme cannot leak its default blue/purple link state into the deck. */
 .slidev-layout a {
   color: inherit;
   /* Slidev's layouts-base gives every <a> a dashed currentColor border
@@ -435,10 +436,22 @@
   text-decoration-color: var(--accent-rule);
   text-decoration-thickness: 0.09em;
   text-underline-offset: 0.16em;
+  transition:
+    color var(--k-motion-fast),
+    text-decoration-color var(--k-motion-fast);
+}
+.slidev-layout a:hover {
+  color: var(--k-teal);
+  text-decoration-color: currentColor;
 }
 .k-dark a,
 .slidev-layout .k-dark a {
   text-decoration-color: color-mix(in srgb, var(--accent-rule) 80%, #fff 20%);
+}
+.slidev-layout.k-dark a:hover,
+.slidev-layout .k-dark a:hover {
+  color: #fff;
+  text-decoration-color: currentColor;
 }
 .slidev-layout .k-btn,
 .slidev-layout .k-btn-ghost,
