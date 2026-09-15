@@ -1,21 +1,10 @@
 import type { AgendaBlockData } from '../../blocks/spec/agenda';
-import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 import { K } from '../classNames';
-import { densityClass, densityFromScore, visibleText } from '../density';
+import { densityClass, sequenceFrameFit } from '../density';
 import { richTextToHTML } from '../richtext';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { AgendaBlockData };
-
-function needsDenseAgenda(items: NonNullable<AgendaBlockData['items']>): boolean {
-  const descriptionLengths = items.map((item) => item.description?.length ?? 0);
-  const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
-  return (
-    items.length >= SLIDE_LIMITS.agenda.items.max - 2 ||
-    totalDescriptionLength > SLIDE_LIMITS.agenda.description.max * 2 ||
-    descriptionLengths.some((length) => length > SLIDE_LIMITS.agenda.description.max / 2)
-  );
-}
 
 export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
   // Authored items win; an empty agenda auto-derives its list from the deck's
@@ -25,16 +14,13 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     block.items && block.items.length > 0
       ? block.items
       : (ctx?.sections ?? []).map((label) => ({ label, description: null }));
-  const dense = needsDenseAgenda(items);
   const leadHtml = richTextToHTML(block.lead);
-  const density = densityFromScore(
-    visibleText(leadHtml).length * 0.6 +
-      items.reduce(
-        (score, item) => score + item.label.length * 1.3 + (item.description?.length ?? 0),
-        items.length * 52,
-      ),
-    { compact: 360, dense: 620 },
-  );
+  const fit = sequenceFrameFit({
+    profile: 'agenda',
+    header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`,
+    items,
+  });
+  const { density } = fit;
   // `active` is 1-based; only emphasize when it points at a real item.
   const active = block.active ?? 0;
   const hasActive = active >= 1 && active <= items.length;
@@ -62,11 +48,11 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     lead: leadHtml || undefined,
     density,
   });
-  const fit = dense || items.length >= 4;
+  const fitted = fit.mode === 'fitted';
   const agendaClass = [
     K.agenda,
-    dense ? 'k-agenda--dense' : '',
-    fit ? 'k-agenda--fit' : '',
+    fit.crowded ? 'k-agenda--dense' : '',
+    fitted ? 'k-agenda--fit' : '',
     densityClass(density),
   ]
     .filter(Boolean)
@@ -74,9 +60,9 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
   const bodyHtml = contentFrame(`<ol class="${agendaClass}">\n${rows}\n</ol>`, {
     header,
     wFull: true,
-    crowded: dense,
+    crowded: fit.crowded,
     density,
-    mainAlign: fit ? 'stretch' : 'center',
+    mainAlign: fitted ? 'stretch' : 'center',
   });
 
   return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });

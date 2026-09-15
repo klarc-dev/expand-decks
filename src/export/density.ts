@@ -37,6 +37,75 @@ export function totalVisibleText(values: Array<string | null | undefined>): numb
   return values.reduce((total, value) => total + visibleText(value).length, 0);
 }
 
+export type SequenceFrameProfile = 'agenda' | 'timeline';
+
+export type SequenceFrameItem = {
+  label: string;
+  description?: string | null;
+};
+
+export type SequenceFrameFit = {
+  density: SlideDensity;
+  mode: 'centered' | 'fitted' | 'horizontal' | 'vertical';
+  crowded: boolean;
+};
+
+/**
+ * One fixed-canvas fitting decision for labelled sequences. Agenda rows and
+ * timeline steps share the same occupancy shape, while profile-specific limits
+ * and geometry remain private to this module.
+ */
+export function sequenceFrameFit(opts: {
+  profile: SequenceFrameProfile;
+  header?: string;
+  items: SequenceFrameItem[];
+}): SequenceFrameFit {
+  const descriptionLengths = opts.items.map((item) => visibleText(item.description).length);
+  const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
+  const maxDescriptionLength = Math.max(0, ...descriptionLengths);
+  const headerLength = visibleText(opts.header).length;
+
+  if (opts.profile === 'agenda') {
+    const crowded =
+      opts.items.length >= SLIDE_LIMITS.agenda.items.max - 2 ||
+      totalDescriptionLength > SLIDE_LIMITS.agenda.description.max * 2 ||
+      maxDescriptionLength > SLIDE_LIMITS.agenda.description.max / 2;
+    const density = densityFromScore(
+      headerLength * 0.6 +
+        opts.items.reduce(
+          (score, item) =>
+            score + visibleText(item.label).length * 1.3 + visibleText(item.description).length,
+          opts.items.length * 52,
+        ),
+      { compact: 360, dense: 620 },
+    );
+    return {
+      density,
+      mode: opts.items.length >= 4 || crowded ? 'fitted' : 'centered',
+      crowded,
+    };
+  }
+
+  const crowded =
+    opts.items.length >= SLIDE_LIMITS.timeline.steps.max - 1 ||
+    totalDescriptionLength > SLIDE_LIMITS.timeline.description.max * 2.35 ||
+    maxDescriptionLength > SLIDE_LIMITS.timeline.description.max * 0.64;
+  const density = densityFromScore(
+    headerLength * 0.6 +
+      opts.items.reduce(
+        (score, item) =>
+          score + visibleText(item.label).length * 1.2 + visibleText(item.description).length,
+        opts.items.length * 65,
+      ),
+    { compact: 430, dense: 690 },
+  );
+  return {
+    density,
+    mode: crowded ? 'vertical' : 'horizontal',
+    crowded,
+  };
+}
+
 export type CardLayoutProfile = 'card-grid' | 'quotes' | 'two-cols' | 'two-cols-image';
 
 export type CardFrameOccupancy = {

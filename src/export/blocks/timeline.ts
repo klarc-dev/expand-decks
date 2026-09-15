@@ -1,37 +1,21 @@
 import type { TimelineBlockData } from '../../blocks/spec/timeline';
-import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 import { K } from '../classNames';
-import { densityClass, densityFromScore, visibleText } from '../density';
+import { densityClass, sequenceFrameFit } from '../density';
 import { richTextToHTML } from '../richtext';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { TimelineBlockData };
 
-// Dense progressions (many steps, or long copy) read better stacked vertically
-// than crammed into narrow horizontal columns — switch layout on the same signal
-// the slide uses for its `crowded` density treatment.
-function needsVerticalTimeline(steps: NonNullable<TimelineBlockData['steps']>): boolean {
-  const descriptionLengths = steps.map((s) => s.description?.length ?? 0);
-  const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
-  return (
-    steps.length >= SLIDE_LIMITS.timeline.steps.max - 1 ||
-    totalDescriptionLength > SLIDE_LIMITS.timeline.description.max * 2.35 ||
-    descriptionLengths.some((length) => length > SLIDE_LIMITS.timeline.description.max * 0.64)
-  );
-}
-
 export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): string {
   const steps = block.steps ?? [];
-  const vertical = needsVerticalTimeline(steps);
   const leadHtml = richTextToHTML(block.lead);
-  const density = densityFromScore(
-    visibleText(leadHtml).length * 0.6 +
-      steps.reduce(
-        (score, step) => score + step.label.length * 1.2 + (step.description?.length ?? 0),
-        steps.length * 65,
-      ),
-    { compact: 430, dense: 690 },
-  );
+  const fit = sequenceFrameFit({
+    profile: 'timeline',
+    header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`,
+    items: steps,
+  });
+  const { density } = fit;
+  const vertical = fit.mode === 'vertical';
 
   // Each step is a self-contained node; the connecting rail is drawn purely in
   // CSS (a pseudo-element behind the numbered dots), so no arrow glyphs or
@@ -62,7 +46,7 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
   const bodyHtml = contentFrame(timeline, {
     header,
     wFull: true,
-    crowded: vertical,
+    crowded: fit.crowded,
     density,
   });
 
