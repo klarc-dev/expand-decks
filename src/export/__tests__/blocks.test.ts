@@ -415,7 +415,7 @@ describe('renderStatement() — variant dispatch (U8)', () => {
     });
     expect(result).toContain('k-takeaway');
     expect(result).toContain('<span class="k-takeaway-label">L’enjeu</span>');
-    expect(result).toContain('<p>examiner ensemble les conséquences.</p>');
+    expect(result).toContain('<p>Examiner ensemble les conséquences.</p>');
     expect(result).not.toContain('<p>L’enjeu');
   });
 
@@ -438,7 +438,18 @@ describe('renderStatement() — variant dispatch (U8)', () => {
     expect(splitTakeaway('<p>10:30 kick-off</p>').label).toBe('À retenir');
     expect(splitTakeaway('<p>https://example.org/x</p>').label).toBe('À retenir');
     expect(splitTakeaway('<p><strong>Note</strong> : text</p>').label).toBe('À retenir');
-    expect(splitTakeaway('<p>Note : text</p>')).toEqual({ label: 'Note', html: '<p>text</p>' });
+    expect(splitTakeaway('<p>Note : text</p>')).toEqual({ label: 'Note', html: '<p>Text</p>' });
+  });
+
+  it('capitalises the sentence left after the cartouche lead', () => {
+    expect(splitTakeaway('<p>L’enjeu : examiner ensemble vos choix.</p>')).toEqual({
+      label: 'L’enjeu',
+      html: '<p>Examiner ensemble vos choix.</p>',
+    });
+    expect(splitTakeaway('<p>Note : <strong>éviter</strong> le doublon</p>').html).toBe(
+      '<p><strong>Éviter</strong> le doublon</p>',
+    );
+    expect(splitTakeaway('<p>Note : Déjà en capitale</p>').html).toBe('<p>Déjà en capitale</p>');
   });
 
   it('omits the takeaway box when there is no footer', () => {
@@ -541,7 +552,7 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('k-takeaway k-takeaway--side'.split(' ')[0]);
     expect(result).toContain('k-takeaway--side');
     expect(result).toContain('<span class="k-takeaway-label">L’enjeu</span>');
-    expect(result).toContain('<p>examiner ensemble les conséquences de vos choix.</p>');
+    expect(result).toContain('<p>Examiner ensemble les conséquences de vos choix.</p>');
     expect(result).not.toContain('k-copy-stack--note');
   });
 });

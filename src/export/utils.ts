@@ -484,6 +484,10 @@ const TAKEAWAY_LABEL: Record<DeckLanguage, string> = {
 // lead are rejected so a URL, a time ("10:30") or an emphasised opener never
 // becomes a cartouche.
 const TAKEAWAY_LEAD_RE = /^(\s*(?:<div[^>]*>\s*)?<p(?:\s[^>]*)?>)\s*([^<>&:\d]{2,40}?)\s*:\s+/;
+// First letter of the remaining text, past the opening tags (and any inline
+// wrapper such as <strong>), so it can start the sentence with a capital.
+const TAKEAWAY_FIRST_LETTER_RE =
+  /^(\s*(?:<div[^>]*>\s*)?<p(?:\s[^>]*)?>\s*(?:<[^>]+>\s*)*)(\p{Ll})/u;
 
 /**
  * Split a footer/note HTML into a cartouche label and the remaining text. The
@@ -496,7 +500,17 @@ export function splitTakeaway(
   language?: DeckLanguage | null,
 ): { label: string; html: string } {
   const m = html.match(TAKEAWAY_LEAD_RE);
-  if (m) return { label: m[2]!, html: html.replace(TAKEAWAY_LEAD_RE, '$1') };
+  if (m) {
+    // "L’enjeu : examiner…" was one sentence; once the lead moves into the
+    // cartouche, what remains starts a sentence of its own.
+    const rest = html
+      .replace(TAKEAWAY_LEAD_RE, '$1')
+      .replace(
+        TAKEAWAY_FIRST_LETTER_RE,
+        (_s, open, letter) => `${open}${letter.toLocaleUpperCase('fr')}`,
+      );
+    return { label: m[2]!, html: rest };
+  }
   return { label: TAKEAWAY_LABEL[language ?? 'fr'], html };
 }
 

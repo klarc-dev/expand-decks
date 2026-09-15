@@ -1399,7 +1399,9 @@
   padding: 1.1rem 1.4rem;
   border-radius: var(--k-radius-chip);
   background: var(--k-teal-50);
-  color: var(--fg);
+  /* The key message speaks in the brand voice: primary ink on its tint, not
+     body black. The dark tone keeps white below. */
+  color: var(--k-teal);
   font-size: calc(var(--t-lead) * 0.92);
   font-weight: 500;
   line-height: 1.45;
@@ -2568,6 +2570,16 @@
   flex-direction: column;
   gap: 1.35rem;
   max-width: 31rem;
+}
+/* The copy column is the slide's own voice (intro + takeaway): primary ink on
+   the light tone, while the cards on the right keep body grey. */
+.k-copy-column .k-copy-stack p,
+.k-copy-column .k-copy-stack li {
+  color: var(--k-teal);
+}
+.k-dark .k-copy-column .k-copy-stack p,
+.k-dark .k-copy-column .k-copy-stack li {
+  color: var(--fg-muted);
 }
 .k-content.k-density-compact .k-copy-column,
 .k-content.k-density-dense .k-copy-column {
