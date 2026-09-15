@@ -37,6 +37,71 @@ export function totalVisibleText(values: Array<string | null | undefined>): numb
   return values.reduce((total, value) => total + visibleText(value).length, 0);
 }
 
+export type HeroSurfaceFitOptions =
+  | {
+      profile: 'cover';
+      title: string;
+      subtitle?: string;
+      hasImage: boolean;
+      peopleCount: number;
+    }
+  | {
+      profile: 'section';
+      title: string;
+      subtitle?: string;
+      hasImage: boolean;
+    }
+  | {
+      profile: 'statement';
+      title: string;
+      body?: string;
+      footer?: string;
+      scale: 'hero' | 'display' | 'title';
+    }
+  | {
+      profile: 'cta';
+      title: string;
+      subtitle?: string;
+      footer?: string;
+      actionLabels: string[];
+    };
+
+/**
+ * Fixed-canvas occupancy policy for the four emphasis-surface adapters. Their
+ * markup remains distinct; only their shared density decision crosses this seam.
+ */
+export function heroSurfaceFit(opts: HeroSurfaceFitOptions): SlideDensity {
+  if (opts.profile === 'cover') {
+    return densityFromScore(
+      opts.title.length * (opts.hasImage ? 2.5 : 1.7) +
+        visibleText(opts.subtitle).length +
+        opts.peopleCount * 70,
+      { compact: opts.hasImage ? 180 : 260, dense: opts.hasImage ? 320 : 440 },
+    );
+  }
+  if (opts.profile === 'section') {
+    return densityFromScore(
+      opts.title.length * (opts.hasImage ? 2.3 : 1.6) + visibleText(opts.subtitle).length,
+      { compact: opts.hasImage ? 170 : 240, dense: opts.hasImage ? 300 : 410 },
+    );
+  }
+  if (opts.profile === 'statement') {
+    return densityFromScore(
+      opts.title.length * (opts.scale === 'display' ? 2.2 : 1.5) +
+        visibleText(opts.body).length +
+        visibleText(opts.footer).length * 0.8,
+      { compact: 250, dense: 480 },
+    );
+  }
+  return densityFromScore(
+    opts.title.length * 2 +
+      visibleText(opts.subtitle).length +
+      visibleText(opts.footer).length * 0.7 +
+      opts.actionLabels.reduce((total, label) => total + label.length, 0),
+    { compact: 220, dense: 400 },
+  );
+}
+
 export type SequenceFrameProfile = 'agenda' | 'timeline';
 
 export type SequenceFrameItem = {
@@ -44,10 +109,21 @@ export type SequenceFrameItem = {
   description?: string | null;
 };
 
-export type SequenceFrameFit = {
+type AgendaSequenceFrameFit = {
   density: SlideDensity;
-  mode: 'centered' | 'fitted' | 'horizontal' | 'vertical';
+  mode: 'centered' | 'fitted';
   crowded: boolean;
+};
+
+type TimelineSequenceFrameFit = {
+  density: SlideDensity;
+  mode: 'horizontal' | 'vertical';
+  crowded: boolean;
+};
+
+type SequenceFrameOptions = {
+  lead?: string;
+  items: SequenceFrameItem[];
 };
 
 /**
@@ -55,15 +131,22 @@ export type SequenceFrameFit = {
  * timeline steps share the same occupancy shape, while profile-specific limits
  * and geometry remain private to this module.
  */
-export function sequenceFrameFit(opts: {
-  profile: SequenceFrameProfile;
-  header?: string;
-  items: SequenceFrameItem[];
-}): SequenceFrameFit {
-  const descriptionLengths = opts.items.map((item) => visibleText(item.description).length);
+export function sequenceFrameFit(
+  opts: SequenceFrameOptions & { profile: 'agenda' },
+): AgendaSequenceFrameFit;
+export function sequenceFrameFit(
+  opts: SequenceFrameOptions & { profile: 'timeline' },
+): TimelineSequenceFrameFit;
+export function sequenceFrameFit(
+  opts: SequenceFrameOptions & { profile: SequenceFrameProfile },
+): AgendaSequenceFrameFit | TimelineSequenceFrameFit {
+  // Labels and descriptions are authored markdown strings. Measure the raw
+  // strings because md() escapes tag-like text before it becomes visible;
+  // visibleText() here would incorrectly erase copy that the renderer shows.
+  const descriptionLengths = opts.items.map((item) => item.description?.length ?? 0);
   const totalDescriptionLength = descriptionLengths.reduce((sum, length) => sum + length, 0);
   const maxDescriptionLength = Math.max(0, ...descriptionLengths);
-  const headerLength = visibleText(opts.header).length;
+  const leadLength = visibleText(opts.lead).length;
 
   if (opts.profile === 'agenda') {
     const crowded =
@@ -71,10 +154,9 @@ export function sequenceFrameFit(opts: {
       totalDescriptionLength > SLIDE_LIMITS.agenda.description.max * 2 ||
       maxDescriptionLength > SLIDE_LIMITS.agenda.description.max / 2;
     const density = densityFromScore(
-      headerLength * 0.6 +
+      leadLength * 0.6 +
         opts.items.reduce(
-          (score, item) =>
-            score + visibleText(item.label).length * 1.3 + visibleText(item.description).length,
+          (score, item) => score + item.label.length * 1.3 + (item.description?.length ?? 0),
           opts.items.length * 52,
         ),
       { compact: 360, dense: 620 },
@@ -91,10 +173,9 @@ export function sequenceFrameFit(opts: {
     totalDescriptionLength > SLIDE_LIMITS.timeline.description.max * 2.35 ||
     maxDescriptionLength > SLIDE_LIMITS.timeline.description.max * 0.64;
   const density = densityFromScore(
-    headerLength * 0.6 +
+    leadLength * 0.6 +
       opts.items.reduce(
-        (score, item) =>
-          score + visibleText(item.label).length * 1.2 + visibleText(item.description).length,
+        (score, item) => score + item.label.length * 1.2 + (item.description?.length ?? 0),
         opts.items.length * 65,
       ),
     { compact: 430, dense: 690 },

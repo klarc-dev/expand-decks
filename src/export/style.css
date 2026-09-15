@@ -255,8 +255,8 @@
 }
 
 /* Heading mark — `[mot]` in any title (md() → <mark class="k-mark">).
-   Keep the word in the heading's ink and draw a deliberate rose underline:
-   slightly offset, rounded, and narrow enough to read as editorial emphasis. */
+   Preserve the heading ink and add a precise secondary-color rule: straight,
+   restrained, and architectural rather than hand-drawn. */
 .slidev-layout .k-mark {
   color: inherit;
   font: inherit;
@@ -274,13 +274,10 @@
   z-index: -1;
   left: 0.03em;
   right: -0.02em;
-  bottom: -0.1em;
-  height: 0.1em;
-  min-height: 4px;
-  border-radius: 999px;
+  bottom: -0.08em;
+  height: 2px;
+  border-radius: 1px;
   background: var(--k-rose);
-  transform: rotate(-1.2deg);
-  transform-origin: left center;
 }
 
 .k-dark .k-mark {
@@ -452,7 +449,7 @@
   border-color: var(--k-teal);
 }
 .k-eyebrow.k-eyebrow--secondary {
-  color: var(--k-rose);
+  color: var(--k-teal);
   background: #fff;
   border-color: #fff;
 }

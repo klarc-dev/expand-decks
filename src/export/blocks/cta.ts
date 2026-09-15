@@ -1,6 +1,6 @@
 import type { CtaBlockData } from '../../blocks/spec/cta';
 import { K } from '../classNames';
-import { densityClass, densityFromScore, visibleText } from '../density';
+import { densityClass, heroSurfaceFit } from '../density';
 import { richTextToHTML } from '../richtext';
 import { resolveVars } from '../vars';
 import {
@@ -57,14 +57,15 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
       ? `\n\n${locations}`
       : `\n\n<div class="${K.caption} ${K.ctaCaption}">\n  ${footerNoteHtml}\n</div>`
     : '';
-  const density = densityFromScore(
-    block.title.length * 2 +
-      visibleText(subtitleHtml).length +
-      visibleText(footerNoteHtml).length * 0.7 +
-      (block.primaryAction?.length ?? 0) +
-      (block.secondaryAction?.length ?? 0),
-    { compact: 220, dense: 400 },
-  );
+  const density = heroSurfaceFit({
+    profile: 'cta',
+    title: block.title,
+    subtitle: subtitleHtml,
+    footer: footerNoteHtml,
+    actionLabels: [block.primaryAction, block.secondaryAction].filter((label): label is string =>
+      Boolean(label),
+    ),
+  });
 
   const body = `<div class="${['k-center-hero', K.ctaFrame, densityClass(density)].filter(Boolean).join(' ')}">
   <div class="k-center-hero-main">

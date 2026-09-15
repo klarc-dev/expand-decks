@@ -17,7 +17,7 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
   const leadHtml = richTextToHTML(block.lead);
   const fit = sequenceFrameFit({
     profile: 'agenda',
-    header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`,
+    lead: leadHtml,
     items,
   });
   const { density } = fit;

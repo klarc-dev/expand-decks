@@ -11,7 +11,7 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
   const leadHtml = richTextToHTML(block.lead);
   const fit = sequenceFrameFit({
     profile: 'timeline',
-    header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`,
+    lead: leadHtml,
     items: steps,
   });
   const { density } = fit;

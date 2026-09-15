@@ -168,15 +168,15 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     );
   });
 
-  it('keeps secondary pills white with brand-pink text and dot on either surface', () => {
+  it('keeps secondary pills white with primary-color text and dot on either surface', () => {
     const secondary = css.match(/\.k-eyebrow\.k-eyebrow--secondary\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(secondary).toContain('color: var(--k-rose)');
+    expect(secondary).toContain('color: var(--k-teal)');
     expect(secondary).toContain('background: #fff');
     expect(secondary).toContain('border-color: #fff');
     expect(css).not.toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{/);
   });
 
-  it('uses a stylish brand-pink underline while preserving the heading ink', () => {
+  it('uses a precise, straight secondary rule for professional title emphasis', () => {
     const mark = css.match(/\.slidev-layout \.k-mark\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(mark).toContain('color: inherit');
     expect(mark).toContain('position: relative');
@@ -185,9 +185,10 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
 
     const underline = css.match(/\.slidev-layout \.k-mark::after\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(underline).toContain('background: var(--k-rose)');
-    expect(underline).toContain('border-radius: 999px');
-    expect(underline).toContain('transform: rotate(-1.2deg)');
-    expect(underline).toMatch(/bottom:\s*-0\.1em/);
+    expect(underline).toContain('border-radius: 1px');
+    expect(underline).not.toContain('transform:');
+    expect(underline).toMatch(/bottom:\s*-0\.08em/);
+    expect(underline).toMatch(/height:\s*2px/);
   });
 
   it('keeps the eyebrow pill dot the same color as its text in every tone', () => {

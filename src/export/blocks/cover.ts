@@ -1,6 +1,6 @@
 import type { CoverBlockData } from '../../blocks/spec/cover';
 import { K } from '../classNames';
-import { densityClass, densityFromScore, visibleText } from '../density';
+import { densityClass, heroSurfaceFit } from '../density';
 import { renderPeopleStrip, vueBoundSrc } from '../people';
 import { richTextToHTML } from '../richtext';
 import { defFooterSlot, eyebrowGroup, md, wrapSlide, type RenderCtx } from '../utils';
@@ -29,12 +29,13 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
   const people = renderPeopleStrip(block.intervenants, K.coverPeople);
-  const density = densityFromScore(
-    block.title.length * (imageUrl ? 2.5 : 1.7) +
-      visibleText(subtitleHtml).length +
-      (block.intervenants?.length ?? 0) * 70,
-    { compact: imageUrl ? 180 : 260, dense: imageUrl ? 320 : 440 },
-  );
+  const density = heroSurfaceFit({
+    profile: 'cover',
+    title: block.title,
+    subtitle: subtitleHtml,
+    hasImage: Boolean(imageUrl),
+    peopleCount: block.intervenants?.length ?? 0,
+  });
 
   // With image: split layout — the image renders as an explicit <img> column
   // inside the slide body. Slidev's built-in image-right/-left layouts paint the

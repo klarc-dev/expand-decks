@@ -1,5 +1,5 @@
 import type { StatementBlockData, StatementVariant } from '../../blocks/spec/statement';
-import { densityFromScore, visibleText } from '../density';
+import { heroSurfaceFit } from '../density';
 import { heroFrame, splitTakeaway, type RenderCtx } from '../utils';
 import { richTextToHTML } from '../richtext';
 
@@ -32,14 +32,13 @@ export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): str
   const bodyHtml = richTextToHTML(block.body);
   const footerHtml = richTextToHTML(block.footer);
   const takeaway = footerHtml ? splitTakeaway(footerHtml, ctx?.language) : null;
-  // The takeaway box is padded and set at body size, so its text weighs more
-  // than the old footnote line did.
-  const density = densityFromScore(
-    block.title.length * (layout.scale === 'display' ? 2.2 : 1.5) +
-      visibleText(bodyHtml).length +
-      visibleText(footerHtml).length * 0.8,
-    { compact: 250, dense: 480 },
-  );
+  const density = heroSurfaceFit({
+    profile: 'statement',
+    title: block.title,
+    body: bodyHtml,
+    footer: footerHtml,
+    scale: layout.scale,
+  });
 
   return heroFrame({
     eyebrow: block.eyebrow,
