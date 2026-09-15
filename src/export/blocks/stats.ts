@@ -1,6 +1,7 @@
 import type { StatsBlockData } from '../../blocks/spec/stats';
 import { K } from '../classNames';
-import { densityClass, densityFromScore } from '../density';
+import { densityClass, densityFromScore, visibleText } from '../density';
+import { richTextToHTML } from '../richtext';
 import {
   contentFrame,
   escape,
@@ -20,8 +21,10 @@ function balancedStatValue(value: string): string {
 export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
   const stats = block.stats ?? [];
   const statGrid = stats.length ? gridClass(stats.length) : '';
+  const leadHtml = richTextToHTML(block.lead);
   const density = densityFromScore(
-    Math.max(0, ...stats.map((stat) => stat.value.length * 2.4 + stat.label.length)) +
+    visibleText(leadHtml).length * 0.5 +
+      Math.max(0, ...stats.map((stat) => stat.value.length * 2.4 + stat.label.length)) +
       stats.length * 42,
     { compact: 145, dense: 225 },
   );
@@ -35,6 +38,7 @@ export function renderStats(block: StatsBlockData, ctx?: RenderCtx): string {
   const header = slideHeader({
     eyebrow: block.eyebrow,
     title: block.title,
+    lead: leadHtml || undefined,
     align: 'center',
     density,
   });

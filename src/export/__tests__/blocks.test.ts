@@ -8,12 +8,12 @@ import { renderMarkdown } from '../blocks/markdown';
 import { renderMermaid } from '../blocks/mermaid';
 import { renderQuotes } from '../blocks/quotes';
 import { renderSection } from '../blocks/section';
-import { renderStatement, splitTakeaway } from '../blocks/statement';
+import { renderStatement } from '../blocks/statement';
 import { renderStats } from '../blocks/stats';
 import { renderTable } from '../blocks/table';
 import { renderTimeline } from '../blocks/timeline';
 import { renderTwoCols } from '../blocks/twoCols';
-import { escape, md, resetDefs } from '../utils';
+import { escape, md, resetDefs, splitTakeaway } from '../utils';
 import { setVarDoc } from '../vars';
 
 // Minimal valid Lexical editor state (root > paragraph > text) for richText
@@ -244,7 +244,7 @@ describe('shared adaptive card stacks', () => {
       title: 'Long comparison grid',
       columns: '2',
       cards: [
-        { title: 'One', description: lexical('A'.repeat(180)) },
+        { title: 'One', description: lexical('A'.repeat(340)) },
         { title: 'Two', description: lexical('B'.repeat(40)) },
         { title: 'Three', description: lexical('C'.repeat(40)) },
         { title: 'Four', description: lexical('D'.repeat(40)) },
@@ -455,9 +455,11 @@ describe('renderTwoCols()', () => {
       rightCards: [{ title: 'Card 1', description: lexical('Desc 1') }],
     });
     expect(result).toContain('k-content-main k-content-main--start');
+    // The unified header separates the copy column: no vestigial accent rule.
     expect(result).toMatch(
-      /k-content-header[\s\S]*k-content-main k-content-main--start[\s\S]*<hr class="k-divider"\/>/,
+      /k-content-header[\s\S]*k-content-main k-content-main--start[\s\S]*k-copy-stack--lead/,
     );
+    expect(result).not.toContain('k-divider');
   });
 
   it('renders right cards in the second split column even when left body is empty', () => {
@@ -506,6 +508,21 @@ describe('renderTwoCols()', () => {
     });
     expect(result).toContain('k-density-dense');
     expect(result).toContain('k-card-scale-xs');
+  });
+
+  it('renders leftFooter as the same takeaway box as the statement footer', () => {
+    const result = renderTwoCols({
+      blockType: 'twoCols',
+      title: 'Le problème des expertises dispersées',
+      intro: lexical('Votre projet touche au droit et à la science.'),
+      leftFooter: lexical('L’enjeu : examiner ensemble les conséquences de vos choix.'),
+      rightCards: [{ title: 'Une seule équipe', description: lexical('Un même dossier.') }],
+    });
+    expect(result).toContain('k-takeaway k-takeaway--side'.split(' ')[0]);
+    expect(result).toContain('k-takeaway--side');
+    expect(result).toContain('<span class="k-takeaway-label">L’enjeu</span>');
+    expect(result).toContain('<p>examiner ensemble les conséquences de vos choix.</p>');
+    expect(result).not.toContain('k-copy-stack--note');
   });
 });
 
@@ -590,7 +607,7 @@ describe('renderCardGrid()', () => {
     expect(result.match(/k-card-scale-(?:sm|xs)/g)).toHaveLength(1);
   });
 
-  it('renders sidebarText as an in-flow lead band above the cards, not a floating header sidebar', () => {
+  it('renders sidebarText as the description line of the unified header, above the cards', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',
       title: 'Grid',
@@ -598,12 +615,12 @@ describe('renderCardGrid()', () => {
       cards: oneCard,
     });
     // The lead is a structural band in the body, not a right-aligned header aside.
-    expect(result).toContain('k-cardgrid-lead');
+    expect(result).toContain('k-header-lead');
     expect(result).toContain('Contexte de la partie');
     expect(result).not.toContain('k-content-header--split');
     expect(result).not.toContain('k-side-note');
     // Lead reads before the card grid so the slide has a clear top-down hierarchy.
-    expect(result.indexOf('k-cardgrid-lead')).toBeLessThan(result.indexOf('k-card-stack'));
+    expect(result.indexOf('k-header-lead')).toBeLessThan(result.indexOf('k-card-stack'));
   });
 
   it('stretches the card body to own the content row so cards align to one baseline', () => {
@@ -734,7 +751,7 @@ describe('renderCardGrid()', () => {
       title: 'Grid',
       cards: oneCard,
     });
-    expect(result).not.toContain('k-cardgrid-lead');
+    expect(result).not.toContain('k-header-lead');
   });
 });
 
@@ -824,6 +841,31 @@ describe('renderStats()', () => {
   });
 });
 
+describe('unified content header', () => {
+  it('renders the lead description inside the shared header on every content block', () => {
+    const lead = lexical('Une phrase d’introduction.');
+    const cases = [
+      renderQuotes({ blockType: 'quotes', title: 'Q', lead, quotes: [] }),
+      renderTimeline({ blockType: 'timeline', title: 'T', lead, steps: [{ label: 'A' }] }),
+      renderTable({
+        blockType: 'table',
+        title: 'Tb',
+        lead,
+        columns: [{ header: 'H' }],
+        rows: [{ cells: [{ value: lexical('c') }] }],
+      }),
+      renderStats({ blockType: 'stats', title: 'S', lead, stats: [{ value: '1', label: 'l' }] }),
+      renderAgenda({ blockType: 'agenda', title: 'Ag', lead, items: [{ label: 'x' }] }),
+    ];
+    for (const html of cases) {
+      expect(html).toMatch(
+        /<header class="k-content-header[^"]*">[\s\S]*<div class="k-header-lead">/,
+      );
+      expect(html).toContain('Une phrase d’introduction.');
+    }
+  });
+});
+
 describe('renderQuotes()', () => {
   it('renders quotes with author info', () => {
     const result = renderQuotes({
@@ -832,6 +874,7 @@ describe('renderQuotes()', () => {
       quotes: [{ quote: lexical('Great service'), authorName: 'John', authorRole: 'CEO' }],
     });
     expect(result).toContain('Great service');
+    expect(result).toContain('<span class="k-quote-mark"><svg viewBox="0 0 24 24"');
     expect(result).toContain('John');
     expect(result).toContain('CEO');
   });

@@ -18,6 +18,8 @@ export const SLIDE_LIMITS = {
   common: {
     eyebrow: { max: 80 },
     title: { max: 180 },
+    // Unified content header: eyebrow pill + title + optional description.
+    lead: { max: 320 },
     footnotes: { min: 0, max: 3, text: { max: 220 } },
   },
   cover: {

@@ -143,12 +143,10 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-card-stack--grid\s*\{[\s\S]*grid-auto-rows:\s*auto/);
   });
 
-  it('styles the lead as an in-flow reading band instead of a detached right note', () => {
-    expect(css).toMatch(
-      /\.k-cardgrid-lead\s*\{[\s\S]*border-top:\s*1px solid var\(--accent-rule\)/,
-    );
-    expect(css).not.toMatch(/\.k-cardgrid-lead\s*\{[\s\S]*border-left:\s*3px/);
-    expect(css).toMatch(/\.k-cardgrid-lead\s*\{[\s\S]*max-width:\s*54rem/);
+  it('styles the header description as muted running text shared by every content block', () => {
+    expect(css).toMatch(/\.k-header-lead\s*\{[\s\S]*?max-width:\s*54rem/);
+    expect(css).toMatch(/\.k-header-lead\s*\{[\s\S]*?color:\s*var\(--fg-muted\)/);
+    expect(css).not.toMatch(/\.k-cardgrid-lead\s*\{/);
   });
 
   it('defines shared card-grid scales rather than per-card font sizes', () => {

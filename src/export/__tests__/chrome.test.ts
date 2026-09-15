@@ -165,13 +165,9 @@ describe('buildFooterLayer / buildLogoLayer', () => {
     expect(footer).toContain('<a v-if="orgUrl && left" :href="orgUrl">{{ left }}</a>');
     const logo = buildLogoLayer(true);
     expect(logo).toContain('klarcOrgUrl');
-    expect(logo).toContain(
-      '<a v-if="url && !hidden && orgUrl" :href="orgUrl" class="k-slide-logo-link"',
-    );
+    expect(logo).toContain('<a v-if="url && orgUrl" :href="orgUrl" class="k-slide-logo-link"');
     // the plain image stays for organisations without a website
-    expect(logo).toContain(
-      '<img v-else-if="url && !hidden" :src="url" class="k-slide-logo" alt="" />',
-    );
+    expect(logo).toContain('<img v-else-if="url" :src="url" class="k-slide-logo" alt="" />');
   });
 
   it('returns empty string when no footer/logo configured (file not written)', () => {
@@ -179,10 +175,11 @@ describe('buildFooterLayer / buildLogoLayer', () => {
     expect(buildLogoLayer(false)).toBe('');
   });
 
-  it('generates a logo layer that swaps the variant on the slide surface and respects hideChrome', () => {
+  it('generates a logo layer that swaps the variant on the slide surface on every slide', () => {
     const layer = buildLogoLayer(true);
     expect(layer).toContain('k-slide-logo');
-    expect(layer).toContain('hideChrome');
+    // hideChrome only drops the footer: the logo is the header of every slide.
+    expect(layer).not.toContain('hideChrome');
     expect(layer).toContain("includes('k-dark')");
     expect(layer).toContain('logos.value?.dark : logos.value?.light');
   });

@@ -309,6 +309,10 @@
    band opt out below with their own treatment. */
 .slidev-layout a {
   color: inherit;
+  /* Slidev's layouts-base gives every <a> a dashed currentColor border
+     (style on all sides, width on the bottom); drop it so the underline below
+     is the only link mark in the PDF. The ghost button restores its own ring. */
+  border: 0;
   text-decoration: underline;
   text-decoration-color: var(--accent-rule);
   text-decoration-thickness: 0.09em;
@@ -325,23 +329,43 @@
 .slidev-layout .k-slide-logo-link {
   text-decoration: none;
 }
+.slidev-layout .k-btn-ghost {
+  border: 1px solid var(--k-line);
+}
 
 /* Components ----------------------------------- */
+/* Eyebrow pill: the small label above a heading, shared by every template
+   that carries one (content header, statement hero, cover, CTA). One tonal
+   pill on --pill-* tokens with a rose accent dot; the dark ground swaps the
+   tokens, the dot stays as the brand constant. */
 .k-eyebrow {
   display: inline-flex;
   align-items: center;
+  gap: 0.5rem;
   width: max-content;
   max-width: 100%;
-  font-size: var(--t-small);
-  font-weight: 650;
-  letter-spacing: 0.09em;
+  min-height: 1.75rem;
+  padding: 0.3rem 0.85rem 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--k-teal) 84%, var(--k-ink));
-  padding: 0 0 0.36rem;
-  border: 0;
-  border-bottom: 1px solid var(--accent-rule);
-  border-radius: 0;
-  background: transparent;
+  color: var(--pill-fg);
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  border-radius: 999px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.k-eyebrow::before {
+  content: "";
+  flex: none;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--accent-rule);
 }
 
 .k-eyebrow--header {
@@ -358,9 +382,12 @@
 }
 
 .k-dark .k-eyebrow {
-  color: rgba(255, 255, 255, 0.92);
-  background: transparent;
-  border-color: color-mix(in srgb, var(--accent-rule) 82%, #fff 10%);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+.k-dark .k-eyebrow::before {
+  background: color-mix(in srgb, var(--accent-rule) 88%, #fff 12%);
 }
 
 .k-logo {
@@ -981,8 +1008,10 @@
   max-width: 15rem;
 }
 
+/* Horizontal rail: the description sits under a centred dot and label, so it
+   is centred too; the vertical rail keeps the left-aligned reading column. */
 .k-timeline--horizontal .k-tl-desc {
-  text-align: left;
+  text-align: center;
 }
 
 .k-timeline--vertical .k-tl-desc {
@@ -1190,13 +1219,26 @@
   font-style: italic;
 }
 
-.k-quote::before {
-  content: "\201C";
-  font-size: 3rem;
+/* Quote mark — Lucide quote glyph on a soft rose disc, above the quote. */
+.k-quote-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  margin-bottom: 0.9rem;
+  border-radius: 999px;
+  background: var(--k-rose-soft);
+  color: color-mix(in srgb, var(--k-rose) 70%, var(--k-teal-700) 30%);
+}
+.k-quote-mark svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+.k-dark .k-quote-mark {
+  background: rgba(255, 255, 255, 0.1);
   color: var(--k-rose);
-  line-height: 0;
-  vertical-align: -0.4em;
-  margin-right: 0.2rem;
 }
 
 .k-tight .k-quote {
@@ -1204,8 +1246,14 @@
   line-height: 1.3;
 }
 
-.k-tight .k-quote::before {
-  font-size: 2.2rem;
+.k-tight .k-quote-mark {
+  width: 1.7rem;
+  height: 1.7rem;
+  margin-bottom: 0.7rem;
+}
+.k-tight .k-quote-mark svg {
+  width: 0.85rem;
+  height: 0.85rem;
 }
 
 .k-author {
@@ -1314,17 +1362,15 @@
   margin-top: 2.4rem;
 }
 
-/* Takeaway — the statement footer promoted to the slide's key message: a
-   tinted box on a rose accent with a cartouche label ("L’enjeu", "À retenir")
-   ahead of the text. Overrides the muted footnote tokens of .k-caption so it
-   reads at body size in the foreground colour on both grounds. */
+/* Takeaway — one quiet surface, with a plain label beside the key message.
+   Type and spacing provide hierarchy without nesting a second colour fill.
+   Overrides .k-caption so the closing note remains readable on both grounds. */
 .k-takeaway {
   display: flex;
   align-items: flex-start;
   gap: 1.1rem;
   max-width: 54rem;
   padding: 1.1rem 1.4rem;
-  border-left: 4px solid var(--accent-rule);
   border-radius: var(--k-radius-chip);
   background: var(--k-teal-50);
   color: var(--fg);
@@ -1340,13 +1386,8 @@
 }
 .k-takeaway-label {
   flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  margin-top: 0.15rem;
-  padding: 0.24rem 0.65rem;
-  border-radius: var(--k-radius-chip);
-  background: var(--k-rose-soft);
-  color: var(--k-teal-700);
+  align-self: center;
+  color: inherit;
   font-size: var(--t-small);
   font-weight: 650;
   letter-spacing: 0.09em;
@@ -1364,13 +1405,21 @@
   font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
   line-height: calc(1.45 * var(--density-leading));
 }
+/* twoCols copy column: the takeaway closes the column under the intro. */
+.k-takeaway--side {
+  margin-top: 1.4rem;
+  max-width: 100%;
+}
+.k-content.k-density-compact .k-takeaway--side,
+.k-content.k-density-dense .k-takeaway--side {
+  margin-top: calc(1.4rem * var(--density-space));
+  padding: calc(1.1rem * var(--density-space)) calc(1.4rem * var(--density-space));
+  font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
+  line-height: calc(1.45 * var(--density-leading));
+}
 .k-dark .k-takeaway {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-}
-.k-dark .k-takeaway-label {
-  background: var(--accent-rule);
-  color: var(--k-teal-900);
 }
 
 /* Status pill (U10) — matrix-table status cells; replaces inline emoji. */
@@ -1436,6 +1485,24 @@
 .k-content-header h2 {
   margin: 0;
 }
+/* Description line of the unified content header. */
+.k-header-lead {
+  margin-top: 0.7rem;
+  max-width: 54rem;
+  font-size: calc(var(--t-lead) * 0.92);
+  line-height: 1.45;
+  color: var(--fg-muted);
+}
+.k-content-header--center .k-header-lead {
+  margin-left: auto;
+  margin-right: auto;
+}
+.k-content.k-density-compact .k-header-lead,
+.k-content.k-density-dense .k-header-lead {
+  margin-top: calc(0.7rem * var(--density-space));
+  font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
+  line-height: calc(1.45 * var(--density-leading));
+}
 .k-content--full {
   width: 100%;
 }
@@ -1483,7 +1550,16 @@
   gap: 0.95rem;
 }
 .k-card-stack--column.k-tight {
-  gap: 0.58rem;
+  gap: 0.5rem;
+}
+/* Four-plus cards stacked in one column (twoCols right rail) run out of canvas
+   before the density score notices, and a wider body face (IBM Plex Sans vs
+   Roboto) costs another line per card. Trim the box, not the type. */
+.k-card-stack--column.k-tight .k-card {
+  padding: 0.68rem 1rem 0.7rem;
+}
+.k-card-stack--column.k-tight .k-card p {
+  line-height: 1.32;
 }
 .k-cardgrid-body {
   width: 100%;
@@ -1495,21 +1571,6 @@
 }
 .k-cardgrid-body > .k-card-stack {
   flex: 1 1 auto;
-}
-.k-cardgrid-lead {
-  max-width: 54rem;
-  color: var(--fg-muted);
-  font-size: var(--t-body);
-  line-height: 1.45;
-  padding: 0.8rem 1rem;
-  border-top: 1px solid var(--accent-rule);
-  border-bottom: 1px solid var(--k-hairline);
-}
-.k-content.k-density-compact .k-cardgrid-lead,
-.k-content.k-density-dense .k-cardgrid-lead {
-  font-size: calc(var(--t-body) * var(--density-scale));
-  line-height: calc(1.45 * var(--density-leading));
-  padding: calc(0.8rem * var(--density-space)) calc(1rem * var(--density-space));
 }
 .k-cardgrid-lead strong {
   color: var(--fg);
@@ -1535,47 +1596,86 @@
 .k-cardgrid-people .k-person-card {
   grid-template-columns: 2.5rem minmax(0, 1fr);
   min-width: min(15rem, 100%);
-  padding: 0.5rem 0.8rem;
+  padding: 0.55rem 0.9rem 0.55rem 0.7rem;
 }
 .k-cardgrid-people .k-person-avatar {
   width: 2.5rem;
   height: 2.5rem;
 }
-/* Prominent variant — a cards-free cardGrid whose people ARE the content
-   (contacts slide). 2-up grid of large person cards, left-aligned with the
-   lead band so header, intro and grid share one margin. */
+/* Prominent variant: a cards-free cardGrid whose people ARE the content
+   (contacts slide). 2-up grid of large person cards on the raised surface,
+   left-aligned with the lead band so header, intro and grid share one margin.
+   Contacts stack under a hairline like the back of a business card. */
 .k-cardgrid-people--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  gap: 1.5rem;
-  width: min(54rem, 100%);
+  gap: 1.25rem;
+  width: min(56rem, 100%);
   margin: 0;
 }
 .k-cardgrid-people--grid .k-person-card {
-  grid-template-columns: 5rem minmax(0, 1fr);
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: start;
   min-width: 0;
-  padding: 1.7rem 1.8rem;
-  gap: 1.2rem;
+  max-width: none;
+  gap: 1.25rem;
+  padding: 1.5rem 1.7rem 1.4rem 1.5rem;
+  background: var(--k-surface-raised);
 }
 .k-cardgrid-people--grid .k-person-avatar {
-  width: 5rem;
-  height: 5rem;
-  font-size: 1.65rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-top: 0.1rem;
+}
+.k-cardgrid-people--grid .k-person-initials {
+  font-size: var(--t-lead);
 }
 .k-cardgrid-people--grid .k-person-name {
   font-size: var(--t-lead);
+  line-height: 1.1;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
 }
 .k-cardgrid-people--grid .k-person-title {
+  margin-top: 0.3rem;
   font-size: var(--t-body);
+  line-height: 1.3;
   /* Long professional titles must read in full on the contacts slide. */
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
 }
+.k-cardgrid-people--grid .k-person-contact {
+  flex-direction: column;
+  align-items: flex-start;
+  row-gap: 0.22rem;
+  margin-top: 0.8rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--k-hairline);
+  font-size: var(--t-small);
+  line-height: 1.35;
+}
+.k-cardgrid-people--grid .k-person-link {
+  max-width: 100%;
+}
+.k-cardgrid-people--grid .k-person-link + .k-person-link::before {
+  content: none;
+}
 .k-card-scale-md.k-grid-3.k-card-stack--grid .k-card h3 {
   font-size: var(--t-lead);
   line-height: 1.15;
+}
+/* A comfortable two-column grid has wide cards: the body steps up between
+   body and lead size so the copy fills the card without overflowing a 2×2
+   grid whose rows share the fixed content height. */
+.k-card-scale-md.k-grid-2.k-card-stack--grid .k-card p {
+  font-size: calc(var(--t-body) * 1.12);
+  line-height: 1.45;
+}
+.k-card-scale-md.k-grid-2.k-card-stack--grid .k-card h3 {
+  margin-bottom: 0.5rem;
 }
 
 /* A five-card, three-column grid uses a six-track sub-grid so its final pair is
@@ -1916,38 +2016,59 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 2rem;
-  max-width: min(100%, 46rem);
+  max-width: min(100%, 54rem);
 }
 .k-cover.k-density-compact .k-cover-people,
 .k-cover.k-density-dense .k-cover-people {
   margin-top: calc(2rem * var(--density-space));
   gap: calc(0.75rem * var(--density-space));
 }
+/* Dense cover (four people, or a split cover with three): the band becomes a
+   two-column grid of compact cards so the rows stay even, and the contact row
+   is allowed to wrap without its separators rather than clip. */
+.k-cover.k-density-dense .k-cover-people {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .k-cover.k-density-dense .k-person-card {
   grid-template-columns: 2.5rem minmax(0, 1fr);
-  min-width: min(15rem, 100%);
-  padding: 0.55rem 0.7rem;
+  min-width: 0;
+  max-width: none;
+  padding: 0.55rem 0.8rem 0.55rem 0.6rem;
 }
 .k-cover.k-density-dense .k-person-avatar {
   width: 2.5rem;
   height: 2.5rem;
 }
+.k-cover.k-density-dense .k-person-contact {
+  flex-wrap: wrap;
+  column-gap: 0.6rem;
+  row-gap: 0.05rem;
+}
+.k-cover.k-density-dense .k-person-link + .k-person-link::before {
+  content: none;
+}
+/* Person card: the shared contact unit (cover band, cardGrid strip, contacts
+   grid). Corporate decks render flat (the print override below strips every
+   box-shadow), so elevation is declared ONCE as a hairline border; no shadow,
+   no inset highlight. The strip variant sits on the quiet --k-surface tint so
+   it reads as a secondary band next to white content cards; the prominent
+   contacts grid promotes it to the raised white surface. */
 .k-person-card {
   display: grid;
   grid-template-columns: 3rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.85rem;
   min-width: min(18rem, 100%);
-  max-width: 22rem;
-  padding: 0.72rem 0.9rem;
-  border-radius: 1.15rem;
+  max-width: 26rem;
+  padding: 0.72rem 1rem 0.72rem 0.8rem;
+  border: 1px solid var(--k-hairline);
+  border-radius: var(--k-radius-card);
   color: var(--fg);
-  background: color-mix(in srgb, var(--bg) 86%, var(--fg) 7%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    0 0 0 1px color-mix(in srgb, var(--pill-border) 62%, var(--fg) 8%),
-    0 14px 32px -24px color-mix(in srgb, var(--k-teal) 42%, transparent);
+  background: var(--k-surface);
 }
+/* Portrait and initials share a quiet keyline; the fallback inherits the
+   card's foreground rather than introducing a second colored surface. */
 .k-person-avatar {
   width: 3rem;
   height: 3rem;
@@ -1957,64 +2078,88 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  background: color-mix(in srgb, var(--accent-rule) 82%, #fff 10%);
-  color: var(--k-teal-900);
-  font-family: var(--k-font-heading);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-rule) 55%, transparent);
+  outline: 1px solid var(--k-hairline);
+  outline-offset: 2px;
+  background: var(--k-surface-soft);
 }
 .k-person-initials {
-  font-size: 0.88rem;
+  background: var(--k-rose-soft);
+  color: var(--k-teal-900);
+  font-family: var(--k-font-heading);
+  font-weight: 600;
+  font-size: calc(var(--t-small) * 1.1);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-indent: 0.06em; /* optically recentre the tracked pair */
 }
 .k-person-body {
   min-width: 0;
 }
 .k-person-name {
   font-family: var(--k-font-heading);
-  font-size: 1rem;
-  line-height: 1.1;
+  font-weight: 600;
+  font-size: var(--t-body);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   color: var(--fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .k-person-title {
-  margin-top: 0.24rem;
+  margin-top: 0.2rem;
   font-size: var(--t-small);
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--fg-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Contact line — email, phone, LinkedIn as separate links so each carries its
-   own PDF annotation. Single line, dot-separated, ellipsised like the title. */
+/* Contact row: email, phone, LinkedIn as separate links so each carries its
+   own PDF annotation. One line, dot-separated, never wrapped: only the email
+   (first item) may ellipsise; a truncated phone number or label is useless. */
 .k-person-contact {
-  margin-top: 0.3rem;
+  margin-top: 0.42rem;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
-  column-gap: 0.7rem;
-  row-gap: 0.12rem;
-  font-size: var(--t-micro);
-  line-height: 1.25;
-  letter-spacing: 0.01em;
-  color: var(--fg-muted);
   min-width: 0;
+  font-size: calc(var(--t-small) * 0.9);
+  line-height: 1.3;
+  letter-spacing: 0.005em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
 }
 .k-person-link {
-  flex: 0 1 auto;
-  max-width: 100%;
+  flex: 0 0 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--k-teal);
-  text-decoration-color: color-mix(in srgb, var(--k-teal) 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--k-teal) 32%, transparent);
+}
+.k-person-link:first-child {
+  flex: 0 1 auto;
+}
+.k-person-link + .k-person-link::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin: 0 0.55rem;
+  border-radius: 999px;
+  vertical-align: 0.22em;
+  background: color-mix(in srgb, var(--fg-muted) 70%, transparent);
 }
 .k-dark .k-person-link {
   color: #fff;
-  text-decoration-color: rgba(255, 255, 255, 0.45);
+  text-decoration-color: rgba(255, 255, 255, 0.36);
+}
+.k-dark .k-person-link + .k-person-link::before {
+  background: rgba(255, 255, 255, 0.45);
 }
 .k-cover-footer {
   display: flex;
@@ -2023,19 +2168,24 @@
   gap: 1rem;
   min-width: 0;
 }
+/* Dark ground: the card lifts one step off the teal (the print override pins
+   the same raised/hairline pair), the disc keeps the rose accent, the keyline
+   turns white at low alpha so photos and discs share one ring. */
 .k-dark .k-person-card {
   color: #fff;
-  background: rgba(255, 255, 255, 0.085);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.16),
-    0 14px 32px -24px rgba(0, 0, 0, 0.75);
+  background: var(--k-surface-raised);
+  border-color: var(--k-hairline);
 }
 .k-dark .k-person-name {
   color: #fff;
 }
 .k-dark .k-person-avatar {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+  outline-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+}
+.k-dark .k-person-initials {
+  background: var(--k-rose);
+  color: var(--k-teal-900);
 }
 
 /* Slide chrome (compound base) — header (brand) + footer (page indicator)
@@ -2127,8 +2277,19 @@
 }
 
 /* CTA-specific text classes — replace inline styles -------------- */
+/* Anchor to the canvas, not Slidev center's auto-height wrapper. Symmetric
+   chrome clearance keeps the editorial group vertically centered. */
 .k-cta-frame {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  max-width: none;
+  height: 100%;
+  padding-block: max(var(--header-top), var(--content-bottom));
+}
+.k-cta-frame > .k-center-hero-main {
+  width: 100%;
+  max-width: 64rem;
 }
 .k-cta-title {
   color: #fff;
@@ -2154,9 +2315,88 @@
   margin: 2.6rem auto 0;
   text-align: center;
 }
+/* Match the CTA's light override as well as its default dark tone. */
+.slidev-layout:not(.k-dark) .k-cta-actions .k-btn {
+  color: #fff;
+}
+/* Location cards are an unfilled address band, not another tinted panel. */
+.k-location-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+.k-location-grid:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 32rem;
+  margin-inline: auto;
+}
+.k-location-card {
+  min-width: 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--k-hairline);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+.k-location-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.slidev-layout .k-location-heading h3 {
+  margin: 0;
+  color: var(--fg);
+  font-size: var(--t-lead);
+  line-height: 1.2;
+}
+.k-location-address {
+  margin-top: 0.5rem;
+  font-size: var(--t-body);
+  font-style: normal;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.k-location-contact {
+  margin-top: 0.45rem;
+  color: var(--fg-muted);
+  font-size: var(--t-small);
+  line-height: 1.6;
+}
+.slidev-layout .k-location-card a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
+}
+.slidev-layout .k-location-directions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.75rem;
+  font-size: var(--t-small);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.k-location-directions svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+.slidev-layout .k-location-card a:hover {
+  text-decoration-thickness: 2px;
+}
+.slidev-layout .k-location-card a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
 .k-eyebrow-dark {
-  background: transparent !important;
-  border-color: color-mix(in srgb, var(--accent-rule) 82%, #fff 10%) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.24) !important;
   color: #fff !important;
 }
 
@@ -2269,9 +2509,11 @@
   align-items: start;
 }
 
+/* Both columns hang from the header like every other content slide; the
+   copy column no longer floats to the vertical middle of the card stack. */
 .k-split--body {
   width: 100%;
-  align-items: center;
+  align-items: start;
 }
 
 .k-copy-column {

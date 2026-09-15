@@ -8,6 +8,7 @@ import {
   escape,
   eyebrow as renderEyebrow,
   md,
+  locationCardsFromNote,
   safeHref,
   surfaceClass,
   wrapSlide,
@@ -28,7 +29,7 @@ export type { CtaBlockData };
 
 export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   const eyebrow = renderEyebrow(block.eyebrow, 'k-eyebrow--cta', {
-    extraClass: K.eyebrowDark,
+    extraClass: ctx?.surface === 'light' ? undefined : K.eyebrowDark,
     multiline: true,
   });
 
@@ -50,8 +51,11 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   // Closing-slide footnote; uses the AA-safe k-caption token plus a CTA-context
   // modifier that owns alignment and spacing in CSS (no inline utilities).
   const footerNoteHtml = richTextToHTML(block.footerNote);
+  const locations = locationCardsFromNote(footerNoteHtml, ctx?.language);
   const footerNote = footerNoteHtml
-    ? `\n\n<div class="${K.caption} ${K.ctaCaption}">\n  ${footerNoteHtml}\n</div>`
+    ? locations
+      ? `\n\n${locations}`
+      : `\n\n<div class="${K.caption} ${K.ctaCaption}">\n  ${footerNoteHtml}\n</div>`
     : '';
   const density = densityFromScore(
     block.title.length * 2 +

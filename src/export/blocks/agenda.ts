@@ -1,7 +1,8 @@
 import type { AgendaBlockData } from '../../blocks/spec/agenda';
 import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 import { K } from '../classNames';
-import { densityClass, densityFromScore } from '../density';
+import { densityClass, densityFromScore, visibleText } from '../density';
+import { richTextToHTML } from '../richtext';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { AgendaBlockData };
@@ -25,11 +26,13 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
       ? block.items
       : (ctx?.sections ?? []).map((label) => ({ label, description: null }));
   const dense = needsDenseAgenda(items);
+  const leadHtml = richTextToHTML(block.lead);
   const density = densityFromScore(
-    items.reduce(
-      (score, item) => score + item.label.length * 1.3 + (item.description?.length ?? 0),
-      items.length * 52,
-    ),
+    visibleText(leadHtml).length * 0.6 +
+      items.reduce(
+        (score, item) => score + item.label.length * 1.3 + (item.description?.length ?? 0),
+        items.length * 52,
+      ),
     { compact: 360, dense: 620 },
   );
   // `active` is 1-based; only emphasize when it points at a real item.
@@ -53,7 +56,12 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     })
     .join('\n');
 
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md', density });
+  const header = slideHeader({
+    eyebrow: block.eyebrow,
+    title: block.title,
+    lead: leadHtml || undefined,
+    density,
+  });
   const fit = dense || items.length >= 4;
   const agendaClass = [
     K.agenda,

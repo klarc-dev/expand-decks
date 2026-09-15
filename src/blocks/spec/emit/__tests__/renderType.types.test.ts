@@ -116,6 +116,7 @@ const twoColsRenderSchema = z.object({
   blockType: z.literal('twoCols'),
   eyebrow: optionalRender(z.string()),
   title: z.string(),
+  lead: optionalRichTextRender(),
   intro: optionalRichTextRender(),
   leftFooter: optionalRichTextRender(),
   rightCards: z

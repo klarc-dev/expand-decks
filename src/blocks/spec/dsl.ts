@@ -400,6 +400,25 @@ export function eyebrowFieldSpec(
   );
 }
 
+/** `lead` render Zod: the optional rich-text description under a content title. */
+export const leadRender = () => optionalLimitedRichTextRender(SLIDE_LIMITS.common.lead);
+
+/**
+ * `lead` field: the description line of the unified content header (eyebrow
+ * pill + title + description) shared by every content block, so a deck reads
+ * as one system from slide to slide.
+ */
+export function leadFieldSpec(
+  description = 'Phrase d’introduction affichée sous le titre, dans l’en-tête commun',
+): FieldSpec {
+  return rawField('lead', leadRender(), optionalLimitedAi(SLIDE_LIMITS.common.lead), {
+    type: 'richText',
+    label: 'Description',
+    description,
+    maxLength: SLIDE_LIMITS.common.lead.max,
+  });
+}
+
 /** Audience-facing title text is a concise headline, not inline Markdown. */
 export const aiTitle = () =>
   nonBlankLimitedString(SLIDE_LIMITS.common.title)

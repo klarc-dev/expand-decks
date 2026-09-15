@@ -4,7 +4,8 @@ import {
   block,
   eyebrowFieldSpec,
   factoryField,
-  type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedString,
   limitedTextPayload,
   nonBlankLimitedString,
@@ -12,6 +13,7 @@ import {
   optionalLimitedRender,
   rawField,
   titleFieldSpec,
+  type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
 
@@ -33,6 +35,7 @@ export const mermaidSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du diagramme'),
+    leadFieldSpec(),
     rawField(
       'source',
       unfencedMermaid,
@@ -63,7 +66,7 @@ export const mermaidSpec = block({
     summary:
       'Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)',
     lines: [
-      'eyebrow, title (obligatoire), caption',
+      'eyebrow, title (obligatoire), lead, caption',
       'source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs ```',
     ],
   },
@@ -73,6 +76,7 @@ export const mermaidRenderSchema = z.object({
   blockType: z.literal('mermaid'),
   eyebrow,
   title,
+  lead: leadRender(),
   source,
   caption,
 });

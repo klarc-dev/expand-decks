@@ -54,8 +54,8 @@ export const cardGridSpec = block({
     titleFieldSpec(title, 'Titre principal de la grille'),
     rawField('sidebarText', sidebarText, optionalLimitedAi(SLIDE_LIMITS.cardGrid.sidebar), {
       type: 'richText',
-      label: 'Texte latéral',
-      description: 'Texte optionnel affiché sur le côté de la grille',
+      label: 'Description',
+      description: 'Phrase d’introduction affichée sous le titre, dans l’en-tête commun',
       maxLength: SLIDE_LIMITS.cardGrid.sidebar.max,
     }),
     rawField('columns', columns, optionalAi(z.enum(['2', '3', '4'])), {

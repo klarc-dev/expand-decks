@@ -47,6 +47,7 @@ const RULES = `Règles :
 - Sinon, si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
 - Sans cible ni nombre dans le brief, génère entre 8 et 15 diapositives selon la complexité du brief
 - Les textes doivent être concis et factuels
+- En-tête commun des diapositives de contenu (twoCols, cardGrid, stats, quotes, table, timeline, agenda, mermaid) : renseigne TOUJOURS eyebrow (2 à 4 mots qui situent la diapositive), title et lead (une phrase qui annonce ce que la diapositive montre) ; le lead ne répète ni le titre ni le premier élément
 - Liens : dans un champ texte, [libellé](url) avec https, mailto: ou tel: rend le libellé cliquable dans le PDF ; utilise-les pour une source citée ou une coordonnée (site, email, téléphone, prise de rendez-vous) fournie dans le contexte ou le brief, jamais pour une URL inventée`;
 
 /** Optional knobs for prompt assembly (reserved for future tuning). */

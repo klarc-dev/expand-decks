@@ -4,7 +4,8 @@ import {
   block,
   eyebrowFieldSpec,
   factoryField,
-  type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedArray,
   limitedArrayPayload,
   limitedString,
@@ -18,6 +19,7 @@ import {
   optionalUnknownRender,
   rawField,
   titleFieldSpec,
+  type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
 
@@ -46,6 +48,7 @@ export const twoColsSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow, 'Texte court au-dessus du titre (ex. "01 · Conseil financier")'),
     titleFieldSpec(title, 'Titre principal de la diapositive'),
+    leadFieldSpec(),
     rawField(
       'intro',
       intro,
@@ -99,7 +102,7 @@ export const twoColsSpec = block({
     heading: 'twoCols',
     summary: 'Deux colonnes avec cartes à droite',
     lines: [
-      'eyebrow, title (obligatoire), intro, leftFooter',
+      'eyebrow, title (obligatoire), lead, intro, leftFooter',
       'rightCards: [{title, description}]',
     ],
   },
@@ -109,6 +112,7 @@ export const twoColsRenderSchema = z.object({
   blockType: z.literal('twoCols'),
   eyebrow,
   title,
+  lead: leadRender(),
   intro,
   leftFooter,
   rightCards,

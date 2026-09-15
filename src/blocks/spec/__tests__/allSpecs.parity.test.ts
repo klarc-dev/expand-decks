@@ -124,7 +124,7 @@ Layouts disponibles :
    - variant: centered-hero | pull-quote | big-statement | split — varie la mise en page entre deux statements consécutifs (laisser vide = alternance auto)
 
 4. **twoCols** — Deux colonnes avec cartes à droite
-   - eyebrow, title (obligatoire), intro, leftFooter
+   - eyebrow, title (obligatoire), lead, intro, leftFooter
    - rightCards: [{title, description}]
 
 5. **cardGrid** — Grille de cartes numérotées
@@ -133,11 +133,11 @@ Layouts disponibles :
    - cards: [{number, title, description}]
 
 6. **stats** — Chiffres clés en grille
-   - eyebrow, title (obligatoire)
+   - eyebrow, title (obligatoire), lead
    - stats: [{value, label}]
 
 7. **quotes** — Grille de citations
-   - eyebrow, title (obligatoire)
+   - eyebrow, title (obligatoire), lead
    - quotes: [{quote, authorName, authorRole}]
 
 8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
@@ -147,21 +147,21 @@ Layouts disponibles :
    - footerNote: petit texte en bas
 
 9. **table** — Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)
-   - eyebrow, title (obligatoire)
+   - eyebrow, title (obligatoire), lead
    - tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.
    - columns: [{header}]
    - rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre
 
 10. **timeline** — Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)
-   - eyebrow, title (obligatoire), footer (bandeau transverse)
+   - eyebrow, title (obligatoire), lead, footer (bandeau transverse)
    - steps: [{label, description}] — dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)
 
 11. **mermaid** — Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)
-   - eyebrow, title (obligatoire), caption
+   - eyebrow, title (obligatoire), lead, caption
    - source: code Mermaid brut UNIQUEMENT (ex. "flowchart TD\\n  A[X] --> B[Y]"), sans les délimiteurs \`\`\`
 
 12. **agenda** — Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire
-   - eyebrow, title (obligatoire)
+   - eyebrow, title (obligatoire), lead
    - items: [{label, description}] — dans l’ordre, numérotées automatiquement
 
 Règles :
@@ -186,6 +186,7 @@ Règles :
 - Sinon, si le brief précise un nombre de diapositives, respecte-le EXACTEMENT (cover et cta inclus dans le décompte)
 - Sans cible ni nombre dans le brief, génère entre 8 et 15 diapositives selon la complexité du brief
 - Les textes doivent être concis et factuels
+- En-tête commun des diapositives de contenu (twoCols, cardGrid, stats, quotes, table, timeline, agenda, mermaid) : renseigne TOUJOURS eyebrow (2 à 4 mots qui situent la diapositive), title et lead (une phrase qui annonce ce que la diapositive montre) ; le lead ne répète ni le titre ni le premier élément
 - Liens : dans un champ texte, [libellé](url) avec https, mailto: ou tel: rend le libellé cliquable dans le PDF ; utilise-les pour une source citée ou une coordonnée (site, email, téléphone, prise de rendez-vous) fournie dans le contexte ou le brief, jamais pour une URL inventée`;
 
 const BLOCKS = {

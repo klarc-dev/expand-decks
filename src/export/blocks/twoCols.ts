@@ -7,6 +7,8 @@ import {
   cardStack,
   contentFrame,
   slideHeader,
+  splitTakeaway,
+  takeawayBox,
   wrapSlide,
   type RenderCtx,
   type SlideImage,
@@ -20,14 +22,22 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
     : null;
 
   // <div> not <p>: richTextToHTML emits its own block-level <p>.
+  const leadHtml = richTextToHTML(block.lead);
   const introHtml = richTextToHTML(block.intro);
+  // No divider before the intro: the unified header (pill, title, lead)
+  // already separates the copy column from the slide top.
   const intro = introHtml
-    ? `\n<hr class="${K.divider}"/>\n\n<div class="k-copy-stack k-copy-stack--lead">\n${introHtml}\n</div>`
+    ? `\n<div class="k-copy-stack k-copy-stack--lead">\n${introHtml}\n</div>`
     : '';
 
+  // The closing note of the copy column is the slide's takeaway: same box and
+  // cartouche as the statement footer, not a grey footnote under a hairline.
   const leftFooterHtml = richTextToHTML(block.leftFooter);
   const leftFooter = leftFooterHtml
-    ? `\n<div class="k-copy-stack k-copy-stack--note k-side-note">${leftFooterHtml}</div>`
+    ? (() => {
+        const takeaway = splitTakeaway(leftFooterHtml, ctx?.language);
+        return `\n${takeawayBox(takeaway.html, takeaway.label, K.takeawaySide)}`;
+      })()
     : '';
 
   const leftBody =
@@ -42,8 +52,9 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   });
   const density = densityFromScore(
     Math.max(0, ...renderedCards.map((item) => item.pressure)) +
+      visibleText(leadHtml).length * 0.6 +
       visibleText(introHtml).length * 0.75 +
-      visibleText(leftFooterHtml).length * 0.55 +
+      visibleText(leftFooterHtml).length * 0.7 +
       cardList.length * (image ? 72 : 58),
     { compact: image ? 250 : 310, dense: image ? 430 : 520 },
   );
@@ -51,7 +62,7 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   const header = slideHeader({
     eyebrow: block.eyebrow,
     title: block.title,
-    size: 'md',
+    lead: leadHtml || undefined,
     density,
   });
 

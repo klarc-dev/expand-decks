@@ -1,7 +1,8 @@
 import type { TimelineBlockData } from '../../blocks/spec/timeline';
 import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 import { K } from '../classNames';
-import { densityClass, densityFromScore } from '../density';
+import { densityClass, densityFromScore, visibleText } from '../density';
+import { richTextToHTML } from '../richtext';
 import { contentFrame, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { TimelineBlockData };
@@ -22,11 +23,13 @@ function needsVerticalTimeline(steps: NonNullable<TimelineBlockData['steps']>): 
 export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): string {
   const steps = block.steps ?? [];
   const vertical = needsVerticalTimeline(steps);
+  const leadHtml = richTextToHTML(block.lead);
   const density = densityFromScore(
-    steps.reduce(
-      (score, step) => score + step.label.length * 1.2 + (step.description?.length ?? 0),
-      steps.length * 65,
-    ),
+    visibleText(leadHtml).length * 0.6 +
+      steps.reduce(
+        (score, step) => score + step.label.length * 1.2 + (step.description?.length ?? 0),
+        steps.length * 65,
+      ),
     { compact: 430, dense: 690 },
   );
 
@@ -50,7 +53,12 @@ export function renderTimeline(block: TimelineBlockData, ctx?: RenderCtx): strin
   const variant = vertical ? K.timelineVertical : K.timelineHorizontal;
   const timeline = `<div class="${[K.timeline, variant, densityClass(density)].filter(Boolean).join(' ')}" style="--k-tl-count:${steps.length || 1}">\n${nodes}\n</div>${band}`;
 
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md', density });
+  const header = slideHeader({
+    eyebrow: block.eyebrow,
+    title: block.title,
+    lead: leadHtml || undefined,
+    density,
+  });
   const bodyHtml = contentFrame(timeline, {
     header,
     wFull: true,

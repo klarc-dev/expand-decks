@@ -1,4 +1,5 @@
 import type { MermaidBlockData } from '../../blocks/spec/mermaid';
+import { richTextToHTML } from '../richtext';
 import { defFooterSlot, md, slideHeader, surfaceClass, wrapSlide, type RenderCtx } from '../utils';
 
 export type { MermaidBlockData };
@@ -20,7 +21,11 @@ export function bareMermaidSource(source: string): string {
 }
 
 export function renderMermaid(block: MermaidBlockData, ctx?: RenderCtx): string {
-  const header = slideHeader({ eyebrow: block.eyebrow, title: block.title, size: 'md' });
+  const header = slideHeader({
+    eyebrow: block.eyebrow,
+    title: block.title,
+    lead: richTextToHTML(block.lead) || undefined,
+  });
 
   const source = bareMermaidSource(block.source ?? '');
 

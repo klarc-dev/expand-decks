@@ -269,6 +269,8 @@ export type RenderCtx = {
 export function slideHeader(opts: {
   eyebrow?: string | null;
   title: string;
+  /** Already-converted rich-text HTML: the description line under the title. */
+  lead?: string;
   size?: 'lg' | 'md';
   sidebar?: string;
   align?: 'left' | 'center';
@@ -278,17 +280,20 @@ export function slideHeader(opts: {
   const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
   const headingDensity = densityClass(opts.density ?? 'comfortable');
   const heading = `<h2 class="${[sizeClass, headingDensity].filter(Boolean).join(' ')}">${md(opts.title)}</h2>`;
+  // Unified content header: pill + title + description, identical on every
+  // content template so the deck reads as one system.
+  const lead = opts.lead ? `\n  <div class="${K.headerLead}">${opts.lead}</div>` : '';
   if (opts.sidebar) {
     return `<header class="${K.contentHeader} ${K.contentHeaderSplit}">
   <div>${eb}
-    ${heading}
+    ${heading}${lead}
   </div>
   ${opts.sidebar}
 </header>`;
   }
   const alignClass = opts.align === 'center' ? ` ${K.contentHeaderCenter}` : '';
   return `<header class="${K.contentHeader}${alignClass}">${eb}
-  ${heading}
+  ${heading}${lead}
 </header>`;
 }
 
@@ -303,6 +308,65 @@ export function card(opts: {
   const h3 = `<h3${opts.titleClass ? ` class="${opts.titleClass}"` : ''}>${escape(opts.title)}</h3>`;
   const body = opts.body ? `\n  <div>${opts.body}</div>` : '';
   return `<div class="${K.card}">${num}\n  ${h3}${body}\n</div>`;
+}
+
+/** A location uses the slide's own surface; only its directions are interactive.
+ * contactHtml is a trusted richTextToHTML fragment, never raw author HTML.
+ */
+export function locationCard(opts: {
+  name: string;
+  address: string;
+  directionsUrl?: string | null;
+  contactHtml?: string;
+  language?: DeckLanguage | null;
+}): string {
+  const name = resolveVars(opts.name) ?? '';
+  const address = resolveVars(opts.address) ?? '';
+  if (!name.trim() || !address.trim()) return '';
+  const href = safeHref(resolveVars(opts.directionsUrl));
+  const label = opts.language === 'en' ? 'Directions' : 'Itinéraire';
+  const link = href
+    ? `<a class="${K.locationDirections}" href="${escape(href)}" aria-label="${escape(`${label} · ${name}`)}">${label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 17 17 7M7 7h10v10" /></svg></a>`
+    : '';
+  return `<section class="${K.locationCard}"><div class="${K.locationHeading}"><h3>${escape(name)}</h3>${link}</div><address class="${K.locationAddress}">${escape(address).replace(/\r?\n/g, '<br>')}</address>${opts.contactHtml ? `<div class="${K.locationContact}">${opts.contactHtml}</div>` : ''}</section>`;
+}
+
+/** Upgrade the existing closing-note convention without a new domain block or
+ * a schema migration. Only complete office rows (bold name · numbered address ·
+ * tel/mail contacts) qualify; all other rich notes remain byte-for-byte intact.
+ * Input is sanitized richTextToHTML output. Contact markup is retained verbatim.
+ */
+export function locationCardsFromNote(html: string, language?: DeckLanguage | null): string | null {
+  const content = html.trim().replace(/^<div class="payload-richtext">([\s\S]*)<\/div>$/, '$1');
+  const paragraphs = content.match(/<p(?:\s[^>]*)?>[\s\S]*?<\/p>/g);
+  if (!paragraphs?.length || paragraphs.length > 2 || paragraphs.join('') !== content) return null;
+  const decode = (text: string) =>
+    text.replace(
+      /&(amp|lt|gt|quot|#39);/g,
+      (entity) =>
+        ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" })[entity] ?? entity,
+    );
+  const cards: string[] = [];
+  for (const paragraph of paragraphs) {
+    const match = paragraph.match(
+      /^<p(?:\s[^>]*)?><strong>([^<]+)<\/strong>\s*·\s*([^<]+?)\s*·\s*([\s\S]+)<\/p>$/,
+    );
+    if (!match || !/\d/.test(match[2]!) || !/<a href="(?:tel:|mailto:)/.test(match[3]!))
+      return null;
+    const name = decode(match[1]!).trim();
+    const address = decode(match[2]!).trim();
+    const destination = `${address}, ${name}`;
+    cards.push(
+      locationCard({
+        name,
+        address,
+        language,
+        contactHtml: match[3],
+        directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`,
+      }),
+    );
+  }
+  return `<div class="${K.locationGrid}">${cards.join('')}</div>`;
 }
 
 /**
@@ -401,17 +465,50 @@ export function contentFrame(
 </div>`;
 }
 
+/** Default cartouche label when a takeaway carries no "Label : …" lead. */
+const TAKEAWAY_LABEL: Record<DeckLanguage, string> = {
+  fr: 'À retenir',
+  en: 'Key takeaway',
+};
+
+// A short plain-text lead followed by a colon at the start of the first
+// paragraph: `<p>L’enjeu : examiner…</p>`. Tags, entities and digits in the
+// lead are rejected so a URL, a time ("10:30") or an emphasised opener never
+// becomes a cartouche.
+const TAKEAWAY_LEAD_RE = /^(\s*(?:<div[^>]*>\s*)?<p(?:\s[^>]*)?>)\s*([^<>&:\d]{2,40}?)\s*:\s+/;
+
 /**
- * In-flow hero caption. With a label it renders as a takeaway box: a tinted
- * cartouche carrying the label (e.g. "L’enjeu", "À retenir") ahead of the
- * caption text, so the closing message of a statement reads as the slide's
- * key point instead of a footnote.
+ * Split a footer/note HTML into a cartouche label and the remaining text. The
+ * lead of a "Label : text" note becomes the label; otherwise the localized
+ * default applies and the text is kept whole. Shared by every block that
+ * promotes its closing note to a takeaway box (statement, twoCols).
  */
+export function splitTakeaway(
+  html: string,
+  language?: DeckLanguage | null,
+): { label: string; html: string } {
+  const m = html.match(TAKEAWAY_LEAD_RE);
+  if (m) return { label: m[2]!, html: html.replace(TAKEAWAY_LEAD_RE, '$1') };
+  return { label: TAKEAWAY_LABEL[language ?? 'fr'], html };
+}
+
+/**
+ * Takeaway box: a tinted panel with a cartouche carrying the label (e.g.
+ * "L’enjeu", "À retenir") ahead of the text, so a slide's closing note reads
+ * as its key point instead of a footnote. `extraClass` picks the per-block
+ * placement (hero caption, twoCols copy column).
+ */
+export function takeawayBox(html: string, label: string, extraClass = ''): string {
+  const classes = [K.caption, extraClass, K.takeaway].filter(Boolean).join(' ');
+  return `<div class="${classes}">\n  <span class="${K.takeawayLabel}">${escape(label)}</span>\n  <div class="${K.takeawayText}">\n    ${html}\n  </div>\n</div>`;
+}
+
+/** In-flow hero caption; with a label it renders as a takeaway box. */
 function heroCaption(captionHtml: string, label?: string): string {
   if (!label) {
     return `\n\n<div class="${K.caption} ${K.heroCaption}">\n  ${captionHtml}\n</div>`;
   }
-  return `\n\n<div class="${K.caption} ${K.heroCaption} ${K.takeaway}">\n  <span class="${K.takeawayLabel}">${escape(label)}</span>\n  <div class="${K.takeawayText}">\n    ${captionHtml}\n  </div>\n</div>`;
+  return `\n\n${takeawayBox(captionHtml, label, K.heroCaption)}`;
 }
 
 /**

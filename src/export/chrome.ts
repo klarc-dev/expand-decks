@@ -10,8 +10,9 @@
  * placeholders. Static tokens (`{org.name}`, `{title}`, `{date}`…) are
  * pre-resolved at build time via resolveVars (the SSOT in vars.ts) before the
  * config is embedded; only `{page}`/`{total}` stay LIVE and are resolved by the
- * Vue layer at render time. Slides flagged `hideChrome: true`
- * (cover/section/cta) get no footer.
+ * Vue layer at render time. Slides flagged `hideChrome: true` (cover/section)
+ * get no footer; the logo is the deck's header and stays on every slide, in
+ * the variant matching the slide's surface.
  *
  * Pure module: builds strings only, no fs/Payload imports.
  */
@@ -173,8 +174,9 @@ const right = computed(() => resolve(cfg.value?.right ?? ''))
 }
 
 /**
- * `slide-top.vue`: renders the organisation logo top-left on every slide that
- * isn't full-bleed chrome, swapping the variant on the slide's surface: dark
+ * `slide-top.vue`: renders the organisation logo top-left on every slide,
+ * including cover and section dividers (`hideChrome` only drops the footer),
+ * swapping the variant on the slide's surface: dark
  * and gradient slides (class `k-dark`) show the `dark` URL, paper slides the
  * `light` one. Logo URLs resolve through the build's `media` symlink. With a
  * `klarcOrgUrl` config the logo is wrapped in a link to the organisation site.
@@ -189,14 +191,13 @@ const logos = computed(() => $slidev?.configs?.klarcLogo)
 const orgUrl = computed(() => $slidev?.configs?.klarcOrgUrl ?? null)
 const dark = computed(() => String($frontmatter?.class ?? '').split(/\\s+/).includes('k-dark'))
 const url = computed(() => (dark.value ? logos.value?.dark : logos.value?.light) ?? null)
-const hidden = computed(() => $frontmatter?.hideChrome === true)
 </script>
 
 <template>
-  <a v-if="url && !hidden && orgUrl" :href="orgUrl" class="k-slide-logo-link" aria-label="Site web">
+  <a v-if="url && orgUrl" :href="orgUrl" class="k-slide-logo-link" aria-label="Site web">
     <img :src="url" class="k-slide-logo" alt="" />
   </a>
-  <img v-else-if="url && !hidden" :src="url" class="k-slide-logo" alt="" />
+  <img v-else-if="url" :src="url" class="k-slide-logo" alt="" />
 </template>
 `;
 }

@@ -4,7 +4,8 @@ import {
   block,
   eyebrowFieldSpec,
   factoryField,
-  type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedArray,
   limitedArrayPayload,
   limitedString,
@@ -15,6 +16,7 @@ import {
   optionalRender,
   rawField,
   titleFieldSpec,
+  type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
 
@@ -39,6 +41,7 @@ export const statsSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre principal de la diapositive'),
+    leadFieldSpec(),
     rawField(
       'stats',
       stats,
@@ -85,7 +88,7 @@ export const statsSpec = block({
     index: 6,
     heading: 'stats',
     summary: 'Chiffres clés en grille',
-    lines: ['eyebrow, title (obligatoire)', 'stats: [{value, label}]'],
+    lines: ['eyebrow, title (obligatoire), lead', 'stats: [{value, label}]'],
   },
 });
 
@@ -93,6 +96,7 @@ export const statsRenderSchema = z.object({
   blockType: z.literal('stats'),
   eyebrow,
   title,
+  lead: leadRender(),
   stats,
 });
 

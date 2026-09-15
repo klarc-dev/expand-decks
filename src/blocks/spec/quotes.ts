@@ -4,7 +4,8 @@ import {
   block,
   eyebrowFieldSpec,
   factoryField,
-  type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedArray,
   limitedArrayPayload,
   limitedRichTextRender,
@@ -17,6 +18,7 @@ import {
   optionalRender,
   rawField,
   titleFieldSpec,
+  type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
 
@@ -42,6 +44,7 @@ export const quotesSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre de la diapositive'),
+    leadFieldSpec(),
     rawField(
       'quotes',
       quotes,
@@ -99,7 +102,7 @@ export const quotesSpec = block({
     index: 7,
     heading: 'quotes',
     summary: 'Grille de citations',
-    lines: ['eyebrow, title (obligatoire)', 'quotes: [{quote, authorName, authorRole}]'],
+    lines: ['eyebrow, title (obligatoire), lead', 'quotes: [{quote, authorName, authorRole}]'],
   },
 });
 
@@ -107,6 +110,7 @@ export const quotesRenderSchema = z.object({
   blockType: z.literal('quotes'),
   eyebrow,
   title,
+  lead: leadRender(),
   quotes,
 });
 

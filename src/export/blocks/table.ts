@@ -48,8 +48,13 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     ...cellHtml,
   ]);
   const longestCell = Math.max(0, ...cellHtml.map((cell) => visibleText(cell).length));
+  const leadHtml = richTextToHTML(block.lead);
   const density = densityFromScore(
-    textVolume + rows.length * 34 + colCount * 54 + longestCell * 2.6,
+    textVolume +
+      visibleText(leadHtml).length * 0.6 +
+      rows.length * 34 +
+      colCount * 54 +
+      longestCell * 2.6,
     { compact: 700, dense: 1120 },
   );
   const fitted = density !== 'comfortable';
@@ -103,7 +108,7 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const header = slideHeader({
     eyebrow: block.eyebrow,
     title: block.title,
-    size: 'md',
+    lead: leadHtml || undefined,
     density,
   });
   const bodyHtml = contentFrame(table, {

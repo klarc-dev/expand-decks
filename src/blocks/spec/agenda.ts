@@ -4,7 +4,8 @@ import {
   block,
   eyebrowFieldSpec,
   factoryField,
-  type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedArray,
   limitedString,
   limitedTextPayload,
@@ -14,6 +15,7 @@ import {
   optionalRender,
   rawField,
   titleFieldSpec,
+  type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
 
@@ -41,6 +43,7 @@ export const agendaSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du programme (ex. "Au programme")'),
+    leadFieldSpec(),
     rawField('items', items, optionalAi(limitedArray(aiItem, SLIDE_LIMITS.agenda.items)), {
       type: 'array',
       label: 'Sections',
@@ -84,7 +87,7 @@ export const agendaSpec = block({
     summary:
       'Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire',
     lines: [
-      'eyebrow, title (obligatoire)',
+      'eyebrow, title (obligatoire), lead',
       'items: [{label, description}] — dans l’ordre, numérotées automatiquement',
     ],
   },
@@ -94,6 +97,7 @@ export const agendaRenderSchema = z.object({
   blockType: z.literal('agenda'),
   eyebrow,
   title,
+  lead: leadRender(),
   items,
   active,
 });

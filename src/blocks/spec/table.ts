@@ -1,16 +1,12 @@
 import { z } from 'zod';
 
 import {
-  findTableAlignmentIssue,
-  tableAlignmentMessage,
-  validateTableRows,
-} from '../tableValidation';
-
-import {
   block,
   eyebrowFieldSpec,
   factoryField,
   type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedArray,
   limitedArrayPayload,
   limitedRichTextRender,
@@ -24,6 +20,11 @@ import {
   rawField,
   titleFieldSpec,
 } from './dsl';
+import {
+  findTableAlignmentIssue,
+  tableAlignmentMessage,
+  validateTableRows,
+} from '../tableValidation';
 import { SLIDE_LIMITS } from './limits';
 
 const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
@@ -82,6 +83,7 @@ export const tableSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre du tableau'),
+    leadFieldSpec(),
     rawField('tableVariant', tableVariant, optionalAi(z.enum(TABLE_VARIANTS)), {
       type: 'select',
       label: 'Type de tableau',
@@ -157,7 +159,7 @@ export const tableSpec = block({
     summary:
       'Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)',
     lines: [
-      'eyebrow, title (obligatoire)',
+      'eyebrow, title (obligatoire), lead',
       'tableVariant: "reference" (standard) | "matrix" (cellules de statut). Pour une matrice, mets ✓/⚠/✗ ou "ok"/"warn"/"blocked" dans les cellules de statut.',
       'columns: [{header}]',
       'rows: [{cells: [{value}]}] — chaque ligne a une cellule par colonne, dans le même ordre',
@@ -169,6 +171,7 @@ export const tableRenderSchema = z.object({
   blockType: z.literal('table'),
   eyebrow,
   title,
+  lead: leadRender(),
   tableVariant,
   columns,
   rows,

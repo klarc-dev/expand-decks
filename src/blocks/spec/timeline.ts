@@ -4,7 +4,8 @@ import {
   block,
   eyebrowFieldSpec,
   factoryField,
-  type InferRender,
+  leadFieldSpec,
+  leadRender,
   limitedArray,
   limitedArrayPayload,
   limitedString,
@@ -15,6 +16,7 @@ import {
   optionalRender,
   rawField,
   titleFieldSpec,
+  type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
 
@@ -42,6 +44,7 @@ export const timelineSpec = block({
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre de la frise'),
+    leadFieldSpec(),
     rawField(
       'steps',
       steps,
@@ -93,7 +96,7 @@ export const timelineSpec = block({
     summary:
       'Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)',
     lines: [
-      'eyebrow, title (obligatoire), footer (bandeau transverse)',
+      'eyebrow, title (obligatoire), lead, footer (bandeau transverse)',
       'steps: [{label, description}] — dans l’ordre ; la mise en page s’adapte (rail horizontal pour les étapes courtes, vertical pour les plus longues)',
     ],
   },
@@ -103,6 +106,7 @@ export const timelineRenderSchema = z.object({
   blockType: z.literal('timeline'),
   eyebrow,
   title,
+  lead: leadRender(),
   steps,
   footer,
 });

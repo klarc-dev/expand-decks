@@ -31,6 +31,8 @@ import * as migration_20260914_071233_agent_run_model from './20260914_071233_ag
 import * as migration_20260914_102932_ia_native_options from './20260914_102932_ia_native_options';
 import * as migration_20260914_153409_org_logo_variants from './20260914_153409_org_logo_variants';
 import * as migration_20260914_163506_contact_links from './20260914_163506_contact_links';
+import * as migration_20260915_064138_content_lead from './20260915_064138_content_lead';
+import * as migration_20260915_071722_twocols_lead from './20260915_071722_twocols_lead';
 
 export const migrations = [
   {
@@ -197,5 +199,15 @@ export const migrations = [
     up: migration_20260914_163506_contact_links.up,
     down: migration_20260914_163506_contact_links.down,
     name: '20260914_163506_contact_links',
+  },
+  {
+    up: migration_20260915_064138_content_lead.up,
+    down: migration_20260915_064138_content_lead.down,
+    name: '20260915_064138_content_lead',
+  },
+  {
+    up: migration_20260915_071722_twocols_lead.up,
+    down: migration_20260915_071722_twocols_lead.down,
+    name: '20260915_071722_twocols_lead',
   },
 ];

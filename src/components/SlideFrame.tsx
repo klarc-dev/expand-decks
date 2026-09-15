@@ -6,6 +6,7 @@ import './SlideFrame.scss';
 
 export type SlideChrome = {
   footer?: { left: string; center: string; right: string };
+  /** Footer hidden (cover, section); the logo header stays on every slide. */
   hidden?: boolean;
   logoUrl?: string;
   /** Organisation website; wraps the logo and the footer's left slot in a link. */
@@ -114,7 +115,7 @@ export function SlideFrame({
 }
 
 function SlideChromeLayer({ chrome }: { chrome?: SlideChrome }) {
-  if (!chrome || chrome.hidden) return null;
+  if (!chrome) return null;
   return (
     <>
       {/* The preview intentionally mirrors Slidev's raw logo markup and sizing. */}
@@ -126,7 +127,7 @@ function SlideChromeLayer({ chrome }: { chrome?: SlideChrome }) {
       ) : chrome.logoUrl ? (
         <img className="k-slide-logo" src={chrome.logoUrl} alt="" />
       ) : null}
-      {chrome.footer ? (
+      {chrome.footer && !chrome.hidden ? (
         <footer className="k-slide-footer">
           <span>
             {chrome.orgUrl && chrome.footer.left ? (
