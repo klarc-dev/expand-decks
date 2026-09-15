@@ -54,7 +54,7 @@ const slides = [
       },
       {
         number: '02',
-        title: 'Vous vous apprêtez à divulguer une innovation',
+        title: 'Vous souhaitez protéger votre innovation ou votre image',
         description:
           'Levée de fonds, partenariat, salon ou publication : avant toute divulgation, nous vérifions les protections disponibles, organisons la confidentialité et arrêtons avec vous la stratégie de dépôt.',
       },
@@ -109,7 +109,7 @@ const slides = [
   {
     blockType: 'timeline',
     eyebrow: 'SUR VOTRE DOSSIER',
-    title: 'Comment nous répondons à vos besoins',
+    title: 'Notre réponse à vos besoins',
     lead: 'Quatre temps, de l’analyse de votre situation à la défense de vos droits.',
     steps: [
       {
@@ -248,41 +248,7 @@ const slides = [
       },
     ],
   },
-  // Page 8 — engagements de fonctionnement, grille 2x2 numérotée
-  {
-    blockType: 'cardGrid',
-    eyebrow: 'NOS ENGAGEMENTS DE FONCTIONNEMENT',
-    title: 'Comment nous travaillons avec vous',
-    sidebarText: 'Quatre engagements de fonctionnement, valables pour chaque mission.',
-    columns: '2',
-    cards: [
-      {
-        number: '01',
-        title: 'Un interlocuteur principal unique',
-        description:
-          'Vous identifiez dès le départ la personne qui coordonne votre dossier, suit les échéances et rassemble les contributions des intervenants.',
-      },
-      {
-        number: '02',
-        title: 'Une mission et des honoraires cadrés',
-        description:
-          'Avant de commencer, nous définissons avec vous le périmètre, les modalités d’intervention et les honoraires dans une lettre de mission.',
-      },
-      {
-        number: '03',
-        title: 'Des points d’étape réguliers',
-        description:
-          'Nous convenons avec vous du rythme des échanges pour suivre les actions, signaler les difficultés et examiner les décisions à prendre.',
-      },
-      {
-        number: '04',
-        title: 'Un accès direct aux spécialistes',
-        description:
-          'Vous échangez directement avec les professionnels qui interviennent sur votre dossier pour traiter les questions juridiques, techniques ou financières.',
-      },
-    ],
-  },
-  // Page 9 — témoignages (extraits fidèles du deck historique livré)
+  // Page 8 — témoignages (extraits fidèles du deck historique livré)
   {
     blockType: 'quotes',
     eyebrow: 'TÉMOIGNAGES',
@@ -309,7 +275,7 @@ const slides = [
       },
     ],
   },
-  // Page 10 — vos contacts (shared person-card grid; people wired at seed time)
+  // Page 9 — vos contacts (shared person-card grid; people wired at seed time)
   {
     blockType: 'cardGrid',
     eyebrow: 'VOS INTERLOCUTEURS',
@@ -317,7 +283,7 @@ const slides = [
     sidebarText:
       'Une équipe resserrée, des interlocuteurs identifiés : chaque mission est suivie par les personnes qui la conduisent.',
   },
-  // Page 11 — cta
+  // Page 10 — cta
   {
     blockType: 'cta',
     eyebrow: 'UN PREMIER ÉCHANGE',
@@ -430,7 +396,7 @@ await runPayloadScript(async (payload) => {
       user: userIds.get(key),
     }));
   };
-  wire(10, ['joachim', 'benjamin', 'lucien', 'carine']);
+  wire(9, ['joachim', 'benjamin', 'lucien', 'carine']);
   const data = {
     title,
     organisation: org[0].id,
@@ -475,7 +441,7 @@ await runPayloadScript(async (payload) => {
     depth: 0,
     overrideAccess: true,
   });
-  if (verified.slides?.length !== 11) throw new Error('Expected 11 persisted slides');
+  if (verified.slides?.length !== 10) throw new Error('Expected 10 persisted slides');
   console.log(
     JSON.stringify({
       id: verified.id,
