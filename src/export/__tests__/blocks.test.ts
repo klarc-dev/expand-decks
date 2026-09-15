@@ -958,7 +958,7 @@ describe('renderQuotes()', () => {
       const seed = readFileSync('scripts/seed-klarc-prospects.ts', 'utf8');
       const quotes = [
         ...seed.matchAll(
-          /quote:\s*'([^']+)',\s*authorName: '([^']+)',\s*(?:authorRole: '([^']+)',\s*)?authorCompany: '([^']+)'/g,
+          /quote:\s*"([^"]+)",\s*authorName: "([^"]+)",\s*(?:authorRole: "([^"]+)",\s*)?authorCompany: "([^"]+)"/g,
         ),
       ].map((m) => ({
         quote: lexical(m[1]!),

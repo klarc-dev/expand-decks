@@ -122,6 +122,19 @@ describe('cardStack()', () => {
     expect(r.html).not.toContain('k-card-stack--crowded');
   });
 
+  it('uses dense scaling for a three-card expert split near the canvas limit', () => {
+    const result = cardStack(['a', 'b', 'c'], {
+      layout: 'column',
+      profile: 'two-cols',
+      itemPressures: [190, 180, 200],
+      occupancy: {
+        header: 'H'.repeat(100),
+        people: 'P'.repeat(100),
+      },
+    });
+    expect(result.density).toBe('dense');
+  });
+
   it('keeps occupancy-driven density when a stack has no cards', () => {
     const result = cardStack([], {
       layout: 'column',

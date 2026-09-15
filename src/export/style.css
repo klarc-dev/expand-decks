@@ -1720,12 +1720,12 @@
   min-width: 0;
   max-width: none;
   gap: 1rem;
-  padding: 0.9rem 1.2rem;
+  padding: 0.65rem 1.1rem;
   background: var(--k-surface-raised);
 }
 .k-cardgrid-people--grid .k-person-avatar {
-  width: 6rem;
-  height: 7.5rem;
+  width: 5.5rem;
+  height: 6.25rem;
   margin-top: 0;
   border-radius: var(--k-radius-card);
   object-position: center top;
@@ -1750,9 +1750,10 @@
   text-overflow: clip;
 }
 .k-cardgrid-people--grid .k-person-description {
-  margin-top: 0.55rem;
+  display: block;
+  margin-top: 0.4rem;
   font-size: var(--t-small);
-  line-height: 1.4;
+  line-height: 1.3;
   color: var(--fg-muted);
   text-wrap: pretty;
 }
@@ -1761,16 +1762,16 @@
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.4rem;
-  margin-top: 0.5rem;
-  padding-top: 0.45rem;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
   border-top: 1px solid var(--k-hairline);
   font-size: var(--t-small);
   line-height: 1;
 }
 .k-cardgrid-people--grid .k-person-link {
   flex: none;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 1.65rem;
+  height: 1.65rem;
 }
 /* Comfortable grid topology can use the available width without introducing a
    second scale class. Compact and dense stacks inherit the density variables. */

@@ -90,6 +90,10 @@ export function cardLayoutDensity(opts: {
     count * (image ? 72 : 58);
   return densityFromScore(score, {
     compact: image ? 250 : 310,
-    dense: image ? 430 : 520,
+    // A three-card split with a prominent expert card reaches the fixed-canvas
+    // limit before 520: the person card and header consume width-independent
+    // height that the max-item score alone understates. Switch the whole slide
+    // to the dense ladder early enough to preserve every card description.
+    dense: image ? 430 : 450,
   });
 }

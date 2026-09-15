@@ -251,6 +251,7 @@ const slides = [
         quote:
           'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème. Une belle équipe !',
         authorName: 'Kristof Descotes',
+        authorRole: 'Directeur R&D',
         authorCompany: 'Althea',
       },
     ],
