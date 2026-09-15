@@ -213,18 +213,18 @@ const slides = [
     eyebrow: '03 · Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
     lead: 'Fiscalité de l’entreprise et de ses dirigeants, avec une expertise dédiée à l’innovation.',
-    intro: 'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle.',
-    leftFooter: 'Avec l’équipe scientifique pour documenter vos travaux de R&D.',
+    intro: 'Conseil et défense face aux enjeux fiscaux.',
+    leftFooter: 'Dossier documenté avec l’équipe scientifique.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
         description:
-          'Résultat, TVA, groupe, capital et rémunération des dirigeants : anticiper les effets fiscaux et sécuriser vos déclarations.',
+          'Résultat, TVA, groupe, capital et dirigeants : anticiper les effets fiscaux et sécuriser vos déclarations.',
       },
       {
         title: 'Vos crédits d’impôt recherche et innovation',
         description:
-          'CIR[^1] et CII[^2] : examiner les travaux et dépenses, sécuriser la position par rescrit si utile et constituer le dossier justificatif.',
+          'CIR[^1] et CII[^2] : examiner travaux et dépenses, sécuriser la position par rescrit et constituer le dossier justificatif.',
       },
       {
         title: 'Vos régimes de faveur',
@@ -234,7 +234,7 @@ const slides = [
       {
         title: 'Vos contrôles et contentieux fiscaux',
         description:
-          'Vous assister pendant la vérification, répondre aux rectifications et conduire les réclamations et contentieux.',
+          'Vous assister lors du contrôle, répondre aux rectifications et exercer les recours.',
       },
     ],
     footnotes: [
