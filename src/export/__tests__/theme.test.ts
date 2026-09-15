@@ -7,8 +7,8 @@ const brand = {
   secondary: '#abcdef',
   ink: '#111111',
   paper: '#ffffff',
-  headingFont: 'Gilroy',
-  bodyFont: 'Roboto',
+  headingFont: 'Newsreader',
+  bodyFont: 'IBM Plex Sans',
 };
 
 describe('buildThemeCss', () => {
@@ -29,8 +29,8 @@ describe('buildThemeCss', () => {
     expect(css).toContain('--k-rose: #abcdef;');
     expect(css).toContain('--k-ink: #111111;');
     expect(css).toContain('--k-paper: #ffffff;');
-    expect(css).toContain('--k-font-heading: "Gilroy", ui-sans-serif, system-ui, sans-serif;');
-    expect(css).toContain('--k-font-body: "Roboto", ui-sans-serif, system-ui, sans-serif;');
+    expect(css).toContain('--k-font-heading: "Newsreader", ui-sans-serif, system-ui, sans-serif;');
+    expect(css).toContain('--k-font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;');
   });
 
   it('derives every shade from the source colors via color-mix (no stored shades)', () => {
@@ -55,10 +55,10 @@ htmlAttrs:
   it('rewrites fonts and lang for the org/presentation', () => {
     const out = buildHeadmatter(
       base,
-      { ...brand, headingFont: 'Roboto', bodyFont: 'Gilroy' },
+      { ...brand, headingFont: 'Newsreader', bodyFont: 'IBM Plex Sans' },
       'en',
     );
-    expect(out).toContain('sans: Gilroy,Roboto');
+    expect(out).toContain('sans: Roboto');
     expect(out).toContain('local: Gilroy');
     expect(out).toContain('lang: en');
   });

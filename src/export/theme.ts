@@ -36,10 +36,7 @@ function cssFontStack(value: unknown, fallback: string): string {
   return `"${fontFamily(value, fallback)}", ui-sans-serif, system-ui, sans-serif`;
 }
 
-/** YAML-safe plain-ish font list for Slidev's Google font auto-import. */
-function slidevFontList(bodyFont: string, headingFont: string): string {
-  return Array.from(new Set([bodyFont, headingFont])).join(',');
-}
+const LOCAL_FONT_FAMILIES = new Set(['Gilroy', 'Newsreader', 'IBM Plex Sans', 'IBM Plex Mono']);
 
 /** `color-mix(in srgb, <base> <pct>%, <towards>)` — clamps pct to [0,100]. */
 function mix(base: string, pct: number, towards: 'black' | 'white' | 'transparent'): string {
@@ -75,8 +72,8 @@ export function buildThemeCss(brand: Partial<OrgBrand> | null | undefined): stri
   --k-hairline: ${mix(primary, 16, 'transparent')};
   --k-shadow-soft: 0 18px 44px -34px ${mix(primary, 34, 'transparent')};
   --k-shadow-lift: 0 24px 58px -42px ${mix(primary, 42, 'transparent')};
-  --k-font-heading: ${cssFontStack(brand.headingFont, 'Gilroy')};
-  --k-font-body: ${cssFontStack(brand.bodyFont, 'Roboto')};
+  --k-font-heading: ${cssFontStack(brand.headingFont, 'Newsreader')};
+  --k-font-body: ${cssFontStack(brand.bodyFont, 'IBM Plex Sans')};
 }
 `;
 }
@@ -100,10 +97,14 @@ export function buildHeadmatter(
   // brand font while leaving other families fetched from Google.
   let out = base;
   if (brand?.bodyFont || brand?.headingFont) {
-    const bodyFont = fontFamily(brand?.bodyFont, 'Roboto');
-    const headingFont = fontFamily(brand?.headingFont, 'Gilroy');
-    out = out.replace(/^(  sans:[ \t]*).*$/m, `$1${slidevFontList(bodyFont, headingFont)}`);
-    out = out.replace(/^(  local:[ \t]*).*$/m, '$1Gilroy');
+    const bodyFont = fontFamily(brand?.bodyFont, 'IBM Plex Sans');
+    const headingFont = fontFamily(brand?.headingFont, 'Newsreader');
+    const remoteFonts = Array.from(
+      new Set([bodyFont, headingFont].filter((font) => !LOCAL_FONT_FAMILIES.has(font))),
+    );
+    if (remoteFonts.length > 0) {
+      out = out.replace(/^(  sans:[ \t]*).*$/m, `$1${remoteFonts.join(',')}`);
+    }
   }
   if (language) {
     out = out.replace(/^(  lang:[ \t]*).*$/m, `$1${language}`);

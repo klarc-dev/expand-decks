@@ -2,10 +2,68 @@
    Klarc Brand System
    Primary  : #02585C (teal)
    Secondary: #F5A3B0 (rose)
-   Polices  : Gilroy (titres) + Roboto (corps)
+   Polices  : Newsreader (titres) + IBM Plex Sans (corps) + IBM Plex Mono (technique)
    ============================================ */
 
-/* Gilroy — chargé localement depuis /public/fonts/ */
+/* Klarc.com typography — exact self-hosted WOFF2 assets from the live site. */
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/Newsreader-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/Newsreader-Medium.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/Newsreader-Semibold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/Newsreader-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Gilroy remains bundled for organisations that explicitly select it. */
 @font-face {
   font-family: "Gilroy";
   src: url("/fonts/Gilroy-Light.ttf") format("truetype");
@@ -161,12 +219,12 @@
   --pill-border: var(--k-line);
   --accent-rule: var(--k-rose);
 
-  /* Font families — single source of truth so per-org fonts (Google Fonts) can
-     override via the generated :root block in theme.ts. Gilroy ships locally
-     (@font-face above); other families load from the Slidev `fonts` headmatter
-     (Google provider). Every component references these vars, never a literal. */
-  --k-font-heading: "Gilroy", "Roboto", sans-serif;
-  --k-font-body: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  /* Font families — single source of truth so per-org fonts can override the
+     heading/body pair via theme.ts. Klarc's exact website families ship locally
+     above so preview, SPA and PDF do not depend on a font CDN. */
+  --k-font-heading: "Newsreader", Georgia, serif;
+  --k-font-body: "IBM Plex Sans", Arial, sans-serif;
+  --k-font-technical: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 /* Dark tone overrides the pair + muted + pill so primitives/AA rules need no
@@ -204,6 +262,13 @@
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+.slidev-layout code,
+.slidev-layout pre,
+.slidev-layout kbd,
+.slidev-layout samp {
+  font-family: var(--k-font-technical);
 }
 
 /* Canonical fixed-canvas frame. Every semantic template owns the same safe-area
@@ -395,6 +460,7 @@
   max-width: 100%;
   min-height: 1.75rem;
   padding: 0.3rem 0.85rem 0.3rem 0.7rem;
+  font-family: var(--k-font-technical);
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1;
@@ -448,10 +514,17 @@
   background: var(--k-teal);
   border-color: var(--k-teal);
 }
+/* The cover already uses the primary teal as its field. Keep the same primary
+   pill role, but step it one shade darker so the filled capsule remains visible
+   instead of dissolving into the title-slide background. */
+.k-cover .k-eyebrow.k-eyebrow--primary {
+  background: var(--k-teal-600);
+  border-color: rgba(255, 255, 255, 0.18);
+}
 .k-eyebrow.k-eyebrow--secondary {
-  color: var(--k-rose);
-  background: #fff;
-  border-color: #fff;
+  color: var(--k-ink);
+  background: var(--k-rose);
+  border-color: var(--k-rose);
 }
 .k-eyebrow.k-eyebrow--ink {
   color: var(--k-paper);

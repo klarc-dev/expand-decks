@@ -36,11 +36,29 @@ export class GoogleFontsUnavailableError extends Error {
 }
 
 /**
- * Families bundled with the app (`src/export/style.css` ships Gilroy as webfont
- * files). They are always selectable and never fetched — this is a local asset
+ * Families bundled with the app (`public/fonts` and `src/export/style.css`).
+ * They are always selectable and never fetched — this is a local asset
  * inventory, not a fallback for a broken API key.
  */
 export const LOCAL_FONTS: GoogleFont[] = [
+  {
+    family: 'Newsreader',
+    category: 'serif',
+    variants: ['regular', '500', '600', '700'],
+    subsets: ['latin'],
+  },
+  {
+    family: 'IBM Plex Sans',
+    category: 'sans-serif',
+    variants: ['regular', '700'],
+    subsets: ['latin'],
+  },
+  {
+    family: 'IBM Plex Mono',
+    category: 'monospace',
+    variants: ['regular', '700'],
+    subsets: ['latin'],
+  },
   { family: 'Gilroy', category: 'sans-serif', variants: ['regular'], subsets: ['latin'] },
 ];
 

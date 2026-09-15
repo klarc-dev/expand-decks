@@ -85,7 +85,7 @@ describe('semantic pill variants', () => {
       });
       await page.route('http://pills.test/fonts/**', (route) =>
         route.fulfill({
-          contentType: 'font/ttf',
+          contentType: route.request().url().endsWith('.woff2') ? 'font/woff2' : 'font/ttf',
           body: readFileSync(
             `public/fonts/${new URL(route.request().url()).pathname.split('/').at(-1)}`,
           ),
@@ -112,10 +112,10 @@ describe('semantic pill variants', () => {
             };
             const html = renderCover(block).replace(/^---\n[\s\S]*?\n---\n*/, '');
             await page.setContent(
-              `<style>${css}</style><div class="slidev-layout cover ${surface === 'dark' ? 'k-dark' : ''}" style="position:relative;width:1280px;height:720px;--k-font-body:Gilroy;--k-font-heading:Gilroy">${html}</div>`,
+              `<style>${css}</style><div class="slidev-layout cover ${surface === 'dark' ? 'k-dark' : ''}" style="position:relative;width:1280px;height:720px;--k-font-body:IBM Plex Sans;--k-font-heading:Newsreader;--k-font-technical:IBM Plex Mono">${html}</div>`,
             );
             await page.evaluate(() => document.fonts.ready);
-            await page.evaluate(() => document.fonts.load('600 16px Gilroy'));
+            await page.evaluate(() => document.fonts.load('600 16px IBM Plex Mono'));
             const metrics = await page.locator('.k-eyebrow').evaluateAll((pills) =>
               pills.map((pill) => {
                 const style = getComputedStyle(pill),
@@ -168,7 +168,7 @@ describe('semantic pill variants', () => {
               expect(m.fits).toBe(true);
               expect(m.contrast).toBeGreaterThanOrEqual(4.5);
               expect(m.dot).toBe(m.fg);
-              expect(m.font).toBe('Gilroy');
+              expect(m.font).toContain('IBM Plex Mono');
               if (variant === 'secondary') expect(m.bg).toEqual([245, 163, 176]);
             }
             report.push({ surface, variant, max, metrics });

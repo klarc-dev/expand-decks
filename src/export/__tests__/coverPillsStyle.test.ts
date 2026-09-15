@@ -5,13 +5,13 @@ import { renderCover } from '../blocks/cover';
 import { renderBlockPreview } from '../preview';
 import { SLIDE_LIMITS } from '../../blocks/spec/limits';
 
-it('wraps title pills on both surfaces with loaded Gilroy and shared preview/export markup', async () => {
+it('wraps title pills on both surfaces with loaded IBM Plex Mono and shared preview/export markup', async () => {
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     await page.route('http://cover.test/fonts/**', (route) =>
       route.fulfill({
-        contentType: 'font/ttf',
+        contentType: 'font/woff2',
         body: readFileSync(
           `public/fonts/${new URL(route.request().url()).pathname.split('/').at(-1)}`,
         ),
@@ -40,10 +40,10 @@ it('wraps title pills on both surfaces with loaded Gilroy and shared preview/exp
         const html = renderCover(block).replace(/^---\n[\s\S]*?\n---\n*/, '');
         expect(renderBlockPreview(block)!.html).toBe(html);
         await page.setContent(
-          `<style>${css}</style><div class="slidev-layout cover ${surface === 'dark' ? 'k-dark' : ''}" style="position:relative;width:1280px;height:720px;--k-font-body:Gilroy;--k-font-heading:Gilroy">${html}</div>`,
+          `<style>${css}</style><div class="slidev-layout cover ${surface === 'dark' ? 'k-dark' : ''}" style="position:relative;width:1280px;height:720px;--k-font-body:IBM Plex Sans;--k-font-heading:Newsreader">${html}</div>`,
         );
         await page.evaluate(() => document.fonts.ready);
-        await page.evaluate(() => document.fonts.load('600 16px Gilroy'));
+        await page.evaluate(() => document.fonts.load('600 16px IBM Plex Mono'));
         const metrics = await page.locator('.k-eyebrow').evaluateAll((pills) =>
           pills.map((pill) => {
             const rect = pill.getBoundingClientRect();
@@ -70,11 +70,13 @@ it('wraps title pills on both surfaces with loaded Gilroy and shared preview/exp
           expect(metric.contained).toBe(true);
           expect(metric.right).toBeLessThanOrEqual(1280);
           expect(metric.bottom).toBeLessThanOrEqual(720);
-          expect(metric.font).toBe('Gilroy');
+          expect(metric.font).toContain('IBM Plex Mono');
           expect(metric.color).toBe('rgb(247, 246, 242)');
-          expect(metric.background).toBe('rgb(2, 88, 92)');
+          expect(metric.background).toBe('rgb(3, 74, 78)');
         }
-        expect(await page.evaluate(() => document.fonts.check('600 16px Gilroy'))).toBe(true);
+        expect(await page.evaluate(() => document.fonts.check('600 16px IBM Plex Mono'))).toBe(
+          true,
+        );
         if (texts.length === 2) await page.screenshot({ path: `/tmp/cover-pills-${surface}.png` });
       }
     }
