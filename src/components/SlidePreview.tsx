@@ -3,13 +3,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Button,
+  Modal,
   TextareaInput,
   toast,
   useDocumentInfo,
   useForm,
   useFormFields,
+  useModal,
 } from '@payloadcms/ui';
 
+import type { SlideLayoutCompatibility } from '@/blocks/spec/slideLayoutCompatibility';
 import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import {
@@ -25,9 +28,87 @@ import './SlidePreview.scss';
 
 const PREVIEW_DEBOUNCE_MS = 200;
 
+const COMPATIBILITY_LABELS: Record<SlideLayoutCompatibility['classification'], string> = {
+  adjustments: 'Ajustements',
+  compatible: 'Compatible',
+  lossy: 'Avec pertes',
+  unavailable: 'Indisponible',
+};
+
+function LayoutCompatibilityModal({
+  currentLayout,
+  modalSlug,
+  results,
+}: {
+  currentLayout?: string;
+  modalSlug: string;
+  results: SlideLayoutCompatibility[];
+}) {
+  const { closeModal, isModalOpen } = useModal();
+  if (!isModalOpen(modalSlug)) return null;
+
+  return (
+    <Modal className="slide-layout-compatibility" closeOnBlur slug={modalSlug}>
+      <div className="slide-layout-compatibility__surface">
+        <header className="slide-layout-compatibility__header">
+          <div>
+            <p className="slide-layout-compatibility__eyebrow">Analyse sans modification</p>
+            <h2>Changer la mise en page</h2>
+            <p>
+              Comparez les layouts autorisés pour cette slide. Aucun contenu ne sera modifié à cette
+              étape.
+            </p>
+          </div>
+          <Button
+            aria-label="Fermer l’analyse des layouts"
+            buttonStyle="secondary"
+            margin={false}
+            onClick={() => closeModal(modalSlug)}
+            size="small"
+            type="button"
+          >
+            Fermer
+          </Button>
+        </header>
+        <div className="slide-layout-compatibility__grid">
+          {results.map((result) => (
+            <article
+              className={`slide-layout-compatibility__card slide-layout-compatibility__card--${result.classification}`}
+              key={result.layout}
+            >
+              <img alt="" aria-hidden="true" src={result.imageURL} />
+              <div className="slide-layout-compatibility__card-heading">
+                <strong>{result.label}</strong>
+                {result.layout === currentLayout ? <span>Actuel</span> : null}
+              </div>
+              <p className="slide-layout-compatibility__classification">
+                {COMPATIBILITY_LABELS[result.classification]}
+              </p>
+              {result.issues.length > 0 ? (
+                <ul>
+                  {result.issues.map((issue, index) => (
+                    <li key={`${issue.code}-${issue.field ?? issue.role ?? index}`}>
+                      {issue.message}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="slide-layout-compatibility__detail">
+                  Tous les contenus affichés par cette slide sont pris en charge.
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 type PreviewResult = {
   canvas: { width: number; height: number; aspectRatio: string };
   chrome?: SlideChrome;
+  compatibility: SlideLayoutCompatibility[];
   preview: {
     className: string;
     html: string;
@@ -103,6 +184,8 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const [instruction, setInstruction] = useState('');
   const [revising, setRevising] = useState(false);
   const { reset, submit } = useForm();
+  const { openModal } = useModal();
+  const modalSlug = `slide-layout-compatibility-${path.replace(/[^a-zA-Z0-9]/g, '-')}`;
   const aiPanelId = `${path.replace(/[^a-zA-Z0-9_-]/g, '-')}-revision-panel`;
 
   async function reviseCurrentSlide() {
@@ -220,6 +303,16 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
             ) : null}
           </span>
           <Button
+            buttonStyle="secondary"
+            disabled={!result?.compatibility?.length}
+            margin={false}
+            onClick={() => openModal(modalSlug)}
+            size="small"
+            type="button"
+          >
+            Changer la mise en page
+          </Button>
+          <Button
             aria-label={showAi ? 'Masquer la modification par IA' : 'Modifier avec l’IA'}
             buttonStyle="pill"
             className="slide-preview__magic-button"
@@ -251,6 +344,11 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
           {error}
         </AdminNotice>
       ) : null}
+      <LayoutCompatibilityModal
+        currentLayout={(request.block as { blockType?: string })?.blockType}
+        modalSlug={modalSlug}
+        results={result?.compatibility ?? []}
+      />
       {result ? <PreviewFrame result={result} /> : null}
     </section>
   );
