@@ -212,7 +212,7 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: '03 · Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
-    lead: 'Fiscalité de l’entreprise et de ses dirigeants, avec une expertise dédiée à l’innovation.',
+    lead: 'Fiscalité des entreprises, dirigeants et innovation.',
     intro: undefined,
     leftFooter: undefined,
     rightCards: [
