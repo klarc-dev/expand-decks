@@ -60,6 +60,7 @@ export function buildThemeCss(brand: Partial<OrgBrand> | null | undefined): stri
   --k-teal-900: ${mix(primary, 40, 'black')};
   --k-teal-50: ${mix(primary, 8, 'white')};
   --k-teal-100: ${mix(primary, 16, 'white')};
+  --k-teal-300: ${mix(primary, 45, 'white')};
   --k-rose: ${secondary};
   --k-rose-soft: ${mix(secondary, 30, 'white')};
   --k-ink: ${ink};

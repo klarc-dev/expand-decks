@@ -37,6 +37,7 @@ describe('buildThemeCss', () => {
     const css = buildThemeCss(brand);
     expect(css).toContain('--k-teal-700: color-mix(in srgb, #123456 75%, black);');
     expect(css).toContain('--k-teal-50: color-mix(in srgb, #123456 8%, white);');
+    expect(css).toContain('--k-teal-300: color-mix(in srgb, #123456 45%, white);');
     expect(css).toContain('--k-rose-soft: color-mix(in srgb, #abcdef 30%, white);');
     expect(css).toContain('--k-ink-soft: color-mix(in srgb, #111111 70%, white);');
     expect(css).toContain('--k-line: color-mix(in srgb, #123456 12%, transparent);');

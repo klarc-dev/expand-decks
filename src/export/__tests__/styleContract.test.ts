@@ -179,7 +179,7 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).not.toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{/);
   });
 
-  it('uses a precise, straight secondary rule for professional title emphasis', () => {
+  it('uses a precise, straight accent rule for professional title emphasis', () => {
     const mark = css.match(/\.slidev-layout \.k-mark\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(mark).toContain('color: inherit');
     expect(mark).toContain('position: relative');
@@ -187,7 +187,7 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(mark).toContain('text-shadow: none');
 
     const underline = css.match(/\.slidev-layout \.k-mark::after\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(underline).toContain('background: var(--k-rose)');
+    expect(underline).toContain('background: var(--accent-rule)');
     expect(underline).toContain('border-radius: 1px');
     expect(underline).not.toContain('transform:');
     expect(underline).toMatch(/bottom:\s*-0\.08em/);

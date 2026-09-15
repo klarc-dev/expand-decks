@@ -128,6 +128,7 @@
   --k-teal-900: #021a1b;
   --k-teal-50: #ecf7f7;
   --k-teal-100: #d4ecec;
+  --k-teal-300: #8eb4b6;
   --k-rose: #d99aa6;
   --k-rose-soft: #f4d6dc;
   --k-ink: #0f2425;
@@ -213,11 +214,13 @@
   --k-card-body-min: calc(var(--t-body) * 0.78);
 
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
-     contrast by ground (U3 consumes these). */
+     contrast by ground (U3 consumes these). On the light ground the emphasis
+     (heading mark, header rule, links, markers) is a light primary; the dark
+     ground below keeps the secondary so the rule stays visible on teal. */
   --pill-bg: var(--k-teal-50);
   --pill-fg: var(--k-teal);
   --pill-border: var(--k-line);
-  --accent-rule: var(--k-rose);
+  --accent-rule: var(--k-teal-300);
 
   /* Font families — single source of truth so per-org fonts can override the
      heading/body pair via theme.ts. Klarc's exact website families ship locally
@@ -237,6 +240,7 @@
   --pill-bg: #1f5e61;
   --pill-fg: #fff;
   --pill-border: #6f989a;
+  --accent-rule: var(--k-rose);
   --k-surface: #195457;
   --k-surface-raised: #1f5e61;
   --k-surface-soft: #164d50;
@@ -320,8 +324,8 @@
 }
 
 /* Heading mark — `[mot]` in any title (md() → <mark class="k-mark">).
-   Preserve the heading ink and add a precise secondary-color rule: straight,
-   restrained, and architectural rather than hand-drawn. */
+   Preserve the heading ink and add a precise accent rule (light primary on
+   paper, secondary on dark grounds): straight, restrained, architectural. */
 .slidev-layout .k-mark {
   color: inherit;
   font: inherit;
@@ -342,7 +346,7 @@
   bottom: -0.08em;
   height: 2px;
   border-radius: 1px;
-  background: var(--k-rose);
+  background: var(--accent-rule);
 }
 
 .k-dark .k-mark {

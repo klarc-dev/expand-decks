@@ -146,7 +146,7 @@ const slides = [
   // Page 5 — droit des affaires
   {
     blockType: 'twoCols',
-    eyebrow: '01 · Droit des affaires',
+    eyebrow: 'Droit des affaires',
     title: 'Sécuriser vos [contrats] et votre société',
     lead: 'Contrats, gouvernance, opérations et différends : notre accompagnement.',
     intro:
@@ -178,7 +178,7 @@ const slides = [
   // Page 6 — propriété industrielle
   {
     blockType: 'twoCols',
-    eyebrow: '02 · Propriété industrielle',
+    eyebrow: 'Propriété industrielle',
     title: 'Protéger et exploiter vos [actifs immatériels]',
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
@@ -210,7 +210,7 @@ const slides = [
   // Page 7 — droit fiscal, avec une expertise particulière de l'innovation
   {
     blockType: 'twoCols',
-    eyebrow: '03 · Droit fiscal',
+    eyebrow: 'Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
     lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
     intro:
@@ -247,7 +247,7 @@ const slides = [
   // Page 8 — management de l'innovation
   {
     blockType: 'twoCols',
-    eyebrow: '04 · Management de l’innovation',
+    eyebrow: 'Management de l’innovation',
     title: 'Structurer et piloter vos projets de [R&D]',
     lead: 'Financements, organisation et preuves de R&D, tenus par une équipe scientifique intégrée au cabinet.',
     intro:
