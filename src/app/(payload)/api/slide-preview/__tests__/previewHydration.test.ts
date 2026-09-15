@@ -136,8 +136,8 @@ describe('POST /api/slide-preview hydration + access', () => {
     expect(res.status).toBe(200);
     expect(findByID.mock.calls.map(([a]) => a.collection)).toEqual(['presentations', 'users']);
     const body = await res.json();
-    expect(body.preview.body).toContain('Anne Martin');
-    expect(body.preview.body).toContain('k-two-cols-user');
+    expect(body.preview.html).toContain('Anne Martin');
+    expect(body.preview.html).toContain('k-two-cols-user');
   });
 
   it('renders simple non-cover blocks without relationship hydration reads', async () => {

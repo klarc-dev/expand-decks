@@ -144,39 +144,25 @@ const slides = [
   },
   // Page 5 — cœur avocat
   {
-    blockType: 'table',
+    blockType: 'twoCols',
     title: 'Conseiller, rédiger et défendre',
     eyebrow: 'Vos enjeux juridiques',
     lead: 'Contrats, vie de la société et différends : ce que l’avocat prend en charge sur votre dossier.',
-    tableVariant: 'reference',
-    columns: [{ header: 'Vos besoins' }, { header: 'Notre intervention' }],
-    rows: [
+    rightCards: [
       {
-        cells: [
-          { value: 'Vos contrats et accords' },
-          {
-            value:
-              'Rédiger et négocier vos contrats commerciaux, partenariats et accords de confidentialité ; préciser les obligations, les responsabilités et les conditions de sortie.',
-          },
-        ],
+        title: 'Vos contrats et accords',
+        description:
+          'Rédiger et négocier vos contrats commerciaux, partenariats et accords de confidentialité ; préciser les obligations, les responsabilités et les conditions de sortie.',
       },
       {
-        cells: [
-          { value: 'La vie de votre société' },
-          {
-            value:
-              'Rédiger vos statuts et pactes ; conseiller les associés et dirigeants sur la gouvernance, préparer les décisions sociales et accompagner les restructurations.',
-          },
-        ],
+        title: 'La vie de votre société',
+        description:
+          'Rédiger vos statuts et pactes ; conseiller les associés et dirigeants sur la gouvernance, préparer les décisions sociales et accompagner les restructurations.',
       },
       {
-        cells: [
-          { value: 'Vos différends et contrôles' },
-          {
-            value:
-              'Examiner les voies de résolution, préparer le précontentieux et conduire le contentieux ; vous assister et défendre vos droits lors d’un contrôle fiscal.',
-          },
-        ],
+        title: 'Vos différends et contrôles',
+        description:
+          'Examiner les voies de résolution, préparer le précontentieux et conduire le contentieux ; vous assister et défendre vos droits lors d’un contrôle fiscal.',
       },
     ],
   },
@@ -213,47 +199,25 @@ const slides = [
   },
   // Page 7 — financement et fiscalité de l'innovation
   {
-    blockType: 'table',
+    blockType: 'twoCols',
     title: 'Financer, étayer et organiser vos projets d’innovation',
     eyebrow: 'Vos projets d’innovation',
     lead: 'Aides, fiscalité de l’innovation et preuves de R&D examinés dans une même démarche.',
-    tableVariant: 'reference',
-    columns: [{ header: 'Vos besoins' }, { header: 'Notre intervention' }],
-    rows: [
+    rightCards: [
       {
-        cells: [
-          { value: 'Vos aides et financements' },
-          {
-            value:
-              'Examiner les dispositifs adaptés à votre projet, leurs critères et leurs contraintes ; préparer les demandes et suivre les obligations liées aux financements obtenus.',
-          },
-        ],
+        title: 'Vos aides et financements',
+        description:
+          'Examiner les dispositifs adaptés à votre projet, leurs critères et leurs contraintes ; préparer les demandes et suivre les obligations liées aux financements obtenus.',
       },
       {
-        cells: [
-          { value: 'Votre fiscalité de l’innovation' },
-          {
-            value:
-              'CIR, CII, JEI et IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
-          },
-        ],
+        title: 'Votre fiscalité de l’innovation',
+        description:
+          'CIR, CII, JEI et IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
       },
       {
-        cells: [
-          { value: 'Votre organisation et vos preuves de R&D' },
-          {
-            value:
-              'Structurer vos projets, leurs jalons et leurs responsables ; documenter l’état de l’art, les travaux et les résultats pour relier les preuves aux dépenses en cas de contrôle.',
-          },
-        ],
-      },
-    ],
-    footnotes: [
-      {
-        text: 'L’éligibilité aux dispositifs dépend notamment de l’examen des pièces ; les décisions relèvent de l’administration et des financeurs.',
-      },
-      {
-        text: 'CIR : crédit d’impôt recherche ; CII : crédit d’impôt innovation ; JEI : jeune entreprise innovante (statut).',
+        title: 'Votre organisation et vos preuves de R&D',
+        description:
+          'Structurer vos projets, leurs jalons et leurs responsables ; documenter l’état de l’art, les travaux et les résultats pour relier les preuves aux dépenses en cas de contrôle.',
       },
     ],
   },
@@ -268,19 +232,21 @@ const slides = [
         quote:
           'EspeRare Foundation a collaboré avec Klarc sur un projet de licence sur un dispositif médical en développement, la collaboration est au TOP, je recommande cette équipe réactive et dynamique qui nous a apporté du soutien dans plusieurs domaines […]',
         authorName: 'Florence Porte-Thome',
-        authorRole: 'Co-fondatrice et Directrice R&D, EspeRare Foundation',
+        authorRole: 'Co-fondatrice et Directrice R&D',
+        authorCompany: 'EspeRare Foundation',
       },
       {
         quote:
           'Je retiens beaucoup de professionnalisme d’une équipe pluridisciplinaire maîtrisant les enjeux techniques, juridiques, comptables et rédactionnels. Les collaborateurs Klarc ont de bonnes qualités relationnelles leur permettant de s’adapter rapidement aux équipes projets et de travailler en bonne intelligence.',
         authorName: 'Frédéric Burnier',
-        authorRole: 'Directeur général adjoint pôle ingénierie, GA Smart Building',
+        authorRole: 'Directeur général adjoint pôle ingénierie',
+        authorCompany: 'GA Smart Building',
       },
       {
         quote:
           'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème. Une belle équipe !',
         authorName: 'Kristof Descotes',
-        authorRole: 'Althea',
+        authorCompany: 'Althea',
       },
     ],
     footnotes: [{ text: 'CIR : crédit d’impôt recherche.' }],
@@ -471,6 +437,14 @@ await runPayloadScript(async (payload) => {
       user: userIds.get(key),
     }));
   };
+  const wireLeftUser = (page: number, key: keyof typeof people) => {
+    const user = userIds.get(key);
+    if (!user) throw new Error(`Missing resolved account for ${key}`);
+    (richSlides[page - 1] as Record<string, unknown>).leftUser = user;
+  };
+  wireLeftUser(5, 'joachim');
+  wireLeftUser(6, 'lucien');
+  wireLeftUser(7, 'benjamin');
   wire(9, ['joachim', 'benjamin', 'lucien', 'carine']);
   const data = {
     title,

@@ -45,7 +45,7 @@ Layouts disponibles :
 
 7. **quotes** — Grille de citations
    - eyebrow, title (obligatoire), lead
-   - quotes: [{quote, authorName, authorRole}]
+   - quotes: [{quote, authorName, authorRole, authorCompany}]
 
 8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
    - eyebrow, title (obligatoire), subtitle
@@ -135,7 +135,7 @@ const metas: PromptMeta[] = [
     index: 7,
     heading: 'quotes',
     summary: 'Grille de citations',
-    lines: ['eyebrow, title (obligatoire), lead', 'quotes: [{quote, authorName, authorRole}]'],
+    lines: ['eyebrow, title (obligatoire), lead', 'quotes: [{quote, authorName, authorRole, authorCompany}]'],
   },
   {
     index: 8,

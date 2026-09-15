@@ -139,7 +139,7 @@ Layouts disponibles :
 
 7. **quotes** — Grille de citations
    - eyebrow, title (obligatoire), lead
-   - quotes: [{quote, authorName, authorRole}]
+   - quotes: [{quote, authorName, authorRole, authorCompany}]
    - linkLabel / linkUrl: lien optionnel vers une liste complète fournie dans le contexte
 
 8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)

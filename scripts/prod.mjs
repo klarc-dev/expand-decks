@@ -61,7 +61,9 @@ function local(cmd, args, opts = {}) {
 
 function containers() {
   const names = ssh('docker ps --format "{{.Names}}"').split('\n');
-  const payload = names.find((n) => n.startsWith(`payload-${APP_UUID}`));
+  const payload = names.find(
+    (n) => n.startsWith(`payload-${APP_UUID}-`) && !n.startsWith('payload-worker-'),
+  );
   const workers = names.filter((n) => n.startsWith(`payload-worker-`) && n.includes(APP_UUID));
   const postgres = names.find((n) => n.startsWith(`postgres-${APP_UUID}`));
   if (!payload || !postgres) {

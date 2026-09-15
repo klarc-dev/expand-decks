@@ -11,7 +11,7 @@ const rule = (selector: string) => {
 };
 
 describe('shared person cards', () => {
-  it('emits one inline Tabler outline SVG per authored channel, with readable link names', () => {
+  it('emits one accessible icon-only Tabler link per authored channel', () => {
     const html = personCard({
       initials: 'AM',
       name: 'Anne Martin',
@@ -27,8 +27,10 @@ describe('shared person cards', () => {
     expect(html.match(/stroke="currentColor"/g)).toHaveLength(4);
     expect(html.match(/stroke-width="1.75"/g)).toHaveLength(4);
     expect(html.match(/aria-hidden="true" focusable="false"/g)).toHaveLength(4);
-    for (const text of ['anne@example.com', '+33 6 12 34 56 78', 'LinkedIn', 'Profil Klarc']) {
-      expect(html).toContain(`<span>${text}</span></a>`);
+    for (const label of ['anne@example.com', '+33 6 12 34 56 78', 'LinkedIn', 'Profil Klarc']) {
+      expect(html).toContain(`aria-label="${label}"`);
+      expect(html).toContain(`title="${label}"`);
+      expect(html).not.toContain(`<span>${label}</span>`);
     }
     expect(html).toContain('href="https://example.com/about?a=1&amp;b=2"');
     expect(html).not.toMatch(/<use|<script|<image/);
@@ -45,7 +47,8 @@ describe('shared person cards', () => {
       organisation: { website: 'https://example.com' },
     })!;
     expect(person.website).toBe('https://example.com/equipe/anne');
-    expect(personCard(person)).toContain('<span>Profil Klarc</span></a>');
+    expect(personCard(person)).toContain('aria-label="Profil Klarc"');
+    expect(personCard(person)).not.toContain('<span>Profil Klarc</span>');
     expect(userToPerson({ name: 'Anne', email: 'anne@example.com' })?.website).toBeUndefined();
     for (const website of ['', 'javascript:alert(1)', 'mailto:anne@example.com', '//example.com']) {
       expect(personCard({ initials: 'AM', name: 'Anne', website })).not.toContain(
@@ -114,11 +117,12 @@ describe('shared person cards', () => {
     }
   });
 
-  it('wraps contacts instead of hiding them and makes keyboard focus visible', () => {
-    expect(rule('.k-person-contact')).toContain('flex-wrap: wrap');
-    expect(rule('.k-person-link')).toContain('overflow-wrap: anywhere');
-    expect(rule('.k-person-link')).not.toContain('overflow: hidden');
-    expect(rule('.k-cardgrid-people--grid .k-person-link')).toContain('white-space: normal');
+  it('keeps contact icons visible on one row and makes keyboard focus visible', () => {
+    expect(rule('.k-person-contact')).toContain('display: flex');
+    expect(rule('.k-person-link')).toContain('width: 1.9rem');
+    expect(rule('.k-person-link')).toContain('border-radius: 999px');
+    expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-wrap: nowrap');
+    expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-direction: row');
     expect(rule('.slidev-layout .k-person-card a')).toContain(
       'text-decoration-color: currentColor',
     );

@@ -32,7 +32,8 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
       (quote) =>
         visibleText(quote.quoteHtml).length +
         quote.authorName.length +
-        (quote.authorRole?.length ?? 0),
+        (quote.authorRole?.length ?? 0) +
+        (quote.authorCompany?.length ?? 0),
     ),
   );
   const leadHtml = richTextToHTML(block.lead);
@@ -49,7 +50,10 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
   // the generic card() primitive — but they flow through the shared cardStack.
   const quoteCards = renderedQuotes.map((q) => {
     const role = q.authorRole ? `<br/>\n    <span>${escape(q.authorRole)}</span>` : '';
-    return `<div class="${K.card} ${K.quoteCard}">\n  <span class="${K.quoteMark}">${QUOTE_ICON}</span>\n  <div class="${K.quote}">\n    ${q.quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}\n  </div>\n</div>`;
+    const company = q.authorCompany?.trim()
+      ? `\n    <span class="${K.authorCompany}">${escape(q.authorCompany.trim())}</span>`
+      : '';
+    return `<div class="${K.card} ${K.quoteCard}">\n  <span class="${K.quoteMark}">${QUOTE_ICON}</span>\n  <div class="${K.quote}">\n    ${q.quoteHtml}\n  </div>\n  <div class="${K.author}">\n    ${escape(q.authorName)}${role}${company}\n  </div>\n</div>`;
   });
 
   // Mirror cardGrid's balanced-grid rule: three quotes in a 2-col dense grid

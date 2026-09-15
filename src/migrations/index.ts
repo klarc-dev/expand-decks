@@ -36,6 +36,8 @@ import * as migration_20260915_071722_twocols_lead from './20260915_071722_twoco
 import * as migration_20260915_121029_cover_pills from './20260915_121029_cover_pills';
 import * as migration_20260915_122318 from './20260915_122318';
 import * as migration_20260915_123452_cover_pill_variant from './20260915_123452_cover_pill_variant';
+import * as migration_20260915_124551 from './20260915_124551';
+import * as migration_20260915_125015_quote_author_company from './20260915_125015_quote_author_company';
 
 export const migrations = [
   {
@@ -227,5 +229,15 @@ export const migrations = [
     up: migration_20260915_123452_cover_pill_variant.up,
     down: migration_20260915_123452_cover_pill_variant.down,
     name: '20260915_123452_cover_pill_variant',
+  },
+  {
+    up: migration_20260915_124551.up,
+    down: migration_20260915_124551.down,
+    name: '20260915_124551'
+  },
+  {
+    up: migration_20260915_125015_quote_author_company.up,
+    down: migration_20260915_125015_quote_author_company.down,
+    name: '20260915_125015_quote_author_company',
   },
 ];

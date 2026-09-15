@@ -728,8 +728,8 @@ describe('renderCardGrid()', () => {
     // Assert each link's destination and readable label together, independent
     // of decorative SVG paths or the span used to lay out the label.
     const contacts = Array.from(
-      result.matchAll(/<a class="k-person-link" href="([^"]+)">([\s\S]*?)<\/a>/g),
-      ([, href, content]) => ({ href, text: content!.replace(/<[^>]*>/g, '') }),
+      result.matchAll(/<a class="k-person-link" href="([^"]+)" aria-label="([^"]+)"[^>]*>/g),
+      ([, href, label]) => ({ href, text: label }),
     );
     expect(contacts).toEqual([
       { href: 'mailto:joachim@klarc.com', text: 'joachim@klarc.com' },
@@ -915,6 +915,97 @@ describe('unified content header', () => {
 });
 
 describe('renderQuotes()', () => {
+  it('separates an escaped company from the role and omits empty companies', () => {
+    const render = (authorCompany?: string | null) =>
+      renderQuotes({
+        blockType: 'quotes',
+        title: 'References',
+        quotes: [
+          {
+            quote: lexical('A recommendation'),
+            authorName: 'Alex',
+            authorRole: 'Director',
+            authorCompany,
+          },
+        ],
+      });
+    expect(render('Research & <Partners>')).toContain(
+      '<span class="k-author-company">Research &amp; &lt;Partners&gt;</span>',
+    );
+    expect(render('Company').indexOf('Director')).toBeLessThan(
+      render('Company').indexOf('k-author-company'),
+    );
+    for (const company of [undefined, null, '', '   '])
+      expect(render(company)).not.toContain('k-author-company');
+  });
+
+  it('keeps company footers aligned and contained in light and dark quote cards', async () => {
+    const { chromium } = await import('playwright');
+    const { readFileSync } = await import('node:fs');
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+      const seed = readFileSync('scripts/seed-klarc-prospects.ts', 'utf8');
+      const quotes = [
+        ...seed.matchAll(
+          /quote:\s*'([^']+)',\s*authorName: '([^']+)',\s*(?:authorRole: '([^']+)',\s*)?authorCompany: '([^']+)'/g,
+        ),
+      ].map((m) => ({
+        quote: lexical(m[1]!),
+        authorName: m[2]!,
+        authorRole: m[3],
+        authorCompany: m[4]!,
+      }));
+      expect(quotes).toHaveLength(3);
+      const css = readFileSync('src/export/style.css', 'utf8').replace(
+        /url\("\/fonts\/([^"/]+)"\)/g,
+        (_, filename: string) =>
+          `url("data:font/ttf;base64,${readFileSync(`public/fonts/${filename}`).toString('base64')}")`,
+      );
+      for (const surface of ['light', 'dark'] as const) {
+        const html = renderQuotes(
+          { blockType: 'quotes', title: 'Ils nous font confiance', quotes },
+          { surface },
+        ).replace(/^---\n[\s\S]*?\n---\n*/, '');
+        await page.setContent(
+          `<style>html,body{margin:0}.slidev-layout p{margin:0}${css}</style><div class="slidev-layout ${surface === 'dark' ? 'k-dark' : ''}" style="width:1280px;height:720px">${html}</div>`,
+        );
+        await page.evaluate(() => document.fonts.ready);
+        const data = await page.locator('.k-quote-card').evaluateAll((cards) =>
+          cards.map((card) => {
+            const company = card.querySelector('.k-author-company')!;
+            const bounds = card.getBoundingClientRect();
+            const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+            let contained = true;
+            while (walker.nextNode()) {
+              if (!walker.currentNode.textContent?.trim()) continue;
+              const range = document.createRange();
+              range.selectNodeContents(walker.currentNode);
+              for (const rect of range.getClientRects())
+                if (
+                  rect.left < bounds.left - 1 ||
+                  rect.right > bounds.right + 1 ||
+                  rect.bottom > bounds.bottom + 1
+                )
+                  contained = false;
+            }
+            return {
+              bottom: company.getBoundingClientRect().bottom,
+              weight: getComputedStyle(company).fontWeight,
+              contained,
+            };
+          }),
+        );
+        expect(data.every((d) => d.contained && d.weight === '600')).toBe(true);
+        expect(
+          Math.max(...data.map((d) => d.bottom)) - Math.min(...data.map((d) => d.bottom)),
+        ).toBeLessThan(1);
+        await page.screenshot({ path: `/tmp/testimonial-companies-${surface}.png` });
+      }
+    } finally {
+      await browser.close();
+    }
+  });
   it('renders quotes with author info', () => {
     const result = renderQuotes({
       blockType: 'quotes',

@@ -51,6 +51,11 @@ describe('style.css fixed-canvas safe frame', () => {
     expect(css).toMatch(/\.k-section-frame\s*>\s*\.k-center-hero-main\s*\{[^}]*width:\s*100%/);
   });
 
+  it('gives parallel location cards a distinct horizontal gutter', () => {
+    expect(css).toMatch(/\.k-location-grid\s*\{[^}]*column-gap:\s*4rem/);
+    expect(css).toMatch(/\.k-location-grid\s*\{[^}]*row-gap:\s*1\.5rem/);
+  });
+
   it('centers the CTA with symmetric clearance and only the split copy within its body', () => {
     expect(css).toMatch(
       /\.k-cta-frame\s*\{[^}]*padding-block:\s*max\(var\(--header-top\), var\(--content-bottom\)\)/,
@@ -161,6 +166,14 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).not.toMatch(
       /\.k-(?:content|hero|center-hero|cover)\.k-density-(?:compact|dense)[^}]*\.k-(?:header-lead|hero-body|hero-sub|section-sub|cta-sub)[^{]*\{[^}]*font-size:/,
     );
+  });
+
+  it('keeps secondary pills subtly outlined with surface-aware secondary text', () => {
+    const secondary = css.match(/\.k-eyebrow\.k-eyebrow--secondary\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(secondary).toContain('color: color-mix(in srgb, var(--k-rose) 50%, var(--k-ink))');
+    expect(secondary).toContain('background: color-mix(in srgb, var(--k-rose) 4%, transparent)');
+    expect(secondary).toContain('border-color: color-mix(in srgb, currentColor 35%, transparent)');
+    expect(css).toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{\s*color: var\(--k-rose\)/);
   });
 
   it('keeps the eyebrow pill dot the same color as its text in every tone', () => {

@@ -15,6 +15,7 @@ export const K = {
   btn: 'k-btn',
   btnGhost: 'k-btn-ghost',
   author: 'k-author',
+  authorCompany: 'k-author-company',
   quote: 'k-quote',
   quoteMark: 'k-quote-mark',
   quoteCard: 'k-quote-card',

@@ -60,6 +60,7 @@ export const SLIDE_LIMITS = {
     quote: { max: 380 },
     authorName: { max: 80 },
     authorRole: { max: 100 },
+    authorCompany: { max: 80 },
   },
   cta: {
     subtitle: { max: 280 },

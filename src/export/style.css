@@ -424,9 +424,12 @@
   border-color: var(--k-teal);
 }
 .k-eyebrow.k-eyebrow--secondary {
-  color: var(--k-ink);
-  background: var(--k-rose);
-  border-color: var(--k-rose);
+  color: color-mix(in srgb, var(--k-rose) 50%, var(--k-ink));
+  background: color-mix(in srgb, var(--k-rose) 4%, transparent);
+  border-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+.k-dark .k-eyebrow.k-eyebrow--secondary {
+  color: var(--k-rose);
 }
 .k-eyebrow.k-eyebrow--ink {
   color: var(--k-paper);
@@ -1336,6 +1339,23 @@
 .k-quote-card .k-author {
   margin-top: auto;
 }
+
+.k-dark .k-quote-card .k-author {
+  color: var(--fg);
+}
+
+.k-dark .k-quote-card .k-author span:where(:not(.k-author-company)) {
+  color: var(--fg-muted);
+}
+
+.k-quote-card .k-author .k-author-company {
+  display: block;
+  margin-top: calc(0.5rem * var(--density-space, 1));
+  color: var(--fg);
+  font-weight: 600;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
 .k-quotes-body {
   display: flex;
   flex-direction: column;
@@ -1534,6 +1554,11 @@
   row-gap: var(--content-gap);
 }
 .k-content-tight {
+  row-gap: var(--content-gap-tight);
+}
+/* Notes consume their own grid row: use the existing tight rhythm rather than
+   shrinking numbered-card typography or clipping descriptions beneath them. */
+.k-content:has(> .k-def-footer) {
   row-gap: var(--content-gap-tight);
 }
 .k-content.k-density-compact {
@@ -2417,7 +2442,8 @@
 .k-location-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
+  column-gap: 4rem;
+  row-gap: 1.5rem;
   margin-top: 2rem;
   text-align: left;
 }
