@@ -40,7 +40,13 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
         return `\n${takeawayBox(takeaway.html, takeaway.label, K.takeawaySide)}`;
       })()
     : '';
-  const leftPerson = userToPerson(block.leftUser);
+  // Same per-slide expertise line as an intervenants row on the contacts grid.
+  const leftUserDescription = block.leftUserDescription?.trim();
+  const leftUserRecord = userToPerson(block.leftUser);
+  const leftPerson =
+    leftUserRecord && leftUserDescription
+      ? { ...leftUserRecord, description: leftUserDescription }
+      : leftUserRecord;
   const leftUser = leftPerson
     ? `\n<div class="k-two-cols-user">\n${personCard(leftPerson)}\n</div>`
     : '';

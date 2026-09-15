@@ -52,23 +52,23 @@ const slides = [
         number: '01',
         title: 'Vous négociez un contrat déterminant pour votre activité',
         description:
-          'Répartition des risques, garanties, propriété des résultats, conditions de sortie : nous analysons les clauses, mesurons leurs conséquences et conduisons la négociation à vos côtés.',
+          'Répartition des risques, garanties, propriété des résultats, conditions de sortie : nous analysons les clauses, mesurons leurs conséquences et négocions à vos côtés.',
       },
       {
         number: '02',
         title: 'Vous souhaitez protéger votre innovation ou votre image',
         description:
-          'Levée de fonds, partenariat, salon ou publication : avant toute divulgation, nous vérifions les protections disponibles, organisons la confidentialité et arrêtons avec vous la stratégie de dépôt.',
+          'Levée de fonds, partenariat, salon ou publication : avant toute divulgation, nous vérifions les protections disponibles, organisons la confidentialité et arrêtons la stratégie de dépôt.',
       },
       {
         number: '03',
         title: 'Vous sollicitez un financement ou un dispositif fiscal',
         description:
-          'CIR, CII, statut JEI, subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un éventuel examen de l’administration.',
+          'CIR, CII, statut JEI, subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un examen de l’administration.',
       },
       {
         number: '04',
-        title: 'Vous lancez un programme de R&D ou recevez un contrôle',
+        title: 'Vous lancez un projet de R&D ou recevez un contrôle',
         description:
           'Nouveau projet, partenariat de recherche ou avis de vérification : nous structurons vos travaux et leurs preuves et définissons la stratégie de réponse.',
       },
@@ -151,8 +151,7 @@ const slides = [
     lead: 'Contrats, gouvernance, opérations et différends : ce que l’avocat prend en charge sur votre dossier.',
     intro:
       'Nos avocats interviennent en conseil et en contentieux, en lien avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
-    leftFooter:
-      'En lien avec la propriété industrielle pour la titularité et l’exploitation de vos résultats.',
+    leftFooter: 'En lien avec la propriété industrielle pour vos résultats de R&D.',
     rightCards: [
       {
         title: 'Vos contrats et partenariats',
@@ -184,8 +183,7 @@ const slides = [
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
       'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
-    leftFooter:
-      'En lien avec le droit des affaires pour vos licences et vos contrats d’exploitation.',
+    leftFooter: 'En lien avec le droit des affaires pour vos licences et vos contrats.',
     rightCards: [
       {
         title: 'Vos brevets et inventions',
@@ -215,10 +213,8 @@ const slides = [
     eyebrow: '03 · Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
     lead: 'Fiscalité de l’entreprise et de ses dirigeants, avec une expertise particulière de la fiscalité de l’innovation.',
-    intro:
-      'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle, avec l’équipe scientifique qui documente vos travaux d’innovation.',
-    leftFooter:
-      'En lien avec le management de l’innovation pour les preuves de vos dépenses de R&D.',
+    intro: 'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle.',
+    leftFooter: 'En lien avec le management de l’innovation pour vos preuves de R&D.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
@@ -241,11 +237,6 @@ const slides = [
           'Vous assister lors d’une vérification, répondre aux propositions de rectification, présenter les réclamations et conduire le contentieux devant les juridictions.',
       },
     ],
-    footnotes: [
-      { text: 'CIR : crédit d’impôt recherche.' },
-      { text: 'CII : crédit d’impôt innovation.' },
-      { text: 'JEI : jeune entreprise innovante.' },
-    ],
   },
   // Page 8 — management de l'innovation
   {
@@ -255,8 +246,7 @@ const slides = [
     lead: 'Financements, organisation et preuves de R&D, tenus par une équipe scientifique intégrée au cabinet.',
     intro:
       'Docteurs et ingénieurs structurent vos projets et leur documentation, en amont des aides et des déclarations fiscales préparées avec l’avocat fiscaliste.',
-    leftFooter:
-      'En lien avec le droit fiscal pour vos crédits d’impôt et le droit des affaires pour vos consortiums.',
+    leftFooter: 'En lien avec le droit fiscal pour vos crédits d’impôt recherche et innovation.',
     rightCards: [
       {
         title: 'Vos aides et financements',
@@ -431,15 +421,14 @@ await runPayloadScript(async (payload) => {
     benjamin: {
       email: 'benjamin.visser@klarc.com',
       description:
-        'Droit fiscal : fiscalité de l’entreprise, fiscalité de l’innovation, contrôles et contentieux.',
+        'Droit fiscal : fiscalité de l’entreprise et de l’innovation, contrôles et contentieux.',
       website: 'https://klarc.com/identite/benjamin-visser',
       linkedin: 'https://www.linkedin.com/in/visser-benjamin/',
       portrait: 'https://klarc.com/wp-content/uploads/benjamin-visser-nose-centered.webp',
     },
     carine: {
       email: 'carine.doyharcabal@klarc.com',
-      description:
-        'Management de l’innovation : aides, structuration et preuves de vos projets de R&D.',
+      description: 'Management de l’innovation : aides, structuration et preuves de R&D.',
       website: 'https://klarc.com/identite/carine-doyharcabal',
       linkedin: 'https://www.linkedin.com/in/carine-doyhar%C3%A7abal-phd-822baa7a/',
       portrait: 'https://klarc.com/wp-content/uploads/carine-doyharcabal-nose-centered.webp',
@@ -507,7 +496,10 @@ await runPayloadScript(async (payload) => {
   const wireLeftUser = (page: number, key: keyof typeof people) => {
     const user = userIds.get(key);
     if (!user) throw new Error(`Missing resolved account for ${key}`);
-    (richSlides[page - 1] as Record<string, unknown>).leftUser = user;
+    const slide = richSlides[page - 1] as Record<string, unknown>;
+    slide.leftUser = user;
+    // Same expertise line as the person's row on the contacts grid.
+    slide.leftUserDescription = people[key].description;
   };
   wireLeftUser(5, 'joachim');
   wireLeftUser(6, 'lucien');

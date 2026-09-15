@@ -38,6 +38,7 @@ import * as migration_20260915_122318 from './20260915_122318';
 import * as migration_20260915_123452_cover_pill_variant from './20260915_123452_cover_pill_variant';
 import * as migration_20260915_124551 from './20260915_124551';
 import * as migration_20260915_125015_quote_author_company from './20260915_125015_quote_author_company';
+import * as migration_20260915_143541_two_cols_left_user_description from './20260915_143541_two_cols_left_user_description';
 
 export const migrations = [
   {
@@ -233,11 +234,16 @@ export const migrations = [
   {
     up: migration_20260915_124551.up,
     down: migration_20260915_124551.down,
-    name: '20260915_124551'
+    name: '20260915_124551',
   },
   {
     up: migration_20260915_125015_quote_author_company.up,
     down: migration_20260915_125015_quote_author_company.down,
     name: '20260915_125015_quote_author_company',
+  },
+  {
+    up: migration_20260915_143541_two_cols_left_user_description.up,
+    down: migration_20260915_143541_two_cols_left_user_description.down,
+    name: '20260915_143541_two_cols_left_user_description',
   },
 ];

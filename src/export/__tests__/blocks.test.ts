@@ -563,6 +563,20 @@ describe('renderTwoCols()', () => {
     expect(result).toMatch(/k-split[\s\S]*k-two-cols-user[\s\S]*k-split-cards/);
   });
 
+  it('shows the slide-specific expertise line on the left person card', () => {
+    const result = renderTwoCols({
+      blockType: 'twoCols',
+      title: 'Droit fiscal',
+      leftUser: { id: 42, name: 'Anne Martin', title: 'Avocate', email: 'anne@klarc.com' },
+      leftUserDescription: ' Fiscalité de l’innovation, contrôles et contentieux. ',
+      rightCards: [{ title: 'CIR', description: lexical('Examiner l’éligibilité.') }],
+    } as never);
+
+    expect(result).toContain(
+      '<div class="k-person-description">Fiscalité de l’innovation, contrôles et contentieux.</div>',
+    );
+  });
+
   it('renders leftFooter as the same takeaway box as the statement footer', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',

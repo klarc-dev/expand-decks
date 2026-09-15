@@ -40,6 +40,7 @@ const rightCards = optionalRender(
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
 const leftUser = optionalRender(userRelationship);
+const leftUserDescription = optionalLimitedRender(SLIDE_LIMITS.twoCols.leftUserDescription);
 
 export const twoColsSpec = block({
   slug: 'twoCols',
@@ -79,6 +80,17 @@ export const twoColsSpec = block({
       description:
         'Utilisateur affiché dans la colonne gauche avec la même carte que sur la diapositive Contacts',
     }),
+    rawField(
+      'leftUserDescription',
+      leftUserDescription,
+      false,
+      limitedTextPayload(SLIDE_LIMITS.twoCols.leftUserDescription, {
+        type: 'text',
+        label: 'Expertise (carte utilisateur)',
+        description:
+          'Expertise ou sujets suivis, affichés sous la fonction, comme sur la diapositive Contacts',
+      }),
+    ),
     rawField(
       'rightCards',
       rightCards,
@@ -126,6 +138,7 @@ export const twoColsRenderSchema = z.object({
   intro,
   leftFooter,
   leftUser,
+  leftUserDescription,
   rightCards,
   image,
   imagePosition,
