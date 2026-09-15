@@ -187,7 +187,7 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(mark).toContain('text-shadow: none');
 
     const underline = css.match(/\.slidev-layout \.k-mark::after\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(underline).toContain('background: var(--accent-rule)');
+    expect(underline).toContain('background: var(--mark-rule)');
     expect(underline).toContain('border-radius: 1px');
     expect(underline).not.toContain('transform:');
     expect(underline).toMatch(/bottom:\s*-0\.08em/);

@@ -214,13 +214,14 @@
   --k-card-body-min: calc(var(--t-body) * 0.78);
 
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
-     contrast by ground (U3 consumes these). On the light ground the emphasis
-     (heading mark, header rule, links, markers) is a light primary; the dark
-     ground below keeps the secondary so the rule stays visible on teal. */
+     contrast by ground (U3 consumes these). The accent rule (header rule,
+     links, markers) stays secondary; the heading-mark underline is a light
+     primary on the paper ground and secondary on the dark ground below. */
   --pill-bg: var(--k-teal-50);
   --pill-fg: var(--k-teal);
   --pill-border: var(--k-line);
-  --accent-rule: var(--k-teal-300);
+  --accent-rule: var(--k-rose);
+  --mark-rule: var(--k-teal-300);
 
   /* Font families — single source of truth so per-org fonts can override the
      heading/body pair via theme.ts. Klarc's exact website families ship locally
@@ -240,7 +241,7 @@
   --pill-bg: #1f5e61;
   --pill-fg: #fff;
   --pill-border: #6f989a;
-  --accent-rule: var(--k-rose);
+  --mark-rule: var(--k-rose);
   --k-surface: #195457;
   --k-surface-raised: #1f5e61;
   --k-surface-soft: #164d50;
@@ -346,7 +347,7 @@
   bottom: -0.08em;
   height: 2px;
   border-radius: 1px;
-  background: var(--accent-rule);
+  background: var(--mark-rule);
 }
 
 .k-dark .k-mark {
