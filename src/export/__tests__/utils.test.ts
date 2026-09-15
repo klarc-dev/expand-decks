@@ -130,7 +130,7 @@ describe('cardStack()', () => {
       occupancy: { header: 'H'.repeat(300), intro: 'I'.repeat(300) },
     });
     expect(result.html).toBe('');
-    expect(result.density).toBe('dense');
+    expect(result.density).toBe('compact');
   });
 
   it('balances five and six cards into three columns behind the stack interface', () => {
