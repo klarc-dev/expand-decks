@@ -38,7 +38,10 @@ describe('style.css fixed-canvas safe frame', () => {
     expect(css).toMatch(/\.k-cover-main\s*\{[\s\S]*overflow:\s*clip/);
   });
 
-  it('makes the declared footer height authoritative and non-wrapping', () => {
+  it('makes the declared footer height authoritative, non-wrapping, and technical', () => {
+    expect(css).toMatch(
+      /\.k-slide-header,\s*\.k-slide-footer\s*\{[\s\S]*font-family:\s*var\(--k-font-technical\)/,
+    );
     expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*height:\s*var\(--chrome-footer-height\)/);
     expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*white-space:\s*nowrap/);
     expect(css).toMatch(/\.k-slide-footer\s*>\s*\*\s*\{[\s\S]*text-overflow:\s*ellipsis/);
