@@ -64,7 +64,7 @@ const slides = [
         number: '03',
         title: 'Vous sollicitez un financement ou un dispositif fiscal',
         description:
-          'CIR, CII, statut JEI, subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un examen de l’administration.',
+          'CIR[^1], CII[^2], statut JEI[^3], subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un examen de l’administration.',
       },
       {
         number: '04',
@@ -224,18 +224,23 @@ const slides = [
       {
         title: 'Vos crédits d’impôt recherche et innovation',
         description:
-          'CIR et CII : examiner l’éligibilité de vos travaux et l’assiette des dépenses, sécuriser la position par rescrit si utile et constituer le dossier justificatif.',
+          'CIR[^1] et CII[^2] : examiner l’éligibilité de vos travaux et l’assiette des dépenses, sécuriser la position par rescrit si utile et constituer le dossier justificatif.',
       },
       {
         title: 'Vos régimes de faveur',
         description:
-          'Statut JEI, régime IP Box et exonérations liées à l’innovation : vérifier les conditions applicables à votre situation, les revenus concernés et les obligations à respecter.',
+          'Statut JEI[^3], régime IP Box et exonérations liées à l’innovation : vérifier les conditions applicables à votre situation, les revenus concernés et les obligations à respecter.',
       },
       {
         title: 'Vos contrôles et contentieux fiscaux',
         description:
           'Vous assister lors d’une vérification, répondre aux propositions de rectification, présenter les réclamations et conduire le contentieux devant les juridictions.',
       },
+    ],
+    footnotes: [
+      { text: 'CIR : crédit d’impôt recherche.' },
+      { text: 'CII : crédit d’impôt innovation.' },
+      { text: 'JEI : jeune entreprise innovante.' },
     ],
   },
   // Page 8 — management de l'innovation
@@ -293,7 +298,7 @@ const slides = [
       },
       {
         quote:
-          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème. Une belle équipe !',
+          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR[^1] sans problème. Une belle équipe !',
         authorName: 'Kristof Descotes',
         authorRole: 'Directeur R&D',
         authorCompany: 'Althea',
