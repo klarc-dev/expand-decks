@@ -12,6 +12,7 @@ export type PersonCard = {
   initials: string;
   name: string;
   title?: string;
+  description?: string;
   email?: string;
   phone?: string;
   linkedin?: string;
@@ -75,6 +76,7 @@ export function userToPerson(user: unknown): PersonCard | null {
   const email = asNonEmptyString(record.email);
   const name = asNonEmptyString(record.name) ?? email?.split('@')[0] ?? 'Intervenant';
   const title = asNonEmptyString(record.title) ?? undefined;
+  const description = asNonEmptyString(record.description) ?? undefined;
   const linkedin = asNonEmptyString(record.linkedin);
   const website = asNonEmptyString(record.website);
 
@@ -83,6 +85,7 @@ export function userToPerson(user: unknown): PersonCard | null {
     initials: initialsFor(name),
     name,
     title,
+    description,
     email: email ?? undefined,
     phone: asNonEmptyString(record.phone) ?? undefined,
     // Only https profile URLs become links; anything else is dropped.
@@ -143,6 +146,9 @@ export function personCard(person: PersonCard): string {
   const title = person.title
     ? `\n      <div class="${K.personTitle}">${escape(person.title)}</div>`
     : '';
+  const description = person.description
+    ? `\n      <div class="${K.personDescription}">${escape(person.description)}</div>`
+    : '';
   // The name itself links to the email (the primary way to reach a contact);
   // the contact line below repeats it as text plus phone and LinkedIn.
   const mailto = person.email ? safeHref(`mailto:${person.email}`) : null;
@@ -152,7 +158,7 @@ export function personCard(person: PersonCard): string {
   return `<div class="${K.personCard}">
     ${avatar}
     <div class="${K.personBody}">
-      <div class="${K.personName}">${name}</div>${title}${personContacts(person)}
+      <div class="${K.personName}">${name}</div>${title}${description}${personContacts(person)}
     </div>
   </div>`;
 }

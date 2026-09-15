@@ -168,12 +168,21 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     );
   });
 
-  it('keeps secondary pills subtly outlined with surface-aware secondary text', () => {
+  it('fills secondary pills with the brand pink and strong ink text on either surface', () => {
     const secondary = css.match(/\.k-eyebrow\.k-eyebrow--secondary\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(secondary).toContain('color: color-mix(in srgb, var(--k-rose) 50%, var(--k-ink))');
-    expect(secondary).toContain('background: color-mix(in srgb, var(--k-rose) 4%, transparent)');
-    expect(secondary).toContain('border-color: color-mix(in srgb, currentColor 35%, transparent)');
-    expect(css).toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{\s*color: var\(--k-rose\)/);
+    expect(secondary).toContain('color: var(--k-ink)');
+    expect(secondary).toContain('background: var(--k-rose)');
+    expect(secondary).toContain('border-color: var(--k-rose)');
+    expect(css).not.toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{/);
+  });
+
+  it('uses crisp brand-color heading emphasis instead of a simulated marker band', () => {
+    const mark = css.match(/\.slidev-layout \.k-mark\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(mark).toContain('color: var(--k-rose)');
+    expect(mark).toContain('background: transparent');
+    expect(mark).toContain('text-decoration: none');
+    expect(mark).toContain('text-shadow: none');
+    expect(mark).not.toMatch(/text-decoration-thickness|text-underline-offset|--mark-band/);
   });
 
   it('keeps the eyebrow pill dot the same color as its text in every tone', () => {
@@ -209,13 +218,15 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     );
   });
 
-  it('reclaims vertical space only in comfortable numbered two-column multirow cards', () => {
+  it('uses smaller headings and even padding in comfortable numbered two-column multirow cards', () => {
     const scope = String.raw`\.k-card-scale-md\.k-grid-2\.k-card-stack--grid\.k-card-stack--multirow\s*>\s*\.k-card:has\(> \.k-num\)`;
     const card = css.match(new RegExp(`${scope}\\s*\\{([^}]*)\\}`))?.[1];
     const heading = css.match(new RegExp(`${scope}\\s+h3\\s*\\{([^}]*)\\}`))?.[1];
-    expect(card).toMatch(/padding-block:\s*0\.5rem/);
+    expect(card).toMatch(/padding:\s*0\.9rem/);
+    expect(card).not.toMatch(/padding-block|padding-bottom/);
+    expect(heading).toMatch(/font-size:\s*var\(--t-lead\)/);
     expect(heading).toMatch(/line-height:\s*1\.15/);
-    expect(`${card}${heading}`).not.toMatch(/font-size|overflow|(?:^|;)\s*height:|line-clamp/);
+    expect(`${card}${heading}`).not.toMatch(/overflow|(?:^|;)\s*height:|line-clamp/);
   });
 
   it('gives multi-row comparable grids equal-height tracks through the shared stack', () => {
@@ -224,29 +235,31 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
   });
 });
 
-describe('style.css source pills', () => {
-  it('renders source items as rounded integrated pills instead of a ruled footer', () => {
+describe('style.css flat footnotes', () => {
+  it('renders notes as a flat list instead of interactive-looking pills', () => {
     const footerBlock = css.match(/\.k-def-footer\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(footerBlock).toMatch(/gap:\s*0\.32rem/);
-    // No detached legal-footer rule above the band.
+    expect(footerBlock).toMatch(/display:\s*grid/);
     expect(footerBlock).not.toMatch(/border-top:/);
-    expect(css).toMatch(/\.k-def-item\s*\{[^}]*display:\s*inline-grid/);
-    expect(css).toMatch(/\.k-def-item\s*\{[^}]*min-height:\s*var\(--k-def-pill-h\)/);
-    expect(css).toMatch(/\.k-def-item\s*\{[^}]*border:\s*0/);
-    expect(css).toMatch(
-      /\.k-def-item\s*\{[^}]*border-radius:\s*calc\(var\(--k-def-pill-h\) \/ 2\)/,
-    );
+
+    const itemBlock = css.match(/\.k-def-item\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(itemBlock).toMatch(/border-radius:\s*0/);
+    expect(itemBlock).toMatch(/background:\s*transparent/);
+    expect(itemBlock).toMatch(/box-shadow:\s*none/);
+
     const textBlock = css.match(/\.k-def-text\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(textBlock).toMatch(/white-space:\s*normal/);
     expect(textBlock).not.toMatch(/overflow:\s*hidden|text-overflow:\s*ellipsis/);
   });
 
-  it('uses a full-height merged number segment inside each source pill', () => {
-    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*display:\s*inline-flex/);
-    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*height:\s*100%/);
-    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*border-radius:\s*999px 0 0 999px/);
-    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*background:\s*linear-gradient\(/);
-    expect(css).toMatch(/\.k-def-index\s*\{[\s\S]*var\(--accent-rule\)/);
+  it('uses pink numerals on white with matching superscript calls in the content', () => {
+    const indexBlock = css.match(/\.k-def-index\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(indexBlock).toMatch(/color:\s*var\(--k-rose\)/);
+    expect(indexBlock).toMatch(/background:\s*#fff/);
+    expect(indexBlock).toMatch(/border-radius:\s*0/);
+
+    const refBlock = css.match(/\.k-def-ref\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(refBlock).toMatch(/color:\s*var\(--k-rose\)/);
+    expect(refBlock).toMatch(/top:\s*-0\.35em/);
   });
 });
 

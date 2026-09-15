@@ -91,11 +91,10 @@ export const cardTitleDescFields = (limits?: {
 ];
 
 // Shared "Sources / Notes" repeater appended to every layout block (except
-// markdown) by the L1 emitter. Each note renders as a numbered ¹²³ entry in the
-// slide-bottom footnote band (consumeDefFooter), in author order. No magic
-// `{{def:…}}` syntax required — clicking "Ajouter une note" is the discoverable
-// path. The single `text` subfield accepts inline markdown links/emphasis
-// (e.g. `[texte](https://…)`) via md() at render time.
+// markdown) by the L1 emitter. Each note renders as a numbered entry in the
+// slide-bottom footnote band, in author order. Authors place the corresponding
+// superscript in content with `[^1]`, `[^2]`, etc. The single `text` subfield
+// accepts inline markdown links/emphasis (e.g. `[texte](https://…)`) via md().
 export const footnotesField = (): Field => ({
   name: 'footnotes',
   type: 'array',
@@ -103,7 +102,7 @@ export const footnotesField = (): Field => ({
   labels: { singular: 'Note', plural: 'Notes' },
   admin: {
     description:
-      'Notes numérotées affichées en bas de diapositive (ex. « Source : … »). Lien possible : [texte](https://…).',
+      'Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).',
     components: { RowLabel: '/components/RepeaterRowLabel#default' },
   },
   minRows: SLIDE_LIMITS.common.footnotes.min,

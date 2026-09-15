@@ -90,6 +90,21 @@ describe('shared person cards', () => {
     expect(userToPerson({ email: 'anne@example.com' })?.name).toBe('anne');
   });
 
+  it('renders an escaped optional description below the job title', () => {
+    const person = userToPerson({
+      name: 'Benjamin Visser',
+      title: 'Avocat',
+      description: 'Fiscalité des entreprises & fiscalité de l’innovation',
+    })!;
+    const html = personCard(person);
+
+    expect(person.description).toBe('Fiscalité des entreprises & fiscalité de l’innovation');
+    expect(html.indexOf('k-person-title')).toBeLessThan(html.indexOf('k-person-description'));
+    expect(html).toContain('Fiscalité des entreprises &amp; fiscalité de l’innovation');
+    expect(rule('.k-person-description')).toContain('display: none');
+    expect(rule('.k-cardgrid-people--grid .k-person-description')).toContain('text-wrap: pretty');
+  });
+
   it('escapes visible content and excludes unsafe contact URLs', () => {
     const html = renderPeopleStrip(
       [

@@ -633,6 +633,7 @@ describe('renderCardGrid()', () => {
       ],
     });
     expect(result).toContain('k-grid-3');
+    expect(result).toContain('<div class="k-card k-card--numbered">');
     for (const n of ['01', '02', '03', '04', '05', '06']) {
       expect(result).toContain(`>${n}<`);
     }

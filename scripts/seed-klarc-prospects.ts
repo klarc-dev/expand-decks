@@ -41,7 +41,7 @@ const slides = [
   // Page 2 — 4 situations client, grille 2x2 numérotée
   {
     blockType: 'cardGrid',
-    title: 'Les situations que vous rencontrez',
+    title: 'Des enjeux à sécuriser',
     eyebrow: 'Vos situations',
     sidebarText:
       'Quatre situations fréquentes où une décision juridique, technique ou financière engage votre activité.',
@@ -63,7 +63,7 @@ const slides = [
         number: '03',
         title: 'Vous sollicitez un financement ou un dispositif fiscal',
         description:
-          'CIR, CII, statut JEI, subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un éventuel examen de l’administration.',
+          'CIR[^1], CII[^2], statut JEI[^3], subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un éventuel examen de l’administration.',
       },
       {
         number: '04',
@@ -73,9 +73,9 @@ const slides = [
       },
     ],
     footnotes: [
-      {
-        text: 'CIR : crédit d’impôt recherche ; CII : crédit d’impôt innovation ; JEI : jeune entreprise innovante (statut).',
-      },
+      { text: 'CIR : crédit d’impôt recherche.' },
+      { text: 'CII : crédit d’impôt innovation.' },
+      { text: 'JEI : jeune entreprise innovante.' },
     ],
   },
   // Page 3 — contraste problème / réponse
@@ -212,13 +212,18 @@ const slides = [
       {
         title: 'Votre fiscalité de l’innovation',
         description:
-          'CIR, CII, JEI et IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
+          'CIR[^1], CII[^2], JEI[^3] et régime IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
       },
       {
         title: 'Votre organisation et vos preuves de R&D',
         description:
           'Structurer vos projets, leurs jalons et leurs responsables ; documenter l’état de l’art, les travaux et les résultats pour relier les preuves aux dépenses en cas de contrôle.',
       },
+    ],
+    footnotes: [
+      { text: 'CIR : crédit d’impôt recherche.' },
+      { text: 'CII : crédit d’impôt innovation.' },
+      { text: 'JEI : jeune entreprise innovante.' },
     ],
   },
   // Page 8 — témoignages (extraits fidèles du deck historique livré)
@@ -256,10 +261,10 @@ const slides = [
   // Page 9 — vos contacts (shared person-card grid; people wired at seed time)
   {
     blockType: 'cardGrid',
-    eyebrow: 'VOS INTERLOCUTEURS',
-    title: 'Vos contacts',
+    eyebrow: 'POUR DÉMARRER',
+    title: 'Vos interlocuteurs',
     sidebarText:
-      'Une équipe resserrée, des interlocuteurs identifiés : chaque mission est suivie par les personnes qui la conduisent.',
+      'Identifiez le bon interlocuteur selon votre besoin. Il mobilisera ensuite les compétences utiles au sein du cabinet.',
   },
   // Page 10 — cta
   {
@@ -356,24 +361,32 @@ await runPayloadScript(async (payload) => {
   const people = {
     joachim: {
       email: 'joachim.brindeau@klarc.com',
+      description:
+        'Contrats commerciaux, partenariats R&D et exploitation des actifs de propriété intellectuelle.',
       website: 'https://klarc.com/identite/joachim-brindeau',
       linkedin: 'https://www.linkedin.com/in/joachim-brindeau/',
       portrait: 'https://klarc.com/wp-content/uploads/joachim-brindeau-nose-centered.webp',
     },
     lucien: {
       email: 'lucien.trouette@klarc.com',
+      description:
+        'Protection des inventions, brevets, liberté d’exploitation et protection du savoir-faire.',
       website: 'https://klarc.com/identite/lucien-trouette',
       linkedin: 'https://www.linkedin.com/in/lucientrouette/',
       portrait: 'https://klarc.com/wp-content/uploads/lucien-trouette-nose-centered.webp',
     },
     benjamin: {
       email: 'benjamin.visser@klarc.com',
+      description:
+        'Fiscalité des entreprises, fiscalité de l’innovation, contrôles et contentieux fiscaux.',
       website: 'https://klarc.com/identite/benjamin-visser',
       linkedin: 'https://www.linkedin.com/in/visser-benjamin/',
       portrait: 'https://klarc.com/wp-content/uploads/benjamin-visser-nose-centered.webp',
     },
     carine: {
       email: 'carine.doyharcabal@klarc.com',
+      description:
+        'Structuration et pilotage de la R&D, aides, subventions et documentation des projets.',
       website: 'https://klarc.com/identite/carine-doyharcabal',
       linkedin: 'https://www.linkedin.com/in/carine-doyhar%C3%A7abal-phd-822baa7a/',
       portrait: 'https://klarc.com/wp-content/uploads/carine-doyharcabal-nose-centered.webp',
@@ -426,7 +439,12 @@ await runPayloadScript(async (payload) => {
     await payload.update({
       collection: 'users',
       id: user.id,
-      data: { avatar, website: profile.website, linkedin: profile.linkedin },
+      data: {
+        avatar,
+        website: profile.website,
+        linkedin: profile.linkedin,
+        ...('description' in profile ? { description: profile.description } : {}),
+      },
       overrideAccess: true,
       context: { skipBuildQueue: true },
     });

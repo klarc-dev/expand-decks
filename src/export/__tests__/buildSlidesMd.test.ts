@@ -132,20 +132,22 @@ describe('buildSlidesMd()', () => {
     expect(chunks.filter((c, i) => i > 0 && c.trim() === '')).toHaveLength(0);
   });
 
-  it('renders authored footnotes as a numbered def-footer band', () => {
+  it('renders authored footnotes with inline superscript calls and a numbered footer list', () => {
     const result = build([
       {
         blockType: 'statement',
-        title: 'Claim',
+        title: 'Claim[^1]',
+        footer: lexical('Une seconde affirmation[^2] et une référence inconnue[^9].'),
         footnotes: [{ text: 'Source : Gartner, 2025' }, { text: 'Voir [étude](https://x.test)' }],
       } as never,
     ]);
     expect(result).toContain('k-def-footer');
-    // First note numbered ¹, second ², in author order.
+    expect(result).toContain('Claim<sup class="k-def-ref">1</sup>');
+    expect(result).toContain('affirmation<sup class="k-def-ref">2</sup>');
+    expect(result).toContain('inconnue[^9]');
     expect(result).toContain(
       '<span class="k-def-index">1</span><span class="k-def-text">Source : Gartner, 2025</span>',
     );
-    // md() turns the inline link into an anchor.
     expect(result).toContain(
       '<span class="k-def-index">2</span><span class="k-def-text">Voir <a href="https://x.test">étude</a></span>',
     );

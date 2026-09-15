@@ -168,6 +168,8 @@ describe('writeSlide invariants', () => {
     expect(prompt).toContain('RÉFÉRENCES AUTORISÉES');
     expect(prompt).toContain('Garner, Legal Writing in Plain English');
     expect(instructions).toContain('footnotes');
+    expect(instructions).toContain('[^1]');
+    expect(instructions).toContain('juste après l’affirmation concernée');
     expect(instructions).toContain('contenu juridique ou normatif');
     expect(instructions).not.toContain('Les sources servent seulement à vérifier les faits');
   });

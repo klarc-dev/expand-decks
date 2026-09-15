@@ -15,7 +15,8 @@ import { resolveVars } from './vars';
 
 const HTML_ENTITY_RE = /[&<>"']/g;
 const DEF_RE = /\{\{def:(.+?)\}\}/g;
-const MARK_RE = /(?<!\\)\[([^[\]\n]+?)(?<!\\)\]/g;
+const NOTE_REF_RE = /\[\^(\d+)\]/g;
+const MARK_RE = /(?<!\\)\[([^^[\]\n]+?)(?<!\\)\]/g;
 
 // Null-safe: freshly added admin blocks have empty required fields, and the
 // live preview renders them immediately — never crash on missing text.
@@ -135,10 +136,18 @@ function consumeDefFooter(): string {
   return `\n\n<div class="${K.defFooter}">${items}</div>`;
 }
 
+function inlineNoteRefs(html: string): string {
+  return html.replace(NOTE_REF_RE, (token, rawNumber) => {
+    const number = Number.parseInt(rawNumber, 10);
+    if (number < 1 || number > _slideDefs.length) return token;
+    return `<sup class="${K.defRef}">${number}</sup>`;
+  });
+}
+
 /**
- * Inline markdown → HTML. Supports **bold**, *italic*, [text](url), and
- * {{def:content}} which collects definitions for the slide-level footnote band
- * and emits a superscript reference inline.
+ * Inline markdown → HTML. Supports **bold**, *italic*, [text](url), authored
+ * footnote references such as [^1], and {{def:content}} definitions. The latter
+ * collect their own note and emit a superscript reference inline.
  */
 // Allow only safe link targets. Browsers ignore leading control chars/whitespace
 // in href, so `\njavascript:` still executes — strip control chars and lowercase
@@ -175,12 +184,14 @@ export function applyDefs(html: string): string {
   // Resolve {path} variables first (input is already Lexical-converted HTML;
   // `{ } .` are not entity-escaped so VAR_RE still matches). escape() guards
   // each substituted value.
-  return resolveVars(html, escape)
-    .replace(DEF_RE, (_, content) => {
-      _slideDefs.push(content);
-      return `\x00DEF${_slideDefs.length}\x00`;
-    })
-    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
+  return inlineNoteRefs(
+    resolveVars(html, escape)
+      .replace(DEF_RE, (_, content) => {
+        _slideDefs.push(content);
+        return `\x00DEF${_slideDefs.length}\x00`;
+      })
+      .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`),
+  );
 }
 
 export function md(text: string | null | undefined): string {
@@ -190,7 +201,7 @@ export function md(text: string | null | undefined): string {
     _slideDefs.push(content);
     return `\x00DEF${_slideDefs.length}\x00`;
   });
-  return (
+  return inlineNoteRefs(
     escaped
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
@@ -203,7 +214,7 @@ export function md(text: string | null | undefined): string {
       // `\[` / `\]` keep a literal bracket.
       .replace(MARK_RE, (_m, content) => `<mark class="${K.mark}">${content}</mark>`)
       .replace(/\\([[\]])/g, '$1')
-      .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`)
+      .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`),
   );
 }
 
@@ -346,7 +357,8 @@ export function card(opts: {
   const num = opts.number ? `\n  <span class="${K.num}">${escape(opts.number)}</span>` : '';
   const h3 = `<h3${opts.titleClass ? ` class="${opts.titleClass}"` : ''}>${md(opts.title)}</h3>`;
   const body = opts.body ? `\n  <div>${opts.body}</div>` : '';
-  return `<div class="${K.card}">${num}\n  ${h3}${body}\n</div>`;
+  const classes = [K.card, opts.number ? K.cardNumbered : ''].filter(Boolean).join(' ');
+  return `<div class="${classes}">${num}\n  ${h3}${body}\n</div>`;
 }
 
 /** A location uses the slide's own surface; only its directions are interactive.
@@ -409,60 +421,66 @@ export function locationCardsFromNote(html: string, language?: DeckLanguage | nu
 }
 
 /**
- * Lay out pre-rendered card strings as a grid or vertical column, centralizing
- * the one crowding heuristic against the fixed 720px canvas (replaces the two
- * ad-hoc `crowded` blocks in cardGrid/twoCols). Grid 3+ rows, or column 4+
- * cards, gets the tight treatment.
+ * Lay out pre-rendered cards behind one topology and density interface. Callers
+ * provide a requested maximum column count; this module owns sparse-grid
+ * clamping, five/six-card balancing, row state, final-row centering and tight
+ * geometry for the fixed canvas.
  */
 export function cardStack(
   cards: string[],
   opts: {
     layout: 'grid' | 'column';
-    cols?: number;
-    className?: string;
+    maxCols?: number;
     density?: SlideDensity;
-    forceTight?: boolean;
+    dense?: boolean;
   },
-): { html: string; crowded: boolean } {
-  // No cards → no container (a freshly-added block with empty fields must not
-  // emit a stray empty grid div in the live preview).
-  if (cards.length === 0) return { html: '', crowded: false };
+): { html: string; crowded: boolean; cols: number; rows: number } {
+  if (cards.length === 0) return { html: '', crowded: false, cols: 0, rows: 0 };
   const inner = cards.join('\n\n');
+  const density = opts.density ?? 'comfortable';
+
   if (opts.layout === 'grid') {
-    const cols = Math.min(Math.max(opts.cols ?? 4, 1), 4);
+    const requested = Math.min(Math.max(opts.maxCols ?? 4, 1), 4);
+    const capped = Math.min(requested, cards.length);
+    const cols = requested >= 4 && cards.length >= 5 && cards.length <= 6 ? 3 : capped;
     const rows = Math.ceil(cards.length / cols);
-    const crowded = rows > 2;
-    // When crowded, also shrink each card box (.k-tight) — density belongs to the
-    // body region, not the slide title baseline.
+    const crowded = rows > 2 || Boolean(opts.dense);
+    const centeredLastRow = cols === 3 && cards.length === 5;
     const classes = [
       K.cardStack,
       K.cardStackGrid,
       gridClass(cols),
-      rows > 1 ? 'k-card-stack--multirow' : '',
-      crowded || opts.forceTight ? 'k-tight' : '',
-      densityClass(opts.density ?? 'comfortable'),
-      opts.className,
+      rows > 1 ? K.cardStackMultirow : '',
+      centeredLastRow ? K.cardStackCenteredLastRow : '',
+      crowded ? K.cardStackCrowded : '',
+      densityClass(density),
     ]
       .filter(Boolean)
       .join(' ');
     return {
       html: `<div class="${classes}">\n\n${inner}\n\n</div>`,
       crowded,
+      cols,
+      rows,
     };
   }
-  const crowded = cards.length >= 4;
+
+  const cols = 1;
+  const rows = cards.length;
+  const crowded = cards.length >= 4 || Boolean(opts.dense);
   const classes = [
     K.cardStack,
     K.cardStackColumn,
-    crowded || opts.forceTight ? 'k-tight' : '',
-    densityClass(opts.density ?? 'comfortable'),
-    opts.className,
+    crowded ? K.cardStackCrowded : '',
+    densityClass(density),
   ]
     .filter(Boolean)
     .join(' ');
   return {
     html: `<div class="${classes}">\n\n${inner}\n\n</div>`,
     crowded,
+    cols,
+    rows,
   };
 }
 

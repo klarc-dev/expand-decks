@@ -247,30 +247,22 @@
   font-weight: 600;
 }
 
-/* Heading mark — `[mot]` in any title (md() → <mark class="k-mark">). The
-   heading keeps its own ink so contrast never drops; the emphasis is a rose
-   highlighter band laid behind the lower half of the word. Drawn as a thick
-   underline with a negative offset rather than a background: the underline is
-   anchored to the baseline, so the band lands at the same height under Gilroy,
-   Newsreader or any org heading face (a background band moves with each font's
-   descender), it wraps line by line, and it survives the PDF print pass. */
+/* Heading mark — `[mot]` in any title (md() → <mark class="k-mark">).
+   Emphasis is typographic, not a simulated marker stroke: one crisp rose word
+   against the slide surface keeps the display face legible at every scale. */
 .slidev-layout .k-mark {
-  --mark-band: color-mix(in srgb, var(--k-rose) 52%, var(--k-paper));
-  color: inherit;
+  color: var(--k-rose);
   font: inherit;
+  font-weight: inherit;
   background: transparent;
-  text-decoration-line: underline;
-  text-decoration-color: var(--mark-band);
-  text-decoration-thickness: 0.4em;
-  text-underline-offset: -0.44em;
-  text-decoration-skip-ink: none;
+  text-decoration: none;
+  text-shadow: none;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .k-dark .k-mark {
-  /* Rose over teal greys out as a solid, so on the dark tone the word itself
-     takes the pale rose ink (≈6:1 on teal) over a translucent rose band. */
-  --mark-band: color-mix(in srgb, var(--k-rose) 30%, transparent);
-  color: var(--k-rose-soft);
+  color: var(--k-rose);
 }
 
 .slidev-layout p,
@@ -424,12 +416,9 @@
   border-color: var(--k-teal);
 }
 .k-eyebrow.k-eyebrow--secondary {
-  color: color-mix(in srgb, var(--k-rose) 50%, var(--k-ink));
-  background: color-mix(in srgb, var(--k-rose) 4%, transparent);
-  border-color: color-mix(in srgb, currentColor 35%, transparent);
-}
-.k-dark .k-eyebrow.k-eyebrow--secondary {
-  color: var(--k-rose);
+  color: var(--k-ink);
+  background: var(--k-rose);
+  border-color: var(--k-rose);
 }
 .k-eyebrow.k-eyebrow--ink {
   color: var(--k-paper);
@@ -1587,6 +1576,8 @@
 .k-content-header h1,
 .k-content-header h2 {
   margin: 0;
+  max-inline-size: 60%;
+  text-wrap: balance;
 }
 /* Heading description/subtitle typography is invariant across templates and
    density modes. Density may tighten spacing and leading, but never its size. */
@@ -1597,13 +1588,18 @@
 /* Description line of the unified content header. */
 .k-header-lead {
   margin-top: 0.7rem;
-  max-width: 54rem;
+  max-inline-size: min(50%, 54rem);
   line-height: 1.45;
   color: var(--fg-muted);
+  text-wrap: pretty;
 }
 .k-content-header--center .k-header-lead {
   margin-left: auto;
   margin-right: auto;
+}
+.k-content-header--center h1,
+.k-content-header--center h2 {
+  margin-inline: auto;
 }
 .k-content.k-density-compact .k-header-lead,
 .k-content.k-density-dense .k-header-lead {
@@ -1756,6 +1752,13 @@
   overflow: visible;
   text-overflow: clip;
 }
+.k-cardgrid-people--grid .k-person-description {
+  margin-top: 0.55rem;
+  font-size: var(--t-small);
+  line-height: 1.4;
+  color: var(--fg-muted);
+  text-wrap: pretty;
+}
 .k-cardgrid-people--grid .k-person-contact {
   flex-direction: row;
   flex-wrap: nowrap;
@@ -1794,10 +1797,11 @@
   margin-bottom: 0.5rem;
 }
 /* Number + two-line title + three-line description must fit equal-height rows.
-   Reclaim vertical padding and heading leading, not body size or hidden copy.
-   Single-row, unnumbered, compact and dense cards retain their existing geometry. */
+   Numbered cards use a smaller title and equal padding on every edge so the
+   bottom clearance matches the sides. Single-row, unnumbered, compact and
+   dense cards retain their existing geometry. */
 .k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) {
-  padding-block: 0.5rem;
+  padding: 0.9rem;
   /* The fixed row is the query container, not the viewport. Preserve the normal
      midpoint; tighter available rows can use the existing dense body floor.
      This is bounded fitting, never a promise that arbitrary content will fit:
@@ -1805,9 +1809,10 @@
   container-type: size;
 }
 .k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) p {
-  font-size: clamp(var(--k-card-body-min), 10cqh, calc(var(--t-body) * 0.95));
+  font-size: clamp(var(--k-card-body-min), 11cqh, calc(var(--t-body) * 0.95));
 }
 .k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) h3 {
+  font-size: var(--t-lead);
   line-height: 1.15;
 }
 
@@ -2245,6 +2250,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.k-person-description {
+  display: none;
+}
 /* Separate, wrapping contact links retain their PDF annotations. Spacing,
    not punctuation attached to a link, separates each actionable detail. */
 .k-person-contact {
@@ -2517,25 +2525,24 @@
   color: #fff !important;
 }
 
-/* Sources / notes : inline ref + integrated source pills.
-   They sit inside the slide frame but read as soft metadata chips, not as a
-   detached legal footer rule. The chip background is tone-aware through --bg/--fg
-   so the same source treatment works on light, dark and gradient slides. ----------- */
+/* Sources / notes: real inline superscript calls plus a flat footnote list.
+   The number stays pink on white; the note itself remains quiet supporting copy. */
 .k-def-ref {
-  font-size: 0.62em;
-  font-weight: 700;
-  color: var(--fg-muted);
-  vertical-align: super;
-  margin: 0 0.05em 0 0.1em;
+  position: relative;
+  top: -0.35em;
+  font-size: 0.58em;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--k-rose);
+  vertical-align: baseline;
+  margin-inline: 0.08em;
 }
 .k-def-footer {
-  margin: 0.75rem 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.32rem;
+  margin: 0.7rem 0 0;
+  display: grid;
+  gap: 0.28rem;
   font-size: var(--t-micro);
-  line-height: 1;
+  line-height: 1.35;
   color: var(--fg-muted);
   width: 100%;
 }
@@ -2548,51 +2555,36 @@
 }
 
 .k-def-item {
-  --k-def-pill-h: 1.42rem;
-  display: inline-grid;
-  grid-template-columns: var(--k-def-pill-h) minmax(0, 1fr);
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 0.32rem;
   max-width: 100%;
-  min-height: var(--k-def-pill-h);
   padding: 0;
-  border-radius: calc(var(--k-def-pill-h) / 2);
-  color: color-mix(in srgb, var(--fg-muted) 92%, var(--fg));
-  background: color-mix(in srgb, var(--bg) 90%, var(--fg) 6%);
   border: 0;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.42),
-    inset 0 -1px 0 color-mix(in srgb, var(--fg) 5%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--pill-border) 74%, var(--fg) 7%),
-    0 6px 14px -14px color-mix(in srgb, var(--k-teal) 45%, transparent);
-  overflow: hidden;
+  border-radius: 0;
+  color: color-mix(in srgb, var(--fg-muted) 92%, var(--fg));
+  background: transparent;
+  box-shadow: none;
 }
 .k-def-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--k-def-pill-h);
-  height: 100%;
-  align-self: stretch;
-  border-radius: 999px 0 0 999px;
-  font-size: 0.78em;
+  display: inline-block;
+  width: auto;
+  height: auto;
+  font-size: 0.82em;
   line-height: 1;
   font-weight: 800;
-  color: var(--k-teal-900);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-rule) 96%, #fff 18%),
-    color-mix(in srgb, var(--accent-rule) 88%, var(--k-teal) 7%)
-  );
-  border-right: 1px solid color-mix(in srgb, var(--accent-rule) 58%, var(--k-teal) 16%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  color: var(--k-rose);
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: right;
 }
 .k-def-text {
   min-width: 0;
-  align-self: center;
-  padding: 0.25rem 0.64rem 0.25rem 0.52rem;
-  /* Notes are content, not single-line labels. Let the frame reserve their
-     natural height and keep glyph ascenders/descenders inside the pill. */
-  line-height: 1.4;
+  padding: 0;
+  line-height: 1.35;
   white-space: normal;
   overflow-wrap: anywhere;
   letter-spacing: 0.01em;
@@ -2600,24 +2592,23 @@
 .k-def-item a,
 .k-def-text a {
   color: inherit;
-  text-decoration: none;
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--k-rose) 65%, transparent);
+  text-underline-offset: 0.12em;
   border-bottom: 0;
 }
 .k-dark .k-def-item {
   color: rgba(234, 242, 242, 0.84);
-  background: rgba(255, 255, 255, 0.075);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-    0 0 0 1px rgba(255, 255, 255, 0.16),
-    0 6px 14px -14px rgba(0, 0, 0, 0.65);
+  background: transparent;
+  box-shadow: none;
 }
 .k-dark .k-def-index {
-  color: var(--k-teal-900);
-  border-right-color: rgba(255, 255, 255, 0.14);
+  color: var(--k-rose);
+  background: #fff;
+  border: 0;
 }
 .k-dark .k-def-ref {
-  color: var(--fg-muted);
+  color: var(--k-rose);
 }
 
 /* Split layout — replaces two-cols so footer can sit at slide root */
@@ -2677,6 +2668,14 @@
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
+}
+.k-two-cols-user .k-person-description {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: var(--t-small);
+  line-height: 1.4;
+  color: var(--fg-muted);
+  text-wrap: pretty;
 }
 .k-two-cols-user .k-person-contact {
   flex-direction: column;
