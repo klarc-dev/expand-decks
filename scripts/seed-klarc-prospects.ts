@@ -212,29 +212,29 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: '03 · Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
-    lead: 'Fiscalité de l’entreprise et de ses dirigeants, avec une expertise particulière de la fiscalité de l’innovation.',
+    lead: 'Fiscalité de l’entreprise et de ses dirigeants, avec une expertise dédiée à l’innovation.',
     intro: 'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle.',
-    leftFooter: 'En lien avec le management de l’innovation pour vos preuves de R&D.',
+    leftFooter: 'Avec l’équipe scientifique pour documenter vos travaux de R&D.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
         description:
-          'Résultat, TVA, groupe, opérations sur le capital et rémunération des dirigeants : conseiller vos choix, anticiper leurs effets fiscaux et sécuriser vos déclarations.',
+          'Résultat, TVA, groupe, capital et rémunération des dirigeants : anticiper les effets fiscaux et sécuriser vos déclarations.',
       },
       {
         title: 'Vos crédits d’impôt recherche et innovation',
         description:
-          'CIR[^1] et CII[^2] : examiner l’éligibilité de vos travaux et l’assiette des dépenses, sécuriser la position par rescrit si utile et constituer le dossier justificatif.',
+          'CIR[^1] et CII[^2] : examiner les travaux et dépenses, sécuriser la position par rescrit si utile et constituer le dossier justificatif.',
       },
       {
         title: 'Vos régimes de faveur',
         description:
-          'Statut JEI[^3], régime IP Box et exonérations liées à l’innovation : vérifier les conditions applicables à votre situation, les revenus concernés et les obligations à respecter.',
+          'Statut JEI[^3], régime IP Box et exonérations : vérifier les conditions, les revenus concernés et les obligations à respecter.',
       },
       {
         title: 'Vos contrôles et contentieux fiscaux',
         description:
-          'Vous assister lors d’une vérification, répondre aux propositions de rectification, présenter les réclamations et conduire le contentieux devant les juridictions.',
+          'Vous assister pendant la vérification, répondre aux rectifications et conduire les réclamations et contentieux.',
       },
     ],
     footnotes: [
