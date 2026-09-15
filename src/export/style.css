@@ -1483,20 +1483,40 @@
   background: var(--k-teal);
   color: #fff;
 }
+.slidev-layout .k-btn:hover {
+  background: var(--k-teal-600);
+  color: #fff;
+}
 
 .k-dark .k-btn {
   background: #fff;
   color: var(--k-teal);
+}
+.slidev-layout.k-dark .k-btn:hover,
+.slidev-layout .k-dark .k-btn:hover {
+  background: var(--k-paper);
+  color: var(--k-teal-700);
 }
 
 .slidev-layout .k-btn-ghost {
   color: var(--k-teal);
   border-color: var(--k-line);
 }
+.slidev-layout .k-btn-ghost:hover {
+  color: var(--k-teal-700);
+  background: var(--k-teal-50);
+  border-color: color-mix(in srgb, var(--k-teal) 38%, transparent);
+}
 
 .k-dark .k-btn-ghost {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.58);
+}
+.slidev-layout.k-dark .k-btn-ghost:hover,
+.slidev-layout .k-dark .k-btn-ghost:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.78);
 }
 
 /* Grids ---------------------------------------- */
@@ -1806,9 +1826,10 @@
 .k-cardgrid-people--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 1fr;
-  gap: 1.25rem;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 1rem 1.25rem;
   width: 100%;
+  max-height: 100%;
   margin: 0;
 }
 .k-cardgrid-people--grid .k-person-card {
@@ -1817,7 +1838,7 @@
   min-width: 0;
   max-width: none;
   gap: 1rem;
-  padding: 0.65rem 1.1rem;
+  padding: 0.55rem 1.1rem;
   background: var(--k-surface-raised);
 }
 .k-cardgrid-people--grid .k-person-avatar {
@@ -1825,7 +1846,7 @@
   height: 6.25rem;
   margin-top: 0;
   border-radius: var(--k-radius-card);
-  object-position: center top;
+  object-position: center 14%;
 }
 .k-cardgrid-people--grid .k-person-initials {
   font-size: var(--t-lead);
@@ -1838,7 +1859,7 @@
   text-overflow: clip;
 }
 .k-cardgrid-people--grid .k-person-title {
-  margin-top: 0.3rem;
+  margin-top: 0.12rem;
   font-size: var(--t-body);
   line-height: 1.3;
   /* Long professional titles must read in full on the contacts slide. */

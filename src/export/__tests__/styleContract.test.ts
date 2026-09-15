@@ -253,6 +253,26 @@ describe('style.css flat footnotes', () => {
   });
 });
 
+describe('style.css link interaction contract', () => {
+  it('keeps hover colors inside the organisation palette on light and dark slides', () => {
+    expect(css).toMatch(
+      /\.slidev-layout a:hover\s*\{[^}]*color:\s*var\(--k-teal\)[^}]*text-decoration-color:\s*currentColor/,
+    );
+    expect(css).toMatch(
+      /\.slidev-layout\.k-dark a:hover,\s*\.slidev-layout \.k-dark a:hover\s*\{[^}]*color:\s*#fff[^}]*text-decoration-color:\s*currentColor/,
+    );
+    expect(css).toMatch(
+      /\.slidev-layout a\s*\{[^}]*transition:[^}]*color var\(--k-motion-fast\)[^}]*text-decoration-color var\(--k-motion-fast\)/,
+    );
+    expect(css).toMatch(
+      /\.slidev-layout \.k-btn:hover\s*\{[^}]*background:\s*var\(--k-teal-600\)[^}]*color:\s*#fff/,
+    );
+    expect(css).toMatch(
+      /\.slidev-layout \.k-btn-ghost:hover\s*\{[^}]*color:\s*var\(--k-teal-700\)[^}]*background:\s*var\(--k-teal-50\)/,
+    );
+  });
+});
+
 describe('style.css corporate flat rendering', () => {
   it('uses the same shadowless and filterless system in SPA and PDF', () => {
     expect(css).toMatch(/\.slidev-layout \*,[\s\S]*?box-shadow:\s*none !important/);

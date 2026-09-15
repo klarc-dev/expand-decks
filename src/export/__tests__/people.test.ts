@@ -105,6 +105,12 @@ describe('shared person cards', () => {
     expect(html).toContain('Fiscalité des entreprises &amp; fiscalité de l’innovation');
     expect(rule('.k-person-description')).toContain('display: none');
     expect(rule('.k-cardgrid-people--grid .k-person-description')).toContain('text-wrap: pretty');
+    expect(rule('.k-cardgrid-people--grid .k-person-title')).toContain('margin-top: 0.12rem');
+    expect(rule('.k-cardgrid-people--grid')).toContain('grid-auto-rows: minmax(0, 1fr)');
+    expect(rule('.k-cardgrid-people--grid')).toContain('max-height: 100%');
+    expect(rule('.k-cardgrid-people--grid .k-person-avatar')).toContain(
+      'object-position: center 14%',
+    );
   });
 
   it('escapes visible content and excludes unsafe contact URLs', () => {

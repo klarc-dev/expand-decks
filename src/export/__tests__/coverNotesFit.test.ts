@@ -24,7 +24,7 @@ it('keeps cover glyphs on the copy rail and wraps complete notes inside natural-
         overflow: getComputedStyle(note).overflow,
         ellipsis: getComputedStyle(note).textOverflow,
         height: bounds.height,
-        minimumHeight: parseFloat(getComputedStyle(pill).minHeight),
+        lineHeight: parseFloat(getComputedStyle(note).lineHeight),
         contained: [...range.getClientRects()].every(
           (rect) =>
             rect.left >= bounds.left &&
@@ -37,7 +37,7 @@ it('keeps cover glyphs on the copy rail and wraps complete notes inside natural-
     expect(result.titleMargin).toBe('0px');
     expect(result.overflow).toBe('visible');
     expect(result.ellipsis).not.toBe('ellipsis');
-    expect(result.height).toBeGreaterThan(result.minimumHeight);
+    expect(result.height).toBeGreaterThan(result.lineHeight);
     expect(result.contained).toBe(true);
   } finally {
     await browser.close();
