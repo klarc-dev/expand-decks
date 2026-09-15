@@ -1,6 +1,3 @@
-import { IconBrandLinkedin, IconMail, IconPhone, IconWorld } from '@tabler/icons-react';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { K } from './classNames';
 import { escape, safeHref, telHref } from './utils';
 
@@ -100,29 +97,20 @@ type IntervenantRows = ({ user?: unknown } | null | undefined)[] | null | undefi
  * PDF carries a mailto:/tel:/https annotation per item. Returns '' when the
  * person has no contact detail.
  */
-// Pre-render library SVGs once: no icon font, network fetch or React runtime in
-// the generated Slidev/PDF. All contact channels share Tabler's outline family.
-const contactIcons = {
-  email: IconMail,
-  phone: IconPhone,
-  linkedin: IconBrandLinkedin,
-  website: IconWorld,
-};
-const contactSvg = Object.fromEntries(
-  Object.entries(contactIcons).map(([kind, icon]) => [
-    kind,
-    renderToStaticMarkup(
-      createElement(icon, {
-        size: 18,
-        stroke: 1.75,
-        'aria-hidden': true,
-        focusable: 'false',
-      }),
-    ),
-  ]),
-);
+// Inline the small, stable SVG paths: exports stay self-contained without pulling
+// React's server renderer into Next's application module graph.
+const contactSvg = {
+  email:
+    '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icons-tabler-outline icon-tabler-mail tabler-icon tabler-icon-mail" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg>',
+  phone:
+    '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icons-tabler-outline icon-tabler-phone tabler-icon tabler-icon-phone" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg>',
+  linkedin:
+    '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-linkedin tabler-icon tabler-icon-brand-linkedin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 11v5"/><path d="M8 8v.01"/><path d="M12 16v-5"/><path d="M16 16v-3a2 2 0 0 0 -4 0"/><path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/></svg>',
+  website:
+    '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icons-tabler-outline icon-tabler-world tabler-icon tabler-icon-world" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>',
+} as const;
 
-function contactLink(kind: keyof typeof contactIcons, href: string, text: string): string {
+function contactLink(kind: keyof typeof contactSvg, href: string, text: string): string {
   return `<a class="${K.personLink}" href="${escape(href)}">${contactSvg[kind]}<span>${escape(text)}</span></a>`;
 }
 
