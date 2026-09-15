@@ -212,9 +212,10 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: '03 · Droit fiscal',
     title: 'Conseiller et défendre votre [fiscalité]',
-    lead: 'Fiscalité des entreprises, dirigeants et innovation.',
-    intro: undefined,
-    leftFooter: undefined,
+    lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
+    intro:
+      'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle, en lien avec l’équipe scientifique pour documenter vos travaux de R&D.',
+    leftFooter: 'En lien avec le management de l’innovation pour vos preuves de R&D.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
@@ -251,7 +252,8 @@ const slides = [
     lead: 'Financements, organisation et preuves de R&D, tenus par une équipe scientifique intégrée au cabinet.',
     intro:
       'Docteurs et ingénieurs structurent vos projets et leur documentation, en amont des aides et des déclarations fiscales préparées avec l’avocat fiscaliste.',
-    leftFooter: 'En lien avec le droit fiscal pour vos crédits d’impôt recherche et innovation.',
+    leftFooter:
+      'En lien avec le droit fiscal pour les dispositifs propres à l’innovation et à la R&D.',
     rightCards: [
       {
         title: 'Vos aides et financements',
@@ -498,19 +500,8 @@ await runPayloadScript(async (payload) => {
       description: people[key].description,
     }));
   };
-  const wireLeftUser = (page: number, key: keyof typeof people) => {
-    const user = userIds.get(key);
-    if (!user) throw new Error(`Missing resolved account for ${key}`);
-    const slide = richSlides[page - 1] as Record<string, unknown>;
-    slide.leftUserHeading = 'Représenté par';
-    slide.leftUser = user;
-    // Same expertise line as the person's row on the contacts grid.
-    slide.leftUserDescription = people[key].description;
-  };
-  wireLeftUser(5, 'joachim');
-  wireLeftUser(6, 'lucien');
-  wireLeftUser(7, 'benjamin');
-  wireLeftUser(8, 'carine');
+  // The four expertise slides carry no person card: the contacts grid (page 10)
+  // is the single place where the referents appear.
   wire(10, ['joachim', 'lucien', 'benjamin', 'carine']);
   const data = {
     title,
