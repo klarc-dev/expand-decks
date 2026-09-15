@@ -8,6 +8,7 @@
  */
 export const K = {
   eyebrow: 'k-eyebrow',
+  eyebrowGroup: 'k-eyebrow-group',
   eyebrowDark: 'k-eyebrow-dark',
   card: 'k-card',
   dark: 'k-dark',
@@ -17,6 +18,7 @@ export const K = {
   quote: 'k-quote',
   quoteMark: 'k-quote-mark',
   quoteCard: 'k-quote-card',
+  quoteFooter: 'k-quote-footer',
   num: 'k-num',
   cover: 'k-cover',
   coverFullBleed: 'k-cover--full-bleed',

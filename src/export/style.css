@@ -115,7 +115,8 @@
   --t-h3: 1.563rem; /* tertiary heading — card title, timeline label */
   --t-numeral: 3.5rem; /* display numeral — stat value */
   --t-quote: 1.4rem; /* pull-quote body */
-  --t-lead: 1.25rem; /* lead/intro — hero body, hero/section/cta subtitle */
+  --t-lead: 1.25rem; /* lead/intro */
+  --t-heading-subtext: var(--t-lead); /* fixed heading description across slide templates */
   --t-body: 1rem; /* default copy — card body, table cells, buttons, lists */
   --t-small: 0.8rem; /* captions, labels, eyebrow, pill, author, card num */
   --t-micro: 0.62rem; /* slide chrome (header/footer), def-footer */
@@ -144,6 +145,7 @@
   --density-scale: 1;
   --density-leading: 1;
   --density-space: 1;
+  --k-card-body-min: calc(var(--t-body) * 0.78);
 
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
      contrast by ground (U3 consumes these). */
@@ -355,15 +357,11 @@
 .slidev-layout .k-slide-logo-link {
   text-decoration: none;
 }
-.slidev-layout .k-btn-ghost {
-  border: 1px solid var(--k-line);
-}
 
 /* Components ----------------------------------- */
 /* Eyebrow pill: the small label above a heading, shared by every template
    that carries one (content header, statement hero, cover, CTA). One tonal
-   pill on --pill-* tokens with a rose accent dot; the dark ground swaps the
-   tokens, the dot stays as the brand constant. */
+   pill on --pill-* tokens; the dot inherits the label color in every tone. */
 .k-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -391,7 +389,14 @@
   width: 0.42rem;
   height: 0.42rem;
   border-radius: 999px;
-  background: var(--accent-rule);
+  background: currentColor;
+}
+
+.k-eyebrow-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .k-eyebrow--header {
@@ -412,8 +417,26 @@
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.24);
 }
-.k-dark .k-eyebrow::before {
-  background: color-mix(in srgb, var(--accent-rule) 88%, #fff 12%);
+/* Explicit palette roles retain identical pill geometry in either surface. */
+.k-eyebrow.k-eyebrow--primary {
+  color: var(--k-paper);
+  background: var(--k-teal);
+  border-color: var(--k-teal);
+}
+.k-eyebrow.k-eyebrow--secondary {
+  color: var(--k-ink);
+  background: var(--k-rose);
+  border-color: var(--k-rose);
+}
+.k-eyebrow.k-eyebrow--ink {
+  color: var(--k-paper);
+  background: var(--k-ink);
+  border-color: var(--k-ink);
+}
+.k-eyebrow.k-eyebrow--paper {
+  color: var(--k-ink);
+  background: var(--k-paper);
+  border-color: var(--k-paper);
 }
 
 .k-logo {
@@ -446,7 +469,8 @@
     box-shadow var(--k-motion-fast),
     background-color var(--k-motion-fast);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -492,7 +516,7 @@
   line-height: 1.12;
 }
 .k-card-scale-xs .k-card p {
-  font-size: calc(var(--t-body) * 0.78);
+  font-size: var(--k-card-body-min);
   line-height: 1.25;
 }
 
@@ -643,8 +667,8 @@
 .k-table.k-density-dense {
   font-size: calc(var(--t-body) * 0.76);
 }
-.k-table--fit th,
-.k-table--fit td {
+.k-table.k-table--fit th,
+.k-table.k-table--fit td {
   padding: calc(0.46rem * var(--density-space)) calc(0.7rem * var(--density-space));
   line-height: calc(1.24 * var(--density-leading));
   overflow-wrap: break-word;
@@ -694,12 +718,12 @@
 .k-table--has-status col.k-table-col--status {
   width: 12%;
 }
-.k-table--fit td ul,
-.k-table--fit td ol {
+.k-table.k-table--fit td ul,
+.k-table.k-table--fit td ol {
   margin-top: 0.08rem;
   padding-left: 0.8rem;
 }
-.k-table--fit td li {
+.k-table.k-table--fit td li {
   margin: 0.08rem 0;
   line-height: 1.18;
 }
@@ -715,7 +739,7 @@
   text-transform: uppercase;
   font-size: 0.9em;
   line-height: 1.2;
-  vertical-align: bottom;
+  vertical-align: middle;
 }
 
 .k-table th:not(:last-child) {
@@ -1312,18 +1336,51 @@
 .k-quote-card .k-author {
   margin-top: auto;
 }
+.k-quotes-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+.k-quote-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 1.8rem;
+  padding-bottom: 0.35rem;
+}
+.k-content-tight .k-quote-footer {
+  padding-top: calc(1.2rem * var(--density-space));
+  padding-bottom: 0;
+}
 
-.k-btn {
+/* One action geometry for filled and outlined links, including inert labels.
+   Match the slide-link reset's specificity so tone does not depend on a
+   CTA-only override. A transparent border reserves the outline in both variants. */
+.slidev-layout :is(.k-btn, .k-btn-ghost) {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  max-width: 100%;
   gap: 0.5rem;
   padding: 0.8rem 1.6rem;
-  background: var(--k-teal);
-  color: #fff;
+  border: 1px solid transparent;
   border-radius: 999px;
+  font-family: var(--k-font-body);
   font-weight: 500;
   font-size: var(--t-body);
+  line-height: 1.5;
   letter-spacing: -0.01em;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.slidev-layout .k-btn {
+  background: var(--k-teal);
+  color: #fff;
 }
 
 .k-dark .k-btn {
@@ -1331,16 +1388,9 @@
   color: var(--k-teal);
 }
 
-.k-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1.6rem;
+.slidev-layout .k-btn-ghost {
   color: var(--k-teal);
-  border: 1px solid var(--k-line);
-  border-radius: 999px;
-  font-weight: 500;
-  font-size: var(--t-body);
+  border-color: var(--k-line);
 }
 
 .k-dark .k-btn-ghost {
@@ -1511,11 +1561,16 @@
 .k-content-header h2 {
   margin: 0;
 }
+/* Heading description/subtitle typography is invariant across templates and
+   density modes. Density may tighten spacing and leading, but never its size. */
+:is(.k-header-lead, .k-hero-body, .k-hero-sub, .k-section-sub, .k-cta-sub) {
+  font-size: var(--t-heading-subtext);
+}
+
 /* Description line of the unified content header. */
 .k-header-lead {
   margin-top: 0.7rem;
   max-width: 54rem;
-  font-size: calc(var(--t-lead) * 0.92);
   line-height: 1.45;
   color: var(--fg-muted);
 }
@@ -1526,7 +1581,6 @@
 .k-content.k-density-compact .k-header-lead,
 .k-content.k-density-dense .k-header-lead {
   margin-top: calc(0.7rem * var(--density-space));
-  font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
   line-height: calc(1.45 * var(--density-leading));
 }
 .k-content--full {
@@ -1637,22 +1691,24 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   gap: 1.25rem;
-  width: min(56rem, 100%);
+  width: 100%;
   margin: 0;
 }
 .k-cardgrid-people--grid .k-person-card {
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: 6rem minmax(0, 1fr);
   align-items: start;
   min-width: 0;
   max-width: none;
-  gap: 1.25rem;
-  padding: 1.5rem 1.7rem 1.4rem 1.5rem;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
   background: var(--k-surface-raised);
 }
 .k-cardgrid-people--grid .k-person-avatar {
-  width: 4.5rem;
-  height: 4.5rem;
-  margin-top: 0.1rem;
+  width: 6rem;
+  height: 7.5rem;
+  margin-top: 0;
+  border-radius: var(--k-radius-card);
+  object-position: center top;
 }
 .k-cardgrid-people--grid .k-person-initials {
   font-size: var(--t-lead);
@@ -1674,19 +1730,20 @@
   text-overflow: clip;
 }
 .k-cardgrid-people--grid .k-person-contact {
-  flex-direction: column;
-  align-items: stretch;
-  row-gap: 0.22rem;
-  margin-top: 0.8rem;
-  padding-top: 0.7rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
   border-top: 1px solid var(--k-hairline);
   font-size: var(--t-small);
-  line-height: 1.35;
+  line-height: 1;
 }
 .k-cardgrid-people--grid .k-person-link {
-  max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
 }
 .k-card-scale-md.k-grid-3.k-card-stack--grid .k-card h3 {
   font-size: var(--t-lead);
@@ -1714,6 +1771,14 @@
    Single-row, unnumbered, compact and dense cards retain their existing geometry. */
 .k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) {
   padding-block: 0.5rem;
+  /* The fixed row is the query container, not the viewport. Preserve the normal
+     midpoint; tighter available rows can use the existing dense body floor.
+     This is bounded fitting, never a promise that arbitrary content will fit:
+     the native Range gate rejects text that still escapes the card. */
+  container-type: size;
+}
+.k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) p {
+  font-size: clamp(var(--k-card-body-min), 10cqh, calc(var(--t-body) * 0.95));
 }
 .k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) h3 {
   line-height: 1.15;
@@ -1822,18 +1887,15 @@
 .k-center-hero.k-density-compact .k-section-sub,
 .k-center-hero.k-density-compact .k-cta-sub,
 .k-cover.k-density-compact .k-hero-sub {
-  font-size: calc(var(--t-lead) * 0.9);
   line-height: 1.4;
 }
 .k-hero.k-density-dense .k-hero-body,
 .k-center-hero.k-density-dense .k-section-sub,
 .k-center-hero.k-density-dense .k-cta-sub,
 .k-cover.k-density-dense .k-hero-sub {
-  font-size: var(--t-body);
   line-height: 1.34;
 }
 .k-hero-body {
-  font-size: var(--t-lead);
   line-height: 1.5;
   max-width: 46rem;
   margin-top: 1.5rem;
@@ -1927,7 +1989,6 @@
 /* Section subtitle — composition owns alignment/width through modifiers so the
    renderer stops emitting max-w / mx-auto utilities. */
 .k-section-sub {
-  font-size: var(--t-lead);
   color: var(--fg-muted);
   line-height: 1.55;
   margin-top: 1.4rem;
@@ -1958,7 +2019,6 @@
 }
 
 .k-hero-sub {
-  font-size: var(--t-lead);
   color: var(--fg-muted); /* solid — was rgba .75 */
   max-width: 36rem;
   line-height: 1.55;
@@ -2048,6 +2108,11 @@
 .k-cover-copy {
   min-width: 0;
   max-width: 52rem;
+}
+/* Title rails are clipping boundaries, not optical bleed areas. Override
+   the default theme's negative h1 margin for every semantic hero title. */
+.slidev-layout :is(.k-cover-title, .k-hero-title, .k-center-hero-title, .k-cta-title) {
+  margin-left: 0;
 }
 .k-cover-title {
   margin-bottom: 1.6rem;
@@ -2159,38 +2224,28 @@
   margin-top: 0.42rem;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.15rem 0.75rem;
+  align-items: center;
+  gap: 0.4rem;
   min-width: 0;
-  font-size: var(--t-small);
-  line-height: 1.3;
-  letter-spacing: 0.005em;
-  font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
 }
 .k-person-link {
   display: inline-flex;
-  align-items: flex-start;
-  gap: 0.45em;
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
   color: var(--k-teal);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
-  text-decoration-color: color-mix(in srgb, var(--k-teal) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--k-teal) 28%, transparent);
+  border-radius: 999px;
+  text-decoration: none;
 }
 .k-person-link > svg {
   flex: none;
-  width: 1.1em;
-  height: 1.1em;
-  margin-top: 0.1em;
+  width: 1rem;
+  height: 1rem;
   color: inherit;
-}
-.k-person-link > span {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 /* Outrank generic slide links: no rose underline or faded name on a card. */
 .slidev-layout .k-person-card a {
@@ -2202,7 +2257,7 @@
 .slidev-layout .k-person-card a:hover {
   text-decoration-line: underline;
 }
-.slidev-layout .k-person-card a:focus-visible {
+.slidev-layout a:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 3px;
   border-radius: 2px;
@@ -2344,7 +2399,6 @@
 .k-cta-sub {
   margin-top: 1rem;
   font-family: var(--k-font-heading);
-  font-size: var(--t-lead);
   font-style: italic;
   color: var(--fg-muted); /* solid on the always-dark cta — was opacity:0.75 */
 }
@@ -2358,10 +2412,6 @@
 .k-cta-caption {
   margin: 2.6rem auto 0;
   text-align: center;
-}
-/* Match the CTA's light override as well as its default dark tone. */
-.slidev-layout:not(.k-dark) .k-cta-actions .k-btn {
-  color: #fff;
 }
 /* Location cards are an unfilled address band, not another tinted panel. */
 .k-location-grid {
@@ -2433,11 +2483,6 @@
 .slidev-layout .k-location-card a:hover {
   text-decoration-thickness: 2px;
 }
-.slidev-layout .k-location-card a:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 4px;
-  border-radius: 2px;
-}
 .k-eyebrow-dark {
   background: rgba(255, 255, 255, 0.1) !important;
   border-color: rgba(255, 255, 255, 0.24) !important;
@@ -2480,9 +2525,9 @@
   grid-template-columns: var(--k-def-pill-h) minmax(0, 1fr);
   align-items: stretch;
   max-width: 100%;
-  height: var(--k-def-pill-h);
+  min-height: var(--k-def-pill-h);
   padding: 0;
-  border-radius: 999px;
+  border-radius: calc(var(--k-def-pill-h) / 2);
   color: color-mix(in srgb, var(--fg-muted) 92%, var(--fg));
   background: color-mix(in srgb, var(--bg) 90%, var(--fg) 6%);
   border: 0;
@@ -2516,10 +2561,12 @@
 .k-def-text {
   min-width: 0;
   align-self: center;
-  padding: 0 0.64rem 0 0.52rem;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  padding: 0.25rem 0.64rem 0.25rem 0.52rem;
+  /* Notes are content, not single-line labels. Let the frame reserve their
+     natural height and keep glyph ascenders/descenders inside the pill. */
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
   letter-spacing: 0.01em;
 }
 .k-def-item a,
@@ -2568,6 +2615,53 @@
   flex-direction: column;
   gap: 1.35rem;
   max-width: 31rem;
+}
+.k-two-cols-user {
+  width: 100%;
+}
+.k-two-cols-user .k-person-card {
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  background: var(--k-surface-raised);
+}
+.k-two-cols-user .k-person-avatar {
+  width: 6rem;
+  height: 7.5rem;
+  border-radius: var(--k-radius-card);
+  object-position: center top;
+}
+.k-two-cols-user .k-person-name {
+  font-size: var(--t-lead);
+  line-height: 1.2;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.k-two-cols-user .k-person-title {
+  margin-top: 0.3rem;
+  font-size: var(--t-body);
+  line-height: 1.3;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.k-two-cols-user .k-person-contact {
+  flex-direction: column;
+  align-items: stretch;
+  row-gap: 0.16rem;
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--k-hairline);
+}
+.k-two-cols-user .k-person-link {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .k-content.k-density-compact .k-copy-column,
 .k-content.k-density-dense .k-copy-column {

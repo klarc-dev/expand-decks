@@ -16,7 +16,7 @@ import { buildHeadmatter } from './theme';
 import { buildDeckRenderContexts } from './renderContext';
 import { getRenderer, type SlideBlock } from './renderers';
 import { resetDefs, seedFootnotes, yamlQuoted } from './utils';
-import { setVarDoc } from './vars';
+import { resolvedVarsForValidation, setVarDoc } from './vars';
 
 export type Presentation = {
   title: string;
@@ -78,6 +78,9 @@ function foldSlides(
   // Validate once at the final render boundary so malformed or over-limit data
   // fails explicitly instead of reaching a renderer that may clip or omit it.
   const slides = parseDocumentRenderPages(template, presentation.slides) as SlideBlock[];
+  // Placeholders are short at authoring time but may expand beyond the same
+  // SSOT limits. Validate the resolved copy; retain original emission semantics.
+  parseDocumentRenderPages(template, resolvedVarsForValidation(slides));
   // One shared deck-context fold drives export and preview parity: tone chain,
   // statement variant rotation, agenda section derivation, and page totals.
   const contexts = buildDeckRenderContexts(slides);

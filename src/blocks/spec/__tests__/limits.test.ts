@@ -23,10 +23,16 @@ function field(blockType: string, name: string) {
 describe('canonical slide authoring limits', () => {
   it('projects common title and eyebrow limits to AI, render and Payload', () => {
     expect(
-      parseAiSlide({ blockType: 'statement', title: repeat(SLIDE_LIMITS.common.title.max) }),
+      parseAiSlide({
+        blockType: 'statement',
+        title: repeat(SLIDE_LIMITS.common.title.max),
+      }),
     ).toBeTruthy();
     expect(() =>
-      parseAiSlide({ blockType: 'statement', title: repeat(SLIDE_LIMITS.common.title.max + 1) }),
+      parseAiSlide({
+        blockType: 'statement',
+        title: repeat(SLIDE_LIMITS.common.title.max + 1),
+      }),
     ).toThrow();
     expect(
       RENDER_SLIDE_SCHEMA.safeParse({
@@ -35,7 +41,9 @@ describe('canonical slide authoring limits', () => {
         eyebrow: repeat(SLIDE_LIMITS.common.eyebrow.max + 1),
       }).success,
     ).toBe(false);
-    expect(field('statement', 'title')).toMatchObject({ maxLength: SLIDE_LIMITS.common.title.max });
+    expect(field('statement', 'title')).toMatchObject({
+      maxLength: SLIDE_LIMITS.common.title.max,
+    });
     expect(field('statement', 'eyebrow')).toMatchObject({
       maxLength: SLIDE_LIMITS.common.eyebrow.max,
     });
@@ -51,16 +59,25 @@ describe('canonical slide authoring limits', () => {
     ['twoCols', 'rightCards', SLIDE_LIMITS.twoCols.cards],
     ['cover', 'intervenants', SLIDE_LIMITS.cover.speakers],
   ] as const)('projects %s.%s native row bounds', (blockType, name, limit) => {
-    expect(field(blockType, name)).toMatchObject({ minRows: limit.min, maxRows: limit.max });
+    expect(field(blockType, name)).toMatchObject({
+      minRows: limit.min,
+      maxRows: limit.max,
+    });
   });
 
   it('keeps agenda empty-authoring semantics while bounding populated values', () => {
-    expect(field('agenda', 'items')).toMatchObject({ maxRows: SLIDE_LIMITS.agenda.items.max });
+    expect(field('agenda', 'items')).toMatchObject({
+      maxRows: SLIDE_LIMITS.agenda.items.max,
+    });
     expect(field('agenda', 'items')).not.toHaveProperty('minRows');
     const schema = aiSchemaOf(AI_SPEC_BY_TYPE.get('agenda')!);
     expect(schema.safeParse({ blockType: 'agenda', title: 'Plan' }).success).toBe(true);
     expect(
-      schema.safeParse({ blockType: 'agenda', title: 'Plan', items: [{ label: 'Only' }] }).success,
+      schema.safeParse({
+        blockType: 'agenda',
+        title: 'Plan',
+        items: [{ label: 'Only' }],
+      }).success,
     ).toBe(false);
   });
 
@@ -83,6 +100,55 @@ describe('canonical slide authoring limits', () => {
     ).not.toBe(true);
   });
 
+  it('enforces nested card limits identically in AI, render and Payload', () => {
+    const limit = SLIDE_LIMITS.cardGrid.cardDescription.max;
+    const cardsField = field('cardGrid', 'cards');
+    const fields = cardsField && 'fields' in cardsField ? cardsField.fields : [];
+    const description = fields.find(
+      (candidate) => 'name' in candidate && candidate.name === 'description',
+    );
+    const validate = description && 'validate' in description ? description.validate : undefined;
+    expect(typeof validate).toBe('function');
+    for (const length of [limit, limit + 1]) {
+      const cards = [{ title: 'One', description: repeat(length) }, { title: 'Two' }];
+      expect(
+        aiSchemaOf(AI_SPEC_BY_TYPE.get('cardGrid')!).safeParse({
+          blockType: 'cardGrid',
+          title: 'Cards',
+          cards,
+        }).success,
+      ).toBe(length === limit);
+      const value = lexical(length);
+      expect(
+        RENDER_SLIDE_SCHEMA.safeParse({
+          blockType: 'cardGrid',
+          title: 'Cards',
+          cards: [{ ...cards[0], description: value }, cards[1]],
+        }).success,
+      ).toBe(length === limit);
+      expect((validate as (value: unknown, options: unknown) => unknown)(value, {}) === true).toBe(
+        length === limit,
+      );
+    }
+  });
+
+  it('counts explicit rich-text linebreaks toward the same card limit', () => {
+    const value = {
+      root: {
+        children: Array.from({ length: SLIDE_LIMITS.cardGrid.cardDescription.max + 1 }, () => ({
+          type: 'linebreak',
+        })),
+      },
+    };
+    expect(
+      RENDER_SLIDE_SCHEMA.safeParse({
+        blockType: 'cardGrid',
+        title: 'Cards',
+        cards: [{ title: 'One', description: value }, { title: 'Two' }],
+      }).success,
+    ).toBe(false);
+  });
+
   it('derives prompt limit guidance from the same field metadata', () => {
     const meta = promptMetaOf(SPEC_BY_TYPE.get('stats')!)!;
     expect(meta.lines).toContain(
@@ -92,7 +158,11 @@ describe('canonical slide authoring limits', () => {
   });
 
   it('rejects fenced Mermaid source at canonical AI and render boundaries', () => {
-    const slide = { blockType: 'mermaid', title: 'Flow', source: '```mermaid\nflowchart TD\n```' };
+    const slide = {
+      blockType: 'mermaid',
+      title: 'Flow',
+      source: '```mermaid\nflowchart TD\n```',
+    };
     expect(() => parseAiSlide(slide)).toThrow();
     expect(RENDER_SLIDE_SCHEMA.safeParse(slide).success).toBe(false);
   });

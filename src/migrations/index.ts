@@ -33,6 +33,9 @@ import * as migration_20260914_153409_org_logo_variants from './20260914_153409_
 import * as migration_20260914_163506_contact_links from './20260914_163506_contact_links';
 import * as migration_20260915_064138_content_lead from './20260915_064138_content_lead';
 import * as migration_20260915_071722_twocols_lead from './20260915_071722_twocols_lead';
+import * as migration_20260915_121029_cover_pills from './20260915_121029_cover_pills';
+import * as migration_20260915_122318 from './20260915_122318';
+import * as migration_20260915_123452_cover_pill_variant from './20260915_123452_cover_pill_variant';
 
 export const migrations = [
   {
@@ -209,5 +212,20 @@ export const migrations = [
     up: migration_20260915_071722_twocols_lead.up,
     down: migration_20260915_071722_twocols_lead.down,
     name: '20260915_071722_twocols_lead',
+  },
+  {
+    up: migration_20260915_121029_cover_pills.up,
+    down: migration_20260915_121029_cover_pills.down,
+    name: '20260915_121029_cover_pills',
+  },
+  {
+    up: migration_20260915_122318.up,
+    down: migration_20260915_122318.down,
+    name: '20260915_122318',
+  },
+  {
+    up: migration_20260915_123452_cover_pill_variant.up,
+    down: migration_20260915_123452_cover_pill_variant.down,
+    name: '20260915_123452_cover_pill_variant',
   },
 ];

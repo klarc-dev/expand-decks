@@ -1,17 +1,17 @@
 import { join } from 'node:path';
 import type { Presentation } from '../src/payload-types';
-import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite';
 import { runPayloadScript } from './lib/payloadScript';
+import { convertSlidesMarkdownToLexical } from '../src/lib/richTextWrite';
 
 // Editorial authority: KLARC_base_information_IA.md (version with Chloé
 // Liebgott) and the approved 2026-09-14 plan v2 (client-centric, 12 pages).
 // AI drafting: gpt-6-astra. Testimonials are faithful extracts from the
 // delivered historical deck; the extract containing a historical entity name
 // and the "120 structures" figure are excluded on purpose.
-const title = 'KLARC : Présentation clients';
+const title = 'Klarc : Présentation clients';
 // Earlier seeds saved the deck under this title; matched so a rerun renames
 // instead of duplicating.
-const LEGACY_TITLE = 'KLARC — Présentation clients';
+const LEGACY_TITLE = 'KLARC : Présentation clients';
 // Brand logomark variants (public/brand): colour on paper, white on the teal
 // cover/CTA surfaces, black as the paper fallback. Rendered small, top-left,
 // by the per-slide header layer on every page including the cover.
@@ -32,16 +32,17 @@ const slides = [
   // Page 1 — cover
   {
     blockType: 'cover',
-    eyebrow: 'TOULOUSE · LYON',
-    title: 'KLARC : Avocats et Conseils en Propriété Industrielle',
+    pills: [{ text: 'Toulouse' }, { text: 'Lyon' }],
+    pillVariant: 'secondary',
+    title: '[Klarc] : Avocats et Conseils en Propriété Industrielle',
     subtitle:
       'Conseil et contentieux pour les entreprises innovantes, à Toulouse, à Lyon et partout en France.',
   },
   // Page 2 — 4 situations client, grille 2x2 numérotée
   {
     blockType: 'cardGrid',
-    eyebrow: 'VOTRE SITUATION',
     title: 'Les situations que vous rencontrez',
+    eyebrow: 'Vos situations',
     sidebarText:
       'Quatre situations fréquentes où une décision juridique, technique ou financière engage votre activité.',
     columns: '2',
@@ -69,6 +70,11 @@ const slides = [
         title: 'Vous êtes confronté à un différend ou à un contrôle',
         description:
           'Réclamation, assignation ou avis de vérification : nous analysons les pièces, identifions les délais qui courent et définissons avec vous la stratégie de réponse et de défense.',
+      },
+    ],
+    footnotes: [
+      {
+        text: 'CIR : crédit d’impôt recherche ; CII : crédit d’impôt innovation ; JEI : jeune entreprise innovante (statut).',
       },
     ],
   },
@@ -118,7 +124,7 @@ const slides = [
           'Examiner vos pièces, vos objectifs et vos échéances ; identifier les risques, les options et les points à trancher.',
       },
       {
-        label: 'Conseiller une stratégie',
+        label: 'Conseiller une stratégie ou un arbitrage',
         description:
           'Vous recommander une voie et en expliquer les effets juridiques, fiscaux et opérationnels ; arbitrer les choix avec vous.',
       },
@@ -139,8 +145,8 @@ const slides = [
   // Page 5 — cœur avocat
   {
     blockType: 'table',
-    eyebrow: 'SITUATIONS 01 ET 04 · CONSEIL ET CONTENTIEUX',
     title: 'Conseiller, rédiger et défendre',
+    eyebrow: 'Vos enjeux juridiques',
     lead: 'Contrats, vie de la société et différends : ce que l’avocat prend en charge sur votre dossier.',
     tableVariant: 'reference',
     columns: [{ header: 'Vos besoins' }, { header: 'Notre intervention' }],
@@ -177,8 +183,8 @@ const slides = [
   // Page 6 — propriété intellectuelle
   {
     blockType: 'twoCols',
-    eyebrow: 'SITUATION 02 · VOS ACTIFS IMMATÉRIELS',
     title: 'Protéger et exploiter vos actifs immatériels',
+    eyebrow: 'Vos actifs immatériels',
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
       'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
@@ -208,8 +214,8 @@ const slides = [
   // Page 7 — financement et fiscalité de l'innovation
   {
     blockType: 'table',
-    eyebrow: 'SITUATION 03 · VOS PROJETS D’INNOVATION',
     title: 'Financer, étayer et organiser vos projets d’innovation',
+    eyebrow: 'Vos projets d’innovation',
     lead: 'Aides, fiscalité de l’innovation et preuves de R&D examinés dans une même démarche.',
     tableVariant: 'reference',
     columns: [{ header: 'Vos besoins' }, { header: 'Notre intervention' }],
@@ -246,6 +252,9 @@ const slides = [
       {
         text: 'L’éligibilité aux dispositifs dépend notamment de l’examen des pièces ; les décisions relèvent de l’administration et des financeurs.',
       },
+      {
+        text: 'CIR : crédit d’impôt recherche ; CII : crédit d’impôt innovation ; JEI : jeune entreprise innovante (statut).',
+      },
     ],
   },
   // Page 8 — témoignages (extraits fidèles du deck historique livré)
@@ -263,9 +272,9 @@ const slides = [
       },
       {
         quote:
-          'Le service Klarc aux petits soins. Les avocats que j’ai eus sur différents domaines en droit du digital et en propriété intellectuelle sont professionnels, réactifs et efficaces dans leur accompagnement juridique !',
-        authorName: 'Marc Girard',
-        authorRole: 'Président, Tillin',
+          'Je retiens beaucoup de professionnalisme d’une équipe pluridisciplinaire maîtrisant les enjeux techniques, juridiques, comptables et rédactionnels. Les collaborateurs Klarc ont de bonnes qualités relationnelles leur permettant de s’adapter rapidement aux équipes projets et de travailler en bonne intelligence.',
+        authorName: 'Frédéric Burnier',
+        authorRole: 'Directeur général adjoint pôle ingénierie, GA Smart Building',
       },
       {
         quote:
@@ -274,6 +283,9 @@ const slides = [
         authorRole: 'Althea',
       },
     ],
+    footnotes: [{ text: 'CIR : crédit d’impôt recherche.' }],
+    linkLabel: 'Voir d’autres témoignages',
+    linkUrl: 'https://klarc.com/identite/temoignages',
   },
   // Page 9 — vos contacts (shared person-card grid; people wired at seed time)
   {
@@ -373,23 +385,86 @@ await runPayloadScript(async (payload) => {
   });
   const richSlides = await convertSlidesMarkdownToLexical(structuredClone(slides), payload);
   // Resolve existing canonical accounts only; a deck seed must not migrate,
-  // delete or manufacture login identities. Preserve their names and portraits.
+  // delete or manufacture login identities. Refresh their public profiles from
+  // klarc.com's canonical ProfilePage metadata before wiring them into the deck.
   const people = {
-    joachim: 'joachim.brindeau@klarc.com',
-    lucien: 'lucien.trouette@klarc.com',
-    benjamin: 'benjamin.visser@klarc.com',
-    carine: 'carine.doyharcabal@klarc.com',
+    joachim: {
+      email: 'joachim.brindeau@klarc.com',
+      website: 'https://klarc.com/identite/joachim-brindeau',
+      linkedin: 'https://www.linkedin.com/in/joachim-brindeau/',
+      portrait: 'https://klarc.com/wp-content/uploads/joachim-brindeau-nose-centered.webp',
+    },
+    lucien: {
+      email: 'lucien.trouette@klarc.com',
+      website: 'https://klarc.com/identite/lucien-trouette',
+      linkedin: 'https://www.linkedin.com/in/lucientrouette/',
+      portrait: 'https://klarc.com/wp-content/uploads/lucien-trouette-nose-centered.webp',
+    },
+    benjamin: {
+      email: 'benjamin.visser@klarc.com',
+      website: 'https://klarc.com/identite/benjamin-visser',
+      linkedin: 'https://www.linkedin.com/in/visser-benjamin/',
+      portrait: 'https://klarc.com/wp-content/uploads/benjamin-visser-nose-centered.webp',
+    },
+    carine: {
+      email: 'carine.doyharcabal@klarc.com',
+      website: 'https://klarc.com/identite/carine-doyharcabal',
+      linkedin: 'https://www.linkedin.com/in/carine-doyhar%C3%A7abal-phd-822baa7a/',
+      portrait: 'https://klarc.com/wp-content/uploads/carine-doyharcabal-nose-centered.webp',
+    },
   } as const;
   const userIds = new Map<string, number | string>();
-  for (const [key, email] of Object.entries(people)) {
+  for (const [key, profile] of Object.entries(people)) {
     const { docs } = await payload.find({
       collection: 'users',
-      where: { email: { equals: email } },
+      where: { email: { equals: profile.email } },
       limit: 2,
       overrideAccess: true,
     });
-    if (docs.length !== 1) throw new Error(`Expected one existing account for ${email}`);
-    userIds.set(key, docs[0].id);
+    if (docs.length !== 1) throw new Error(`Expected one existing account for ${profile.email}`);
+    const user = docs[0];
+    let avatar = typeof user.avatar === 'object' && user.avatar ? user.avatar.id : user.avatar;
+    if ('portrait' in profile) {
+      const alt = `Portrait public de ${user.name ?? profile.email}`;
+      const filename = `${key}-klarc-portrait.webp`;
+      const existingPortrait = (
+        await payload.find({
+          collection: 'media',
+          where: {
+            or: [{ filename: { equals: filename } }, { alt: { equals: alt } }],
+          },
+          limit: 1,
+          overrideAccess: true,
+        })
+      ).docs[0];
+      if (existingPortrait) {
+        avatar = existingPortrait.id;
+      } else {
+        const response = await fetch(profile.portrait);
+        if (!response.ok) throw new Error(`Failed to fetch public portrait (${response.status})`);
+        const data = Buffer.from(await response.arrayBuffer());
+        const media = await payload.create({
+          collection: 'media',
+          data: { alt },
+          file: {
+            data,
+            mimetype: response.headers.get('content-type')?.split(';')[0] ?? 'image/webp',
+            name: filename,
+            size: data.byteLength,
+          },
+          overrideAccess: true,
+        });
+        avatar = media.id;
+      }
+    }
+    await payload.update({
+      collection: 'users',
+      id: user.id,
+      data: { avatar, website: profile.website, linkedin: profile.linkedin },
+      overrideAccess: true,
+      context: { skipBuildQueue: true },
+    });
+    userIds.set(key, user.id);
   }
   const wire = (page: number, keys: (keyof typeof people)[]) => {
     (richSlides[page - 1] as Record<string, unknown>).intervenants = keys.map((key) => ({
@@ -406,7 +481,7 @@ await runPayloadScript(async (payload) => {
     agentModel: 'gpt-6-astra',
     footer: {
       enabled: true,
-      left: 'KLARC',
+      left: 'Klarc',
       center: 'Avocats et Conseils en Propriété Industrielle',
       right: '{page} / {total}',
     },

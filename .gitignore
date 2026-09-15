@@ -7,6 +7,8 @@ local.db
 dist/
 _reusable/
 media/
+# Production database dumps pulled by `pnpm prod pull`
+.prod-dumps/
 slidev-workspace/node_modules/
 src/payload-types.ts
 dogfood-output/

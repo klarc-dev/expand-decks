@@ -45,10 +45,19 @@ describe('style.css fixed-canvas safe frame', () => {
   });
 
   it('centers section-title content against the full chrome-free canvas', () => {
-    expect(css).toMatch(/\.k-section-frame\s*\{[\s\S]*position:\s*absolute/);
-    expect(css).toMatch(/\.k-section-frame\s*\{[\s\S]*inset:\s*0/);
-    expect(css).toMatch(/\.k-section-frame\s*\{[\s\S]*place-items:\s*center/);
-    expect(css).toMatch(/\.k-section-frame\s*>\s*\.k-center-hero-main\s*\{[\s\S]*width:\s*100%/);
+    expect(css).toMatch(/\.k-section-frame\s*\{[^}]*position:\s*absolute/);
+    expect(css).toMatch(/\.k-section-frame\s*\{[^}]*inset:\s*0/);
+    expect(css).toMatch(/\.k-section-frame\s*\{[^}]*place-items:\s*center/);
+    expect(css).toMatch(/\.k-section-frame\s*>\s*\.k-center-hero-main\s*\{[^}]*width:\s*100%/);
+  });
+
+  it('centers the CTA with symmetric clearance and only the split copy within its body', () => {
+    expect(css).toMatch(
+      /\.k-cta-frame\s*\{[^}]*padding-block:\s*max\(var\(--header-top\), var\(--content-bottom\)\)/,
+    );
+    expect(css).toMatch(/\.k-split--body\s*\{[^}]*align-items:\s*start/);
+    expect(css).toMatch(/\.k-split--body > \.k-copy-column\s*\{[^}]*align-self:\s*center/);
+    expect(css).not.toMatch(/\.k-split--body > \.k-card-stack\s*\{[^}]*align-self:\s*center/);
   });
 });
 
@@ -143,10 +152,21 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-card-stack--grid\s*\{[\s\S]*grid-auto-rows:\s*auto/);
   });
 
-  it('styles the header description as muted running text shared by every content block', () => {
-    expect(css).toMatch(/\.k-header-lead\s*\{[\s\S]*?max-width:\s*54rem/);
-    expect(css).toMatch(/\.k-header-lead\s*\{[\s\S]*?color:\s*var\(--fg-muted\)/);
-    expect(css).not.toMatch(/\.k-cardgrid-lead\s*\{/);
+  it('uses one fixed heading-description size across content, hero, cover, section, and CTA slides', () => {
+    const token = css.match(/--t-heading-subtext:\s*([^;]+);/)?.[1]?.trim();
+    expect(token).toBe('var(--t-lead)');
+    expect(css).toMatch(
+      /:is\(\.k-header-lead, \.k-hero-body, \.k-hero-sub, \.k-section-sub, \.k-cta-sub\)\s*\{[^}]*font-size:\s*var\(--t-heading-subtext\)/,
+    );
+    expect(css).not.toMatch(
+      /\.k-(?:content|hero|center-hero|cover)\.k-density-(?:compact|dense)[^}]*\.k-(?:header-lead|hero-body|hero-sub|section-sub|cta-sub)[^{]*\{[^}]*font-size:/,
+    );
+  });
+
+  it('keeps the eyebrow pill dot the same color as its text in every tone', () => {
+    const dot = css.match(/\.k-eyebrow::before\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(dot).toMatch(/background:\s*currentColor/);
+    expect(css).not.toMatch(/\.k-dark \.k-eyebrow::before\s*\{/);
   });
 
   it('defines shared card-grid scales rather than per-card font sizes', () => {
@@ -172,14 +192,14 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
       /\.k-card-scale-sm \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.9\)/,
     );
     expect(css).toMatch(
-      /\.k-card-scale-xs \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.78\)/,
+      /\.k-card-scale-xs \.k-card p\s*\{[^}]*font-size:\s*var\(--k-card-body-min\)/,
     );
   });
 
   it('reclaims vertical space only in comfortable numbered two-column multirow cards', () => {
-    const scope = String.raw`\.k-card-scale-md\.k-grid-2\.k-card-stack--grid\.k-card-stack--multirow > \.k-card:has\(> \.k-num\)`;
+    const scope = String.raw`\.k-card-scale-md\.k-grid-2\.k-card-stack--grid\.k-card-stack--multirow\s*>\s*\.k-card:has\(> \.k-num\)`;
     const card = css.match(new RegExp(`${scope}\\s*\\{([^}]*)\\}`))?.[1];
-    const heading = css.match(new RegExp(`${scope} h3\\s*\\{([^}]*)\\}`))?.[1];
+    const heading = css.match(new RegExp(`${scope}\\s+h3\\s*\\{([^}]*)\\}`))?.[1];
     expect(card).toMatch(/padding-block:\s*0\.5rem/);
     expect(heading).toMatch(/line-height:\s*1\.15/);
     expect(`${card}${heading}`).not.toMatch(/font-size|overflow|(?:^|;)\s*height:|line-clamp/);
@@ -198,9 +218,14 @@ describe('style.css source pills', () => {
     // No detached legal-footer rule above the band.
     expect(footerBlock).not.toMatch(/border-top:/);
     expect(css).toMatch(/\.k-def-item\s*\{[^}]*display:\s*inline-grid/);
-    expect(css).toMatch(/\.k-def-item\s*\{[^}]*height:\s*var\(--k-def-pill-h\)/);
+    expect(css).toMatch(/\.k-def-item\s*\{[^}]*min-height:\s*var\(--k-def-pill-h\)/);
     expect(css).toMatch(/\.k-def-item\s*\{[^}]*border:\s*0/);
-    expect(css).toMatch(/\.k-def-item\s*\{[^}]*border-radius:\s*999px/);
+    expect(css).toMatch(
+      /\.k-def-item\s*\{[^}]*border-radius:\s*calc\(var\(--k-def-pill-h\) \/ 2\)/,
+    );
+    const textBlock = css.match(/\.k-def-text\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(textBlock).toMatch(/white-space:\s*normal/);
+    expect(textBlock).not.toMatch(/overflow:\s*hidden|text-overflow:\s*ellipsis/);
   });
 
   it('uses a full-height merged number segment inside each source pill', () => {

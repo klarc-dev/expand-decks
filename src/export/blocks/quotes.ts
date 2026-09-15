@@ -2,7 +2,15 @@ import type { QuotesBlockData } from '../../blocks/spec/quotes';
 import { K } from '../classNames';
 import { densityFromScore, visibleText } from '../density';
 import { richTextToHTML } from '../richtext';
-import { cardStack, contentFrame, escape, slideHeader, wrapSlide, type RenderCtx } from '../utils';
+import {
+  cardStack,
+  contentFrame,
+  escape,
+  safeHref,
+  slideHeader,
+  wrapSlide,
+  type RenderCtx,
+} from '../utils';
 
 export type { QuotesBlockData };
 
@@ -63,13 +71,20 @@ export function renderQuotes(block: QuotesBlockData, ctx?: RenderCtx): string {
     lead: leadHtml || undefined,
     density,
   });
-  // Quotes read top-down under the unified header like tables and grids,
-  // instead of floating mid-slide.
-  const body = contentFrame(stack.html, {
+  const linkHref = safeHref(block.linkUrl);
+  const link =
+    block.linkLabel && linkHref
+      ? `<div class="${K.quoteFooter}"><a class="${K.btnGhost}" href="${escape(linkHref)}">${escape(block.linkLabel)}</a></div>`
+      : '';
+  const main = `<div class="k-quotes-body">${stack.html}${link}</div>`;
+  // Quotes read top-down under the unified header; when an action is present,
+  // the body uses the full row so the button anchors in the remaining lower
+  // space instead of crowding the cards.
+  const body = contentFrame(main, {
     header,
     crowded: dense || stack.crowded,
     density,
-    mainAlign: 'start',
+    mainAlign: 'stretch',
   });
 
   return wrapSlide({ surface: ctx?.surface, body });

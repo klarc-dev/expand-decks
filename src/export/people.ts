@@ -15,7 +15,6 @@ export type PersonCard = {
   email?: string;
   phone?: string;
   linkedin?: string;
-  /** Explicit helper input only: Users has no website field. Never infer from email/org. */
   website?: string;
 };
 
@@ -77,6 +76,7 @@ export function userToPerson(user: unknown): PersonCard | null {
   const name = asNonEmptyString(record.name) ?? email?.split('@')[0] ?? 'Intervenant';
   const title = asNonEmptyString(record.title) ?? undefined;
   const linkedin = asNonEmptyString(record.linkedin);
+  const website = asNonEmptyString(record.website);
 
   return {
     avatarUrl: avatarUrl(record.avatar),
@@ -85,8 +85,9 @@ export function userToPerson(user: unknown): PersonCard | null {
     title,
     email: email ?? undefined,
     phone: asNonEmptyString(record.phone) ?? undefined,
-    // Only an https profile URL becomes a link; anything else is dropped.
+    // Only https profile URLs become links; anything else is dropped.
     linkedin: linkedin && /^https:\/\//i.test(linkedin) ? linkedin : undefined,
+    website: website && /^https:\/\//i.test(website) ? website : undefined,
   };
 }
 
@@ -110,8 +111,8 @@ const contactSvg = {
     '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icons-tabler-outline icon-tabler-world tabler-icon tabler-icon-world" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>',
 } as const;
 
-function contactLink(kind: keyof typeof contactSvg, href: string, text: string): string {
-  return `<a class="${K.personLink}" href="${escape(href)}">${contactSvg[kind]}<span>${escape(text)}</span></a>`;
+function contactLink(kind: keyof typeof contactSvg, href: string, label: string): string {
+  return `<a class="${K.personLink}" href="${escape(href)}" aria-label="${escape(label)}" title="${escape(label)}">${contactSvg[kind]}</a>`;
 }
 
 function personContacts(person: PersonCard): string {
@@ -130,7 +131,7 @@ function personContacts(person: PersonCard): string {
   }
   const website =
     person.website && /^https?:\/\/\S+$/i.test(person.website) ? safeHref(person.website) : null;
-  if (website) items.push(contactLink('website', website, website));
+  if (website) items.push(contactLink('website', website, 'Profil Klarc'));
   if (items.length === 0) return '';
   return `\n      <div class="${K.personContact}">${items.join('')}</div>`;
 }

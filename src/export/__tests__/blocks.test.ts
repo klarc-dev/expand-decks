@@ -530,6 +530,30 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('k-card-scale-xs');
   });
 
+  it('renders the shared contact card in the left column', () => {
+    const result = renderTwoCols({
+      blockType: 'twoCols',
+      title: 'Votre interlocutrice',
+      leftUser: {
+        id: 42,
+        name: 'Anne Martin',
+        title: 'Avocate associée',
+        email: 'anne@klarc.com',
+        phone: '06 12 34 56 78',
+        linkedin: 'https://www.linkedin.com/in/anne',
+        avatar: { filename: 'anne.png' },
+      },
+      rightCards: [{ title: 'Accompagnement', description: lexical('Un suivi direct.') }],
+    } as never);
+
+    expect(result).toContain('k-two-cols-user');
+    expect(result).toContain('k-person-card');
+    expect(result).toContain(`:src='"./media/anne.png"'`);
+    expect(result).toContain('Anne Martin');
+    expect(result).toContain('href="mailto:anne@klarc.com"');
+    expect(result).toMatch(/k-split[\s\S]*k-two-cols-user[\s\S]*k-split-cards/);
+  });
+
   it('renders leftFooter as the same takeaway box as the statement footer', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
@@ -701,11 +725,17 @@ describe('renderCardGrid()', () => {
     expect(result).toContain(
       '<div class="k-person-name"><a href="mailto:joachim@klarc.com">Joachim Brindeau</a></div>',
     );
-    expect(result).toContain('<a class="k-person-link" href="mailto:joachim@klarc.com"><svg');
-    expect(result).toContain('<span>06 12 34 56 78</span></a>');
-    expect(result).toContain(
-      '<a class="k-person-link" href="https://www.linkedin.com/in/joachim"><svg',
+    // Assert each link's destination and readable label together, independent
+    // of decorative SVG paths or the span used to lay out the label.
+    const contacts = Array.from(
+      result.matchAll(/<a class="k-person-link" href="([^"]+)">([\s\S]*?)<\/a>/g),
+      ([, href, content]) => ({ href, text: content!.replace(/<[^>]*>/g, '') }),
     );
+    expect(contacts).toEqual([
+      { href: 'mailto:joachim@klarc.com', text: 'joachim@klarc.com' },
+      { href: 'tel:0612345678', text: '06 12 34 56 78' },
+      { href: 'https://www.linkedin.com/in/joachim', text: 'LinkedIn' },
+    ]);
   });
 
   it('keeps the plain card and drops unsafe contact targets when details are missing or invalid', () => {
@@ -895,6 +925,29 @@ describe('renderQuotes()', () => {
     expect(result).toContain('<span class="k-quote-mark"><svg viewBox="0 0 24 24"');
     expect(result).toContain('John');
     expect(result).toContain('CEO');
+  });
+
+  it('renders an optional safe link to the full testimonial list', () => {
+    const result = renderQuotes({
+      blockType: 'quotes',
+      title: 'Quotes',
+      quotes: [{ quote: lexical('Great service'), authorName: 'John' }],
+      linkLabel: 'Voir d’autres témoignages',
+      linkUrl: 'https://klarc.com/identite/temoignages',
+    });
+    expect(result).toContain('k-content-main k-content-main--stretch');
+    expect(result).toContain('<div class="k-quotes-body">');
+    expect(result).toContain(
+      '<a class="k-btn-ghost" href="https://klarc.com/identite/temoignages">Voir d’autres témoignages</a>',
+    );
+    const unsafe = renderQuotes({
+      blockType: 'quotes',
+      title: 'Quotes',
+      quotes: [],
+      linkLabel: 'Voir',
+      linkUrl: 'javascript:alert(1)',
+    });
+    expect(unsafe).not.toContain('k-quote-footer');
   });
 
   it('centers a single quote instead of stranding it in a two-column grid', () => {

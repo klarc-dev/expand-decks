@@ -20,6 +20,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { optionalRender, optionalRichTextRender } from '../../dsl';
+import { userRelationship } from '../../person';
 import { type Equal, type Expect, type InferRender } from '../renderType';
 
 import type { CardGridBlockData } from '../../../../export/blocks/cardGrid';
@@ -93,6 +94,8 @@ const coverIntervenants = optionalRender(
 const coverRenderSchema = z.object({
   blockType: z.literal('cover'),
   eyebrow: optionalRender(z.string()),
+  pills: optionalRender(z.array(z.object({ text: z.string() }))),
+  pillVariant: optionalRender(z.enum(['default', 'primary', 'secondary', 'ink', 'paper'])),
   title: z.string(),
   subtitle: optionalRichTextRender(),
   intervenants: coverIntervenants,
@@ -119,6 +122,7 @@ const twoColsRenderSchema = z.object({
   lead: optionalRichTextRender(),
   intro: optionalRichTextRender(),
   leftFooter: optionalRichTextRender(),
+  leftUser: optionalRender(userRelationship),
   rightCards: z
     .array(
       z.object({

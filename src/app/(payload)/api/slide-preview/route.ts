@@ -79,13 +79,27 @@ async function hydrateRelationship(args: {
   );
 }
 
-async function hydrateCoverIntervenants(
+async function hydrateBlockUsers(
   block: Record<string, unknown>,
   payload: Awaited<ReturnType<typeof getPayload>>,
   user: PayloadUser,
   userId: string | number,
 ) {
-  if (block.blockType !== 'cover' || !Array.isArray(block.intervenants)) return block;
+  if (block.blockType === 'twoCols') {
+    const id = relationshipId(block.leftUser);
+    const hydratedUser = await hydrateRelationship({
+      collection: COLLECTIONS.users,
+      depth: 2,
+      id,
+      payload,
+      user,
+      userId,
+    });
+    return hydratedUser ? { ...block, leftUser: hydratedUser } : block;
+  }
+
+  if (block.blockType !== 'cover' && block.blockType !== 'cardGrid') return block;
+  if (!Array.isArray(block.intervenants)) return block;
 
   const rows = await Promise.all(
     block.intervenants.map(async (row) => {
@@ -113,8 +127,7 @@ async function hydratePreviewBlock(
   user: PayloadUser,
   userId: string | number,
 ) {
-  if (block.blockType === 'cover') return hydrateCoverIntervenants(block, payload, user, userId);
-  return block;
+  return hydrateBlockUsers(block, payload, user, userId);
 }
 
 async function hydrateChromeFields(

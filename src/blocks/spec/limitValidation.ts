@@ -5,7 +5,8 @@ export function serializedTextLength(value: unknown): number {
   if (!value || typeof value !== 'object') return 0;
 
   const record = value as Record<string, unknown>;
-  const ownText = typeof record.text === 'string' ? record.text.length : 0;
+  const ownText =
+    record.type === 'linebreak' ? 1 : typeof record.text === 'string' ? record.text.length : 0;
   return ownText + serializedTextLength(record.children) + serializedTextLength(record.root);
 }
 

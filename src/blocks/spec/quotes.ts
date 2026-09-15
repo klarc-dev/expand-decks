@@ -96,13 +96,37 @@ export const quotesSpec = block({
         ],
       }),
     ),
+    rawField(
+      'linkLabel',
+      optionalLimitedRender(SLIDE_LIMITS.cta.action),
+      optionalLimitedAi(SLIDE_LIMITS.cta.action),
+      limitedTextPayload(SLIDE_LIMITS.cta.action, {
+        type: 'text',
+        label: 'Libellé du lien',
+        description: 'Texte du lien vers la liste complète des témoignages (optionnel)',
+      }),
+    ),
+    rawField(
+      'linkUrl',
+      optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl),
+      optionalLimitedAi(SLIDE_LIMITS.cta.actionUrl),
+      limitedTextPayload(SLIDE_LIMITS.cta.actionUrl, {
+        type: 'text',
+        label: 'URL du lien',
+        description: 'URL https vers la liste complète des témoignages (optionnel)',
+      }),
+    ),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {
     index: 7,
     heading: 'quotes',
     summary: 'Grille de citations',
-    lines: ['eyebrow, title (obligatoire), lead', 'quotes: [{quote, authorName, authorRole}]'],
+    lines: [
+      'eyebrow, title (obligatoire), lead',
+      'quotes: [{quote, authorName, authorRole}]',
+      'linkLabel / linkUrl: lien optionnel vers une liste complète fournie dans le contexte',
+    ],
   },
 });
 
@@ -112,6 +136,8 @@ export const quotesRenderSchema = z.object({
   title,
   lead: leadRender(),
   quotes,
+  linkLabel: optionalLimitedRender(SLIDE_LIMITS.cta.action),
+  linkUrl: optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl),
 });
 
 export type QuotesBlockData = InferRender<typeof quotesRenderSchema>;

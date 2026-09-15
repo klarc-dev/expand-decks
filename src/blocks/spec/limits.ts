@@ -23,6 +23,7 @@ export const SLIDE_LIMITS = {
     footnotes: { min: 0, max: 3, text: { max: 220 } },
   },
   cover: {
+    pills: { min: 0, max: 4, text: { max: 40 } },
     subtitle: { max: 320 },
     speakers: { min: 0, max: 4 },
   },

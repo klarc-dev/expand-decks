@@ -39,9 +39,10 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   const rows = block.rows ?? [];
   const colCount = cols.length;
   const isMatrix = block.tableVariant === 'matrix';
-  const cellHtml = rows.flatMap((row) =>
+  const renderedRows = rows.map((row) =>
     (row.cells ?? []).map((cell) => richTextToHTML(cell.value)),
   );
+  const cellHtml = renderedRows.flat();
   const textVolume = totalVisibleText([
     block.title,
     ...cols.map((column) => column.header),
@@ -49,18 +50,19 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
   ]);
   const longestCell = Math.max(0, ...cellHtml.map((cell) => visibleText(cell).length));
   const leadHtml = richTextToHTML(block.lead);
+  // Two wide columns with a few rows have substantially more room per cell
+  // than dense reference matrices. Discount text pressure only in this proven
+  // layout; row/column pressure and unbounded prose still step the table down.
+  const textPressure = colCount === 2 && rows.length <= 4 ? 0.45 : 1;
   const density = densityFromScore(
-    textVolume +
+    textVolume * textPressure +
       visibleText(leadHtml).length * 0.6 +
       rows.length * 34 +
       colCount * 54 +
-      longestCell * 2.6,
+      longestCell * 2.6 * textPressure,
     { compact: 700, dense: 1120 },
   );
   const fitted = density !== 'comfortable';
-  const renderedRows = rows.map((row) =>
-    (row.cells ?? []).map((cell) => richTextToHTML(cell.value)),
-  );
   const statusColumns = new Set(
     isMatrix
       ? Array.from({ length: colCount }, (_, columnIndex) => columnIndex).filter((columnIndex) => {

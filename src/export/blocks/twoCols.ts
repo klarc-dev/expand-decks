@@ -1,6 +1,7 @@
 import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
 import { cardScaleClass, densityFromScore, visibleText } from '../density';
+import { personCard, userToPerson } from '../people';
 import { richTextToHTML } from '../richtext';
 import {
   card,
@@ -39,9 +40,15 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
         return `\n${takeawayBox(takeaway.html, takeaway.label, K.takeawaySide)}`;
       })()
     : '';
+  const leftPerson = userToPerson(block.leftUser);
+  const leftUser = leftPerson
+    ? `\n<div class="k-two-cols-user">\n${personCard(leftPerson)}\n</div>`
+    : '';
 
   const leftBody =
-    intro || leftFooter ? `<div class="k-copy-column">${intro}${leftFooter}\n</div>` : '';
+    intro || leftFooter || leftUser
+      ? `<div class="k-copy-column">${intro}${leftUser}${leftFooter}\n</div>`
+      : '';
   const cardList = block.rightCards ?? [];
   const renderedCards = cardList.map((item) => {
     const body = richTextToHTML(item.description);
@@ -55,6 +62,7 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
       visibleText(leadHtml).length * 0.6 +
       visibleText(introHtml).length * 0.75 +
       visibleText(leftFooterHtml).length * 0.7 +
+      (leftPerson ? 110 : 0) +
       cardList.length * (image ? 72 : 58),
     { compact: image ? 250 : 310, dense: image ? 430 : 520 },
   );

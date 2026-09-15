@@ -69,6 +69,18 @@ export function resolveVars(text: string | null | undefined, esc?: (s: string) =
   return resolveVarsWith(text ?? '', _varCtx, esc);
 }
 
+/** Validate a resolved copy without changing stored content or resolving twice
+ * during HTML emission. Traverses JSON slide data, including Lexical text nodes. */
+export function resolvedVarsForValidation(value: unknown): unknown {
+  if (typeof value === 'string') return resolveVars(value);
+  if (Array.isArray(value)) return value.map(resolvedVarsForValidation);
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key, resolvedVarsForValidation(entry)]),
+    );
+  return value;
+}
+
 // ---------------------------------------------------------------------------
 // flattenVars — derive the `@`-menu list from a populated document. Generic
 // walk: a primitive emits one entry; a nested object recurses; arrays and

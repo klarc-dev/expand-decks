@@ -28,6 +28,7 @@ Package manager is **pnpm** (pinned by `packageManager`; workspace settings live
 - `pnpm generate:types` — Regenerate `src/payload-types.ts` after collection/block changes.
 - `pnpm generate:importmap` — Regenerate `src/app/(payload)/admin/importMap.js` after adding custom admin components **or richText fields** (run this when changing `admin.components` references, or after adding/removing a `type: 'richText'` field — the Lexical editor's admin components must be in the import map or the field silently fails to render with "PayloadComponent not found in importMap").
 - `pnpm jobs:run` — Run the default job queue once (used by the `payload-worker` service in Docker).
+- `pnpm prod <status|run|pull>` — Operate the live Coolify deployment over the `klarc` ssh alias (`scripts/prod.mjs`). `status` prints containers, deployed sha vs local HEAD and the job queue. `run scripts/<file>.ts [args]` executes a repo script inside the production payload container, deployed or not (names starting with `seed-`/`set-` need `--yes`; an uncommitted file needs `--allow-dirty`). `pull` restores a production dump into a fresh local database (`slides_prod_<date>`) and rsyncs media into `./media`; it never writes to production.
 
 Migrations live in `src/migrations/` with an `index.ts` barrel. After changing schema run `pnpm payload migrate:create` then commit both the `.ts` and `.json` files.
 

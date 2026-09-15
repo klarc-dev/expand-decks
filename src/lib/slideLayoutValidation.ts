@@ -1,7 +1,7 @@
 export type LayoutViolation = {
   slide: number;
   selector: string;
-  issue: 'footer-intersection' | 'missing' | 'overflow';
+  issue: 'footer-intersection' | 'missing' | 'overflow' | 'text-clipping';
   verticalPx?: number;
   horizontalPx?: number;
   bottomPx?: number;

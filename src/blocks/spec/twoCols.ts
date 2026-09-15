@@ -22,6 +22,7 @@ import {
   type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
+import { userRelationship } from './person';
 
 const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const title = limitedString(SLIDE_LIMITS.common.title);
@@ -38,6 +39,7 @@ const rightCards = optionalRender(
 );
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
+const leftUser = optionalRender(userRelationship);
 
 export const twoColsSpec = block({
   slug: 'twoCols',
@@ -69,6 +71,14 @@ export const twoColsSpec = block({
         description: 'Texte ou statistique en bas de la colonne gauche',
       }),
     ),
+    rawField('leftUser', leftUser, false, {
+      type: 'relationship',
+      relationTo: 'users',
+      maxDepth: 2,
+      label: 'Carte utilisateur (colonne gauche)',
+      description:
+        'Utilisateur affiché dans la colonne gauche avec la même carte que sur la diapositive Contacts',
+    }),
     rawField(
       'rightCards',
       rightCards,
@@ -115,6 +125,7 @@ export const twoColsRenderSchema = z.object({
   lead: leadRender(),
   intro,
   leftFooter,
+  leftUser,
   rightCards,
   image,
   imagePosition,

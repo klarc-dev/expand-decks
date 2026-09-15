@@ -3,7 +3,7 @@ import { K } from '../classNames';
 import { densityClass, densityFromScore, visibleText } from '../density';
 import { renderPeopleStrip, vueBoundSrc } from '../people';
 import { richTextToHTML } from '../richtext';
-import { defFooterSlot, eyebrow as renderEyebrow, md, wrapSlide, type RenderCtx } from '../utils';
+import { defFooterSlot, eyebrowGroup, md, wrapSlide, type RenderCtx } from '../utils';
 
 export type { CoverBlockData };
 
@@ -19,7 +19,12 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   const imageUrl = imageFilename ? `./media/${imageFilename}` : (block.image?.url ?? null);
   const imagePosition = block.imagePosition ?? 'right';
 
-  const eyebrow = renderEyebrow(block.eyebrow, 'k-eyebrow--cover', { indent: '      ' });
+  const pillTexts = block.pills?.length
+    ? block.pills.map((pill) => pill.text)
+    : block.eyebrow
+      ? [block.eyebrow]
+      : [];
+  const eyebrow = eyebrowGroup(pillTexts, 'k-eyebrow--cover', { variant: block.pillVariant });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';

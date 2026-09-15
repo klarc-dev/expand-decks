@@ -50,6 +50,18 @@ const syncGoogleAvatar: CollectionAfterLoginHook = async ({ req, user }) => {
     const data = Buffer.from(await response.arrayBuffer());
     const previousAvatarId =
       typeof user.avatar === 'object' && user.avatar !== null ? user.avatar.id : user.avatar;
+    if (previousAvatarId) {
+      const previousAvatar = await req.payload.findByID({
+        collection: COLLECTIONS.media,
+        id: previousAvatarId,
+        depth: 0,
+        overrideAccess: true,
+        req,
+      });
+      // A curated public portrait is authoritative. Google OAuth remains the
+      // fallback for accounts that have no portrait or still use a synced avatar.
+      if (previousAvatar.alt?.startsWith('Portrait public de ')) return user;
+    }
     const media = await req.payload.create({
       collection: COLLECTIONS.media,
       data: { alt: `Avatar de ${user.email}` },
@@ -157,6 +169,19 @@ export const Users: CollectionConfig = {
             description:
               'Numéro affiché sur les cartes intervenants, cliquable (tel:) dans le PDF exporté',
           },
+        },
+        {
+          name: 'website',
+          type: 'text',
+          label: 'Page de profil',
+          admin: {
+            description:
+              'URL https de la page de profil, ajoutée comme lien sur les cartes intervenants',
+          },
+          validate: (value: string | null | undefined) =>
+            !value || /^https:\/\//.test(value)
+              ? true
+              : 'URL https requise (ex. https://example.com/equipe/nom)',
         },
         {
           name: 'linkedin',

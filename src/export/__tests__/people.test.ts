@@ -27,12 +27,7 @@ describe('shared person cards', () => {
     expect(html.match(/stroke="currentColor"/g)).toHaveLength(4);
     expect(html.match(/stroke-width="1.75"/g)).toHaveLength(4);
     expect(html.match(/aria-hidden="true" focusable="false"/g)).toHaveLength(4);
-    for (const text of [
-      'anne@example.com',
-      '+33 6 12 34 56 78',
-      'LinkedIn',
-      'https://example.com/about?a=1&amp;b=2',
-    ]) {
+    for (const text of ['anne@example.com', '+33 6 12 34 56 78', 'LinkedIn', 'Profil Klarc']) {
       expect(html).toContain(`<span>${text}</span></a>`);
     }
     expect(html).toContain('href="https://example.com/about?a=1&amp;b=2"');
@@ -41,15 +36,17 @@ describe('shared person cards', () => {
     expect(rule('.k-person-link > svg')).toContain('color: inherit');
   });
 
-  it('never infers a personal site from organisation, email or LinkedIn', () => {
+  it('keeps authored profile links and never infers them from organisation or email', () => {
     const person = userToPerson({
       name: 'Anne',
       email: 'anne@example.com',
+      website: 'https://example.com/equipe/anne',
       linkedin: 'https://linkedin.com/in/anne',
       organisation: { website: 'https://example.com' },
     })!;
-    expect(person.website).toBeUndefined();
-    expect(personCard(person)).not.toContain('tabler-icon-world');
+    expect(person.website).toBe('https://example.com/equipe/anne');
+    expect(personCard(person)).toContain('<span>Profil Klarc</span></a>');
+    expect(userToPerson({ name: 'Anne', email: 'anne@example.com' })?.website).toBeUndefined();
     for (const website of ['', 'javascript:alert(1)', 'mailto:anne@example.com', '//example.com']) {
       expect(personCard({ initials: 'AM', name: 'Anne', website })).not.toContain(
         'k-person-contact',
@@ -125,8 +122,6 @@ describe('shared person cards', () => {
     expect(rule('.slidev-layout .k-person-card a')).toContain(
       'text-decoration-color: currentColor',
     );
-    expect(rule('.slidev-layout .k-person-card a:focus-visible')).toContain(
-      'outline: 2px solid currentColor',
-    );
+    expect(rule('.slidev-layout a:focus-visible')).toContain('outline: 2px solid currentColor');
   });
 });

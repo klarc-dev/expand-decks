@@ -8,6 +8,8 @@ const HTML_ENTITIES: Record<string, string> = {
 
 import type { DeckLanguage } from '../agents/language';
 import { K } from './classNames';
+import type { PillVariant } from '../blocks/spec/pillVariants';
+export type { PillVariant } from '../blocks/spec/pillVariants';
 import { densityClass, type SlideDensity } from './density';
 import { resolveVars } from './vars';
 
@@ -26,13 +28,38 @@ export function escape(text: string | null | undefined): string {
 export function eyebrow(
   text: string | null | undefined,
   spacingClass = '',
-  opts?: { indent?: string; extraClass?: string; multiline?: boolean },
+  opts?: {
+    indent?: string;
+    extraClass?: string;
+    multiline?: boolean;
+    variant?: PillVariant | null;
+  },
 ): string {
   if (!text) return '';
   const indent = opts?.indent ?? '';
-  const classes = [K.eyebrow, opts?.extraClass, spacingClass].filter(Boolean).join(' ');
+  const variantClass =
+    opts?.variant && opts.variant !== 'default' ? `k-eyebrow--${opts.variant}` : '';
+  // A legacy forced-dark class must not override an explicit palette role.
+  const extraClass = variantClass
+    ? opts?.extraClass
+        ?.split(/\s+/)
+        .filter((cls) => cls !== K.eyebrowDark)
+        .join(' ')
+    : opts?.extraClass;
+  const classes = [K.eyebrow, variantClass, extraClass, spacingClass].filter(Boolean).join(' ');
   const inner = opts?.multiline ? `\n  ${escape(text)}\n` : escape(text);
   return `\n${indent}<div class="${classes}">${inner}</div>`;
+}
+
+/** A wrapping group composes the canonical pill, never a second pill recipe. */
+export function eyebrowGroup(
+  texts: readonly string[],
+  spacingClass = '',
+  opts?: { variant?: PillVariant | null },
+): string {
+  const items = texts.map((text) => eyebrow(text, '', opts)).join('');
+  if (!items) return '';
+  return `\n<div class="${[K.eyebrowGroup, spacingClass].filter(Boolean).join(' ')}">${items}\n</div>`;
 }
 
 // Serialize a string as a YAML scalar, double-quoting only when the value
@@ -276,6 +303,7 @@ export type RenderCtx = {
  */
 export function slideHeader(opts: {
   eyebrow?: string | null;
+  pillVariant?: PillVariant | null;
   title: string;
   /** Already-converted rich-text HTML: the description line under the title. */
   lead?: string;
@@ -284,7 +312,10 @@ export function slideHeader(opts: {
   align?: 'left' | 'center';
   density?: SlideDensity;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--header', { indent: '    ' });
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--header', {
+    indent: '    ',
+    variant: opts.pillVariant,
+  });
   const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
   const headingDensity = densityClass(opts.density ?? 'comfortable');
   const heading = `<h2 class="${[sizeClass, headingDensity].filter(Boolean).join(' ')}">${md(opts.title)}</h2>`;
@@ -528,6 +559,7 @@ function heroCaption(captionHtml: string, label?: string): string {
  */
 export function heroFrame(opts: {
   eyebrow?: string | null;
+  pillVariant?: PillVariant | null;
   title: string;
   body?: string; // already-converted HTML
   caption?: string; // in-flow footer caption HTML
@@ -538,7 +570,7 @@ export function heroFrame(opts: {
   accentRule?: boolean;
   density?: SlideDensity;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero', { variant: opts.pillVariant });
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption ? heroCaption(opts.caption, opts.captionLabel) : '';
   const sharedDensityClass = densityClass(opts.density ?? 'comfortable');

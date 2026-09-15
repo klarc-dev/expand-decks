@@ -51,9 +51,35 @@ function build(slides: Presentation['slides']): string {
 }
 
 describe('buildSlidesMd()', () => {
+  it('rejects card variables that expand beyond the canonical rich-text limit', () => {
+    const slides: Presentation['slides'] = [
+      {
+        blockType: 'cardGrid',
+        title: 'Cards',
+        columns: '2',
+        cards: [{ title: 'First', description: lexical('{details}') }, { title: 'Second' }],
+      },
+    ];
+    expect(() =>
+      buildSlidesMd(
+        { title: 'Variables', slides },
+        {
+          vars: {
+            details: 'x'.repeat(SLIDE_LIMITS.cardGrid.cardDescription.max + 1),
+          },
+        },
+      ),
+    ).toThrow();
+    expect(
+      buildSlidesMd({ title: 'Variables', slides }, { vars: { details: 'Complete copy' } }),
+    ).toContain('Complete copy');
+  });
   it('rewrites the exported html language when the presentation language is supplied', () => {
     const result = buildSlidesMd(
-      { title: 'English deck', slides: [{ blockType: 'cover', title: 'Cover' }] as never },
+      {
+        title: 'English deck',
+        slides: [{ blockType: 'cover', title: 'Cover' }] as never,
+      },
       { headmatter: `${HEADMATTER}\nhtmlAttrs:\n  lang: fr`, language: 'en' },
     );
 
@@ -140,14 +166,21 @@ describe('buildSlidesMd()', () => {
     // markdown carries no footnotes field and never calls wrapSlide; seedFootnotes
     // is skipped for it, so even a stray value must not produce a band.
     const result = build([
-      { blockType: 'markdown', content: '# Hi', footnotes: [{ text: 'x' }] } as never,
+      {
+        blockType: 'markdown',
+        content: '# Hi',
+        footnotes: [{ text: 'x' }],
+      } as never,
     ]);
     expect(result).not.toContain('k-def-footer');
   });
 
   it('resolves {path} variables against the build vars context', () => {
     const result = buildSlidesMd(
-      { title: 'Deck', slides: [{ blockType: 'cover', title: 'Bienvenue chez {org.name}' }] },
+      {
+        title: 'Deck',
+        slides: [{ blockType: 'cover', title: 'Bienvenue chez {org.name}' }],
+      },
       { headmatter: HEADMATTER, vars: { org: { name: 'Klarc' } } },
     );
     expect(result).toContain('Bienvenue chez Klarc');
@@ -271,7 +304,10 @@ describe('buildSlidesMd()', () => {
     const FIXTURES: Array<{ type: string; block: Record<string, unknown> }> = [
       { type: 'section', block: { title: 'Section' } },
       { type: 'statement', block: { title: 'Statement' } },
-      { type: 'twoCols', block: { title: 'Two Cols', intro: lexical('Intro') } },
+      {
+        type: 'twoCols',
+        block: { title: 'Two Cols', intro: lexical('Intro') },
+      },
       {
         type: 'cardGrid',
         block: {
@@ -294,7 +330,10 @@ describe('buildSlidesMd()', () => {
       },
       {
         type: 'quotes',
-        block: { title: 'Quotes', quotes: [{ quote: lexical('Q'), authorName: 'A' }] },
+        block: {
+          title: 'Quotes',
+          quotes: [{ quote: lexical('Q'), authorName: 'A' }],
+        },
       },
       { type: 'cta', block: { title: 'CTA' } },
       {
@@ -315,7 +354,10 @@ describe('buildSlidesMd()', () => {
           ],
         },
       },
-      { type: 'mermaid', block: { title: 'Diagram', source: 'flowchart TD\nA-->B' } },
+      {
+        type: 'mermaid',
+        block: { title: 'Diagram', source: 'flowchart TD\nA-->B' },
+      },
       {
         type: 'agenda',
         block: {
@@ -331,7 +373,11 @@ describe('buildSlidesMd()', () => {
     for (const { type, block } of FIXTURES) {
       it(`${type} renders a numbered source band from authored footnotes`, () => {
         const result = build([
-          { blockType: type, ...block, footnotes: [{ text: 'Source : CGI art. 256' }] } as never,
+          {
+            blockType: type,
+            ...block,
+            footnotes: [{ text: 'Source : CGI art. 256' }],
+          } as never,
         ]);
         expect(result).toContain('k-def-footer');
         expect(result).toContain(
@@ -344,7 +390,11 @@ describe('buildSlidesMd()', () => {
 
     it('markdown is intentionally excluded from the sources repeater', () => {
       const result = build([
-        { blockType: 'markdown', content: '# Hi', footnotes: [{ text: 'x' }] } as never,
+        {
+          blockType: 'markdown',
+          content: '# Hi',
+          footnotes: [{ text: 'x' }],
+        } as never,
       ]);
       expect(result).not.toContain('k-def-footer');
     });
@@ -352,8 +402,17 @@ describe('buildSlidesMd()', () => {
 
   it('handles a full deck with all block types', () => {
     const slides: Presentation['slides'] = [
-      { blockType: 'cover', title: 'Cover', eyebrow: 'Tag', subtitle: lexical('Sub') },
-      { blockType: 'statement', title: 'Statement', body: lexical('Body text') },
+      {
+        blockType: 'cover',
+        title: 'Cover',
+        eyebrow: 'Tag',
+        subtitle: lexical('Sub'),
+      },
+      {
+        blockType: 'statement',
+        title: 'Statement',
+        body: lexical('Body text'),
+      },
       { blockType: 'section', title: 'Section', number: '02' },
       {
         blockType: 'cardGrid',

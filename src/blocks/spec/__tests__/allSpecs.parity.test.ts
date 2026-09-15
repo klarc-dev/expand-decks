@@ -110,7 +110,8 @@ Tu retournes un tableau de blocs (slides) typés. Chaque bloc a un champ "blockT
 Layouts disponibles :
 
 1. **cover** — Diapositive d'ouverture
-   - eyebrow: accroche courte au-dessus du titre
+   - pills: [{text}] — libellés courts indépendants au-dessus du titre, une entrée par pastille
+   - pillVariant: default | primary | secondary | ink | paper — rôle de couleur commun aux pastilles
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
 
@@ -139,6 +140,7 @@ Layouts disponibles :
 7. **quotes** — Grille de citations
    - eyebrow, title (obligatoire), lead
    - quotes: [{quote, authorName, authorRole}]
+   - linkLabel / linkUrl: lien optionnel vers une liste complète fournie dans le contexte
 
 8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
    - eyebrow, title (obligatoire), subtitle
