@@ -135,7 +135,7 @@ const slides = [
           'Rédiger les actes, négocier les clauses, déposer les titres et réunir les justificatifs qui sécurisent vos choix.',
       },
       {
-        label: 'Représenter et défendre vos droits',
+        label: 'Défendre vos droits et vous représenter',
         description:
           'Préparer les réponses, les pièces et les écritures ; vous représenter en cas de négociation, de différend ou de contrôle.',
       },
@@ -148,7 +148,7 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: '01 · Droit des affaires',
     title: 'Sécuriser vos [contrats] et votre société',
-    lead: 'Contrats, gouvernance, opérations et différends : ce que l’avocat prend en charge sur votre dossier.',
+    lead: 'Contrats, gouvernance, opérations et différends : notre accompagnement.',
     intro:
       'Nos avocats interviennent en conseil et en contentieux, en lien avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
     leftFooter: 'En lien avec la propriété industrielle pour vos résultats de R&D.',
