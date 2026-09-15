@@ -146,8 +146,6 @@ describe('shared person cards', () => {
     expect(rule('.k-person-link')).toContain('border-radius: 999px');
     expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-wrap: nowrap');
     expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-direction: row');
-    expect(rule('.k-two-cols-user .k-person-contact')).toContain('flex-wrap: nowrap');
-    expect(rule('.k-two-cols-user .k-person-contact')).toContain('flex-direction: row');
     expect(rule('.slidev-layout .k-person-card a')).toContain(
       'text-decoration-color: currentColor',
     );

@@ -20,7 +20,6 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { optionalRender, optionalRichTextRender } from '../../dsl';
-import { userRelationship } from '../../person';
 import { type Equal, type Expect, type InferRender } from '../renderType';
 
 import type { CardGridBlockData } from '../../../../export/blocks/cardGrid';
@@ -123,9 +122,6 @@ const twoColsRenderSchema = z.object({
   lead: optionalRichTextRender(),
   intro: optionalRichTextRender(),
   leftFooter: optionalRichTextRender(),
-  leftUser: optionalRender(userRelationship),
-  leftUserHeading: optionalRender(z.string()),
-  leftUserDescription: optionalRender(z.string()),
   rightCards: z
     .array(
       z.object({

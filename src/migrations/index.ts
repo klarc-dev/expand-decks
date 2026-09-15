@@ -40,6 +40,7 @@ import * as migration_20260915_124551 from './20260915_124551';
 import * as migration_20260915_125015_quote_author_company from './20260915_125015_quote_author_company';
 import * as migration_20260915_143541_two_cols_left_user_description from './20260915_143541_two_cols_left_user_description';
 import * as migration_20260915_152850_add_two_cols_left_user_heading from './20260915_152850_add_two_cols_left_user_heading';
+import * as migration_20260915_154407_drop_two_cols_left_user from './20260915_154407_drop_two_cols_left_user';
 
 export const migrations = [
   {
@@ -251,5 +252,10 @@ export const migrations = [
     up: migration_20260915_152850_add_two_cols_left_user_heading.up,
     down: migration_20260915_152850_add_two_cols_left_user_heading.down,
     name: '20260915_152850_add_two_cols_left_user_heading',
+  },
+  {
+    up: migration_20260915_154407_drop_two_cols_left_user.up,
+    down: migration_20260915_154407_drop_two_cols_left_user.down,
+    name: '20260915_154407_drop_two_cols_left_user',
   },
 ];

@@ -85,19 +85,6 @@ async function hydrateBlockUsers(
   user: PayloadUser,
   userId: string | number,
 ) {
-  if (block.blockType === 'twoCols') {
-    const id = relationshipId(block.leftUser);
-    const hydratedUser = await hydrateRelationship({
-      collection: COLLECTIONS.users,
-      depth: 2,
-      id,
-      payload,
-      user,
-      userId,
-    });
-    return hydratedUser ? { ...block, leftUser: hydratedUser } : block;
-  }
-
   if (block.blockType !== 'cover' && block.blockType !== 'cardGrid') return block;
   if (!Array.isArray(block.intervenants)) return block;
 

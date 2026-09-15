@@ -34,17 +34,6 @@ const coverBody = (userId: string) => ({
   previewFieldPath: 'slides.0.preview',
 });
 
-const twoColsBody = {
-  presentationId: 'p1',
-  block: {
-    blockType: 'twoCols',
-    title: 'Contact',
-    leftUser: 42,
-    rightCards: [{ title: 'Conseil' }],
-  },
-  previewFieldPath: 'slides.0.preview',
-};
-
 describe('POST /api/slide-preview hydration + access', () => {
   beforeEach(() => {
     auth.mockReset();
@@ -122,22 +111,6 @@ describe('POST /api/slide-preview hydration + access', () => {
 
     const userReads = findByID.mock.calls.filter(([a]) => a.collection === 'users');
     expect(userReads).toHaveLength(2);
-  });
-
-  it('hydrates a two-column left user for the live preview', async () => {
-    auth.mockResolvedValue({ user: { id: 'u1' } });
-    findByID.mockImplementation(async ({ collection }: { collection: string }) => {
-      if (collection === 'presentations') return { id: 'p1' };
-      return { id: 42, name: 'Anne Martin', email: 'anne@klarc.com' };
-    });
-
-    const res = await POST(request(twoColsBody));
-
-    expect(res.status).toBe(200);
-    expect(findByID.mock.calls.map(([a]) => a.collection)).toEqual(['presentations', 'users']);
-    const body = await res.json();
-    expect(body.preview.html).toContain('Anne Martin');
-    expect(body.preview.html).toContain('k-two-cols-user');
   });
 
   it('renders simple non-cover blocks without relationship hydration reads', async () => {

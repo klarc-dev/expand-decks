@@ -1,13 +1,11 @@
 import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
 import { visibleText } from '../density';
-import { personCard, userToPerson } from '../people';
 import { richTextToHTML } from '../richtext';
 import {
   card,
   cardStack,
   contentFrame,
-  escape,
   slideHeader,
   splitTakeaway,
   takeawayBox,
@@ -41,26 +39,9 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
         return `\n${takeawayBox(takeaway.html, takeaway.label, K.takeawaySide)}`;
       })()
     : '';
-  // Same per-slide expertise line as an intervenants row on the contacts grid.
-  const leftUserDescription = block.leftUserDescription?.trim();
-  const leftUserRecord = userToPerson(block.leftUser);
-  const leftPerson =
-    leftUserRecord && leftUserDescription
-      ? { ...leftUserRecord, description: leftUserDescription }
-      : leftUserRecord;
-  const leftUserHeading = block.leftUserHeading?.trim();
-  const leftUser = leftPerson
-    ? `\n<div class="k-two-cols-user">${
-        leftUserHeading
-          ? `\n<div class="k-two-cols-user-heading">${escape(leftUserHeading)}</div>`
-          : ''
-      }\n${personCard(leftPerson)}\n</div>`
-    : '';
 
   const leftBody =
-    intro || leftFooter || leftUser
-      ? `<div class="k-copy-column">${intro}${leftUser}${leftFooter}\n</div>`
-      : '';
+    intro || leftFooter ? `<div class="k-copy-column">${intro}${leftFooter}\n</div>` : '';
   const cardList = block.rightCards ?? [];
   const renderedCards = cardList.map((item) => {
     const body = richTextToHTML(item.description);
@@ -73,7 +54,6 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
     header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`,
     intro: introHtml,
     footer: leftFooterHtml,
-    people: leftPerson ? personCard(leftPerson) : '',
   };
   const profile = image ? 'two-cols-image' : 'two-cols';
   const cards = renderedCards.map((item) => item.html);

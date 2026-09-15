@@ -38,8 +38,6 @@ export const SLIDE_LIMITS = {
   twoCols: {
     intro: { max: 480 },
     leftFooter: { max: 220 },
-    leftUserHeading: { max: 80 },
-    leftUserDescription: { max: 140 },
     cards: { min: 1, max: 5 },
     cardTitle: { max: 120 },
     cardDescription: { max: 280 },

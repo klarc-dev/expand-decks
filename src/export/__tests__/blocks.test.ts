@@ -539,46 +539,6 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('k-density-dense');
   });
 
-  it('renders the shared contact card in the left column', () => {
-    const result = renderTwoCols({
-      blockType: 'twoCols',
-      title: 'Votre interlocutrice',
-      leftUserHeading: 'Représenté par',
-      leftUser: {
-        id: 42,
-        name: 'Anne Martin',
-        title: 'Avocate associée',
-        email: 'anne@klarc.com',
-        phone: '06 12 34 56 78',
-        linkedin: 'https://www.linkedin.com/in/anne',
-        avatar: { filename: 'anne.png' },
-      },
-      rightCards: [{ title: 'Accompagnement', description: lexical('Un suivi direct.') }],
-    } as never);
-
-    expect(result).toContain('k-two-cols-user');
-    expect(result).toContain('<div class="k-two-cols-user-heading">Représenté par</div>');
-    expect(result).toContain('k-person-card');
-    expect(result).toContain(`:src='"./media/anne.png"'`);
-    expect(result).toContain('Anne Martin');
-    expect(result).toContain('href="mailto:anne@klarc.com"');
-    expect(result).toMatch(/k-split[\s\S]*k-two-cols-user[\s\S]*k-split-cards/);
-  });
-
-  it('shows the slide-specific expertise line on the left person card', () => {
-    const result = renderTwoCols({
-      blockType: 'twoCols',
-      title: 'Droit fiscal',
-      leftUser: { id: 42, name: 'Anne Martin', title: 'Avocate', email: 'anne@klarc.com' },
-      leftUserDescription: ' Fiscalité de l’innovation, contrôles et contentieux. ',
-      rightCards: [{ title: 'CIR', description: lexical('Examiner l’éligibilité.') }],
-    } as never);
-
-    expect(result).toContain(
-      '<div class="k-person-description">Fiscalité de l’innovation, contrôles et contentieux.</div>',
-    );
-  });
-
   it('renders leftFooter as the same takeaway box as the statement footer', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',

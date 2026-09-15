@@ -22,7 +22,6 @@ import {
   type InferRender,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
-import { userRelationship } from './person';
 
 const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const title = limitedString(SLIDE_LIMITS.common.title);
@@ -39,9 +38,6 @@ const rightCards = optionalRender(
 );
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
-const leftUser = optionalRender(userRelationship);
-const leftUserHeading = optionalLimitedRender(SLIDE_LIMITS.twoCols.leftUserHeading);
-const leftUserDescription = optionalLimitedRender(SLIDE_LIMITS.twoCols.leftUserDescription);
 
 export const twoColsSpec = block({
   slug: 'twoCols',
@@ -71,35 +67,6 @@ export const twoColsSpec = block({
         type: 'richText',
         label: 'Pied gauche',
         description: 'Texte ou statistique en bas de la colonne gauche',
-      }),
-    ),
-    rawField(
-      'leftUserHeading',
-      leftUserHeading,
-      false,
-      limitedTextPayload(SLIDE_LIMITS.twoCols.leftUserHeading, {
-        type: 'text',
-        label: 'Titre au-dessus de la carte utilisateur',
-        description: 'Titre optionnel affiché immédiatement au-dessus de la carte utilisateur',
-      }),
-    ),
-    rawField('leftUser', leftUser, false, {
-      type: 'relationship',
-      relationTo: 'users',
-      maxDepth: 2,
-      label: 'Carte utilisateur (colonne gauche)',
-      description:
-        'Utilisateur affiché dans la colonne gauche avec la même carte que sur la diapositive Contacts',
-    }),
-    rawField(
-      'leftUserDescription',
-      leftUserDescription,
-      false,
-      limitedTextPayload(SLIDE_LIMITS.twoCols.leftUserDescription, {
-        type: 'text',
-        label: 'Expertise (carte utilisateur)',
-        description:
-          'Expertise ou sujets suivis, affichés sous la fonction, comme sur la diapositive Contacts',
       }),
     ),
     rawField(
@@ -148,9 +115,6 @@ export const twoColsRenderSchema = z.object({
   lead: leadRender(),
   intro,
   leftFooter,
-  leftUserHeading,
-  leftUser,
-  leftUserDescription,
   rightCards,
   image,
   imagePosition,
