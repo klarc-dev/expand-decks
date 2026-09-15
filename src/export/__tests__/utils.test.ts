@@ -76,26 +76,125 @@ describe('card()', () => {
 describe('cardStack()', () => {
   it('grid of 4 cards in 2 cols is crowded (3 rows would be), 4 cols is not', () => {
     const four = ['a', 'b', 'c', 'd'];
-    expect(cardStack(four, { layout: 'grid', cols: 2 }).crowded).toBe(false); // 2 rows
-    expect(cardStack(['a', 'b', 'c', 'd', 'e'], { layout: 'grid', cols: 2 }).crowded).toBe(true); // 3 rows
-    expect(cardStack(four, { layout: 'grid', cols: 4 }).crowded).toBe(false); // 1 row
+    expect(
+      cardStack(four, {
+        layout: 'grid',
+        maxCols: 2,
+        profile: 'card-grid',
+        itemPressures: [1, 1, 1, 1],
+      }).crowded,
+    ).toBe(false); // 2 rows
+    expect(
+      cardStack(['a', 'b', 'c', 'd', 'e'], {
+        layout: 'grid',
+        maxCols: 2,
+        profile: 'card-grid',
+        itemPressures: [1, 1, 1, 1, 1],
+      }).crowded,
+    ).toBe(true); // 3 rows
+    expect(
+      cardStack(four, {
+        layout: 'grid',
+        maxCols: 4,
+        profile: 'card-grid',
+        itemPressures: [1, 1, 1, 1],
+      }).crowded,
+    ).toBe(false); // 1 row
   });
 
-  it('column of 4+ cards is crowded and gets the tight class', () => {
-    const r = cardStack(['a', 'b', 'c', 'd'], { layout: 'column' });
+  it('column of 4+ cards is crowded and gets the crowded class', () => {
+    const r = cardStack(['a', 'b', 'c', 'd'], {
+      layout: 'column',
+      profile: 'two-cols',
+      itemPressures: [1, 1, 1, 1],
+    });
     expect(r.crowded).toBe(true);
-    expect(r.html).toContain('k-tight');
+    expect(r.html).toContain('k-card-stack--crowded');
   });
 
   it('column of 3 cards is not crowded', () => {
-    const r = cardStack(['a', 'b', 'c'], { layout: 'column' });
+    const r = cardStack(['a', 'b', 'c'], {
+      layout: 'column',
+      profile: 'two-cols',
+      itemPressures: [1, 1, 1],
+    });
     expect(r.crowded).toBe(false);
-    expect(r.html).not.toContain('k-tight');
+    expect(r.html).not.toContain('k-card-stack--crowded');
   });
 
-  it('grid uses a clamped gridClass including centered one-card grids', () => {
-    expect(cardStack(['a'], { layout: 'grid', cols: 1 }).html).toContain('k-grid-1');
-    expect(cardStack(['a'], { layout: 'grid', cols: 9 }).html).toContain('k-grid-4');
+  it('keeps occupancy-driven density when a stack has no cards', () => {
+    const result = cardStack([], {
+      layout: 'column',
+      profile: 'two-cols',
+      itemPressures: [],
+      occupancy: { header: 'H'.repeat(300), intro: 'I'.repeat(300) },
+    });
+    expect(result.html).toBe('');
+    expect(result.density).toBe('dense');
+  });
+
+  it('balances five and six cards into three columns behind the stack interface', () => {
+    for (const count of [5, 6]) {
+      const result = cardStack(
+        Array.from({ length: count }, (_, index) => String(index)),
+        {
+          layout: 'grid',
+          maxCols: 4,
+          profile: 'card-grid',
+          itemPressures: Array.from({ length: count }, () => 1),
+        },
+      );
+      expect(result.cols).toBe(3);
+      expect(result.rows).toBe(2);
+      expect(result.html).toContain('k-grid-3');
+    }
+  });
+
+  it('marks only five-card three-column grids for a centered final row', () => {
+    const five = cardStack(['a', 'b', 'c', 'd', 'e'], {
+      layout: 'grid',
+      maxCols: 4,
+      profile: 'card-grid',
+      itemPressures: [1, 1, 1, 1, 1],
+    });
+    const six = cardStack(['a', 'b', 'c', 'd', 'e', 'f'], {
+      layout: 'grid',
+      maxCols: 4,
+      profile: 'card-grid',
+      itemPressures: [1, 1, 1, 1, 1, 1],
+    });
+    expect(five.html).toContain('k-card-stack--centered-last-row');
+    expect(six.html).not.toContain('k-card-stack--centered-last-row');
+  });
+
+  it('rejects pressure metadata that does not match the cards', () => {
+    expect(() =>
+      cardStack(['a', 'b'], {
+        layout: 'grid',
+        maxCols: 2,
+        profile: 'card-grid',
+        itemPressures: [1],
+      }),
+    ).toThrow('cardStack itemPressures must match cards');
+  });
+
+  it('clamps requested columns and sparse grids to their actual card count', () => {
+    expect(
+      cardStack(['a'], {
+        layout: 'grid',
+        maxCols: 1,
+        profile: 'card-grid',
+        itemPressures: [1],
+      }).html,
+    ).toContain('k-grid-1');
+    expect(
+      cardStack(['a'], {
+        layout: 'grid',
+        maxCols: 9,
+        profile: 'card-grid',
+        itemPressures: [1],
+      }).html,
+    ).toContain('k-grid-1');
   });
 });
 

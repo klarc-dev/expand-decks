@@ -168,21 +168,26 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     );
   });
 
-  it('fills secondary pills with the brand pink and strong ink text on either surface', () => {
+  it('keeps secondary pills white with brand-pink text and dot on either surface', () => {
     const secondary = css.match(/\.k-eyebrow\.k-eyebrow--secondary\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(secondary).toContain('color: var(--k-ink)');
-    expect(secondary).toContain('background: var(--k-rose)');
-    expect(secondary).toContain('border-color: var(--k-rose)');
+    expect(secondary).toContain('color: var(--k-rose)');
+    expect(secondary).toContain('background: #fff');
+    expect(secondary).toContain('border-color: #fff');
     expect(css).not.toMatch(/\.k-dark \.k-eyebrow\.k-eyebrow--secondary\s*\{/);
   });
 
-  it('uses crisp brand-color heading emphasis instead of a simulated marker band', () => {
+  it('uses a stylish brand-pink underline while preserving the heading ink', () => {
     const mark = css.match(/\.slidev-layout \.k-mark\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(mark).toContain('color: var(--k-rose)');
-    expect(mark).toContain('background: transparent');
+    expect(mark).toContain('color: inherit');
+    expect(mark).toContain('position: relative');
     expect(mark).toContain('text-decoration: none');
     expect(mark).toContain('text-shadow: none');
-    expect(mark).not.toMatch(/text-decoration-thickness|text-underline-offset|--mark-band/);
+
+    const underline = css.match(/\.slidev-layout \.k-mark::after\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(underline).toContain('background: var(--k-rose)');
+    expect(underline).toContain('border-radius: 999px');
+    expect(underline).toContain('transform: rotate(-1.2deg)');
+    expect(underline).toMatch(/bottom:\s*-0\.1em/);
   });
 
   it('keeps the eyebrow pill dot the same color as its text in every tone', () => {
@@ -191,42 +196,26 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).not.toMatch(/\.k-dark \.k-eyebrow::before\s*\{/);
   });
 
-  it('defines shared card-grid scales rather than per-card font sizes', () => {
-    expect(css).toMatch(/\.k-card-scale-sm \.k-card h3/);
-    expect(css).toMatch(/\.k-card-scale-sm \.k-card p/);
-    expect(css).toMatch(/\.k-card-scale-xs \.k-card h3/);
-    expect(css).toMatch(/\.k-card-scale-xs \.k-card p/);
-    expect(css).toMatch(/\.k-card-scale-md\.k-grid-3/);
+  it('uses one density contract for card typography and geometry', () => {
+    expect(css).toMatch(/\.k-density-compact\s*\{[^}]*--card-title-scale:\s*0\.88/);
+    expect(css).toMatch(/\.k-density-compact\s*\{[^}]*--card-body-scale:\s*0\.9/);
+    expect(css).toMatch(/\.k-density-dense\s*\{[^}]*--card-title-scale:\s*0\.76/);
+    expect(css).toMatch(/\.k-density-dense\s*\{[^}]*--card-body-scale:\s*0\.78/);
+    expect(css).not.toContain('k-card-scale-');
   });
 
-  it('uses the old dense/new comfortable midpoint only for numbered two-column descriptions', () => {
-    const numberedBody = css.match(
-      /\.k-card-scale-md\.k-grid-2\.k-card-stack--grid \.k-card:has\(> \.k-num\) p\s*\{([^}]*)\}/,
-    )?.[1];
-    expect(numberedBody).toMatch(/font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/);
-    expect(numberedBody).toMatch(/line-height:\s*1\.45/);
-    // Preserve ordinary copy, unnumbered wide cards, and the density ladder.
-    expect(css).toMatch(/\.k-card p\s*\{[^}]*font-size:\s*var\(--t-body\)/);
+  it('uses an explicit numbered role for comfortable two-column cards', () => {
     expect(css).toMatch(
-      /\.k-card-scale-md\.k-grid-2\.k-card-stack--grid \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 1\.12\)/,
+      /\.k-card-stack--grid\.k-grid-2:not\([^)]*\) \.k-card--numbered p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/,
     );
-    expect(css).toMatch(
-      /\.k-card-scale-sm \.k-card p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.9\)/,
-    );
-    expect(css).toMatch(
-      /\.k-card-scale-xs \.k-card p\s*\{[^}]*font-size:\s*var\(--k-card-body-min\)/,
-    );
+    expect(css).not.toContain(':has(> .k-num)');
   });
 
-  it('uses smaller headings and even padding in comfortable numbered two-column multirow cards', () => {
-    const scope = String.raw`\.k-card-scale-md\.k-grid-2\.k-card-stack--grid\.k-card-stack--multirow\s*>\s*\.k-card:has\(> \.k-num\)`;
-    const card = css.match(new RegExp(`${scope}\\s*\\{([^}]*)\\}`))?.[1];
-    const heading = css.match(new RegExp(`${scope}\\s+h3\\s*\\{([^}]*)\\}`))?.[1];
-    expect(card).toMatch(/padding:\s*0\.9rem/);
-    expect(card).not.toMatch(/padding-block|padding-bottom/);
-    expect(heading).toMatch(/font-size:\s*var\(--t-lead\)/);
-    expect(heading).toMatch(/line-height:\s*1\.15/);
-    expect(`${card}${heading}`).not.toMatch(/overflow|(?:^|;)\s*height:|line-clamp/);
+  it('uses smaller headings and even padding in comfortable numbered multirow cards', () => {
+    expect(css).toMatch(
+      /\.k-card-stack--grid\.k-grid-2\.k-card-stack--multirow:not\([^)]*\)[\s\S]*?> \.k-card--numbered\s*\{[^}]*--card-padding-block:\s*0\.9rem;[^}]*--card-padding-inline:\s*0\.9rem/,
+    );
+    expect(css).toMatch(/> \.k-card--numbered\s+h3\s*\{[^}]*font-size:\s*var\(--t-lead\)/);
   });
 
   it('gives multi-row comparable grids equal-height tracks through the shared stack', () => {

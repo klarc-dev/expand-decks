@@ -10,7 +10,13 @@ import type { DeckLanguage } from '../agents/language';
 import { K } from './classNames';
 import type { PillVariant } from '../blocks/spec/pillVariants';
 export type { PillVariant } from '../blocks/spec/pillVariants';
-import { densityClass, type SlideDensity } from './density';
+import {
+  cardLayoutDensity,
+  densityClass,
+  type CardFrameOccupancy,
+  type CardLayoutProfile,
+  type SlideDensity,
+} from './density';
 import { resolveVars } from './vars';
 
 const HTML_ENTITY_RE = /[&<>"']/g;
@@ -431,19 +437,37 @@ export function cardStack(
   opts: {
     layout: 'grid' | 'column';
     maxCols?: number;
-    density?: SlideDensity;
+    profile: CardLayoutProfile;
+    itemPressures: number[];
+    occupancy?: CardFrameOccupancy;
     dense?: boolean;
   },
-): { html: string; crowded: boolean; cols: number; rows: number } {
-  if (cards.length === 0) return { html: '', crowded: false, cols: 0, rows: 0 };
+): { html: string; crowded: boolean; cols: number; rows: number; density: SlideDensity } {
+  if (opts.itemPressures.length !== cards.length) {
+    throw new Error('cardStack itemPressures must match cards');
+  }
+  if (cards.length === 0) {
+    const density = cardLayoutDensity({
+      profile: opts.profile,
+      itemPressures: opts.itemPressures,
+      cols: 1,
+      occupancy: opts.occupancy,
+    });
+    return { html: '', crowded: false, cols: 0, rows: 0, density };
+  }
   const inner = cards.join('\n\n');
-  const density = opts.density ?? 'comfortable';
 
   if (opts.layout === 'grid') {
     const requested = Math.min(Math.max(opts.maxCols ?? 4, 1), 4);
     const capped = Math.min(requested, cards.length);
     const cols = requested >= 4 && cards.length >= 5 && cards.length <= 6 ? 3 : capped;
     const rows = Math.ceil(cards.length / cols);
+    const density = cardLayoutDensity({
+      profile: opts.profile,
+      itemPressures: opts.itemPressures,
+      cols,
+      occupancy: opts.occupancy,
+    });
     const crowded = rows > 2 || Boolean(opts.dense);
     const centeredLastRow = cols === 3 && cards.length === 5;
     const classes = [
@@ -462,11 +486,18 @@ export function cardStack(
       crowded,
       cols,
       rows,
+      density,
     };
   }
 
   const cols = 1;
   const rows = cards.length;
+  const density = cardLayoutDensity({
+    profile: opts.profile,
+    itemPressures: opts.itemPressures,
+    cols,
+    occupancy: opts.occupancy,
+  });
   const crowded = cards.length >= 4 || Boolean(opts.dense);
   const classes = [
     K.cardStack,
@@ -481,6 +512,7 @@ export function cardStack(
     crowded,
     cols,
     rows,
+    density,
   };
 }
 

@@ -1,6 +1,6 @@
 import type { CardGridBlockData } from '../../blocks/spec/cardGrid';
 import { K } from '../classNames';
-import { cardLayoutDensity, visibleText } from '../density';
+import { visibleText } from '../density';
 import { renderPeopleStrip } from '../people';
 import { richTextToHTML } from '../richtext';
 import { card, cardStack, contentFrame, slideHeader, wrapSlide, type RenderCtx } from '../utils';
@@ -23,20 +23,15 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
     block.intervenants,
     peopleProminent ? `${K.cardGridPeople} ${K.cardGridPeopleGrid}` : K.cardGridPeople,
   );
-  const requestedCols = Number(block.columns ?? '4');
-  const topology = cardStack(
-    renderedCards.map((item) => item.html),
-    { layout: 'grid', maxCols: requestedCols },
-  );
-  const density = cardLayoutDensity({
-    profile: 'card-grid',
-    itemPressures: renderedCards.map((item) => item.pressure),
-    cols: topology.cols || 1,
-    occupancy: { lead: leadHtml, people },
-  });
   const stack = cardStack(
     renderedCards.map((item) => item.html),
-    { layout: 'grid', maxCols: requestedCols, density },
+    {
+      layout: 'grid',
+      maxCols: Number(block.columns ?? '4'),
+      profile: 'card-grid',
+      itemPressures: renderedCards.map((item) => item.pressure),
+      occupancy: { header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`, people },
+    },
   );
 
   const parts = [stack.html, people].filter(Boolean);
@@ -47,12 +42,12 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
     eyebrow: block.eyebrow,
     title: block.title,
     lead: leadHtml || undefined,
-    density,
+    density: stack.density,
   });
   const body = contentFrame(main, {
     header,
     crowded: stack.crowded,
-    density,
+    density: stack.density,
     mainAlign: peopleProminent && people ? 'center' : 'stretch',
   });
 

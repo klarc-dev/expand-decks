@@ -152,16 +152,6 @@ export const Users: CollectionConfig = {
       admin: { description: 'Titre public affiché sur les cartes intervenants' },
     },
     {
-      name: 'description',
-      type: 'textarea',
-      label: 'Description publique',
-      maxLength: 240,
-      admin: {
-        description:
-          'Expertise ou sujets suivis, affichés sous la fonction sur les grandes cartes intervenants',
-      },
-    },
-    {
       name: 'avatar',
       type: 'upload',
       relationTo: COLLECTIONS.media,

@@ -1,6 +1,6 @@
 import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
-import { cardScaleClass, densityFromScore, visibleText } from '../density';
+import { visibleText } from '../density';
 import { personCard, userToPerson } from '../people';
 import { richTextToHTML } from '../richtext';
 import {
@@ -57,47 +57,48 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
       pressure: item.title.length + visibleText(body).length,
     };
   });
-  const density = densityFromScore(
-    Math.max(0, ...renderedCards.map((item) => item.pressure)) +
-      visibleText(leadHtml).length * 0.6 +
-      visibleText(introHtml).length * 0.75 +
-      visibleText(leftFooterHtml).length * 0.7 +
-      (leftPerson ? 110 : 0) +
-      cardList.length * (image ? 72 : 58),
-    { compact: image ? 250 : 310, dense: image ? 430 : 520 },
-  );
-  const scaleClass = cardScaleClass(density);
+  const occupancy = {
+    header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`,
+    intro: introHtml,
+    footer: leftFooterHtml,
+    people: leftPerson ? personCard(leftPerson) : '',
+  };
+  const profile = image ? 'two-cols-image' : 'two-cols';
+  const cards = renderedCards.map((item) => item.html);
+  const stack = cardStack(cards, {
+    layout: 'column',
+    profile,
+    itemPressures: renderedCards.map((item) => item.pressure),
+    occupancy,
+  });
   const header = slideHeader({
     eyebrow: block.eyebrow,
     title: block.title,
     lead: leadHtml || undefined,
-    density,
+    density: stack.density,
   });
 
   // Image variant: image takes the right slot via Slidev's image-right layout;
   // rightCards, when present, stay in the content column instead of being dropped.
   if (image) {
-    const cards = renderedCards.map((item) => item.html);
-    const stack = cardStack(cards, { layout: 'column', className: scaleClass, density });
     const body = [leftBody, stack.html].filter(Boolean).join('\n\n');
     return wrapSlide({
       image,
-      body: contentFrame(body, { header, crowded: stack.crowded, density }),
+      body: contentFrame(body, {
+        header,
+        crowded: stack.crowded,
+        density: stack.density,
+      }),
     });
   }
 
-  // No titleClass override: card titles must render at the shared .k-card h3
-  // size (var(--t-h3)) whether the card sits in a cardGrid or a twoCols column.
-  // The old 'text-sm' made twoCols card titles smaller than cardGrid ones.
-  const cards = renderedCards.map((item) => item.html);
-  const stack = cardStack(cards, { layout: 'column', className: scaleClass, density });
   const rightCol = cards.length ? `\n<div class="k-split-cards">${stack.html}\n</div>` : '';
   const leftCol = leftBody || (rightCol ? '<div></div>' : '');
   const main = `<div class="${K.split} k-split--body">\n${leftCol}${rightCol}\n</div>`;
   const body = contentFrame(main, {
     header,
     crowded: stack.crowded,
-    density,
+    density: stack.density,
     mainAlign: 'start',
   });
 

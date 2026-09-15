@@ -35,7 +35,6 @@ export const userRelationship = z.union([
       name: optionalRender(z.string()),
       email: optionalRender(z.string()),
       title: optionalRender(z.string()),
-      description: optionalRender(z.string()),
       phone: optionalRender(z.string()),
       linkedin: optionalRender(z.string()),
       avatar: optionalRender(mediaRelationship),
@@ -49,6 +48,7 @@ export const intervenantsRender = (limit: RangeLimit) =>
       z
         .object({
           user: userRelationship.nullable().optional(),
+          description: optionalRender(z.string()),
         })
         .passthrough(),
       limit,
@@ -73,6 +73,12 @@ export function intervenantsFieldSpec(limit: RangeLimit, description: string): F
           maxDepth: 2,
           label: 'Utilisateur',
           description: 'Utilisateur affiché comme intervenant',
+        }),
+        rawField('description', optionalRender(z.string()), false, {
+          type: 'textarea',
+          label: 'Description',
+          maxLength: 240,
+          description: 'Expertise ou sujets suivis, affichés sous la fonction',
         }),
       ],
     }),

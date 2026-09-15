@@ -75,7 +75,6 @@ const coverUserRelationship = z.union([
       name: optionalRender(z.string()),
       email: optionalRender(z.string()),
       title: optionalRender(z.string()),
-      description: optionalRender(z.string()),
       phone: optionalRender(z.string()),
       linkedin: optionalRender(z.string()),
       avatar: optionalRender(coverMediaRelationship),
@@ -87,6 +86,7 @@ const coverIntervenants = optionalRender(
     z
       .object({
         user: coverUserRelationship.nullable().optional(),
+        description: optionalRender(z.string()),
       })
       .passthrough(),
   ),

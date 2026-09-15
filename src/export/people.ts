@@ -94,7 +94,10 @@ export function userToPerson(user: unknown): PersonCard | null {
   };
 }
 
-type IntervenantRows = ({ user?: unknown } | null | undefined)[] | null | undefined;
+type IntervenantRows =
+  | ({ user?: unknown; description?: unknown } | null | undefined)[]
+  | null
+  | undefined;
 
 /**
  * Contact line under the title: each detail is its own link so the exported
@@ -170,7 +173,17 @@ export function personCard(person: PersonCard): string {
  */
 export function renderPeopleStrip(rows: IntervenantRows, wrapperClass: string): string {
   const people = (rows ?? [])
-    .map((row) => userToPerson(asRecord(row)?.user))
+    .map((row) => {
+      const record = asRecord(row);
+      const person = userToPerson(record?.user);
+      if (!person) return null;
+      return {
+        ...person,
+        ...(asNonEmptyString(record?.description)
+          ? { description: asNonEmptyString(record?.description)! }
+          : {}),
+      } satisfies PersonCard;
+    })
     .filter((person): person is PersonCard => Boolean(person));
 
   if (people.length === 0) return '';

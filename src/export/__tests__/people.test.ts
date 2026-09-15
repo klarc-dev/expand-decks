@@ -91,14 +91,16 @@ describe('shared person cards', () => {
   });
 
   it('renders an escaped optional description below the job title', () => {
-    const person = userToPerson({
-      name: 'Benjamin Visser',
-      title: 'Avocat',
-      description: 'Fiscalité des entreprises & fiscalité de l’innovation',
-    })!;
-    const html = personCard(person);
+    const html = renderPeopleStrip(
+      [
+        {
+          user: { name: 'Benjamin Visser', title: 'Avocat' },
+          description: 'Fiscalité des entreprises & fiscalité de l’innovation',
+        },
+      ],
+      'k-cardgrid-people--grid',
+    );
 
-    expect(person.description).toBe('Fiscalité des entreprises & fiscalité de l’innovation');
     expect(html.indexOf('k-person-title')).toBeLessThan(html.indexOf('k-person-description'));
     expect(html).toContain('Fiscalité des entreprises &amp; fiscalité de l’innovation');
     expect(rule('.k-person-description')).toContain('display: none');
@@ -138,6 +140,8 @@ describe('shared person cards', () => {
     expect(rule('.k-person-link')).toContain('border-radius: 999px');
     expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-wrap: nowrap');
     expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-direction: row');
+    expect(rule('.k-two-cols-user .k-person-contact')).toContain('flex-wrap: nowrap');
+    expect(rule('.k-two-cols-user .k-person-contact')).toContain('flex-direction: row');
     expect(rule('.slidev-layout .k-person-card a')).toContain(
       'text-decoration-color: currentColor',
     );

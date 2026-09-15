@@ -273,7 +273,6 @@ describe('shared adaptive card stacks', () => {
 
     expect(result).toContain('k-card-stack--multirow');
     expect(result).toContain('k-density-compact');
-    expect(result).toContain('k-card-scale-sm');
   });
 
   it('uses the shared stack API for dense quote grids without markup surgery', () => {
@@ -289,7 +288,7 @@ describe('shared adaptive card stacks', () => {
     });
 
     expect(result).toContain('k-card-stack--multirow');
-    expect(result).toContain('k-tight');
+    expect(result).toContain('k-card-stack--crowded');
     expect(result).toContain('k-density-dense');
   });
 
@@ -538,7 +537,6 @@ describe('renderTwoCols()', () => {
       })),
     });
     expect(result).toContain('k-density-dense');
-    expect(result).toContain('k-card-scale-xs');
   });
 
   it('renders the shared contact card in the left column', () => {
@@ -659,8 +657,8 @@ describe('renderCardGrid()', () => {
       ],
     });
 
-    expect(result).toMatch(/k-card-scale-(sm|xs)/);
-    expect(result.match(/k-card-scale-(?:sm|xs)/g)).toHaveLength(1);
+    expect(result).toMatch(/k-density-(compact|dense)/);
+    expect(result).not.toContain('k-card-scale-');
   });
 
   it('renders sidebarText as the description line of the unified header, above the cards', () => {
@@ -1079,7 +1077,7 @@ describe('renderQuotes()', () => {
     expect(result).toContain('k-grid-2');
     expect(result).toContain('k-content-tight');
     // 2x2 grid is only 2 rows, so force the tight quote typography explicitly.
-    expect(result).toContain('k-card-stack--multirow k-tight');
+    expect(result).toContain('k-card-stack--multirow k-card-stack--crowded');
   });
 
   it('uses the shared content header/body frame', () => {

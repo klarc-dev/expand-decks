@@ -63,7 +63,7 @@ const slides = [
         number: '03',
         title: 'Vous sollicitez un financement ou un dispositif fiscal',
         description:
-          'CIR[^1], CII[^2], statut JEI[^3], subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un éventuel examen de l’administration.',
+          'CIR, CII, statut JEI, subventions : nous vérifions les conditions applicables à votre situation et constituons un dossier documenté en vue d’un éventuel examen de l’administration.',
       },
       {
         number: '04',
@@ -212,7 +212,7 @@ const slides = [
       {
         title: 'Votre fiscalité de l’innovation',
         description:
-          'CIR[^1], CII[^2], JEI[^3] et régime IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
+          'CIR, CII, JEI et régime IP Box : examiner les conditions applicables à votre situation, les dépenses ou revenus concernés et les justificatifs à réunir.',
       },
       {
         title: 'Votre organisation et vos preuves de R&D',
@@ -264,7 +264,7 @@ const slides = [
     eyebrow: 'POUR DÉMARRER',
     title: 'Vos interlocuteurs',
     sidebarText:
-      'Identifiez le bon interlocuteur selon votre besoin. Il mobilisera ensuite les compétences utiles au sein du cabinet.',
+      'Choisissez votre interlocuteur selon votre besoin ; il mobilisera les compétences utiles à votre dossier.',
   },
   // Page 10 — cta
   {
@@ -439,12 +439,7 @@ await runPayloadScript(async (payload) => {
     await payload.update({
       collection: 'users',
       id: user.id,
-      data: {
-        avatar,
-        website: profile.website,
-        linkedin: profile.linkedin,
-        ...('description' in profile ? { description: profile.description } : {}),
-      },
+      data: { avatar, website: profile.website, linkedin: profile.linkedin },
       overrideAccess: true,
       context: { skipBuildQueue: true },
     });
@@ -453,6 +448,7 @@ await runPayloadScript(async (payload) => {
   const wire = (page: number, keys: (keyof typeof people)[]) => {
     (richSlides[page - 1] as Record<string, unknown>).intervenants = keys.map((key) => ({
       user: userIds.get(key),
+      description: people[key].description,
     }));
   };
   const wireLeftUser = (page: number, key: keyof typeof people) => {

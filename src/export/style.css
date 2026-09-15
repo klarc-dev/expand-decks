@@ -105,9 +105,8 @@
 
   /* Type ramp — single source of truth for every font-size on a slide.
      Major-Third (1.25) modular scale anchored at 1rem body. EVERY component
-     pulls a token from here; no per-component literal rem (the .k-tight density
-     modifier may step DOWN one token, but never invents a literal). Adding a
-     size? Map it to a token or add a token — don't hardcode. */
+     pulls a token from here; no per-component literal rem. Density modifiers
+     adjust shared variables but never invent a second typography ladder. */
   --t-display: 4.5rem; /* cover + cta hero headline */
   --t-hero: 3.052rem; /* section/stats/statement centered-hero (h1) */
   --t-title: 2.441rem; /* unified primary content-slide title (k-h-lg) */
@@ -145,6 +144,14 @@
   --density-scale: 1;
   --density-leading: 1;
   --density-space: 1;
+  --card-title-scale: 1;
+  --card-body-scale: 1;
+  --card-title-leading: 1.2;
+  --card-body-leading: 1.45;
+  --card-padding-block: 1.35rem;
+  --card-padding-inline: 1.35rem;
+  --card-radius: var(--k-radius-card);
+  --card-gap: 0.95rem;
   --k-card-body-min: calc(var(--t-body) * 0.78);
 
   /* Eyebrow pill + accent rule — tone-aware tokens so the pill stops flipping
@@ -248,21 +255,36 @@
 }
 
 /* Heading mark — `[mot]` in any title (md() → <mark class="k-mark">).
-   Emphasis is typographic, not a simulated marker stroke: one crisp rose word
-   against the slide surface keeps the display face legible at every scale. */
+   Keep the word in the heading's ink and draw a deliberate rose underline:
+   slightly offset, rounded, and narrow enough to read as editorial emphasis. */
 .slidev-layout .k-mark {
-  color: var(--k-rose);
+  color: inherit;
   font: inherit;
   font-weight: inherit;
   background: transparent;
   text-decoration: none;
   text-shadow: none;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  position: relative;
+  z-index: 0;
+  white-space: nowrap;
+}
+.slidev-layout .k-mark::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0.03em;
+  right: -0.02em;
+  bottom: -0.1em;
+  height: 0.1em;
+  min-height: 4px;
+  border-radius: 999px;
+  background: var(--k-rose);
+  transform: rotate(-1.2deg);
+  transform-origin: left center;
 }
 
 .k-dark .k-mark {
-  color: var(--k-rose);
+  color: inherit;
 }
 
 .slidev-layout p,
@@ -275,12 +297,26 @@
   --density-scale: 0.88;
   --density-leading: 0.94;
   --density-space: 0.82;
+  --card-title-scale: 0.88;
+  --card-body-scale: 0.9;
+  --card-title-leading: 1.15;
+  --card-body-leading: 1.38;
+  --card-padding-block: 1rem;
+  --card-padding-inline: 1.08rem;
 }
 
 .k-density-dense {
   --density-scale: 0.76;
   --density-leading: 0.88;
   --density-space: 0.68;
+  --card-title-scale: 0.76;
+  --card-body-scale: 0.78;
+  --card-title-leading: 1.12;
+  --card-body-leading: 1.25;
+  --card-padding-block: 0.76rem;
+  --card-padding-inline: 0.9rem;
+  --card-radius: 0.82rem;
+  --card-gap: 0.7rem;
 }
 
 .k-h-lg.k-density-compact,
@@ -416,9 +452,9 @@
   border-color: var(--k-teal);
 }
 .k-eyebrow.k-eyebrow--secondary {
-  color: var(--k-ink);
-  background: var(--k-rose);
-  border-color: var(--k-rose);
+  color: var(--k-rose);
+  background: #fff;
+  border-color: #fff;
 }
 .k-eyebrow.k-eyebrow--ink {
   color: var(--k-paper);
@@ -453,8 +489,8 @@
 .k-card {
   background: var(--k-surface-raised);
   border: 1px solid var(--k-hairline);
-  border-radius: var(--k-radius-card);
-  padding: 1.35rem 1.35rem 1.25rem;
+  border-radius: var(--card-radius);
+  padding: var(--card-padding-block) var(--card-padding-inline);
   transition:
     transform var(--k-motion-fast),
     border-color var(--k-motion-fast),
@@ -477,47 +513,20 @@
 
 .k-card h3 {
   margin: 0 0 0.4rem;
-  font-size: var(--t-h3);
+  font-size: calc(var(--t-h3) * var(--card-title-scale));
+  line-height: var(--card-title-leading);
   color: var(--k-teal);
 }
 
 .k-card p {
   margin: 0;
-  font-size: var(--t-body);
+  font-size: calc(var(--t-body) * var(--card-body-scale));
   color: var(--k-ink-soft);
-  line-height: 1.45;
+  line-height: var(--card-body-leading);
 }
 .k-dark .k-card h3,
 .k-dark .k-card p {
   color: inherit;
-}
-
-/* One scale per grid, selected from its densest card. This keeps typography
-   uniform across sibling cards while stepping the entire grid down before any
-   individual card can clip. */
-.k-card-scale-sm .k-card h3 {
-  font-size: calc(var(--t-h3) * 0.88);
-  line-height: 1.15;
-}
-.k-card-scale-sm .k-card p {
-  font-size: calc(var(--t-body) * 0.9);
-  line-height: 1.38;
-}
-.k-card-scale-xs .k-card h3 {
-  font-size: calc(var(--t-h3) * 0.76);
-  line-height: 1.12;
-}
-.k-card-scale-xs .k-card p {
-  font-size: var(--k-card-body-min);
-  line-height: 1.25;
-}
-
-.k-density-compact .k-card {
-  padding: 1rem 1.08rem;
-}
-.k-density-dense .k-card {
-  padding: 0.76rem 0.9rem;
-  border-radius: 0.82rem;
 }
 
 .k-card .k-num {
@@ -529,19 +538,19 @@
   letter-spacing: 0.1em;
 }
 
-/* Crowded-column variant: a tall stack of cards on the fixed 720px canvas
-   (e.g. 4+ cards in a twoCols right column) overflows with default padding.
-   .k-tight shrinks each card's box so the whole stack stays on-slide. */
-.k-tight .k-card {
-  padding: 0.85rem 1.1rem;
-  border-radius: 14px;
+/* Crowded stacks tighten geometry through the same density variables instead of
+   a second typography ladder. */
+.k-card-stack--crowded {
+  --card-padding-block: 0.68rem;
+  --card-padding-inline: 1rem;
+  --card-radius: 14px;
+  --card-gap: 0.5rem;
 }
-.k-tight .k-card h3 {
+.k-card-stack--crowded .k-card h3 {
   margin-bottom: 0.2rem;
 }
-.k-tight .k-card p {
-  font-size: var(--t-small);
-  line-height: 1.35;
+.k-card-stack--crowded .k-card p {
+  line-height: 1.32;
 }
 
 .k-stat-grid {
@@ -1283,17 +1292,17 @@
   color: var(--k-rose);
 }
 
-.k-tight .k-quote {
+.k-card-stack--crowded .k-quote {
   font-size: var(--t-body);
   line-height: 1.3;
 }
 
-.k-tight .k-quote-mark {
+.k-card-stack--crowded .k-quote-mark {
   width: 1.7rem;
   height: 1.7rem;
   margin-bottom: 0.7rem;
 }
-.k-tight .k-quote-mark svg {
+.k-card-stack--crowded .k-quote-mark svg {
   width: 0.85rem;
   height: 0.85rem;
 }
@@ -1650,19 +1659,7 @@
 .k-card-stack--column {
   display: flex;
   flex-direction: column;
-  gap: 0.95rem;
-}
-.k-card-stack--column.k-tight {
-  gap: 0.5rem;
-}
-/* Four-plus cards stacked in one column (twoCols right rail) run out of canvas
-   before the density score notices, and a wider body face (IBM Plex Sans vs
-   Roboto) costs another line per card. Trim the box, not the type. */
-.k-card-stack--column.k-tight .k-card {
-  padding: 0.68rem 1rem 0.7rem;
-}
-.k-card-stack--column.k-tight .k-card p {
-  line-height: 1.32;
+  gap: var(--card-gap);
 }
 .k-cardgrid-body {
   width: 100%;
@@ -1775,67 +1772,58 @@
   width: 1.9rem;
   height: 1.9rem;
 }
-.k-card-scale-md.k-grid-3.k-card-stack--grid .k-card h3 {
+/* Comfortable grid topology can use the available width without introducing a
+   second scale class. Compact and dense stacks inherit the density variables. */
+.k-card-stack--grid.k-grid-3:not(.k-density-compact, .k-density-dense) .k-card h3 {
   font-size: var(--t-lead);
   line-height: 1.15;
 }
-/* A comfortable two-column grid has wide cards: the body steps up between
-   body and lead size so the copy fills the card without overflowing a 2×2
-   grid whose rows share the fixed content height. */
-.k-card-scale-md.k-grid-2.k-card-stack--grid .k-card p {
+.k-card-stack--grid.k-grid-2:not(.k-density-compact, .k-density-dense) .k-card p {
   font-size: calc(var(--t-body) * 1.12);
-  line-height: 1.45;
 }
-/* Numbered descriptions: midpoint between the previous dense 0.78× body
-   and the comfortable 1.12× body introduced with the wider density limits.
-   Keep titles, unnumbered cards, and compact/dense fitting unchanged. */
-.k-card-scale-md.k-grid-2.k-card-stack--grid .k-card:has(> .k-num) p {
+.k-card-stack--grid.k-grid-2:not(.k-density-compact, .k-density-dense) .k-card--numbered p {
   font-size: calc(var(--t-body) * 0.95);
-  line-height: 1.45;
 }
-.k-card-scale-md.k-grid-2.k-card-stack--grid .k-card h3 {
+.k-card-stack--grid.k-grid-2:not(.k-density-compact, .k-density-dense) .k-card h3 {
   margin-bottom: 0.5rem;
 }
 /* Number + two-line title + three-line description must fit equal-height rows.
-   Numbered cards use a smaller title and equal padding on every edge so the
-   bottom clearance matches the sides. Single-row, unnumbered, compact and
-   dense cards retain their existing geometry. */
-.k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) {
-  padding: 0.9rem;
-  /* The fixed row is the query container, not the viewport. Preserve the normal
-     midpoint; tighter available rows can use the existing dense body floor.
-     This is bounded fitting, never a promise that arbitrary content will fit:
-     the native Range gate rejects text that still escapes the card. */
+   The explicit numbered role is emitted by card(), so CSS does not infer
+   renderer state from child markup. */
+.k-card-stack--grid.k-grid-2.k-card-stack--multirow:not(.k-density-compact, .k-density-dense)
+> .k-card--numbered {
+  --card-padding-block: 0.9rem;
+  --card-padding-inline: 0.9rem;
   container-type: size;
 }
-.k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) p {
+.k-card-stack--grid.k-grid-2.k-card-stack--multirow:not(.k-density-compact, .k-density-dense)
+  > .k-card--numbered
+  p {
   font-size: clamp(var(--k-card-body-min), 11cqh, calc(var(--t-body) * 0.95));
 }
-.k-card-scale-md.k-grid-2.k-card-stack--grid.k-card-stack--multirow > .k-card:has(> .k-num) h3 {
+.k-card-stack--grid.k-grid-2.k-card-stack--multirow:not(.k-density-compact, .k-density-dense)
+  > .k-card--numbered
+  h3 {
   font-size: var(--t-lead);
   line-height: 1.15;
 }
 
-/* A five-card, three-column grid uses a six-track sub-grid so its final pair is
-   centered instead of leaving an apparent missing card at bottom-right. */
-.k-grid-3.k-card-stack--grid:has(> .k-card:nth-child(5):last-child) {
+/* Explicit topology from cardStack: a five-card, three-column grid uses a
+   six-track sub-grid so the final pair is centered. */
+.k-card-stack--centered-last-row {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-auto-rows: minmax(0, 1fr);
 }
-.k-grid-3.k-card-stack--grid:has(> .k-card:nth-child(5):last-child) > .k-card {
+.k-card-stack--centered-last-row > .k-card {
   grid-column: span 2;
   height: 100%;
   box-sizing: border-box;
 }
-.k-grid-3.k-card-stack--grid:has(> .k-card:nth-child(5):last-child) > .k-card:nth-child(4) {
+.k-card-stack--centered-last-row > .k-card:nth-child(4) {
   grid-column: 2 / span 2;
 }
-/* Crowded grids (3+ rows) tighten their row gap so the last row stays on-canvas. */
-.k-grid-1.k-tight,
-.k-grid-2.k-tight,
-.k-grid-3.k-tight,
-.k-grid-4.k-tight {
-  gap: 0.7rem;
+.k-card-stack--grid.k-card-stack--crowded {
+  gap: var(--card-gap);
 }
 .k-h-lg {
   font-size: var(--t-title);
@@ -2678,9 +2666,10 @@
   text-wrap: pretty;
 }
 .k-two-cols-user .k-person-contact {
-  flex-direction: column;
-  align-items: stretch;
-  row-gap: 0.16rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.4rem;
   margin-top: 0.5rem;
   padding-top: 0.45rem;
   border-top: 1px solid var(--k-hairline);
