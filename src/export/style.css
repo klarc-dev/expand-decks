@@ -1633,7 +1633,7 @@
 }
 .k-cardgrid-people--grid .k-person-name {
   font-size: var(--t-lead);
-  line-height: 1.1;
+  line-height: 1.2;
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
@@ -1649,7 +1649,7 @@
 }
 .k-cardgrid-people--grid .k-person-contact {
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   row-gap: 0.22rem;
   margin-top: 0.8rem;
   padding-top: 0.7rem;
@@ -1659,9 +1659,8 @@
 }
 .k-cardgrid-people--grid .k-person-link {
   max-width: 100%;
-}
-.k-cardgrid-people--grid .k-person-link + .k-person-link::before {
-  content: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .k-card-scale-md.k-grid-3.k-card-stack--grid .k-card h3 {
   font-size: var(--t-lead);
@@ -2045,9 +2044,6 @@
   column-gap: 0.6rem;
   row-gap: 0.05rem;
 }
-.k-cover.k-density-dense .k-person-link + .k-person-link::before {
-  content: none;
-}
 /* Person card: the shared contact unit (cover band, cardGrid strip, contacts
    grid). Corporate decks render flat (the print override below strips every
    box-shadow), so elevation is declared ONCE as a hairline border; no shadow,
@@ -2083,8 +2079,8 @@
   background: var(--k-surface-soft);
 }
 .k-person-initials {
-  background: var(--k-rose-soft);
-  color: var(--k-teal-900);
+  background: transparent;
+  color: inherit;
   font-family: var(--k-font-heading);
   font-weight: 600;
   font-size: calc(var(--t-small) * 1.1);
@@ -2115,51 +2111,45 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Contact row: email, phone, LinkedIn as separate links so each carries its
-   own PDF annotation. One line, dot-separated, never wrapped: only the email
-   (first item) may ellipsise; a truncated phone number or label is useless. */
+/* Separate, wrapping contact links retain their PDF annotations. Spacing,
+   not punctuation attached to a link, separates each actionable detail. */
 .k-person-contact {
   margin-top: 0.42rem;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: baseline;
+  gap: 0.15rem 0.75rem;
   min-width: 0;
-  font-size: calc(var(--t-small) * 0.9);
+  font-size: var(--t-small);
   line-height: 1.3;
   letter-spacing: 0.005em;
   font-variant-numeric: tabular-nums;
   color: var(--fg-muted);
 }
 .k-person-link {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   color: var(--k-teal);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
   text-decoration-color: color-mix(in srgb, var(--k-teal) 32%, transparent);
 }
-.k-person-link:first-child {
-  flex: 0 1 auto;
+/* Outrank generic slide links: no rose underline or faded name on a card. */
+.slidev-layout .k-person-card a {
+  color: inherit;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
 }
-.k-person-link + .k-person-link::before {
-  content: "";
-  display: inline-block;
-  width: 3px;
-  height: 3px;
-  margin: 0 0.55rem;
-  border-radius: 999px;
-  vertical-align: 0.22em;
-  background: color-mix(in srgb, var(--fg-muted) 70%, transparent);
+.slidev-layout .k-person-card a:hover {
+  text-decoration-line: underline;
 }
-.k-dark .k-person-link {
-  color: #fff;
-  text-decoration-color: rgba(255, 255, 255, 0.36);
-}
-.k-dark .k-person-link + .k-person-link::before {
-  background: rgba(255, 255, 255, 0.45);
+.slidev-layout .k-person-card a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 .k-cover-footer {
   display: flex;
@@ -2168,9 +2158,7 @@
   gap: 1rem;
   min-width: 0;
 }
-/* Dark ground: the card lifts one step off the teal (the print override pins
-   the same raised/hairline pair), the disc keeps the rose accent, the keyline
-   turns white at low alpha so photos and discs share one ring. */
+/* Dark ground uses the same restrained surface and a visible portrait keyline. */
 .k-dark .k-person-card {
   color: #fff;
   background: var(--k-surface-raised);
@@ -2184,8 +2172,8 @@
   background: rgba(255, 255, 255, 0.1);
 }
 .k-dark .k-person-initials {
-  background: var(--k-rose);
-  color: var(--k-teal-900);
+  background: transparent;
+  color: inherit;
 }
 
 /* Slide chrome (compound base) — header (brand) + footer (page indicator)
