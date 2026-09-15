@@ -92,6 +92,26 @@ describe('md()', () => {
   it('escapes HTML while converting markdown', () => {
     expect(md('**<script>**')).toBe('<strong>&lt;script&gt;</strong>');
   });
+
+  it('marks a bracketed term as a heading highlight', () => {
+    expect(md('[Klarc] : Avocats')).toBe('<mark class="k-mark">Klarc</mark> : Avocats');
+  });
+
+  it('keeps links out of the mark syntax', () => {
+    expect(md('[Klarc](https://klarc.com) et [PI]')).toBe(
+      '<a href="https://klarc.com">Klarc</a> et <mark class="k-mark">PI</mark>',
+    );
+  });
+
+  it('keeps escaped brackets literal', () => {
+    expect(md('art. \\[L. 611-1\\]')).toBe('art. [L. 611-1]');
+  });
+
+  it('allows bold inside a mark and marks several terms', () => {
+    expect(md('[**Klarc**] à [Toulouse]')).toBe(
+      '<mark class="k-mark"><strong>Klarc</strong></mark> à <mark class="k-mark">Toulouse</mark>',
+    );
+  });
 });
 
 describe('renderCover()', () => {

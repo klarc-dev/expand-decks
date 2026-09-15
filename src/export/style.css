@@ -245,6 +245,32 @@
   font-weight: 600;
 }
 
+/* Heading mark — `[mot]` in any title (md() → <mark class="k-mark">). The
+   heading keeps its own ink so contrast never drops; the emphasis is a rose
+   highlighter band laid behind the lower half of the word. Drawn as a thick
+   underline with a negative offset rather than a background: the underline is
+   anchored to the baseline, so the band lands at the same height under Gilroy,
+   Newsreader or any org heading face (a background band moves with each font's
+   descender), it wraps line by line, and it survives the PDF print pass. */
+.slidev-layout .k-mark {
+  --mark-band: color-mix(in srgb, var(--k-rose) 52%, var(--k-paper));
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  text-decoration-line: underline;
+  text-decoration-color: var(--mark-band);
+  text-decoration-thickness: 0.4em;
+  text-underline-offset: -0.44em;
+  text-decoration-skip-ink: none;
+}
+
+.k-dark .k-mark {
+  /* Rose over teal greys out as a solid, so on the dark tone the word itself
+     takes the pale rose ink (≈6:1 on teal) over a translucent rose band. */
+  --mark-band: color-mix(in srgb, var(--k-rose) 30%, transparent);
+  color: var(--k-rose-soft);
+}
+
 .slidev-layout p,
 .slidev-layout li {
   color: var(--k-ink-soft);

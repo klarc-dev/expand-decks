@@ -59,7 +59,10 @@ export const titleField = (
   type: 'text',
   required: true,
   label: 'Titre',
-  admin: { description },
+  // `[mot]` renders as the rose heading mark (see md() / .k-mark).
+  admin: {
+    description: `${description} · Entourez un terme de crochets pour le mettre en valeur : [Klarc]`,
+  },
   maxLength,
 });
 

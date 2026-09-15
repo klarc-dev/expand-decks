@@ -13,6 +13,7 @@ import { resolveVars } from './vars';
 
 const HTML_ENTITY_RE = /[&<>"']/g;
 const DEF_RE = /\{\{def:(.+?)\}\}/g;
+const MARK_RE = /(?<!\\)\[([^[\]\n]+?)(?<!\\)\]/g;
 
 // Null-safe: freshly added admin blocks have empty required fields, and the
 // live preview renders them immediately — never crash on missing text.
@@ -162,14 +163,21 @@ export function md(text: string | null | undefined): string {
     _slideDefs.push(content);
     return `\x00DEF${_slideDefs.length}\x00`;
   });
-  return escaped
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label, url) => {
-      const href = safeHref(url);
-      return href ? `<a href="${href}">${label}</a>` : label;
-    })
-    .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`);
+  return (
+    escaped
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+      .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label, url) => {
+        const href = safeHref(url);
+        return href ? `<a href="${href}">${label}</a>` : label;
+      })
+      // `[mot]` marks a key term inside a heading (the rose highlighter band, see
+      // .k-mark). Runs after links so `[label](url)` is never re-read as a mark;
+      // `\[` / `\]` keep a literal bracket.
+      .replace(MARK_RE, (_m, content) => `<mark class="${K.mark}">${content}</mark>`)
+      .replace(/\\([[\]])/g, '$1')
+      .replace(/\x00DEF(\d+)\x00/g, (_m, n) => `<sup class="${K.defRef}">${n}</sup>`)
+  );
 }
 
 export type Surface = 'dark' | 'light' | 'gradient';
@@ -305,7 +313,7 @@ export function card(opts: {
   titleClass?: string;
 }): string {
   const num = opts.number ? `\n  <span class="${K.num}">${escape(opts.number)}</span>` : '';
-  const h3 = `<h3${opts.titleClass ? ` class="${opts.titleClass}"` : ''}>${escape(opts.title)}</h3>`;
+  const h3 = `<h3${opts.titleClass ? ` class="${opts.titleClass}"` : ''}>${md(opts.title)}</h3>`;
   const body = opts.body ? `\n  <div>${opts.body}</div>` : '';
   return `<div class="${K.card}">${num}\n  ${h3}${body}\n</div>`;
 }

@@ -109,4 +109,5 @@ export const K = {
   defText: 'k-def-text',
   defFooter: 'k-def-footer',
   defRef: 'k-def-ref',
+  mark: 'k-mark',
 } as const;
