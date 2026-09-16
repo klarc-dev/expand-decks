@@ -1,5 +1,5 @@
 import type { SlideChrome } from '@/components/SlideFrame';
-import { pickLogoUrl, resolveLogoUrls, resolveOrgUrl } from '@/export/chrome';
+import { pickLogoUrl, resolveLogoUrls, resolveOrgUrl, standardFooter } from '@/export/chrome';
 
 type FormFields = Record<string, { value?: unknown } | undefined>;
 
@@ -32,10 +32,6 @@ function orgFonts(value: unknown): { heading: string; body: string } | undefined
   return { heading: heading || 'Gilroy', body: body || 'Roboto' };
 }
 
-function resolveTemplate(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{([^}]+)\}/g, (_match, key) => vars[key] ?? '');
-}
-
 export function buildSlidePreviewChrome(
   fields: FormFields,
   previewFieldPath: string,
@@ -51,21 +47,15 @@ export function buildSlidePreviewChrome(
   const orgName = relationshipName(organisation);
   const vars = {
     date: new Date().toLocaleDateString(language),
-    'org.name': orgName,
-    'organisation.name': orgName,
+    org: { name: orgName },
+    organisation: { name: orgName },
     page: String(slideIndex + 1),
     title: fieldString(fields, 'title'),
     total: String(total),
   };
 
   const enabled = fields['footer.enabled']?.value !== false;
-  const footer = enabled
-    ? {
-        left: resolveTemplate(fieldString(fields, 'footer.left') || '{org.name}', vars),
-        center: resolveTemplate(fieldString(fields, 'footer.center'), vars),
-        right: resolveTemplate(fieldString(fields, 'footer.right') || '{page} / {total}', vars),
-      }
-    : undefined;
+  const footer = enabled ? standardFooter(true, vars) : undefined;
 
   return {
     footer,

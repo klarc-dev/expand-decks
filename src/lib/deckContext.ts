@@ -6,33 +6,28 @@ import type { Organisation, Presentation } from '@/payload-types';
  * output (e.g. honours the deck's language) — without baking domain vocabulary
  * into the shared system prompt.
  *
- * Only fields that exist on the collection are read: `title`, `language`,
- * `tags`, plus the linked organisation's public contact details when the
+ * Only fields that exist on the collection are read: `title`, `language`, plus
+ * the linked organisation's public links when the
  * relationship is populated — the only URLs the agent may turn into links
  * (CTA buttons, footer notes). There is no `client`/`audience` field. Empty
  * fields are omitted, and an entirely empty deck yields an empty string (the
  * brief is used as-is).
  */
 export function deckContext(
-  p: Pick<Presentation, 'title' | 'language' | 'tags'> & {
+  p: Pick<Presentation, 'title' | 'language'> & {
     organisation?: number | Partial<Organisation> | null;
   },
 ): string {
   const lines: string[] = [];
   if (p.title) lines.push(`Titre : ${p.title}`);
   if (p.language) lines.push(`Langue : ${p.language}`);
-  const tags = Array.isArray(p.tags) ? p.tags.filter(Boolean) : [];
-  if (tags.length) lines.push(`Mots-clés : ${tags.join(', ')}`);
   lines.push(...organisationContactLines(p.organisation));
   return lines.length ? `CONTEXTE DE LA PRÉSENTATION :\n${lines.join('\n')}\n\n---\n\n` : '';
 }
 
 const ORG_CONTACT_LABELS: [keyof Organisation, string][] = [
   ['website', 'Site web'],
-  ['contactEmail', 'Email de contact'],
-  ['phone', 'Téléphone'],
   ['bookingUrl', 'Prise de rendez-vous'],
-  ['linkedin', 'LinkedIn'],
 ];
 
 function organisationContactLines(

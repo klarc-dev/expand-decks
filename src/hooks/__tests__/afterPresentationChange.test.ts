@@ -8,7 +8,7 @@ import { afterPresentationChange, buildInputsChanged } from '../afterPresentatio
 const base = {
   slides: [{ blockType: 'cover', title: 'A' }],
   organisation: 1,
-  footer: { enabled: true, left: '{org.name}', center: '', right: '{page} / {total}' },
+  footer: { enabled: true },
   title: 'Deck',
   language: 'fr',
 };
@@ -39,9 +39,6 @@ describe('afterPresentationChange', () => {
       lastBuildRequestedAt: expect.any(String),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
-      spaUrl: null,
-      pdfFile: null,
-      coverImage: null,
       updatedAt: null,
     });
     expect(Date.parse(updateOne.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
@@ -126,8 +123,8 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
   it('ignores non-build fields (e.g. build artifacts / status)', () => {
     expect(
       buildInputsChanged(
-        { ...base, lastBuildStatus: 'success', spaUrl: '/x' },
-        { ...base, lastBuildStatus: 'idle', spaUrl: null },
+        { ...base, lastBuildStatus: 'success', artifacts: [{ key: 'pdf' }] },
+        { ...base, lastBuildStatus: 'idle', artifacts: [] },
       ),
     ).toBe(false);
   });
@@ -149,9 +146,7 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
   });
 
   it('detects footer, title and language changes', () => {
-    expect(buildInputsChanged({ ...base, footer: { ...base.footer, left: '{title}' } }, base)).toBe(
-      true,
-    );
+    expect(buildInputsChanged({ ...base, footer: { enabled: false } }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, title: 'New' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, language: 'en' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, documentTemplate: 'other' }, base)).toBe(true);

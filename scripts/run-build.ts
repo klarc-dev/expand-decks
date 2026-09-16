@@ -38,8 +38,6 @@ await runPayloadScript(async (payload) => {
         id: updated.id,
         title: updated.title,
         slug: updated.slug,
-        spaUrl: updated.spaUrl,
-        pdfFile: updated.pdfFile,
         lastBuildStatus: updated.lastBuildStatus,
         lastBuildError: updated.lastBuildError,
       },

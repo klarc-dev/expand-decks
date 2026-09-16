@@ -13,9 +13,6 @@ import { beforeKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
 import { COLLECTIONS } from '../lib/collections';
 import { trustedLifecycleWrite } from './KnowledgeDocuments';
 
-const stampCreator: FieldHook = ({ req, operation, value }) =>
-  operation === 'create' ? req.user?.id : value;
-
 /**
  * Server-side owner of the `organisation` value: fills in the author's sole
  * organisation on create and refuses a base handed to an organisation the
@@ -126,16 +123,6 @@ export const KnowledgeBases: CollectionConfig = {
         allowCreate: true,
         defaultColumns: ['filename', 'indexingStatus', 'updatedAt'],
       },
-    },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: COLLECTIONS.users,
-      index: true,
-      label: 'Créée par',
-      hidden: true,
-      hooks: { beforeChange: [stampCreator] },
-      access: { create: () => false, update: () => false },
     },
   ],
 };

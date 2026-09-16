@@ -372,7 +372,6 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       startedAt: ledger.startedAt ?? new Date().toISOString(),
       heartbeatAt: new Date().toISOString(),
       attempt: (ledger.attempt ?? 0) + 1,
-      errorCode: null,
       errorSummary: null,
     })) as AgentRun;
     const workflowResult = await withRunLiveness(payload, ledger, (registerCancel) =>
@@ -392,9 +391,7 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
       await patchRun(payload, ledger, {
         status: 'suspended',
         phase: 'approval',
-        suspendedStep: 'approval',
         suspendPayload: state.suspendPayload ?? state.suspended,
-        suspendedAt: new Date().toISOString(),
         heartbeatAt: new Date().toISOString(),
       });
       await mirrorPresentation(payload, ledger, { draftStatus: DRAFT_STATUS.validating });
@@ -406,9 +403,6 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
     await patchRun(payload, ledger, {
       status: 'succeeded',
       phase: 'complete',
-      evidence: deck.evidence ?? [],
-      sourceFailures: deck.sourceFailures ?? [],
-      completedAt: new Date().toISOString(),
       heartbeatAt: new Date().toISOString(),
       events: [...events, { ts: Date.now(), phase: 'done' }],
     });
@@ -423,10 +417,7 @@ export async function runAgentCommand(payload: Payload, agentRunId: number | str
     const detail = failureDetail(message, sourceFailures);
     await patchRun(payload, ledger, {
       status: 'failed',
-      errorCode: sourceFailures.length > 0 ? 'source-unavailable' : 'agent-run-failed',
       errorSummary: message,
-      sourceFailures,
-      completedAt: new Date().toISOString(),
       heartbeatAt: new Date().toISOString(),
       events: [...events, { ts: Date.now(), phase: 'failed', detail }].slice(-MAX_EVENTS),
     });

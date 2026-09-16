@@ -528,12 +528,8 @@ const data = {
   language: 'fr',
   status: 'published',
   organisation: org.id,
-  tags: ['R&D', 'gouvernance', 'CIR', 'propriété intellectuelle', 'décision'],
   footer: {
     enabled: true,
-    left: '{org.name}',
-    center: '',
-    right: '{page} / {total}',
   },
   slides: richSlides,
 } as unknown as Presentation;

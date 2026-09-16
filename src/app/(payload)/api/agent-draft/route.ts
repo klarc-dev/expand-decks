@@ -7,7 +7,6 @@ import config from '@payload-config';
 import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { resolveDocumentTemplate } from '@/documents/templates';
-import { agentRunFingerprint } from '@/jobs/agentRunLifecycle';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
 import { DEFAULT_AGENT_MODEL, verifyAgentModel } from '@/lib/agentModel';
 import { COLLECTIONS } from '@/lib/collections';
@@ -181,17 +180,6 @@ export async function POST(req: NextRequest) {
       ...(slideCountRange ? { slideCountRange } : {}),
       sourcePolicy,
       sourceIds,
-      inputFingerprint: agentRunFingerprint({
-        presentationId: String(presentationId),
-        brief,
-        mode,
-        model,
-        visual,
-        sourcePolicy,
-        sourceIds,
-        approvalRequired,
-        ...(slideCountRange ? { slideCountRange } : {}),
-      }),
       events: [event],
     },
     user,
@@ -201,7 +189,6 @@ export async function POST(req: NextRequest) {
       collection: COLLECTIONS.presentations,
       id: presentationId,
       data: {
-        latestAgentRun: run.id,
         agentBrief: brief,
         agentSlideCountMin: slideCountRange?.min ?? null,
         agentSlideCountMax: slideCountRange?.max ?? null,
@@ -214,7 +201,6 @@ export async function POST(req: NextRequest) {
         agentVisualCritique: visual,
         agentApprovalRequired: approvalRequired,
         draftRunId: runId,
-        draftRequestId: requestId,
         draftTraceId: traceId,
         draftStatus: DRAFT_STATUS.gathering,
       },
@@ -240,7 +226,6 @@ export async function POST(req: NextRequest) {
       id: run.id,
       data: {
         status: 'failed',
-        errorCode: 'start-failed',
         errorSummary: String(error).slice(0, 2_000),
       },
       overrideAccess: true,

@@ -9,10 +9,10 @@ function accessArgs(user: unknown) {
 }
 
 describe('Media access', () => {
-  it('allows media creation for admins and authors but not viewers or anonymous users', () => {
+  it('allows media creation for admins and authors but not unknown roles or anonymous users', () => {
     expect(canCreateMedia(accessArgs({ id: 'admin', role: 'admin' }))).toBe(true);
     expect(canCreateMedia(accessArgs({ id: 'author', role: 'author' }))).toBe(true);
-    expect(canCreateMedia(accessArgs({ id: 'viewer', role: 'viewer' }))).toBe(false);
+    expect(canCreateMedia(accessArgs({ id: 'legacy', role: 'legacy-viewer' }))).toBe(false);
     expect(canCreateMedia(accessArgs(null))).toBe(false);
   });
 

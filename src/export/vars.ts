@@ -84,8 +84,7 @@ export function resolvedVarsForValidation(value: unknown): unknown {
 // ---------------------------------------------------------------------------
 // flattenVars — derive the `@`-menu list from a populated document. Generic
 // walk: a primitive emits one entry; a nested object recurses; arrays and
-// unpopulated relation ids (numbers) are skipped so we never emit `{tags.0}`
-// or a meaningless `{organisation}`. SKIP prunes known build/internal noise at
+// unpopulated relation ids (numbers) are skipped. SKIP prunes known build/internal noise at
 // the top level only (nested org fields are all useful).
 // ---------------------------------------------------------------------------
 
@@ -97,15 +96,12 @@ const SKIP = new Set([
   'updatedAt',
   'createdAt',
   'status',
-  'tags',
   'lastBuildStatus',
   'lastBuildError',
   'lastBuildRequestedAt',
   'draftStatus',
   'draftRunId',
-  'draftRequestId',
   'draftTraceId',
-  'latestAgentRun',
   'agentBrief',
   'agentSlideCountMin',
   'agentSlideCountMax',
@@ -115,9 +111,6 @@ const SKIP = new Set([
   'agentModel',
   'agentVisualCritique',
   'agentApprovalRequired',
-  'spaUrl',
-  'pdfFile',
-  'coverImage',
   'buildStatusLive',
   'sizes', // media upload variants, if a relation is ever walked
 ]);

@@ -19,7 +19,6 @@ const original = {
   sourcePolicy: 'exclusive',
   sourceIds: ['docs'],
   revisionContext: 'original deck',
-  inputFingerprint: 'fingerprint-1',
   status: 'queued',
 };
 
@@ -119,7 +118,7 @@ describe('AgentRun collection mutation boundary', () => {
       command: 'restart',
       phase: 'structure',
       heartbeatAt: '2026-09-02T12:00:00.000Z',
-      sourceFailures: [{ sourceId: 'docs', stage: 'discover', code: 'unavailable' }],
+      errorSummary: 'Source unavailable',
     });
 
     expect(result).toMatchObject({
@@ -127,7 +126,7 @@ describe('AgentRun collection mutation boundary', () => {
       command: 'restart',
       phase: 'structure',
       heartbeatAt: '2026-09-02T12:00:00.000Z',
-      sourceFailures: [{ sourceId: 'docs', stage: 'discover', code: 'unavailable' }],
+      errorSummary: 'Source unavailable',
     });
   });
 });

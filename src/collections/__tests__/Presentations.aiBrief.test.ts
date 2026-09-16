@@ -71,13 +71,7 @@ describe('Presentations IA tab', () => {
   });
 
   it('locks the run pointers against admin and REST saves', () => {
-    for (const name of [
-      'draftStatus',
-      'latestAgentRun',
-      'draftRunId',
-      'draftRequestId',
-      'draftTraceId',
-    ]) {
+    for (const name of ['draftStatus', 'draftRunId', 'draftTraceId']) {
       const access = findField(name)?.access as { update: () => boolean } | undefined;
       expect(access?.update(), `${name} must be run-owned`).toBe(false);
     }
@@ -106,9 +100,8 @@ describe('Presentations IA tab', () => {
     expect(findField('draftStatus')).toMatchObject({
       admin: { readOnly: true, position: 'sidebar' },
     });
-    expect(findField('latestAgentRun')).toMatchObject({
-      admin: { readOnly: true, position: 'sidebar' },
-    });
+    expect(findField('latestAgentRun')).toBeUndefined();
+    expect(findField('draftRequestId')).toBeUndefined();
     for (const removed of ['draftEvents', 'draftSources', 'draftEvidence']) {
       expect(findField(removed)).toBeUndefined();
     }

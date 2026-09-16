@@ -868,6 +868,15 @@
   vertical-align: middle;
 }
 
+/* Matrix tables emphasize decision cells while reference tables retain the
+   neutral reading treatment above. */
+.k-table--matrix {
+  border-color: color-mix(in srgb, var(--k-rose) 38%, var(--k-teal));
+}
+.k-table--matrix .k-table-cell--status {
+  background: color-mix(in srgb, var(--k-rose-soft) 28%, transparent);
+}
+
 .k-table strong {
   color: var(--k-teal-700);
 }
@@ -926,6 +935,13 @@
 
 .k-dark .k-table td:first-child {
   color: var(--k-rose);
+}
+
+.k-dark .k-table--matrix {
+  border-color: color-mix(in srgb, var(--k-rose) 58%, transparent);
+}
+.k-dark .k-table--matrix .k-table-cell--status {
+  background: color-mix(in srgb, var(--k-rose) 14%, transparent);
 }
 
 .k-dark .k-table tbody tr:nth-child(even) {

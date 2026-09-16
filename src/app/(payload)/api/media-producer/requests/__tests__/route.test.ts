@@ -203,7 +203,6 @@ describe('POST /api/media-producer/requests', () => {
         collection: 'media-production-requests',
         id: 17,
         data: expect.objectContaining({
-          status: 'stale',
           result: expect.objectContaining({
             error: { code: 'request_replaced', message: expect.any(String) },
           }),
@@ -223,7 +222,9 @@ describe('POST /api/media-producer/requests', () => {
       expect.objectContaining({
         collection: 'media-production-requests',
         id: 91,
-        data: expect.objectContaining({ status: 'failed' }),
+        data: expect.objectContaining({
+          result: expect.objectContaining({ status: 'failed' }),
+        }),
       }),
     );
     expect(dbUpdateOne).toHaveBeenLastCalledWith(

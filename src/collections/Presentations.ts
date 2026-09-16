@@ -230,9 +230,6 @@ export const Presentations: CollectionConfig = {
               lastBuildToken: buildToken,
               lastBuildStatus: BUILD_STATUS.building,
               lastBuildError: '',
-              spaUrl: null,
-              pdfFile: null,
-              coverImage: null,
             },
             req,
           );
@@ -355,21 +352,6 @@ export const Presentations: CollectionConfig = {
         }
         return data;
       },
-      // Standardized footer: no free text. Whatever the client submits (admin
-      // is read-only, but the API is not), the stored footer is always the
-      // canonical {org.name} / empty / {page} / {total}. `enabled` stays
-      // user-controlled.
-      ({ data }) => {
-        if (data && typeof data === 'object') {
-          const footer = (data as Record<string, unknown>).footer;
-          if (footer && typeof footer === 'object') {
-            (footer as Record<string, unknown>).left = '{org.name}';
-            (footer as Record<string, unknown>).center = '';
-            (footer as Record<string, unknown>).right = '{page} / {total}';
-          }
-        }
-        return data;
-      },
     ],
     afterChange: [afterPresentationChange],
   },
@@ -435,14 +417,6 @@ export const Presentations: CollectionConfig = {
         { label: 'Terminé', value: DRAFT_STATUS.done },
         { label: 'Échoué', value: DRAFT_STATUS.failed },
       ],
-    },
-    {
-      name: 'latestAgentRun',
-      type: 'relationship',
-      relationTo: COLLECTIONS.agentRuns,
-      label: 'Dernier run IA',
-      access: runPointerAccess,
-      admin: { readOnly: true, position: 'sidebar' },
     },
     {
       type: 'tabs',
@@ -609,12 +583,6 @@ export const Presentations: CollectionConfig = {
               admin: { hidden: true, readOnly: true },
             },
             {
-              name: 'draftRequestId',
-              type: 'text',
-              access: runPointerAccess,
-              admin: { hidden: true, readOnly: true },
-            },
-            {
               name: 'draftTraceId',
               type: 'text',
               access: runPointerAccess,
@@ -638,26 +606,7 @@ export const Presentations: CollectionConfig = {
               options: [
                 { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
                 { label: 'Publiée', value: PRESENTATION_STATUS.published },
-                { label: 'Archivée', value: PRESENTATION_STATUS.archived },
               ],
-            },
-            {
-              name: 'createdBy',
-              type: 'relationship',
-              relationTo: COLLECTIONS.users,
-              label: 'Créé par',
-              admin: {
-                readOnly: true,
-                description: 'Auteur de la présentation',
-              },
-              hooks: {
-                beforeChange: [
-                  ({ req, operation }) => {
-                    if (operation === 'create') return req.user?.id;
-                    return undefined;
-                  },
-                ],
-              },
             },
             {
               name: 'slug',
@@ -692,15 +641,6 @@ export const Presentations: CollectionConfig = {
               },
             },
             {
-              name: 'tags',
-              type: 'text',
-              hasMany: true,
-              label: 'Tags',
-              admin: {
-                description: 'Mots-clés libres pour classer la présentation',
-              },
-            },
-            {
               name: 'language',
               type: 'select',
               required: true,
@@ -728,40 +668,6 @@ export const Presentations: CollectionConfig = {
                   type: 'checkbox',
                   defaultValue: true,
                   label: 'Afficher le pied de page',
-                },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'left',
-                      type: 'text',
-                      defaultValue: '{org.name}',
-                      label: 'Gauche',
-                      admin: {
-                        readOnly: true,
-                        description: 'Standardisé : {org.name}.',
-                      },
-                    },
-                    {
-                      name: 'center',
-                      type: 'text',
-                      label: 'Centre',
-                      admin: {
-                        readOnly: true,
-                        description: 'Standardisé : vide.',
-                      },
-                    },
-                    {
-                      name: 'right',
-                      type: 'text',
-                      defaultValue: '{page} / {total}',
-                      label: 'Droite',
-                      admin: {
-                        readOnly: true,
-                        description: 'Standardisé : {page} / {total}.',
-                      },
-                    },
-                  ],
                 },
               ],
             },
@@ -809,58 +715,12 @@ export const Presentations: CollectionConfig = {
               access: { create: () => false, update: () => false },
               fields: [
                 { name: 'key', type: 'text', required: true },
-                {
-                  name: 'kind',
-                  type: 'select',
-                  required: true,
-                  options: [
-                    { label: 'PDF', value: 'pdf' },
-                    { label: 'Web', value: 'web' },
-                    { label: 'Image', value: 'image' },
-                  ],
-                },
-                { name: 'label', type: 'text', required: true },
                 { name: 'actionLabel', type: 'text', required: true },
                 { name: 'buildId', type: 'text', required: true, index: true },
                 { name: 'file', type: 'upload', relationTo: COLLECTIONS.media },
                 { name: 'url', type: 'text' },
                 { name: 'pageIndex', type: 'number', min: 0 },
               ],
-            },
-            {
-              name: 'spaUrl',
-              type: 'text',
-              label: 'URL de la présentation web',
-              admin: {
-                description: 'Lien vers la version web interactive (généré automatiquement)',
-                readOnly: true,
-                hidden: true,
-              },
-              access: { create: () => false, update: () => false },
-            },
-            {
-              name: 'pdfFile',
-              type: 'upload',
-              relationTo: COLLECTIONS.media,
-              label: 'Fichier PDF',
-              admin: {
-                description: 'PDF généré automatiquement par le système de build',
-                readOnly: true,
-                hidden: true,
-              },
-              access: { create: () => false, update: () => false },
-            },
-            {
-              name: 'coverImage',
-              type: 'upload',
-              relationTo: COLLECTIONS.media,
-              label: 'Image de couverture',
-              admin: {
-                description: 'Miniature générée à partir de la première diapositive',
-                readOnly: true,
-                hidden: true,
-              },
-              access: { create: () => false, update: () => false },
             },
             {
               name: 'lastBuildError',

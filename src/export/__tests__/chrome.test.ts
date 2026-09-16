@@ -73,11 +73,8 @@ describe('isDarkSurfaceClass', () => {
 describe('applyPageNumberChrome', () => {
   it('keeps footer content but clears the numbering slot when disabled by the template', () => {
     expect(
-      applyPageNumberChrome(
-        { enabled: true, left: 'Klarc', center: 'Confidential', right: '{page} / {total}' },
-        false,
-      ),
-    ).toEqual({ enabled: true, left: 'Klarc', center: 'Confidential', right: '' });
+      applyPageNumberChrome({ enabled: true, left: 'Klarc', right: '{page} / {total}' }, false),
+    ).toEqual({ enabled: true, left: 'Klarc', right: '' });
   });
 
   it('preserves the configured numbering slot when enabled', () => {
@@ -91,7 +88,7 @@ describe('buildFooterHeadmatter', () => {
     // Static tokens are resolved by the caller; this helper just embeds the
     // strings and leaves {page}/{total} for the Vue layer.
     const out = buildFooterHeadmatter(
-      { enabled: true, left: 'Klarc', center: '', right: '{page} / {total}' },
+      { enabled: true, left: 'Klarc', right: '{page} / {total}' },
       null,
     );
     expect(out).toContain('klarcFooter:');
@@ -113,7 +110,7 @@ describe('buildFooterHeadmatter', () => {
 
   it('emits both the footer and the logo line when both apply', () => {
     const out = buildFooterHeadmatter(
-      { enabled: true, left: 'Klarc', center: '', right: '' },
+      { enabled: true, left: 'Klarc', right: '' },
       { light: '/media/logo.png', dark: null },
     );
     expect(out).toContain('klarcFooter:');
@@ -130,7 +127,7 @@ describe('buildFooterHeadmatter', () => {
       'klarcOrgUrl: "https://klarc.com"\n',
     );
     const out = buildFooterHeadmatter(
-      { enabled: true, left: 'Klarc', center: '', right: '' },
+      { enabled: true, left: 'Klarc', right: '' },
       { light: '/media/logo.png', dark: null },
       'https://klarc.com',
     );
@@ -163,6 +160,7 @@ describe('buildFooterLayer / buildLogoLayer', () => {
     const footer = buildFooterLayer(true);
     expect(footer).toContain('klarcOrgUrl');
     expect(footer).toContain('<a v-if="orgUrl && left" :href="orgUrl">{{ left }}</a>');
+    expect(footer).not.toContain('{{ center }}');
     const logo = buildLogoLayer(true);
     expect(logo).toContain('klarcOrgUrl');
     expect(logo).toContain('<a v-if="url && orgUrl" :href="orgUrl" class="k-slide-logo-link"');

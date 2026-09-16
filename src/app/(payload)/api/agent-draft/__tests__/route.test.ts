@@ -81,7 +81,7 @@ describe('agent draft source policy API', () => {
     expect(mocks.queue).not.toHaveBeenCalled();
   });
 
-  it('persists the range separately from the brief and fingerprints it', async () => {
+  it('persists the range separately from the brief', async () => {
     await POST(request(base));
     const legacy = mocks.create.mock.calls[0]![0].data;
     expect(legacy).not.toHaveProperty('slideCountRange');
@@ -89,7 +89,7 @@ describe('agent draft source policy API', () => {
     expect((await POST(request({ ...base, slideCountRange }))).status).toBe(202);
     const saved = mocks.create.mock.calls[1]![0].data;
     expect(saved).toMatchObject({ brief: base.brief, slideCountRange });
-    expect(saved.inputFingerprint).not.toBe(legacy.inputFingerprint);
+    expect(saved).not.toHaveProperty('inputFingerprint');
     expect(mocks.queue).toHaveBeenLastCalledWith({
       task: 'agentDraft',
       input: { agentRunId: '7', presentationId: '1' },
@@ -120,7 +120,9 @@ describe('agent draft source policy API', () => {
   });
 
   it('preserves access denial before reporting an unknown template', async () => {
-    mocks.auth.mockResolvedValueOnce({ user: { id: 2, role: 'viewer', organisations: [] } });
+    mocks.auth.mockResolvedValueOnce({
+      user: { id: 2, role: 'legacy-viewer', organisations: [] },
+    });
     mocks.findByID.mockResolvedValueOnce({
       id: 1,
       createdBy: 3,
@@ -206,7 +208,7 @@ describe('agent draft source policy API', () => {
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'agent-runs',
-        data: expect.objectContaining({ status: 'failed', errorCode: 'start-failed' }),
+        data: expect.objectContaining({ status: 'failed', errorSummary: 'Error: ValidationError' }),
       }),
     );
   });

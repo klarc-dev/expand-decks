@@ -19,7 +19,6 @@ const fields: FormFields = {
   'slides.1.blockType': { value: 'statement' },
   'slides.1.title': { value: 'Msg' },
   'footer.enabled': { value: true },
-  'footer.left': { value: '{org.name}' },
   organisation: { value: 'org-1' },
   title: { value: 'Deck' },
   language: { value: 'fr' },
@@ -48,6 +47,7 @@ describe('slidePreviewState selectors', () => {
     const chrome = selectChromeFields(fields);
     expect(chrome).toMatchObject({ organisation: 'org-1', title: 'Deck', language: 'fr' });
     expect(chrome['footer.enabled']).toBe(true);
+    expect(chrome).not.toHaveProperty('footer.left');
   });
 
   it('produces a stable request key for identical state', () => {

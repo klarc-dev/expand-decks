@@ -7,15 +7,16 @@ import {
   VISUAL_PUBLICATION_DOCUMENT_TEMPLATE,
 } from '../templates';
 import {
+  artifactFileIds,
   artifactLinkKey,
   artifactsForBuild,
   availableArtifactLinks,
   MissingPrimaryArtifactError,
   MissingExpectedArtifactError,
-  projectLegacyPresentationArtifacts,
   presentationArtifactPatch,
   resolvePrimaryArtifact,
   resolvePrimaryArtifactHref,
+  staleArtifactFileIds,
 } from '../artifacts';
 
 describe('document artifacts', () => {
@@ -29,24 +30,18 @@ describe('document artifacts', () => {
     expect(artifactsForBuild(PRESENTATION_DOCUMENT_TEMPLATE, 'build-2', outputs)).toEqual([
       {
         key: 'pdf',
-        kind: 'pdf',
-        label: 'PDF',
         actionLabel: 'Télécharger le PDF',
         buildId: 'build-2',
         file: 11,
       },
       {
         key: 'web-presentation',
-        kind: 'web',
-        label: 'Présentation web',
         actionLabel: 'Ouvrir la présentation web',
         buildId: 'build-2',
         url: '/spa/deck/index.html',
       },
       {
         key: 'cover-image',
-        kind: 'image',
-        label: 'Image de couverture',
         actionLabel: 'Ouvrir l’image de couverture',
         buildId: 'build-2',
         file: 12,
@@ -130,26 +125,7 @@ describe('document artifacts', () => {
     ).toBe('/spa/deck/index.html');
   });
 
-  it('derives compatibility fields from generic artifacts and clears missing projections', () => {
-    expect(
-      projectLegacyPresentationArtifacts(
-        artifactsForBuild(PRESENTATION_DOCUMENT_TEMPLATE, 'build-2', outputs),
-        'build-2',
-      ),
-    ).toEqual({
-      pdfFile: 11,
-      spaUrl: '/spa/deck/index.html',
-      coverImage: 12,
-    });
-
-    expect(projectLegacyPresentationArtifacts([], 'build-2')).toEqual({
-      pdfFile: null,
-      spaUrl: null,
-      coverImage: null,
-    });
-  });
-
-  it('builds the persistence patch and compatibility projections from one artifact source', () => {
+  it('builds the persistence patch from the canonical artifact source only', () => {
     const patch = presentationArtifactPatch(PRESENTATION_DOCUMENT_TEMPLATE, 'build-2', outputs, 8);
 
     expect(patch.artifacts.map((artifact) => artifact.key)).toEqual([
@@ -157,11 +133,20 @@ describe('document artifacts', () => {
       'web-presentation',
       'cover-image',
     ]);
-    expect(patch).toMatchObject({
-      pdfFile: 11,
-      spaUrl: '/spa/deck/index.html',
-      coverImage: 12,
-    });
+    expect(Object.keys(patch)).toEqual(['artifacts']);
+  });
+
+  it('selects media from stale build rows for garbage collection', () => {
+    const artifacts = [
+      ...artifactsForBuild(PRESENTATION_DOCUMENT_TEMPLATE, 'old-build', outputs),
+      ...artifactsForBuild(PRESENTATION_DOCUMENT_TEMPLATE, 'current-build', {
+        ...outputs,
+        pdf: { file: 21 },
+        'cover-image': { file: 22 },
+      }),
+    ];
+    expect(staleArtifactFileIds(artifacts, 'current-build')).toEqual([11, 12]);
+    expect(artifactFileIds(artifacts)).toEqual([11, 12, 21, 22]);
   });
 
   it('persists one ordered carousel image artifact per page', () => {
@@ -215,14 +200,13 @@ describe('document artifacts', () => {
     ).toEqual([
       expect.objectContaining({
         key: 'page-image',
-        kind: 'image',
         file: 21,
         pageIndex: 0,
       }),
     ]);
     expect(
       artifactsForBuild(SALES_SHEET_DOCUMENT_TEMPLATE, 'sheet-build', { pdf: { file: 22 } }),
-    ).toEqual([expect.objectContaining({ key: 'pdf', kind: 'pdf', file: 22 })]);
+    ).toEqual([expect.objectContaining({ key: 'pdf', file: 22 })]);
     expect(() =>
       artifactsForBuild(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE, 'visual-build', {}),
     ).toThrow('page-image');

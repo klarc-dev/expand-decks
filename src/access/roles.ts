@@ -1,6 +1,6 @@
 import type { Access, FieldAccess, PayloadRequest, Where } from 'payload';
 
-export const ROLES = { admin: 'admin', author: 'author', viewer: 'viewer' } as const;
+export const ROLES = { admin: 'admin', author: 'author' } as const;
 
 type RoleUser = Partial<NonNullable<PayloadRequest['user']>> | null | undefined;
 
@@ -97,18 +97,6 @@ export const isOwnOrganisationAuthor: Access = ({ req: { user } }) => {
   const ids = userOrganisationIds(user);
   if (ids.length === 0) return false;
   return { id: { in: ids } } satisfies Where;
-};
-
-/**
- * Creator-scoped read/write for documents carrying a `createdBy` relationship
- * but no `organisation` of their own. Admins are unrestricted; everyone else is
- * narrowed by a query constraint, so list views, REST, GraphQL and the admin
- * panel are filtered from one place — same shape as `isOrganisationMember`.
- */
-export const isAdminOrCreator: Access = ({ req: { user } }) => {
-  if (!user) return false;
-  if (userIsAdmin(user)) return true;
-  return { createdBy: { equals: user.id } } satisfies Where;
 };
 
 // Users have no `organisation`; self-scoping matches on `id`.

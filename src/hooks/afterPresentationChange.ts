@@ -59,7 +59,7 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
       await req.payload.update({
         collection: COLLECTIONS.mediaProductionRequests,
         id: currentRequestId as string | number,
-        data: { status: MEDIA_PRODUCER_STATUS.stale, result },
+        data: { result },
         overrideAccess: true,
         depth: 0,
       });
@@ -75,9 +75,6 @@ export const afterPresentationChange: CollectionAfterChangeHook = async ({
       lastBuildRequestedAt: new Date().toISOString(),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
-      spaUrl: null,
-      pdfFile: null,
-      coverImage: null,
       ...(currentRequestId ? { currentMediaProductionRequest: null } : {}),
     },
     req,

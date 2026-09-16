@@ -35,7 +35,6 @@ describe('media producer terminal lifecycle', () => {
             { requestId: { equals: identity.request_id } },
             { publicationId: { equals: identity.publication_id } },
             { revisionSha256: { equals: identity.revision_sha256 } },
-            { status: { equals: 'building' } },
           ],
         },
       }),

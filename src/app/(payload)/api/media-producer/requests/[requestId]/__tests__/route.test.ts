@@ -180,7 +180,9 @@ describe('GET /api/media-producer/requests/:requestId', () => {
       error: { code: 'artifact_mismatch' },
     });
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: 'stale' }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({ result: expect.objectContaining({ status: 'stale' }) }),
+      }),
     );
   });
 

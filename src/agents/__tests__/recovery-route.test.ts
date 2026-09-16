@@ -45,7 +45,6 @@ const ledger = {
   mode: 'replace',
   brief: 'A sufficiently long test brief',
   language: 'fr',
-  inputFingerprint: 'fingerprint',
   events: [],
   updatedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),

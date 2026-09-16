@@ -41,6 +41,7 @@ import * as migration_20260915_125015_quote_author_company from './20260915_1250
 import * as migration_20260915_143541_two_cols_left_user_description from './20260915_143541_two_cols_left_user_description';
 import * as migration_20260915_152850_add_two_cols_left_user_heading from './20260915_152850_add_two_cols_left_user_heading';
 import * as migration_20260915_154407_drop_two_cols_left_user from './20260915_154407_drop_two_cols_left_user';
+import * as migration_20260916_084523_issues_51_55_data_model_debloat from './20260916_084523_issues_51_55_data_model_debloat';
 import * as migration_20260916_085921_single_cta from './20260916_085921_single_cta';
 
 export const migrations = [
@@ -258,6 +259,11 @@ export const migrations = [
     up: migration_20260915_154407_drop_two_cols_left_user.up,
     down: migration_20260915_154407_drop_two_cols_left_user.down,
     name: '20260915_154407_drop_two_cols_left_user',
+  },
+  {
+    up: migration_20260916_084523_issues_51_55_data_model_debloat.up,
+    down: migration_20260916_084523_issues_51_55_data_model_debloat.down,
+    name: '20260916_084523_issues_51_55_data_model_debloat',
   },
   {
     up: migration_20260916_085921_single_cta.up,

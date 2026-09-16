@@ -109,7 +109,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
       id: auth.ledger.id,
       data: {
         status: 'canceled',
-        completedAt: new Date().toISOString(),
         events: [
           ...(Array.isArray(auth.ledger.events) ? auth.ledger.events : []),
           { ts: Date.now(), phase: 'cancelled' },

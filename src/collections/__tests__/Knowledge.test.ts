@@ -32,15 +32,6 @@ describe('KnowledgeBases', () => {
     });
   });
 
-  it('stamps the creator on create only', () => {
-    const createdBy = findNamedField(KnowledgeBases.fields, 'createdBy');
-    const hook = (createdBy.hooks as { beforeChange: ((args: unknown) => unknown)[] })
-      .beforeChange[0];
-
-    expect(hook({ req: { user: { id: 42 } }, operation: 'create' })).toBe(42);
-    expect(hook({ req: { user: { id: 42 } }, operation: 'update', value: 17 })).toBe(17);
-  });
-
   it('keeps the author surface to a name, organisation and its documents', () => {
     expect(KnowledgeBases.admin?.defaultColumns).toEqual(['name', 'organisation', 'updatedAt']);
     expect(() => findNamedField(KnowledgeBases.fields, 'description')).toThrow();
@@ -54,13 +45,8 @@ describe('KnowledgeBases', () => {
     });
   });
 
-  it('keeps ownership server-managed', () => {
-    const ownerAccess = findNamedField(KnowledgeBases.fields, 'createdBy').access as {
-      create: (args: unknown) => boolean;
-      update: (args: unknown) => boolean;
-    };
-    expect(ownerAccess.create({})).toBe(false);
-    expect(ownerAccess.update({})).toBe(false);
+  it('does not persist an unused creator pointer', () => {
+    expect(() => findNamedField(KnowledgeBases.fields, 'createdBy')).toThrow();
   });
 
   it('scopes non-admin reads to their organisations', () => {

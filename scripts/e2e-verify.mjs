@@ -115,10 +115,5 @@ const final = await payload.findByID({
 console.log('\n=== RESULT ===');
 console.log('lastBuildStatus:', final.lastBuildStatus);
 console.log('lastBuildError :', final.lastBuildError || '(none)');
-console.log('spaUrl         :', final.spaUrl);
-console.log(
-  'pdfFile        :',
-  final.pdfFile && typeof final.pdfFile === 'object' ? final.pdfFile.filename : final.pdfFile,
-);
 
 process.exit(final.lastBuildStatus === 'success' ? 0 : 1);

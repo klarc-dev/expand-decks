@@ -328,7 +328,6 @@ describe('exclusive source admin-to-worker acceptance', () => {
       createdBy: 2,
       organisation: null,
       slides: [],
-      tags: [],
     };
     process.env[SOURCE_REGISTRY_ENV] = JSON.stringify([
       {
@@ -368,10 +367,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
     expect(state.openedSourceIds).toEqual(['docs']);
     expect(state.openedSourceIds).not.toContain('other');
     expect(state.modelCalls).toContain('gather:research');
-    expect(state.ledger).toMatchObject({
-      status: 'succeeded',
-      sourceFailures: [],
-    });
+    expect(state.ledger).toMatchObject({ status: 'succeeded' });
     expect(state.presentation.draftStatus).toBe('done');
     expect(state.ledger).toMatchObject({ sourceIds: ['docs'] });
   });
@@ -410,10 +406,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
     });
 
     expect(state.modelCalls).toContain('structure:research');
-    expect(state.ledger).toMatchObject({
-      status: 'succeeded',
-      evidence: [evidence, structureEvidence],
-    });
+    expect(state.ledger).toMatchObject({ status: 'succeeded' });
     expect(state.presentation.draftStatus).toBe('done');
   });
 
@@ -442,18 +435,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
       }),
     );
     expect(state.presentation.draftStatus).toBe('done');
-    expect(state.ledger).toMatchObject({
-      sourceIds: ['knowledge_42'],
-      evidence: [
-        expect.objectContaining({
-          sourceId: 'knowledge_42',
-          excerpt: 'Clause résolutoire verbatim.',
-          documentId: '9',
-          documentTitle: 'Contrat cadre',
-          chunkIndex: 3,
-        }),
-      ],
-    });
+    expect(state.ledger).toMatchObject({ sourceIds: ['knowledge_42'], status: 'succeeded' });
   });
 
   it('fails exclusive knowledge mode when vector search returns zero excerpts', async () => {
@@ -461,9 +443,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
     await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
 
     expect(state.knowledgeQuery).toHaveBeenCalled();
-    expect(state.ledger).toMatchObject({
-      status: 'failed',
-      errorCode: 'source-unavailable',
+    expect(state.ledger).toMatchObject({ status: 'failed' });
+    expect(state.ledger?.events.at(-1)?.detail).toMatchObject({
       sourceFailures: [
         expect.objectContaining({
           sourceId: 'knowledge_42',
@@ -486,7 +467,6 @@ describe('exclusive source admin-to-worker acceptance', () => {
     expect(state.ledger).toMatchObject({
       status: 'succeeded',
       sourceIds: ['docs', 'knowledge_42'],
-      evidence: [evidence, knowledgeEvidence],
     });
     expect(state.presentation.draftStatus).toBe('done');
   });
@@ -500,15 +480,10 @@ describe('exclusive source admin-to-worker acceptance', () => {
       req: { payload } as never,
     });
 
-    expect(state.ledger).toMatchObject({
-      status: 'failed',
-      errorCode: 'source-unavailable',
+    expect(state.ledger).toMatchObject({ status: 'failed' });
+    expect(state.ledger?.events.at(-1)?.detail).toMatchObject({
       sourceFailures: [
-        expect.objectContaining({
-          sourceId: 'docs',
-          stage: 'tool',
-          code: 'invalid-result',
-        }),
+        expect.objectContaining({ sourceId: 'docs', stage: 'tool', code: 'invalid-result' }),
       ],
     });
     expect(state.presentation.draftStatus).toBe('failed');
@@ -531,11 +506,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
 
     await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
 
-    expect(state.ledger).toMatchObject({
-      status: 'failed',
-      errorCode: 'source-unavailable',
-      sourceFailures: [failure],
-    });
+    expect(state.ledger).toMatchObject({ status: 'failed' });
+    expect(state.ledger?.events.at(-1)?.detail).toMatchObject({ sourceFailures: [failure] });
   });
 
   it('fails before model invocation and journals structured exclusive discovery failure', async () => {
@@ -556,10 +528,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
     expect(state.modelCalls).toEqual([]);
     expect(state.ledger).toMatchObject({
       status: 'failed',
-      errorCode: 'source-unavailable',
       sourcePolicy: 'exclusive',
       sourceIds: ['docs'],
-      sourceFailures: [failure],
     });
     expect(state.ledger?.events.at(-1)?.detail).toMatchObject({
       sourceFailures: [failure],
@@ -590,11 +560,8 @@ describe('exclusive source admin-to-worker acceptance', () => {
     await runAgentDraftTask({ input: state.queuedInput, req: { payload } as never });
 
     expect(state.modelCalls).toEqual([]);
-    expect(state.ledger).toMatchObject({
-      status: 'failed',
-      errorCode: 'source-unavailable',
-      sourceFailures: [failure],
-    });
+    expect(state.ledger).toMatchObject({ status: 'failed' });
+    expect(state.ledger?.events.at(-1)?.detail).toMatchObject({ sourceFailures: [failure] });
     expect(state.ledger?.events.at(-1)?.detail).toMatchObject({
       sourceFailures: [failure],
     });

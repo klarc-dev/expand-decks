@@ -1,11 +1,9 @@
-import type { DocumentArtifactDefinition, DocumentTemplateDefinition } from './templates';
+import type { DocumentTemplateDefinition } from './templates';
 
 export type ArtifactFile = number | string | { id?: number | string; url?: string | null };
 
 export type DocumentArtifact = {
   key: string;
-  kind: DocumentArtifactDefinition['kind'];
-  label: string;
   actionLabel: string;
   buildId: string;
   file?: ArtifactFile | null;
@@ -55,8 +53,6 @@ export function artifactsForBuild(
       }
       return pageOutputs.map((pageOutput, pageIndex) => ({
         key: definition.key,
-        kind: definition.kind,
-        label: `${definition.label} ${pageIndex + 1}`,
         actionLabel: `${definition.actionLabel} ${pageIndex + 1}`,
         buildId,
         ...pageOutput,
@@ -72,8 +68,6 @@ export function artifactsForBuild(
     return [
       {
         key: definition.key,
-        kind: definition.kind,
-        label: definition.label,
         actionLabel: definition.actionLabel,
         buildId,
         ...(output as ArtifactOutput),
@@ -166,29 +160,13 @@ export function resolvePrimaryArtifactHref(
   return href;
 }
 
-export function projectLegacyPresentationArtifacts(
-  artifacts: unknown,
-  buildId: unknown,
-): { pdfFile: number | string | null; spaUrl: string | null; coverImage: number | string | null } {
-  const current = currentBuildArtifacts(artifacts, buildId);
-  return {
-    pdfFile: fileId(current.find((artifact) => artifact.key === 'pdf')?.file),
-    spaUrl: current.find((artifact) => artifact.key === 'web-presentation')?.url ?? null,
-    coverImage: fileId(current.find((artifact) => artifact.key === 'cover-image')?.file),
-  };
-}
-
 export function presentationArtifactPatch(
   template: DocumentTemplateDefinition,
   buildId: string,
   outputs: ArtifactOutputs,
   pageCount: number,
 ) {
-  const artifacts = artifactsForBuild(template, buildId, outputs, { pageCount });
-  return {
-    artifacts,
-    ...projectLegacyPresentationArtifacts(artifacts, buildId),
-  };
+  return { artifacts: artifactsForBuild(template, buildId, outputs, { pageCount }) };
 }
 
 export function artifactFileIds(artifacts: unknown): Array<number | string> {
@@ -198,4 +176,20 @@ export function artifactFileIds(artifacts: unknown): Array<number | string> {
     const id = fileId((artifact as DocumentArtifact).file);
     return id === null ? [] : [id];
   });
+}
+
+/** Media files left by artifact rows from builds other than the build being committed. */
+export function staleArtifactFileIds(
+  artifacts: unknown,
+  currentBuildId: string,
+): Array<number | string> {
+  if (!Array.isArray(artifacts)) return [];
+  return artifactFileIds(
+    artifacts.filter(
+      (artifact) =>
+        artifact &&
+        typeof artifact === 'object' &&
+        (artifact as { buildId?: unknown }).buildId !== currentBuildId,
+    ),
+  );
 }

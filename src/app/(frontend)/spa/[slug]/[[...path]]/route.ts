@@ -9,9 +9,8 @@ import { SLUG_RE } from '@/lib/slug';
 import { COLLECTIONS } from '@/lib/collections';
 
 /**
- * Auth-gated viewer for built presentation SPAs (the `spaUrl` shown in the
- * admin Sortie tab). Mirrors the presentations collection's read access
- * (any logged-in user).
+ * Auth-gated viewer for built presentation SPAs. Mirrors the presentations
+ * collection's read access (any logged-in user).
  */
 export async function GET(
   _request: Request,

@@ -40,7 +40,6 @@ async function markPriorRequestStale(
     collection: COLLECTIONS.mediaProductionRequests,
     id: prior.id,
     data: {
-      status: MEDIA_PRODUCER_STATUS.stale,
       result: terminalMediaProducerResult(
         {
           request_id: priorResult.data.request_id,
@@ -106,11 +105,9 @@ export async function POST(req: NextRequest) {
       requestId,
       publicationId: command.publication_id,
       revisionSha256: command.revision_sha256,
-      format: command.intended_format,
       organisation: command.organisation_id,
       presentation: existingPresentation?.id,
       request: command,
-      status: MEDIA_PRODUCER_STATUS.queued,
     },
     overrideAccess: true,
     depth: 0,
@@ -159,7 +156,7 @@ export async function POST(req: NextRequest) {
     await payload.update({
       collection: COLLECTIONS.mediaProductionRequests,
       id: requestRecord.id,
-      data: { presentation: presentation.id, buildToken, result },
+      data: { presentation: presentation.id, result },
       overrideAccess: true,
       depth: 0,
     });
@@ -197,7 +194,7 @@ export async function POST(req: NextRequest) {
       await payload.update({
         collection: COLLECTIONS.mediaProductionRequests,
         id: requestRecord.id,
-        data: { status: MEDIA_PRODUCER_STATUS.failed, result },
+        data: { result },
         overrideAccess: true,
       });
       await patchPresentationBuildMetadata(payload, boundPresentationId, {

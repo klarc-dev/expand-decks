@@ -257,9 +257,6 @@ describe('POST /api/slide-preview hydration + access', () => {
         block: { blockType: 'statement', title: 'Commercial offer' },
         fields: {
           'footer.enabled': true,
-          'footer.left': 'Klarc',
-          'footer.center': 'Confidential',
-          'footer.right': '{page} / {total}',
           'slides.0.blockType': 'statement',
         },
         previewFieldPath: 'slides.0.preview',
@@ -268,8 +265,8 @@ describe('POST /api/slide-preview hydration + access', () => {
 
     expect(res.status).toBe(200);
     expect((await res.json()).chrome.footer).toEqual({
-      left: 'Klarc',
-      center: 'Confidential',
+      enabled: true,
+      left: '',
       right: '',
     });
   });

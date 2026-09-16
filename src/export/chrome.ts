@@ -6,28 +6,45 @@
  * layers carry the correct `$frontmatter` + `$nav` state into the PDF export
  * without needing `--per-slide` (Slidev's "wrong global layer state" caveat).
  *
- * Footer content is normalized: the Presentation stores TEMPLATES with
- * placeholders. Static tokens (`{org.name}`, `{title}`, `{date}`…) are
- * pre-resolved at build time via resolveVars (the SSOT in vars.ts) before the
- * config is embedded; only `{page}`/`{total}` stay LIVE and are resolved by the
- * Vue layer at render time. Slides flagged `hideChrome: true` (cover/section)
+ * Footer content is standardized here rather than stored on each presentation.
+ * Static tokens (`{org.name}`) are pre-resolved at build time via resolveVars
+ * (the SSOT in vars.ts) before the config is embedded; only `{page}`/`{total}`
+ * stay LIVE and are resolved by the Vue layer at render time. Slides flagged
+ * `hideChrome: true` (cover/section)
  * get no footer; the logo is the deck's header and stays on every slide, in
  * the variant matching the slide's surface.
  *
  * Pure module: builds strings only, no fs/Payload imports.
  */
 
+import { resolveVarsWith } from './vars';
+
+export const FOOTER_LEFT_TEMPLATE = '{org.name}';
+export const FOOTER_RIGHT_TEMPLATE = '{page} / {total}';
+
 export interface FooterConfig {
   enabled: boolean;
   left: string;
-  center: string;
   right: string;
+}
+
+/** Build the one canonical footer used by exports and the admin preview. */
+export function standardFooter(
+  enabled: boolean,
+  vars: Record<string, unknown>,
+  pageNumbers = true,
+): FooterConfig {
+  return {
+    enabled,
+    left: resolveVarsWith(FOOTER_LEFT_TEMPLATE, vars),
+    right: pageNumbers ? resolveVarsWith(FOOTER_RIGHT_TEMPLATE, vars) : '',
+  };
 }
 
 /**
  * Apply the document template's page-number policy to an enabled footer.
  * Page numbering is standardized in the footer's right slot; templates such
- * as the one-page sales sheet retain their left/center footer content without
+ * as the one-page sales sheet retain their left footer content without
  * rendering a redundant “1 / 1”.
  */
 export function applyPageNumberChrome<T extends { right?: string }>(
@@ -118,7 +135,6 @@ export function buildFooterHeadmatter(
   if (!footer?.enabled) return `${logoLine}${urlLine}`;
   const block = {
     left: footer.left ?? '',
-    center: footer.center ?? '',
     right: footer.right ?? '',
   };
   return `klarcFooter: ${jsonInline(block)}\n${logoLine}${urlLine}`;
@@ -159,14 +175,12 @@ function resolve(t: string): string {
   })
 }
 const left = computed(() => resolve(cfg.value?.left ?? ''))
-const center = computed(() => resolve(cfg.value?.center ?? ''))
 const right = computed(() => resolve(cfg.value?.right ?? ''))
 </script>
 
 <template>
   <footer v-if="cfg && !hidden" class="k-slide-footer" :class="{ 'k-slide-footer--dark': dark }">
     <span><a v-if="orgUrl && left" :href="orgUrl">{{ left }}</a><template v-else>{{ left }}</template></span>
-    <span>{{ center }}</span>
     <span class="page">{{ right }}</span>
   </footer>
 </template>

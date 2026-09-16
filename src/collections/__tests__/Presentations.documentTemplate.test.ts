@@ -183,14 +183,11 @@ describe('Presentations document template contract', () => {
     ]);
   });
 
-  it('declares ordered generic build artifacts and keeps legacy fields hidden', () => {
+  it('declares only canonical ordered build artifacts', () => {
     const visit = (fields: unknown[]): Array<Record<string, unknown>> => {
       const matches: Array<Record<string, unknown>> = [];
       for (const field of fields as Array<Record<string, unknown>>) {
-        if (
-          field.name === 'artifacts' ||
-          ['spaUrl', 'pdfFile', 'coverImage'].includes(String(field.name))
-        ) {
+        if (field.name === 'artifacts') {
           matches.push(field);
         }
         if (Array.isArray(field.fields)) matches.push(...visit(field.fields));
@@ -208,22 +205,13 @@ describe('Presentations document template contract', () => {
     expect(artifacts).toMatchObject({ type: 'array', admin: { readOnly: true } });
     expect((artifacts!.fields as Array<{ name?: string }>).map((field) => field.name)).toEqual([
       'key',
-      'kind',
-      'label',
       'actionLabel',
       'buildId',
       'file',
       'url',
       'pageIndex',
     ]);
-    for (const name of ['spaUrl', 'pdfFile', 'coverImage']) {
-      const field = fields.find((candidate) => candidate.name === name);
-      expect(field).toMatchObject({
-        admin: { readOnly: true, hidden: true },
-      });
-      expect((field!.access as { create: () => boolean }).create()).toBe(false);
-      expect((field!.access as { update: () => boolean }).update()).toBe(false);
-    }
+    expect(fields).toHaveLength(1);
   });
 
   it('resolves admin preview from the template primary artifact and rejects stale artifacts', () => {
@@ -236,8 +224,6 @@ describe('Presentations document template contract', () => {
         artifacts: [
           {
             key: 'web-presentation',
-            kind: 'web',
-            label: 'Web',
             actionLabel: 'Open',
             buildId: 'build-2',
             url: '/spa/current/index.html',
@@ -253,8 +239,6 @@ describe('Presentations document template contract', () => {
         artifacts: [
           {
             key: 'web-presentation',
-            kind: 'web',
-            label: 'Web',
             actionLabel: 'Open',
             buildId: 'build-1',
             url: '/spa/stale/index.html',

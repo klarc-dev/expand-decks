@@ -475,12 +475,8 @@ const presentation = await payload.update({
     title: 'R&D Perrin : anomalies constatées et décisions à prendre',
     language: 'fr',
     status: 'published',
-    tags: ['R&D', 'CIR', 'organisation', 'propriété intellectuelle', 'décision'],
     footer: {
       enabled: true,
-      left: 'Groupe Perrin · R&D',
-      center: 'Revue de l’organisation existante',
-      right: '{page} / {total}',
     },
     slides: richSlides,
   } as unknown as Presentation,

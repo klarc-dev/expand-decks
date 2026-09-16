@@ -18,7 +18,6 @@ export const AGENT_RUN_IMMUTABLE_FIELDS = [
   'sourcePolicy',
   'sourceIds',
   'revisionContext',
-  'inputFingerprint',
 ] as const;
 
 function relationshipId(value: unknown): unknown {

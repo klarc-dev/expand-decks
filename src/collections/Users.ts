@@ -270,7 +270,6 @@ export const Users: CollectionConfig = {
       options: [
         { label: 'Administrateur', value: ROLES.admin },
         { label: 'Auteur', value: ROLES.author },
-        { label: 'Lecteur', value: ROLES.viewer },
       ],
     },
   ],

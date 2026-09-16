@@ -2,12 +2,6 @@ import type { CollectionConfig } from 'payload';
 
 import { isOrganisationMember } from '../access/roles';
 import { COLLECTIONS } from '../lib/collections';
-import {
-  LINKEDIN_DOCUMENT_CAROUSEL,
-  LINKEDIN_IMAGE,
-  LINKEDIN_MULTI_IMAGE,
-  MEDIA_PRODUCER_STATUS,
-} from '../lib/mediaProducer';
 
 export const MediaProductionRequests: CollectionConfig = {
   slug: COLLECTIONS.mediaProductionRequests,
@@ -24,16 +18,6 @@ export const MediaProductionRequests: CollectionConfig = {
     { name: 'publicationId', type: 'text', required: true, index: true },
     { name: 'revisionSha256', type: 'text', required: true },
     {
-      name: 'format',
-      type: 'select',
-      required: true,
-      options: [
-        { label: 'LinkedIn document via Postiz images', value: LINKEDIN_DOCUMENT_CAROUSEL },
-        { label: 'LinkedIn image', value: LINKEDIN_IMAGE },
-        { label: 'LinkedIn native multi-image', value: LINKEDIN_MULTI_IMAGE },
-      ],
-    },
-    {
       name: 'organisation',
       type: 'relationship',
       relationTo: COLLECTIONS.organisations,
@@ -47,14 +31,6 @@ export const MediaProductionRequests: CollectionConfig = {
       index: true,
     },
     { name: 'request', type: 'json', required: true },
-    {
-      name: 'status',
-      type: 'select',
-      required: true,
-      defaultValue: MEDIA_PRODUCER_STATUS.queued,
-      options: Object.values(MEDIA_PRODUCER_STATUS).map((value) => ({ label: value, value })),
-    },
     { name: 'result', type: 'json' },
-    { name: 'buildToken', type: 'text', index: true },
   ],
 };

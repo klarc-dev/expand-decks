@@ -48,7 +48,7 @@ const credentials = {
   viewer: {
     email: 'e2e-viewer@expand.local',
     password: 'E2e-viewer-password-4317',
-    role: ROLES.viewer,
+    role: ROLES.author,
   },
 } as const;
 
@@ -150,7 +150,6 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     collection: COLLECTIONS.organisations,
     data: {
       name: 'E2E Member Organisation',
-      createdBy: admin.id,
       primary: '#02585C',
       secondary: '#F5A3B0',
       ink: '#0F2A2B',
@@ -164,7 +163,6 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     collection: COLLECTIONS.organisations,
     data: {
       name: 'E2E Foreign Organisation',
-      createdBy: admin.id,
       primary: '#02585C',
       secondary: '#F5A3B0',
       ink: '#0F2A2B',
@@ -192,7 +190,6 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     data: {
       name: 'E2E Knowledge Base',
       organisation: organisation.id,
-      createdBy: author.id,
     },
     overrideAccess: true,
     user: admin,
@@ -203,7 +200,6 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     data: {
       name: 'E2E Empty Knowledge Base',
       organisation: organisation.id,
-      createdBy: author.id,
     },
     overrideAccess: true,
     user: admin,
@@ -214,7 +210,6 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
     data: {
       name: 'E2E UI Document Knowledge Base',
       organisation: organisation.id,
-      createdBy: author.id,
     },
     overrideAccess: true,
     user: admin,
@@ -354,21 +349,15 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
       lastBuildError: null,
       lastBuildRequestedAt: '2026-09-08T13:00:00.000Z',
       lastBuildToken: 'e2e-successful-build',
-      spaUrl: '/spa/e2e-successful-build-presentation/index.html',
-      pdfFile: successfulBuildPdf.id,
       artifacts: [
         {
           key: 'web-presentation',
-          kind: 'web',
-          label: 'Présentation web',
           actionLabel: 'Ouvrir la présentation web',
           buildId: 'e2e-successful-build',
           url: '/spa/e2e-successful-build-presentation/index.html',
         },
         {
           key: 'pdf',
-          kind: 'pdf',
-          label: 'PDF',
           actionLabel: 'Télécharger le PDF',
           buildId: 'e2e-successful-build',
           file: successfulBuildPdf.id,
@@ -459,10 +448,8 @@ setup('seed deterministic users and authenticate roles', async ({ browser }) => 
       approvalRequired: false,
       sourcePolicy: 'none',
       sourceIds: [],
-      inputFingerprint: 'e2e-agent-fingerprint',
       events: [{ ts: 1, phase: 'complete' }],
       heartbeatAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
     },
     overrideAccess: true,
     user: admin,

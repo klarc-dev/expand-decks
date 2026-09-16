@@ -69,7 +69,6 @@ describe('flattenVars', () => {
     status: 'draft',
     tags: ['a', 'b'],
     slides: [{ blockType: 'cover' }],
-    pdfFile: 99,
     organisation: { name: 'Klarc', primary: '#02585C' },
   };
 
@@ -78,11 +77,10 @@ describe('flattenVars', () => {
     expect(paths).toContain('title');
     expect(paths).toContain('slug');
     expect(paths).toContain('language');
-    // pruned: id, status, tags(array), slides, pdfFile, organisation(walked separately here)
+    // pruned: id, status, tags(array), slides, organisation(walked separately here)
     expect(paths).not.toContain('id');
     expect(paths).not.toContain('status');
     expect(paths).not.toContain('slides');
-    expect(paths).not.toContain('pdfFile');
     // arrays never emit indexed paths
     expect(paths.some((p) => p.startsWith('tags'))).toBe(false);
   });

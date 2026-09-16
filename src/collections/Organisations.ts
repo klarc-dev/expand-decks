@@ -124,7 +124,7 @@ export const Organisations: CollectionConfig = {
       admin: {
         initCollapsed: false,
         description:
-          'Coordonnées publiques : elles rendent le logo et le pied de page cliquables dans le PDF et sont disponibles comme balises ({org.website}, {org.contactEmail}, {org.phone}, {org.bookingUrl}).',
+          'Liens publics : le site web rend le logo et le nom du pied de page cliquables ; l’URL de rendez-vous est disponible comme balise {org.bookingUrl} pour les boutons CTA.',
       },
       fields: [
         {
@@ -144,30 +144,6 @@ export const Organisations: CollectionConfig = {
               admin: {
                 description: 'URL https d’un agenda en ligne, proposée aux boutons du bloc cta',
               },
-              validate: httpsUrl,
-            },
-          ],
-        },
-        {
-          type: 'row',
-          fields: [
-            {
-              name: 'contactEmail',
-              type: 'email',
-              label: 'Email de contact',
-              admin: { description: 'Adresse générique, rendue cliquable (mailto:)' },
-            },
-            {
-              name: 'phone',
-              type: 'text',
-              label: 'Téléphone',
-              admin: { description: 'Numéro rendu cliquable (tel:)' },
-            },
-            {
-              name: 'linkedin',
-              type: 'text',
-              label: 'Page LinkedIn',
-              admin: { description: 'URL https de la page entreprise' },
               validate: httpsUrl,
             },
           ],
@@ -200,16 +176,6 @@ export const Organisations: CollectionConfig = {
           },
         },
       ],
-    },
-    {
-      name: 'createdBy',
-      type: 'relationship',
-      relationTo: COLLECTIONS.users,
-      label: 'Créé par',
-      admin: { readOnly: true, position: 'sidebar', description: 'Auteur de l’organisation' },
-      hooks: {
-        beforeChange: [({ req, operation }) => (operation === 'create' ? req.user?.id : undefined)],
-      },
     },
   ],
 };

@@ -94,7 +94,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ request
       await payload.update({
         collection: COLLECTIONS.mediaProductionRequests,
         id: record.id,
-        data: { status: MEDIA_PRODUCER_STATUS.stale, result: stale },
+        data: { result: stale },
         overrideAccess: true,
         depth: 0,
       });

@@ -33,7 +33,7 @@ const access = (user: TestUser) =>
 
 const admin: TestUser = { id: 'a1', role: ROLES.admin };
 const author: TestUser = { id: 'u1', role: ROLES.author, organisations: [7, 9] };
-const viewer: TestUser = { id: 'v1', role: ROLES.viewer, organisations: [7] };
+const nonAuthor = { id: 'v1', role: 'legacy-viewer', organisations: [7] } as never;
 const orphan: TestUser = { id: 'u2', role: ROLES.author };
 
 describe('userOrganisationIds', () => {
@@ -74,10 +74,10 @@ describe('isAdmin — gates delete', () => {
 });
 
 describe('isAdminOrAuthor — gates create', () => {
-  it('admits admins and authors, rejects viewers and anonymous', () => {
+  it('admits admins and authors, rejects unknown roles and anonymous', () => {
     expect(isAdminOrAuthor(access(admin))).toBe(true);
     expect(isAdminOrAuthor(access(author))).toBe(true);
-    expect(isAdminOrAuthor(access({ id: 'v1', role: ROLES.viewer }))).toBe(false);
+    expect(isAdminOrAuthor(access(nonAuthor))).toBe(false);
     expect(isAdminOrAuthor(access(null))).toBe(false);
   });
 });
@@ -109,10 +109,10 @@ describe('isOwnOrganisation — gates the organisations collection', () => {
 });
 
 describe('isOwnOrganisationAuthor — organisation write access', () => {
-  it('allows authors and admins but keeps viewers read-only', () => {
+  it('allows authors and admins but keeps unknown legacy roles read-only', () => {
     expect(isOwnOrganisationAuthor(access(author))).toEqual({ id: { in: [7, 9] } });
     expect(isOwnOrganisationAuthor(access(admin))).toBe(true);
-    expect(isOwnOrganisationAuthor(access(viewer))).toBe(false);
+    expect(isOwnOrganisationAuthor(access(nonAuthor))).toBe(false);
     expect(isOwnOrganisationAuthor(access(orphan))).toBe(false);
   });
 });
@@ -144,8 +144,8 @@ describe('isOrganisationAuthor — organisation-scoped write access', () => {
     });
   });
 
-  it('keeps viewers and anonymous users read-only', () => {
-    expect(isOrganisationAuthor({ req: { user: viewer } } as never)).toBe(false);
+  it('keeps unknown legacy roles and anonymous users read-only', () => {
+    expect(isOrganisationAuthor({ req: { user: nonAuthor } } as never)).toBe(false);
     expect(isOrganisationAuthor({ req: { user: null } } as never)).toBe(false);
   });
 });

@@ -5,7 +5,7 @@ import { MermaidPreview } from './MermaidPreview';
 import './SlideFrame.scss';
 
 export type SlideChrome = {
-  footer?: { left: string; center: string; right: string };
+  footer?: { left: string; right: string };
   /** Footer hidden (cover, section); the logo header stays on every slide. */
   hidden?: boolean;
   logoUrl?: string;
@@ -136,7 +136,6 @@ function SlideChromeLayer({ chrome }: { chrome?: SlideChrome }) {
               chrome.footer.left
             )}
           </span>
-          <span>{chrome.footer.center}</span>
           <span className="page">{chrome.footer.right}</span>
         </footer>
       ) : null}

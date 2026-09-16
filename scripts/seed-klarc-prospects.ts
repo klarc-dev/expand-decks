@@ -398,8 +398,6 @@ await runPayloadScript(async (payload) => {
       headingFont: 'Newsreader',
       bodyFont: 'IBM Plex Sans',
       bookingUrl: 'https://cal.klarc.com/team/meeting?user=team&duration=30',
-      contactEmail: 'toulouse@klarc.com',
-      phone: '+33 (0)5 61 38 53 52',
     },
     overrideAccess: true,
     context: { skipBuildQueue: true },

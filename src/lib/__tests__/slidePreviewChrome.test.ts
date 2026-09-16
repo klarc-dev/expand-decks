@@ -17,9 +17,6 @@ describe('buildSlidePreviewChrome()', () => {
           },
         },
         'footer.enabled': { value: true },
-        'footer.left': { value: '{org.name}' },
-        'footer.center': { value: '{title}' },
-        'footer.right': { value: '{page} / {total}' },
         'slides.0.blockType': { value: 'cover' },
         'slides.1.blockType': { value: 'statement' },
       },
@@ -27,7 +24,7 @@ describe('buildSlidePreviewChrome()', () => {
       false,
     );
 
-    expect(chrome.footer).toEqual({ left: 'Klarc', center: 'Deck title', right: '2 / 2' });
+    expect(chrome.footer).toEqual({ enabled: true, left: 'Klarc', right: '2 / 2' });
     expect(chrome.logoUrl).toBe('/media/logo.svg');
     expect(chrome.fonts).toEqual({ heading: 'Noto Sans Display', body: 'Inter' });
     expect(chrome.hidden).toBe(false);
