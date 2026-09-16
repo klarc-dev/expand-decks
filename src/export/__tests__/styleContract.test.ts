@@ -200,6 +200,14 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-card-stack--grid\s*\{[\s\S]*grid-auto-rows:\s*auto/);
   });
 
+  it('optically centers timeline numerals inside their circular markers', () => {
+    const dot = css.match(/\.k-tl-dot\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(dot).toMatch(/line-height:\s*1/);
+    expect(dot).toMatch(/align-items:\s*center/);
+    expect(dot).toMatch(/justify-content:\s*center/);
+    expect(dot).toMatch(/padding-top:\s*0\.12em/);
+  });
+
   it('uses one fixed heading-description size across content, hero, cover, section, and CTA slides', () => {
     const token = css.match(/--t-heading-subtext:\s*([^;]+);/)?.[1]?.replace(/\s+/g, '');
     expect(token).toBe('var(--t-lead)');
