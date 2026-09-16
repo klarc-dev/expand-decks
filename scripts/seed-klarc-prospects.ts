@@ -35,9 +35,9 @@ const slides = [
     blockType: 'cover',
     pills: [{ text: 'Toulouse' }, { text: 'Lyon' }],
     pillVariant: 'primary',
-    title: '[Klarc] : Avocats d’affaires et Conseils en Propriété Industrielle',
+    title: '[Klarc] : Avocats et Conseils en Propriété Industrielle',
     subtitle:
-      'Conseil et contentieux pour protéger, financer et valoriser l’innovation, à Toulouse, à Lyon et partout en France.',
+      'Conseil et contentieux pour les entreprises innovantes, à Toulouse, à Lyon et partout en France.',
   },
   // Page 2 — 4 situations client, grille 2x2 numérotée
   {
@@ -115,7 +115,7 @@ const slides = [
   // Page 4 — 4 temps d'action
   {
     blockType: 'timeline',
-    eyebrow: 'NOTRE ACCOMPAGNEMENT',
+    eyebrow: 'SUR VOTRE DOSSIER',
     title: 'Notre réponse à vos besoins',
     lead: 'Quatre temps, de l’analyse de votre situation à la défense de vos droits.',
     steps: [
