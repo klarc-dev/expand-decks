@@ -2,36 +2,25 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
+  gap: 8px 20px;
+  min-height: 32px;
+  color: var(--theme-elevation-800);
+  font-size: 13px;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 
   &__label {
-    font-size: 13px;
+    color: var(--theme-elevation-600);
     font-weight: 600;
   }
 
-
-
   &__error {
-    width: 100%;
-    max-width: 100%;
-    margin-top: 12px;
-  }
-
-  &__error-details {
-    margin-top: 8px;
-
-    summary {
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    pre {
-      margin: 8px 0 0;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
+    flex-basis: 100%;
+    margin-top: 0;
+    white-space: pre-wrap;
   }
 }

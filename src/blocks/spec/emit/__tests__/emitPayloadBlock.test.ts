@@ -35,6 +35,7 @@ describe('emitPayloadBlock', () => {
     expect(cards).toMatchObject({
       minRows: SLIDE_LIMITS.cardGrid.cards.min,
       maxRows: SLIDE_LIMITS.cardGrid.cards.max,
+      admin: { initCollapsed: true },
     });
     const fields = cards && 'fields' in cards ? cards.fields : [];
     expect(fields).toEqual(

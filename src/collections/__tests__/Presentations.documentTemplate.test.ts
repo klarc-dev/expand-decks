@@ -136,6 +136,7 @@ describe('Presentations document template contract', () => {
 
     const slidesField = visit(Presentations.fields as unknown[]);
     expect(slidesField).toBeDefined();
+    expect(slidesField).toMatchObject({ admin: { initCollapsed: true } });
     expect((slidesField!.blocks as Array<{ slug: string }>).map((block) => block.slug)).toEqual([
       'cover',
       'section',
@@ -182,7 +183,7 @@ describe('Presentations document template contract', () => {
     ]);
   });
 
-  it('keeps build feedback visible without a dedicated output tab or sidebar', () => {
+  it('keeps build feedback compact inside the settings tab', () => {
     const tabsField = (Presentations.fields as Array<Record<string, unknown>>).find(
       (field) => field.type === 'tabs',
     );
@@ -191,10 +192,7 @@ describe('Presentations document template contract', () => {
     ).toEqual(['Contenu', 'IA', 'Réglages']);
 
     const fields = Presentations.fields as Array<Record<string, unknown>>;
-    const buildStatusIndex = fields.findIndex((field) => field.name === 'buildStatusLive');
-    const tabsIndex = fields.findIndex((field) => field.type === 'tabs');
-    expect(buildStatusIndex).toBeGreaterThanOrEqual(0);
-    expect(buildStatusIndex).toBeLessThan(tabsIndex);
+    expect(fields.some((field) => field.name === 'buildStatusLive')).toBe(false);
     expect(
       fields.some(
         (field) => (field.admin as { position?: string } | undefined)?.position === 'sidebar',
@@ -202,6 +200,13 @@ describe('Presentations document template contract', () => {
     ).toBe(false);
 
     const tabs = (tabsField?.tabs ?? []) as Array<Record<string, unknown>>;
+    const settingsTab = tabs.find((tab) => tab.label === 'Réglages');
+    const settingsFields = (settingsTab?.fields ?? []) as Array<Record<string, unknown>>;
+    expect(settingsFields.find((field) => field.name === 'buildStatusLive')).toMatchObject({
+      type: 'ui',
+      admin: { components: { Field: '/components/BuildStatusField#default' } },
+    });
+
     const aiTab = tabs.find((tab) => tab.label === 'IA');
     const aiFields = (aiTab?.fields ?? []) as Array<Record<string, unknown>>;
     const draftStatus = aiFields.find((field) => field.name === 'draftStatus');

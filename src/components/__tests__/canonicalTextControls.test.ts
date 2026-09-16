@@ -233,7 +233,9 @@ describe('canonical custom admin controls', () => {
   });
 
   it('keeps shared panel and notice chrome in AdminSurface', () => {
-    expect(sourceContains('src/components/BuildStatusField.tsx', '<AdminPanel')).toBe(true);
+    expect(sourceContains('src/components/BuildStatusField.tsx', '<AdminPanel')).toBe(false);
+    expect(sourceContains('src/components/BuildStatusField.tsx', 'Modifiée le')).toBe(true);
+    expect(sourceContains('src/components/BuildStatusField.tsx', 'Créée le')).toBe(true);
     expect(
       sourceContains(
         'src/components/adminUi/AdminSurface.tsx',
@@ -247,8 +249,14 @@ describe('canonical custom admin controls', () => {
       sourceContains('src/components/adminUi/AdminSurface.scss', '.admin-panel {\n  border:'),
     ).toBe(true);
     expect(sourceContains('src/components/BuildStatusField.scss', 'margin-bottom: 20px')).toBe(
-      true,
+      false,
     );
+    expect(
+      sourceContains(
+        'src/app/(payload)/admin-overrides.scss',
+        '.collection-edit--presentations .doc-controls__meta',
+      ),
+    ).toBe(true);
     expect(sourceContains('src/components/adminUi/AdminSurface.scss', 'margin-top: 12px')).toBe(
       false,
     );

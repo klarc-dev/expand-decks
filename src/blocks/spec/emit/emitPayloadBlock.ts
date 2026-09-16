@@ -36,6 +36,7 @@ function emitAdminMeta(payload: PayloadFieldMeta): Record<string, unknown> {
   // Every repeater item gets a row label derived from its own text fields
   // (instead of the default "Card 01 / Row 01") — see RepeaterRowLabel.
   if (payload.type === 'array' && !payload.adminFieldComponent) {
+    admin.initCollapsed = payload.initCollapsed ?? true;
     admin.components = { RowLabel: '/components/RepeaterRowLabel#default' };
   }
 

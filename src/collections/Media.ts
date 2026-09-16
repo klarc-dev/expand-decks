@@ -27,6 +27,9 @@ export const canCreateMedia: Access = ({ req: { user } }) => {
 export const Media: CollectionConfig = {
   slug: COLLECTIONS.media,
   labels: { singular: 'M\u00e9dia', plural: 'M\u00e9dias' },
+  admin: {
+    hidden: true,
+  },
   access: {
     create: canCreateMedia,
     read: canReadMedia,

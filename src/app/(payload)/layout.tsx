@@ -10,6 +10,7 @@ import type { ServerFunctionClient } from 'payload';
 // to ensure all admin styles (variables, layouts, components) survive Next.js CSS optimization.
 // Regenerated automatically by the prebuild script.
 import './payload-admin.css';
+import './admin-overrides.scss';
 
 type Args = {
   children: React.ReactNode;

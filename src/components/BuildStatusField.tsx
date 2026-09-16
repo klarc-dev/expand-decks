@@ -3,12 +3,14 @@
 import React, { useEffect } from 'react';
 import { Pill, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
-import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
+import { AdminNotice } from '@/components/adminUi/AdminSurface';
 import { BUILD_STATUS, type BuildStatus } from '@/lib/status';
 
 import './BuildStatusField.scss';
 
 type BuildInfo = {
+  createdAt?: string | null;
+  updatedAt?: string | null;
   lastBuildStatus?: BuildStatus | null;
   lastBuildError?: string | null;
   lastBuildRequestedAt?: string | null;
@@ -71,19 +73,42 @@ const BuildStatusField: React.FC = () => {
   if (!id || !info) return null;
 
   const meta = STATUS_LABELS[status] ?? STATUS_LABELS[BUILD_STATUS.idle]!;
+  const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+  const formatDate = (value?: string | null) =>
+    value ? dateFormatter.format(new Date(value)) : null;
+  const updatedAt = formatDate(info.updatedAt);
+  const createdAt = formatDate(info.createdAt);
+
   return (
-    <AdminPanel className="build-status">
-      <span className="build-status__label">Build</span>
-      <span aria-atomic="true" aria-live="polite" role="status">
-        <span className="sr-only">Statut du build : </span>
-        <Pill pillStyle={meta.pillStyle} rounded size="small">
-          {meta.label}
-        </Pill>
+    <div className="build-status">
+      <span className="build-status__item">
+        <span className="build-status__label">Build</span>
+        <span aria-atomic="true" aria-live="polite" role="status">
+          <span className="sr-only">Statut du build : </span>
+          <Pill pillStyle={meta.pillStyle} rounded size="small">
+            {meta.label}
+          </Pill>
+        </span>
       </span>
+      {updatedAt ? (
+        <span className="build-status__item">
+          <span className="build-status__label">Modifiée le</span>
+          <span>{updatedAt}</span>
+        </span>
+      ) : null}
+      {createdAt ? (
+        <span className="build-status__item">
+          <span className="build-status__label">Créée le</span>
+          <span>{createdAt}</span>
+        </span>
+      ) : null}
       {status === BUILD_STATUS.failed && info.lastBuildError ? (
         <BuildErrorNotice error={info.lastBuildError} />
       ) : null}
-    </AdminPanel>
+    </div>
   );
 };
 

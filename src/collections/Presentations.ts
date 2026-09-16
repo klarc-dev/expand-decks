@@ -360,15 +360,6 @@ export const Presentations: CollectionConfig = {
       admin: { components: { Field: '/components/TitleField#default' } },
     },
     {
-      name: 'buildStatusLive',
-      type: 'ui',
-      admin: {
-        components: {
-          Field: '/components/BuildStatusField#default',
-        },
-      },
-    },
-    {
       type: 'tabs',
       tabs: [
         {
@@ -381,6 +372,7 @@ export const Presentations: CollectionConfig = {
               admin: {
                 description:
                   'Une page par bloc. Les layouts proposés dépendent du template de document.',
+                initCollapsed: true,
               },
               blocks: payloadBlocksForTemplate(),
               filterOptions: ({ data }) =>
@@ -534,6 +526,15 @@ export const Presentations: CollectionConfig = {
         {
           label: 'Réglages',
           fields: [
+            {
+              name: 'buildStatusLive',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field: '/components/BuildStatusField#default',
+                },
+              },
+            },
             {
               name: 'organisation',
               type: 'relationship',

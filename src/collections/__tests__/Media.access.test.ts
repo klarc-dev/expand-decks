@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { canCreateMedia, canReadMedia } from '../Media';
+import { canCreateMedia, canReadMedia, Media } from '../Media';
 
 const find = vi.fn();
 
@@ -9,6 +9,10 @@ function accessArgs(user: unknown) {
 }
 
 describe('Media access', () => {
+  it('stays available to upload fields and APIs but is hidden from the admin navigation', () => {
+    expect(Media.admin?.hidden).toBe(true);
+  });
+
   it('allows media creation for admins and authors but not unknown roles or anonymous users', () => {
     expect(canCreateMedia(accessArgs({ id: 'admin', role: 'admin' }))).toBe(true);
     expect(canCreateMedia(accessArgs({ id: 'author', role: 'author' }))).toBe(true);
