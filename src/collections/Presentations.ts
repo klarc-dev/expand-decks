@@ -345,12 +345,6 @@ export const Presentations: CollectionConfig = {
           assertDocumentPages(template, pages);
         }
         record.documentTemplate = template.id;
-        if (!template.chrome.footer) {
-          record.footer = {
-            ...((record.footer as Record<string, unknown> | undefined) ?? {}),
-            enabled: false,
-          };
-        }
         return data;
       },
     ],
@@ -629,25 +623,6 @@ export const Presentations: CollectionConfig = {
               options: [
                 { label: 'Français', value: 'fr' },
                 { label: 'Anglais', value: 'en' },
-              ],
-            },
-            {
-              name: 'footer',
-              type: 'group',
-              label: 'Pied de page',
-              admin: {
-                description:
-                  'Bandeau bas de diapositive (masqué sur couverture, section et clôture). Contenu standardisé, non éditable : {org.name} à gauche (lien vers le site web de l’organisation s’il est renseigné), {page} / {total} à droite.',
-                condition: (_data, siblingData) =>
-                  resolveDocumentTemplate(siblingData?.documentTemplate).chrome.footer,
-              },
-              fields: [
-                {
-                  name: 'enabled',
-                  type: 'checkbox',
-                  defaultValue: true,
-                  label: 'Afficher le pied de page',
-                },
               ],
             },
           ],

@@ -544,12 +544,6 @@ await runPayloadScript(async (payload) => {
     status: 'published',
     documentTemplate: 'presentation',
     agentModel: 'gpt-6-astra',
-    footer: {
-      enabled: true,
-      left: 'Klarc',
-      center: 'Avocats et Conseils en Propriété Industrielle',
-      right: '{page} / {total}',
-    },
     slides: richSlides,
   } as unknown as Presentation;
   const existing = (

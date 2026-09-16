@@ -7,8 +7,8 @@ function relId(rel: unknown): unknown {
 
 /**
  * Fingerprint of every field that affects the built output. Anything that
- * changes the generated deck — slides, the organisation (theme/logo/font), the
- * footer config, title, language — must be here, or an edit to it on an already
+ * changes the generated deck — slides, the organisation (theme/logo/font),
+ * title, language — must be here, or an edit to it on an already
  * published deck would silently NOT rebuild. Lives in lib (not the hook) so the
  * build-job runner can import it without a hook → jobs → runner import cycle.
  */
@@ -16,7 +16,6 @@ export function buildFingerprint(doc: Record<string, unknown>): string {
   const inputs = {
     slides: doc.slides ?? [],
     organisation: relId(doc.organisation),
-    footer: doc.footer ?? null,
     title: doc.title ?? '',
     language: doc.language ?? '',
     documentTemplate: doc.documentTemplate ?? 'presentation',

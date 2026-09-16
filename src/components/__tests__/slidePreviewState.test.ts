@@ -19,7 +19,6 @@ const fields: FormFields = {
   'slides.2.title': { value: 'Plan' },
   'slides.1.blockType': { value: 'statement' },
   'slides.1.title': { value: 'Msg' },
-  'footer.enabled': { value: true },
   organisation: { value: 'org-1' },
   title: { value: 'Deck' },
   language: { value: 'fr' },
@@ -73,7 +72,7 @@ describe('slidePreviewState selectors', () => {
       title: 'Deck',
       language: 'fr',
     });
-    expect(chrome['footer.enabled']).toBe(true);
+    expect(chrome).not.toHaveProperty('footer.enabled');
     expect(chrome).not.toHaveProperty('footer.left');
   });
 

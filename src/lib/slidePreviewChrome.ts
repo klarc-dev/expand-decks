@@ -54,8 +54,7 @@ export function buildSlidePreviewChrome(
     total: String(total),
   };
 
-  const enabled = fields['footer.enabled']?.value !== false;
-  const footer = enabled ? standardFooter(true, vars) : undefined;
+  const footer = standardFooter(true, vars);
 
   return {
     footer,

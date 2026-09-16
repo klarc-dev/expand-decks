@@ -16,7 +16,6 @@ describe('buildSlidePreviewChrome()', () => {
             bodyFont: 'Inter',
           },
         },
-        'footer.enabled': { value: true },
         'slides.0.blockType': { value: 'cover' },
         'slides.1.blockType': { value: 'statement' },
       },
@@ -65,7 +64,6 @@ describe('buildSlidePreviewChrome()', () => {
   it('keeps the final hideChrome behavior for cover, section, and CTA slides', () => {
     const chrome = buildSlidePreviewChrome(
       {
-        'footer.enabled': { value: true },
         'slides.0.blockType': { value: 'cover' },
       },
       'slides.0.preview',
@@ -94,16 +92,13 @@ describe('buildSlidePreviewChrome()', () => {
     expect(withoutSite.orgUrl).toBeUndefined();
   });
 
-  it('omits the footer when disabled', () => {
+  it('always builds the standard footer; the document template decides whether it shows', () => {
     const chrome = buildSlidePreviewChrome(
-      {
-        'footer.enabled': { value: false },
-        'slides.0.blockType': { value: 'statement' },
-      },
+      { 'slides.0.blockType': { value: 'statement' } },
       'slides.0.preview',
       false,
     );
 
-    expect(chrome.footer).toBeUndefined();
+    expect(chrome.footer).toEqual({ enabled: true, left: '', right: '1 / 1' });
   });
 });

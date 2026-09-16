@@ -100,10 +100,9 @@ export function selectSlideCount(fields: FormFields): number {
   return count || 1;
 }
 
-/** Chrome-relevant fields (footer/org/title/language) for footer rendering. */
+/** Chrome-relevant fields (org/title/language) for footer rendering. */
 export function selectChromeFields(fields: FormFields): Record<string, unknown> {
   return {
-    'footer.enabled': fields['footer.enabled']?.value,
     language: fields.language?.value,
     organisation: fields.organisation?.value,
     title: fields.title?.value,

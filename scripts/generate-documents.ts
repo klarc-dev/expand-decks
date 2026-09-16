@@ -62,12 +62,6 @@ await runPayloadScript(async (payload) => {
       language: 'fr' as const,
       status: 'draft' as const,
       agentBrief: '',
-      footer: {
-        enabled: true,
-        left: '{org.name}',
-        center: '',
-        right: '{page} / {total}',
-      },
       slides: fixture.slides as never,
     };
     const presentation = previous.docs[0]

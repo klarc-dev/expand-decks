@@ -202,8 +202,6 @@ describe('POST /api/slide-preview hydration + access', () => {
         block: { blockType: 'statement', title: 'Portrait' },
         fields: {
           organisation: 1,
-          'footer.enabled': true,
-          'footer.left': 'Klarc',
         },
         previewFieldPath: 'slides.0.preview',
       }),
@@ -259,7 +257,6 @@ describe('POST /api/slide-preview hydration + access', () => {
         presentationId: 'p1',
         block: { blockType: 'statement', title: 'Commercial offer' },
         fields: {
-          'footer.enabled': true,
           'slides.0.blockType': 'statement',
         },
         previewFieldPath: 'slides.0.preview',

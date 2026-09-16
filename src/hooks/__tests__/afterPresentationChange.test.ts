@@ -9,7 +9,6 @@ import { afterPresentationChange } from '../afterPresentationChange';
 const base = {
   slides: [{ blockType: 'cover', title: 'A' }],
   organisation: 1,
-  footer: { enabled: true },
   title: 'Deck',
   language: 'fr',
 };
@@ -127,8 +126,7 @@ describe('buildInputsChanged — rebuild fingerprint', () => {
     );
   });
 
-  it('detects footer, title and language changes', () => {
-    expect(buildInputsChanged({ ...base, footer: { enabled: false } }, base)).toBe(true);
+  it('detects title, language and template changes', () => {
     expect(buildInputsChanged({ ...base, title: 'New' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, language: 'en' }, base)).toBe(true);
     expect(buildInputsChanged({ ...base, documentTemplate: 'other' }, base)).toBe(true);

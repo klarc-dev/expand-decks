@@ -38,7 +38,6 @@ import {
   resolveLogoUrls,
   resolveOrgUrl,
   standardFooter,
-  type FooterConfig,
 } from '../export/chrome';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
 import { buildMermaidConfigSource } from '../export/mermaidConfig';
@@ -225,7 +224,6 @@ export type LayoutPreflightCandidate = {
   title: string;
   language?: string | null;
   organisation?: number | { id: number } | null;
-  footer?: Partial<FooterConfig> | null;
   slides: unknown[];
   [key: string]: unknown;
 };
@@ -255,7 +253,7 @@ export async function preflightPresentationLayout(
     : null;
   const brand = org as (OrgBrand & Record<string, unknown>) | null;
   const template = resolveDocumentTemplate(candidate.documentTemplate);
-  const footerEnabled = template.chrome.footer && candidate.footer?.enabled !== false;
+  const footerEnabled = template.chrome.footer;
   const logos = template.chrome.logo ? resolveLogoUrls(brand) : null;
   const language = candidate.language === 'en' ? 'en' : 'fr';
   const vars: Record<string, unknown> = {
@@ -375,9 +373,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       depth: 2,
     });
 
-    const footerEnabled =
-      template.chrome.footer &&
-      (presentation as { footer?: Partial<FooterConfig> }).footer?.enabled !== false;
+    const footerEnabled = template.chrome.footer;
     const logos = template.chrome.logo ? resolveLogoUrls(brand) : null;
 
     // Single resolution context — the SSOT for {path} variables in slide bodies
