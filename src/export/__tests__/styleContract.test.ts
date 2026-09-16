@@ -217,7 +217,8 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     const dot = css.match(/\.k-eyebrow::before\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(dot).toMatch(/background:\s*currentColor/);
     expect(css).not.toMatch(/\.k-dark \.k-eyebrow::before\s*\{/);
-    const coverDot = css.match(/\.k-eyebrow--cover::before\s*\{([^}]*)\}/)?.[1] ?? '';
+    const coverDot =
+      css.match(/\.k-eyebrow-group\.k-eyebrow--cover \.k-eyebrow::before\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(coverDot).toMatch(/content:\s*none/);
   });
 
