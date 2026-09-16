@@ -1291,7 +1291,7 @@
   font-size: var(--ag-num-size);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
-  color: var(--fg-muted);
+  color: var(--k-rose);
 }
 
 /* Matches the shared heading reset's specificity so the label keeps its own
@@ -1399,7 +1399,7 @@
   color: var(--fg-muted);
 }
 .k-dark .k-ag-item--dim .k-ag-num {
-  color: color-mix(in srgb, var(--fg-muted) 70%, var(--bg));
+  color: color-mix(in srgb, var(--k-rose) 55%, var(--bg));
 }
 
 .k-divider {
