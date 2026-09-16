@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { KNOWLEDGE_RETRIEVAL_VERSION } from '../knowledgeIngestRunner';
-import { backfillStaleKnowledgeDocuments } from '../knowledgeReindexBackfill';
+import {
+  backfillStaleKnowledgeDocuments,
+  startKnowledgeReindexBackfill,
+} from '../knowledgeReindexBackfill';
 
 function payloadWith(docs: { id: number | string }[]) {
+  const remaining = [...docs];
   return {
-    find: vi.fn().mockResolvedValue({ docs }),
+    find: vi.fn().mockImplementation(async ({ limit }: { limit: number }) => ({
+      docs: remaining.splice(0, limit),
+    })),
     update: vi.fn().mockResolvedValue({}),
     jobs: { queue: vi.fn().mockResolvedValue({}) },
     logger: { info: vi.fn(), error: vi.fn() },
@@ -54,7 +60,47 @@ describe('backfillStaleKnowledgeDocuments', () => {
     expect(payload.logger.error).toHaveBeenCalled();
   });
 
-  it('bounds how many documents one run may requeue', async () => {
+  it('drains more than one bounded batch without queueing a document twice', async () => {
+    vi.useFakeTimers();
+    const payload = payloadWith(Array.from({ length: 121 }, (_, index) => ({ id: index + 1 })));
+
+    const stop = startKnowledgeReindexBackfill(payload, { limit: 50, intervalMs: 10 });
+    await vi.advanceTimersByTimeAsync(30);
+    stop();
+
+    expect(payload.find).toHaveBeenCalledTimes(4);
+    expect(payload.jobs.queue).toHaveBeenCalledTimes(121);
+    expect(
+      new Set(
+        payload.jobs.queue.mock.calls.map(
+          ([call]) => (call as { input: { documentId: number } }).input.documentId,
+        ),
+      ).size,
+    ).toBe(121);
+    vi.useRealTimers();
+  });
+
+  it('leaves a document stale and retryable when queueing fails', async () => {
+    const payload = payloadWith([{ id: 1 }]);
+    payload.jobs.queue.mockRejectedValueOnce(new Error('queue unavailable'));
+
+    expect(await backfillStaleKnowledgeDocuments(payload)).toBe(0);
+    expect(payload.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps scheduled retries alive after an empty or failed batch', async () => {
+    vi.useFakeTimers();
+    const payload = payloadWith([]);
+    const stop = startKnowledgeReindexBackfill(payload, { intervalMs: 10 });
+
+    await vi.advanceTimersByTimeAsync(20);
+    stop();
+
+    expect(payload.find).toHaveBeenCalledTimes(3);
+    vi.useRealTimers();
+  });
+
+  it('bounds how many documents one query may claim', async () => {
     const payload = payloadWith([]);
 
     await backfillStaleKnowledgeDocuments(payload, { limit: 10 });

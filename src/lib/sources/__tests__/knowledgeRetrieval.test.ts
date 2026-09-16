@@ -226,6 +226,43 @@ describe('knowledge retrieval contract', () => {
     expect(items[2]!.ranking.candidateSources).toEqual(['neighbor']);
   });
 
+  it('preserves a full set of stronger direct results instead of replacing one with a zero-score neighbor', async () => {
+    const first = hit('direct:1', 0.95, {
+      documentId: '1',
+      parentSectionId: 'section-a',
+      nextChunkId: 'neighbor:1',
+      text: 'Réponse directe principale.',
+    });
+    const second = hit('direct:2', 0.92, {
+      documentId: '2',
+      text: 'Deuxième preuve directe pertinente.',
+    });
+    const neighbor = hit('neighbor:1', 0, {
+      documentId: '1',
+      chunkIndex: 1,
+      parentSectionId: 'section-a',
+      text: 'Contexte adjacent sans signal de pertinence.',
+    });
+    const { deps: dependencies } = deps([[first, second]]);
+
+    const items = await retrieveKnowledgeEvidence({
+      source,
+      query: 'preuve directe pertinente',
+      topK: 2,
+      minScore: 0,
+      deps: {
+        ...dependencies,
+        lexicalStore: {
+          search: vi.fn().mockResolvedValue([]),
+          byIds: vi.fn().mockResolvedValue([neighbor]),
+        },
+      },
+    });
+
+    expect(new Set(items.map((item) => item.chunkId))).toEqual(new Set(['direct:1', 'direct:2']));
+    expect(items.some((item) => item.ranking.candidateSources.includes('neighbor'))).toBe(false);
+  });
+
   it('returns the section heading path so passages keep their context', async () => {
     const { deps: dependencies } = deps([
       [hit('h-1', 0.8, { headingPath: 'Pilote > Budget', text: 'Budget 90 000 EUR.' })],

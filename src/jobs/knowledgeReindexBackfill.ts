@@ -4,6 +4,8 @@ import { INDEXING_STATUS } from '../lib/status';
 import { KNOWLEDGE_INGEST_TASK } from './knowledgeIngest';
 import { KNOWLEDGE_RETRIEVAL_VERSION } from './knowledgeIngestRunner';
 
+const BACKFILL_INTERVAL_MS = 60_000;
+
 type BackfillPayload = {
   find: (args: unknown) => Promise<{ docs: { id: number | string }[] }>;
   update: (args: unknown) => Promise<unknown>;
@@ -29,8 +31,9 @@ const staleWhere = {
  * retrieval version. Without this, bumping KNOWLEDGE_RETRIEVAL_VERSION would
  * only mark old chunks as stale while continuing to serve them: the new and old
  * embedding representations are not comparable, so mixed results rank
- * arbitrarily. Bounded per run so a large backlog drains over several boots
- * instead of saturating the queue at once.
+ * arbitrarily. Each run claims one bounded batch and the owner schedules another
+ * run only when work was queued, so large backlogs drain without an unbounded
+ * startup loop or duplicate queue flood.
  *
  * `onInit` runs in every process that boots Payload — the web container and
  * each worker replica — so this must run in exactly one of them or the same
@@ -43,6 +46,7 @@ export async function backfillStaleKnowledgeDocuments(
   const { limit = 50, isOwner = !process.env.PAYLOAD_WORKER } = options;
   if (!isOwner) return 0;
 
+  let queued = 0;
   const stale = await payload.find({
     collection: COLLECTIONS.knowledgeDocuments,
     where: staleWhere,
@@ -50,10 +54,15 @@ export async function backfillStaleKnowledgeDocuments(
     sort: 'updatedAt',
     overrideAccess: true,
   });
-
-  let queued = 0;
   for (const document of stale.docs) {
     try {
+      // Queue first: a crash or queue rejection leaves the document stale and
+      // retryable. The ingest task's per-document superseding key makes a
+      // duplicate queued before a failed status patch harmless.
+      await payload.jobs.queue({
+        task: KNOWLEDGE_INGEST_TASK,
+        input: { documentId: document.id },
+      });
       await payload.update({
         collection: COLLECTIONS.knowledgeDocuments,
         id: document.id,
@@ -63,10 +72,6 @@ export async function backfillStaleKnowledgeDocuments(
           [CTX.skipIngestQueue]: true,
           [CTX.trustedKnowledgeLifecycle]: true,
         },
-      });
-      await payload.jobs.queue({
-        task: KNOWLEDGE_INGEST_TASK,
-        input: { documentId: document.id },
       });
       queued += 1;
     } catch (err) {
@@ -81,4 +86,35 @@ export async function backfillStaleKnowledgeDocuments(
     );
   }
   return queued;
+}
+
+/**
+ * Schedule one bounded claim per interval. Empty runs remain scheduled so
+ * transient queue/database failures and newly stale rows are retried without a
+ * process restart.
+ */
+export function startKnowledgeReindexBackfill(
+  payload: BackfillPayload,
+  options: { limit?: number; intervalMs?: number; isOwner?: boolean } = {},
+): () => void {
+  const { intervalMs = BACKFILL_INTERVAL_MS, ...backfillOptions } = options;
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const run = async () => {
+    if (stopped) return;
+    try {
+      await backfillStaleKnowledgeDocuments(payload, backfillOptions);
+    } catch (err) {
+      payload.logger.error({ err }, 'knowledge reindex backlog drain failed');
+    }
+    if (!stopped) {
+      timer = setTimeout(run, intervalMs);
+      timer.unref?.();
+    }
+  };
+  void run();
+  return () => {
+    stopped = true;
+    if (timer) clearTimeout(timer);
+  };
 }

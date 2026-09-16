@@ -1,5 +1,7 @@
+import { GraphRAG } from '@mastra/rag';
 import { describe, expect, it, vi } from 'vitest';
 
+import { createKnowledgeLexicalStore } from '../knowledgeLexical';
 import { retrieveKnowledgeEvidence } from '../knowledgeRetrieval';
 import {
   assessRetrievalPromotion,
@@ -151,6 +153,173 @@ describe('retrieval evaluation runner', () => {
       'bytes',
       'grounding-completeness',
     ]);
+  });
+
+  it('evaluates the production lexical and neighbor adapters over a corpus larger than the old scan cap', async () => {
+    const target = {
+      id: 'doc-599:target',
+      score: 0,
+      metadata: {
+        knowledgeBaseId: '42',
+        retrievalVersion: 4,
+        documentId: 'doc-599',
+        title: 'Target',
+        chunkIndex: 0,
+        chunkId: 'doc-599:target',
+        text: 'Référence unique ZX-9917.',
+        parentSectionId: 'section-target',
+        nextChunkId: 'doc-599:neighbor',
+      },
+    };
+    const neighbor = {
+      id: 'doc-599:neighbor',
+      score: 0,
+      metadata: {
+        knowledgeBaseId: '42',
+        retrievalVersion: 4,
+        documentId: 'doc-599',
+        title: 'Target',
+        chunkIndex: 1,
+        chunkId: 'doc-599:neighbor',
+        text: 'Le jalon suivant confirme la décision finale.',
+        parentSectionId: 'section-target',
+      },
+    };
+    const corpus = [
+      ...Array.from({ length: 599 }, (_, index) => ({
+        id: `noise-${index}`,
+        score: 0,
+        metadata: {
+          knowledgeBaseId: '42',
+          retrievalVersion: 4,
+          documentId: `noise-${index}`,
+          title: 'Noise',
+          chunkIndex: 0,
+          chunkId: `noise-${index}`,
+          text: `Contenu générique numéro ${index}.`,
+        },
+      })),
+      target,
+      neighbor,
+    ];
+    const sqlStore = {
+      queryKnowledgeRows: vi.fn(
+        async (args: { terms?: string[]; ids?: string[]; topK: number }) => {
+          if (args.ids)
+            return corpus.filter((row) => args.ids!.includes(row.id)).slice(0, args.topK);
+          const wanted = new Set(args.terms ?? []);
+          return corpus
+            .map((row) => ({
+              ...row,
+              score:
+                [...wanted].filter((term) =>
+                  String(row.metadata.text).toLocaleLowerCase().includes(term),
+                ).length / Math.max(wanted.size, 1),
+            }))
+            .filter((row) => row.score > 0)
+            .sort((left, right) => right.score - left.score)
+            .slice(0, args.topK);
+        },
+      ),
+    };
+    const lexicalStore = createKnowledgeLexicalStore(sqlStore);
+    const modelVisible = new Map<string, unknown[]>();
+    const report = await evaluateRetrieval({
+      strategy: 'production-hybrid-adapters',
+      cases: [{ id: 'large-exact', query: 'ZX-9917', expectedChunkIds: [target.id] }],
+      retrieve: async (testCase) => {
+        const items = await retrieveKnowledgeEvidence({
+          source: { knowledgeBaseId: 42, indexName: 'knowledge_42' },
+          query: testCase.query,
+          topK: 2,
+          minScore: 0.5,
+          deps: {
+            embedQuery: vi.fn().mockResolvedValue([0]),
+            vectorStore: { query: vi.fn().mockResolvedValue([]) },
+            lexicalStore,
+          },
+        });
+        modelVisible.set(
+          testCase.id,
+          items.map(({ ranking: _ranking, ...item }) => ({ text: item.text })),
+        );
+        return items.map((item) => item.chunkId);
+      },
+      bytesOf: (_returned, testCase) =>
+        Buffer.byteLength(JSON.stringify(modelVisible.get(testCase.id) ?? [])),
+    });
+
+    expect(report.recall).toBe(1);
+    expect(report.p95LatencyMs).toBeGreaterThanOrEqual(0);
+    expect(report.returnedBytes).toBe(
+      Buffer.byteLength(
+        JSON.stringify([
+          { text: 'Référence unique ZX-9917.' },
+          { text: 'Le jalon suivant confirme la décision finale.' },
+        ]),
+      ),
+    );
+    expect(modelVisible.get('large-exact')).toEqual([
+      { text: 'Référence unique ZX-9917.' },
+      { text: 'Le jalon suivant confirme la décision finale.' },
+    ]);
+    expect(sqlStore.queryKnowledgeRows).toHaveBeenCalledWith(
+      expect.objectContaining({ terms: ['zx', '9917'] }),
+    );
+  });
+
+  it('rejects the installed GraphRAG candidate against an independently evaluated hybrid baseline', async () => {
+    const dimension = 1024;
+    const unit = (axis: number) =>
+      Array.from({ length: dimension }, (_, index) => (index === axis ? 1 : 0));
+    const graph = new GraphRAG(dimension, 0.7);
+    graph.createGraph(
+      [
+        { text: 'budget', metadata: { chunkId: 'c-1' } },
+        { text: 'other', metadata: { chunkId: 'c-2' } },
+      ],
+      [{ vector: unit(0) }, { vector: unit(1) }],
+    );
+    const evaluationCases = [{ id: 'budget', query: 'budget', expectedChunkIds: ['c-1'] }];
+    const baseline = await evaluateRetrieval({
+      strategy: 'evaluated-hybrid',
+      cases: evaluationCases,
+      retrieve: async () => ['c-1'],
+      bytesOf: (returned) => Buffer.byteLength(JSON.stringify(returned)),
+    });
+    const graphReport = await evaluateRetrieval({
+      strategy: 'installed-graphrag',
+      cases: evaluationCases,
+      retrieve: async () =>
+        graph
+          .query({ query: unit(0), topK: 2, randomWalkSteps: 4 })
+          .map((item) => String(item.metadata?.chunkId)),
+      bytesOf: (returned) => Buffer.byteLength(JSON.stringify(returned)),
+    });
+    const completeness = (report: RetrievalReport) => report.cases[0]?.recall ?? 0;
+    const decision = assessRetrievalPromotion(
+      baseline,
+      graphReport,
+      {
+        minRecallGain: 0.01,
+        minNdcgGain: 0.01,
+        maxPrecisionLoss: 0.02,
+        minNoAnswerPrecision: 1,
+        maxP95LatencyMs: 100,
+        maxReturnedBytes: 10_000,
+      },
+      {
+        baselineCompleteness: completeness(baseline),
+        candidateCompleteness: completeness(graphReport),
+        minCompletenessGain: 0.01,
+      },
+    );
+
+    expect(graphReport.recall).toBe(1);
+    expect(decision).toMatchObject({ promoted: false });
+    expect(decision.reasons).toEqual(
+      expect.arrayContaining(['recall-gain', 'ndcg-gain', 'grounding-completeness']),
+    );
   });
 
   it('scores the hybrid retrieval strategy above the previous overlap-only ranking', async () => {

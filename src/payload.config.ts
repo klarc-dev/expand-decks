@@ -21,7 +21,7 @@ import { buildSlidesTask } from './jobs/buildSlides';
 import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
 import { knowledgeIngestTask } from './jobs/knowledgeIngest';
-import { backfillStaleKnowledgeDocuments } from './jobs/knowledgeReindexBackfill';
+import { startKnowledgeReindexBackfill } from './jobs/knowledgeReindexBackfill';
 import { startStalledJobSweep } from './jobs/requeueStalledJobs';
 import { COLLECTIONS } from './lib/collections';
 import {
@@ -128,11 +128,7 @@ export default buildConfig({
         payload.logger.error({ err }, '[seed] Failed to upsert admin user');
       }
     }
-    try {
-      await backfillStaleKnowledgeDocuments(payload as never);
-    } catch (err) {
-      payload.logger.error({ err }, '[knowledge] Failed to backfill stale documents');
-    }
+    startKnowledgeReindexBackfill(payload as never);
     // Workers replaced mid-run (deploys, OOM kills) leave jobs flagged
     // `processing`, which the per-deck concurrency key turns into a permanent
     // block. The owner process releases such jobs at boot and periodically.

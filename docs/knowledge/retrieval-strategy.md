@@ -3,9 +3,9 @@
 Issue #20 is evaluation-led. The production strategy remains direct hybrid retrieval:
 
 - semantic pgvector candidates;
-- a bounded exact-term pass over the selected base's PostgreSQL-backed vector rows;
+- a bounded PostgreSQL exact-term query over the complete selected base/version (no arbitrary row sample);
 - deterministic score fusion and document diversity;
-- immediate-neighbor expansion only inside the same indexed parent section;
+- direct PostgreSQL lookup of immediate neighbors, admitted only when direct retrieval leaves context budget;
 - unchanged evidence recorder, authorization boundary, and model-visible byte cap.
 
 ## GraphRAG decision

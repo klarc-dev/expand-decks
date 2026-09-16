@@ -254,9 +254,9 @@ async function expandNeighbors(args: {
           },
         }) satisfies KnowledgeEvidenceItem,
     );
-  if (!neighbors.length) return args.selected;
-  const directBudget = Math.max(0, args.topK - neighbors.length);
-  return [...args.selected.slice(0, directBudget), ...neighbors].slice(0, args.topK);
+  if (!neighbors.length || args.selected.length >= args.topK) return args.selected;
+  const contextBudget = args.topK - args.selected.length;
+  return [...args.selected, ...neighbors.slice(0, contextBudget)];
 }
 
 function defaultQueryExpansion(query: string): string[] {

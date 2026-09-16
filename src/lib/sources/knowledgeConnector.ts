@@ -6,6 +6,7 @@ import { z } from 'zod';
 import {
   embedKnowledgeQuery,
   knowledgeVectorStore,
+  type KnowledgePgStore,
   type KnowledgeVectorStore,
 } from './knowledgeVector';
 import {
@@ -271,9 +272,16 @@ async function openOneSource(
   disconnect: () => Promise<void>;
 }> {
   const vectorStore = dependencies.vectorStore ?? knowledgeVectorStore();
+  const lexicalStore =
+    dependencies.lexicalStore ??
+    createKnowledgeLexicalStore(
+      dependencies.vectorStore
+        ? (dependencies.vectorStore as KnowledgePgStore)
+        : (vectorStore as KnowledgePgStore),
+    );
   const deps: SourceConnectorDependencies = {
     vectorStore,
-    lexicalStore: dependencies.lexicalStore ?? createKnowledgeLexicalStore(vectorStore),
+    lexicalStore,
     embedQuery: dependencies.embedQuery ?? embedKnowledgeQuery,
   };
   const tool = knowledgeTool(source, deps);

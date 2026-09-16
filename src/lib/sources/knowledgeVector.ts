@@ -25,9 +25,83 @@ export type KnowledgeVectorStore = {
   }): Promise<KnowledgeQueryResult[]>;
 };
 
+type PgQueryResult = { rows: Array<{ id: string; score: number | string; metadata: unknown }> };
+type PgQueryable = { query(sql: string, values: unknown[]): Promise<PgQueryResult> };
+
+export type KnowledgePgStore = PgVector & {
+  queryKnowledgeRows(args: {
+    indexName: string;
+    knowledgeBaseId: string;
+    retrievalVersion: number;
+    topK: number;
+    terms?: string[];
+    ids?: string[];
+  }): Promise<KnowledgeQueryResult[]>;
+};
+
+function knowledgeTable(indexName: string, knowledgeBaseId: string): string {
+  if (!/^\d+$/.test(knowledgeBaseId) || indexName !== `knowledge_${knowledgeBaseId}`) {
+    throw new Error('Knowledge index must match the server-owned numeric knowledge base');
+  }
+  return `"${KNOWLEDGE_VECTOR_SCHEMA}"."${indexName}"`;
+}
+
+export async function queryKnowledgeRows(
+  pool: PgQueryable,
+  args: Parameters<KnowledgePgStore['queryKnowledgeRows']>[0],
+): Promise<KnowledgeQueryResult[]> {
+  const table = knowledgeTable(args.indexName, args.knowledgeBaseId);
+  const baseValues: unknown[] = [args.knowledgeBaseId, String(args.retrievalVersion)];
+  let sql: string;
+  let values: unknown[];
+  if (args.ids) {
+    sql = `SELECT vector_id AS id, 0::float8 AS score, metadata
+      FROM ${table}
+      WHERE metadata->>'knowledgeBaseId' = $1
+        AND metadata->>'retrievalVersion' = $2
+        AND vector_id = ANY($3::text[])
+      ORDER BY array_position($3::text[], vector_id)
+      LIMIT $4`;
+    values = [...baseValues, args.ids, args.topK];
+  } else {
+    const weightedTerms = args.terms ?? [];
+    sql = `WITH query_terms AS (
+        SELECT term,
+          CASE WHEN term ~ '[0-9]' OR char_length(term) >= 8 THEN 2.0 ELSE 1.0 END AS weight
+        FROM unnest($3::text[]) AS term
+      ), scored AS (
+        SELECT vector_id AS id, metadata,
+          COALESCE(sum(query_terms.weight) FILTER (
+            WHERE lower(concat_ws(' ', metadata->>'headingPath', metadata->>'text'))
+              ~ ('(^|[^[:alnum:]])' || regexp_replace(query_terms.term, '([\\.\\+\\*\\?\\[\\]\\(\\)\\{\\}\\^\\$\\|\\-])', '\\\\1', 'g') || '([^[:alnum:]]|$)')
+          ), 0) / NULLIF(sum(query_terms.weight), 0) AS score
+        FROM ${table}
+        CROSS JOIN query_terms
+        WHERE metadata->>'knowledgeBaseId' = $1
+          AND metadata->>'retrievalVersion' = $2
+        GROUP BY vector_id, metadata
+      )
+      SELECT id, score, metadata
+      FROM scored
+      WHERE score > 0
+      ORDER BY score DESC, id
+      LIMIT $4`;
+    values = [...baseValues, weightedTerms, args.topK];
+  }
+  const result = await pool.query(sql, values);
+  return result.rows.map((row) => ({
+    id: row.id,
+    score: Number(row.score),
+    metadata:
+      row.metadata && typeof row.metadata === 'object'
+        ? (row.metadata as Record<string, unknown>)
+        : undefined,
+  }));
+}
+
 const g = globalThis as typeof globalThis & { __knowledgePgVector?: PgVector };
 
-export function knowledgeVectorStore(): PgVector {
+export function knowledgeVectorStore(): KnowledgePgStore {
   if (!g.__knowledgePgVector) {
     g.__knowledgePgVector = new PgVector({
       id: 'knowledge-pg-vector',
@@ -39,7 +113,11 @@ export function knowledgeVectorStore(): PgVector {
       disableInit: false,
     });
   }
-  return g.__knowledgePgVector;
+  const store = g.__knowledgePgVector as PgVector & Partial<KnowledgePgStore>;
+  if (!store.queryKnowledgeRows) {
+    store.queryKnowledgeRows = (args) => queryKnowledgeRows(store.pool, args);
+  }
+  return store as KnowledgePgStore;
 }
 
 // The provider already caches one MLE5Large session for both prefixes. Bound
