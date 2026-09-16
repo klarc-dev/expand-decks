@@ -656,9 +656,7 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
           const fragment = valueForRole(state, role, field);
           if (!fragment || !hasContent(projectedSlide[field])) continue;
           if (role !== 'collection.items') {
-            projectedSlide[field] = RICH_TEXT_TARGET_FIELDS.has(field)
-              ? lexical(structuredClone(fragment.value))
-              : structuredClone(fragment.value);
+            projectedSlide[field] = projectMappedValue(role, fragment, field);
           }
           used.add(`${role}:${fragment.field}`);
         }

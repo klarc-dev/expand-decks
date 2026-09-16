@@ -52,15 +52,15 @@ const EXPECTED_CLASSIFICATION_MATRIX: Record<string, string> = {
   cover: 'ccccuuucuuuc',
   section: 'ccccuuucuuuc',
   statement: 'ccccuuucuuuc',
-  twoCols: 'lllcuualuuuu',
-  cardGrid: 'lllacaaluaua',
-  stats: 'lllauualuuuu',
+  twoCols: 'lllcuulluuuu',
+  cardGrid: 'lllaclllulul',
+  stats: 'lllluulluuuu',
   quotes: 'lllluucluuuu',
   cta: 'ccccuuucuuuc',
   table: 'lllluuuluuul',
-  timeline: 'lllauualuuuu',
+  timeline: 'lllluulluuuu',
   mermaid: 'lllluuuluucl',
-  agenda: 'lllauualuuuu',
+  agenda: 'lllluulluuuu',
 };
 
 const CLASSIFICATION_CODE = {
