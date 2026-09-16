@@ -75,7 +75,6 @@ export const DOCUMENT_TEMPLATE_FIXTURES: readonly DocumentTemplateFixture[] = [
         subtitle:
           'Une promesse lisible, trois bénéfices concrets et une prochaine étape sans ambiguïté.',
         primaryAction: 'Planifier un échange',
-        secondaryAction: 'Recevoir le détail',
       },
     ],
   },

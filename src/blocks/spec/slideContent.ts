@@ -129,6 +129,21 @@ export function normalizeSlideContent(slide: Record<string, unknown>): LayoutCon
   ) {
     const state = structuredClone(existing as LayoutContentState);
     state.layouts[layout] = storedProjection(slide);
+    const visibleRoles = new Map<SlideContentRole, CanonicalFragment[]>();
+    for (const [field, role] of Object.entries(contract.fields)) {
+      const value = slide[field];
+      if (!hasContent(value)) continue;
+      const fragments = visibleRoles.get(role) ?? [];
+      fragments.push({ field, value: normalizeRoleValue(role, value) });
+      visibleRoles.set(role, fragments);
+    }
+    for (const [role, fragments] of visibleRoles) state.roles[role] = fragments;
+    if (hasContent(slide.footnotes)) {
+      state.roles.citations = [
+        { field: 'footnotes', value: structuredClone(slide.footnotes) },
+        ...(state.roles.citations ?? []).filter((fragment) => fragment.field !== 'footnotes'),
+      ];
+    }
     return state;
   }
 
@@ -312,6 +327,33 @@ function projectFromRoles(
   return { mappedFields, slide, used };
 }
 
+function omittedCollectionItemFields(
+  state: LayoutContentState,
+  target: LayoutAdapterContract,
+  projection: Record<string, unknown>,
+): string[] {
+  const targetField = Object.entries(target.fields).find(
+    ([, role]) => role === 'collection.items',
+  )?.[0];
+  if (!targetField) return [];
+  const source = valueForRole(state, 'collection.items', targetField)?.value;
+  const projected = projection[targetField];
+  if (!Array.isArray(source) || !Array.isArray(projected)) return [];
+
+  const omitted = new Set<string>();
+  source.forEach((raw, index) => {
+    if (!raw || typeof raw !== 'object') return;
+    const visible = projected[index];
+    const visibleRecord =
+      visible && typeof visible === 'object' ? (visible as Record<string, unknown>) : {};
+    for (const [field, value] of Object.entries(raw as Record<string, unknown>)) {
+      if (field !== 'id' && hasContent(value) && !hasContent(visibleRecord[field]))
+        omitted.add(field);
+    }
+  });
+  return [...omitted].sort();
+}
+
 function hiddenFragments(state: LayoutContentState, used: Set<string>) {
   const hidden: Array<{ field: string; role: SlideContentRole }> = [];
   for (const [role, fragments] of Object.entries(state.roles) as Array<
@@ -338,23 +380,39 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
   const state = normalizeSlideContent(slide);
   const exact = state.layouts[targetLayout];
   const projection = exact
-    ? {
-        mappedFields: [],
-        slide: { ...structuredClone(exact), blockType: targetLayout },
-        used: new Set<string>(),
-      }
+    ? (() => {
+        const projectedSlide: Record<string, unknown> = {
+          ...structuredClone(exact),
+          blockType: targetLayout,
+        };
+        const used = new Set<string>();
+        for (const [field, role] of Object.entries(target.fields)) {
+          const fragment = valueForRole(state, role, field);
+          if (!fragment || !hasContent(projectedSlide[field])) continue;
+          if (role !== 'collection.items') {
+            projectedSlide[field] = RICH_TEXT_TARGET_FIELDS.has(field)
+              ? lexical(structuredClone(fragment.value))
+              : structuredClone(fragment.value);
+          }
+          used.add(`${role}:${fragment.field}`);
+        }
+        return { mappedFields: [], slide: projectedSlide, used };
+      })()
     : projectFromRoles(state, targetLayout);
-  if (exact) {
-    for (const [field, role] of Object.entries(target.fields)) {
-      const fragment = valueForRole(state, role, field);
-      if (fragment && hasContent(exact[field])) projection.used.add(`${role}:${fragment.field}`);
-    }
-    if (target.supportsCitations && hasContent(exact.footnotes)) {
-      const citation = valueForRole(state, 'citations', 'footnotes');
-      if (citation) projection.used.add(`citations:${citation.field}`);
-    }
+  if (exact && target.supportsCitations && hasContent(exact.footnotes)) {
+    const citation = valueForRole(state, 'citations', 'footnotes');
+    if (citation) projection.used.add(`citations:${citation.field}`);
   }
   const issues: LayoutChangeIssue[] = [];
+  const omittedItemFields = omittedCollectionItemFields(state, target, projection.slide);
+  for (const field of omittedItemFields) {
+    issues.push({
+      code: 'non-portable',
+      field,
+      role: 'collection.items',
+      message: `Le champ renseigné « ${field} » des éléments sera conservé hors affichage dans ce layout.`,
+    });
+  }
   for (const role of target.required ?? []) {
     const field = Object.entries(target.fields).find(([, value]) => value === role)?.[0];
     if (!field || !hasContent(projection.slide[field])) {
@@ -456,7 +514,10 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
     targetLayout !== sourceLayout &&
     (source.kind === 'specialized' || target.kind === 'specialized');
   const requiresConfirmation =
-    !unavailable && (specializedConfirmation || issues.some((issue) => issue.code === 'capacity'));
+    !unavailable &&
+    (specializedConfirmation ||
+      omittedItemFields.length > 0 ||
+      issues.some((issue) => issue.code === 'capacity'));
   const classification: LayoutChangeClassification = unavailable
     ? 'unavailable'
     : requiresConfirmation || hidden.length > 0

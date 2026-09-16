@@ -73,12 +73,68 @@ describe('unified slide-content adapters', () => {
           { id: 'b', number: '02', title: 'Second', description: rich('Beta') },
         ],
       };
-      const changed = applyLayoutProjection({ slide: source, targetLayout }).slide;
-      const restored = applyLayoutProjection({ slide: changed, targetLayout: 'cardGrid' }).slide;
+      const analysis = analyzeSlideLayouts(source, [targetLayout])[0]!;
+      const changed = applyLayoutProjection({
+        slide: source,
+        targetLayout,
+        confirmLossy: analysis.requiresConfirmation,
+      }).slide;
+      const backAnalysis = analyzeSlideLayouts(changed, ['cardGrid'])[0]!;
+      const restored = applyLayoutProjection({
+        slide: changed,
+        targetLayout: 'cardGrid',
+        confirmLossy: backAnalysis.requiresConfirmation,
+      }).slide;
       expect((restored.cards as Array<{ id: string }>).map((item) => item.id)).toEqual(['a', 'b']);
       expect(restored.cards).toEqual(source.cards);
     },
   );
+
+  it('refreshes canonical roles from edited visible content across subsequent layout changes', () => {
+    const source = { blockType: 'statement', title: 'Original', body: rich('Initial support') };
+    const section = applyLayoutProjection({ slide: source, targetLayout: 'section' }).slide;
+    const edited = { ...section, title: 'Edited in B', subtitle: rich('Edited support in B') };
+
+    const cta = applyLayoutProjection({ slide: edited, targetLayout: 'cta' }).slide;
+    expect(cta).toMatchObject({ title: 'Edited in B', subtitle: rich('Edited support in B') });
+
+    const back = applyLayoutProjection({ slide: edited, targetLayout: 'statement' }).slide;
+    expect(back).toMatchObject({ title: 'Edited in B', body: rich('Edited support in B') });
+  });
+
+  it('diagnoses populated collection fields omitted by the target and preserves them round trip', () => {
+    const source = {
+      blockType: 'cardGrid',
+      title: 'Cards',
+      cards: [
+        { id: 'a', number: '01', title: 'Alpha', description: rich('Detail') },
+        { id: 'b', number: '02', title: 'Beta', description: rich('More detail') },
+      ],
+    };
+    const analysis = analyzeSlideLayouts(source, ['stats'])[0]!;
+    expect(analysis).toMatchObject({ classification: 'lossy', requiresConfirmation: true });
+    expect(analysis.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'non-portable', field: 'description' }),
+        expect.objectContaining({ code: 'non-portable', field: 'number' }),
+      ]),
+    );
+    expect(() => applyLayoutProjection({ slide: source, targetLayout: 'stats' })).toThrow(
+      /confirmation/,
+    );
+    const stats = applyLayoutProjection({
+      slide: source,
+      targetLayout: 'stats',
+      confirmLossy: true,
+    }).slide;
+    const backAnalysis = analyzeSlideLayouts(stats, ['cardGrid'])[0]!;
+    const restored = applyLayoutProjection({
+      slide: stats,
+      targetLayout: 'cardGrid',
+      confirmLossy: backAnalysis.requiresConfirmation,
+    }).slide;
+    expect(restored.cards).toEqual(source.cards);
+  });
 
   it('requires confirmation for specialized transformations and never deletes their structure', () => {
     const source = {

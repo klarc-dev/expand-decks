@@ -10,7 +10,8 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Authenticated slide-layout command boundary used by the admin preview.
+// Canonical external boundary for slide layout changes. Issue #45's MCP half was superseded by
+// #66's removal of the unreachable deck MCP server; do not recreate a parallel MCP transport.
 export async function POST(req: NextRequest) {
   const { payload, user } = await authenticateRequest(req.headers);
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });

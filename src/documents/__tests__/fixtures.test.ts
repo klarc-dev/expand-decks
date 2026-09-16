@@ -24,7 +24,6 @@ describe('document template fixtures', () => {
       blockType: 'cta',
       subtitle: expect.any(String),
       primaryAction: 'Planifier un échange',
-      secondaryAction: 'Recevoir le détail',
     });
     expect(slide).not.toHaveProperty('body');
     expect(slide).not.toHaveProperty('primaryCtaLabel');

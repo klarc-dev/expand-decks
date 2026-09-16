@@ -234,7 +234,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const [applyingLayout, setApplyingLayout] = useState(false);
   const [includeLayoutCandidates, setIncludeLayoutCandidates] = useState(false);
   const [undo, setUndo] = useState<{ fingerprint: string; token: string } | null>(null);
-  const { getData, reset } = useForm();
+  const { reset } = useForm();
   const { closeModal, openModal } = useModal();
   const modalSlug = `slide-layout-compatibility-${path.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
@@ -269,7 +269,10 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
         expectedFingerprint: result.fingerprint,
         confirmLossy: candidate.requiresConfirmation,
         mapping,
-        draft: getData(),
+        draft: {
+          slideId: (request.block as { id?: string | number }).id ?? null,
+          slide: request.block as Record<string, unknown>,
+        },
       });
       if (!response.ok) throw new Error(response.data.error || 'Changement de layout impossible.');
       const data = response.data as LayoutMutationResult;

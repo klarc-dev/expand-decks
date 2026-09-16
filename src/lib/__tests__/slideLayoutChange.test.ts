@@ -22,12 +22,25 @@ const presentation = {
   ],
 };
 
-function payload() {
+function payload(options?: { beforeLockedRead?: (state: typeof presentation) => void }) {
   const state = structuredClone(presentation);
+  let reads = 0;
   return {
     state,
-    findByID: vi.fn(async () => structuredClone(state)),
+    db: {
+      sessions: { 'tx-1': { db: { id: 'transaction-db' } } },
+      beginTransaction: vi.fn(async () => 'tx-1'),
+      commitTransaction: vi.fn(async () => undefined),
+      rollbackTransaction: vi.fn(async () => undefined),
+      execute: vi.fn(async () => undefined),
+    },
+    findByID: vi.fn(async () => {
+      reads += 1;
+      if (reads === 2) options?.beforeLockedRead?.(state);
+      return structuredClone(state);
+    }),
     update: vi.fn(async ({ data }: any) => {
+      expect(Object.keys(data)).toEqual(['slides']);
       state.slides = structuredClone(data.slides);
       return structuredClone(state);
     }),
@@ -82,6 +95,9 @@ describe('executeSlideLayoutCommand', () => {
       user,
     });
     expect(api.update).toHaveBeenCalledTimes(1);
+    expect(api.db.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ db: api.db.sessions['tx-1'].db }),
+    );
     expect(result).toMatchObject({ buildQueued: true, slideId: 'slide-row' });
     expect(result.slide).toMatchObject({ id: 'slide-row', blockType: 'section', title: 'Stable' });
     expect(api.state.slides.map((slide) => slide.id)).toEqual([
@@ -111,6 +127,67 @@ describe('executeSlideLayoutCommand', () => {
     } satisfies Partial<SlideLayoutCommandError>);
     expect(api.update).not.toHaveBeenCalled();
     expect(api.state).toEqual(presentation);
+  });
+
+  it('rejects a mutation that races between the initial read and locked persistence read', async () => {
+    const api = payload({
+      beforeLockedRead: (state) => {
+        state.slides[1]!.title = 'Concurrent edit';
+      },
+    });
+    await expect(
+      executeSlideLayoutCommand({
+        command: {
+          action: 'apply',
+          deckId: 42,
+          slideIndex: 1,
+          targetLayout: 'section',
+          expectedFingerprint: slideLayoutFingerprint(presentation.slides[1]!),
+        },
+        payload: api,
+        user,
+      }),
+    ).rejects.toMatchObject({ status: 409, code: 'stale' });
+    expect(api.update).not.toHaveBeenCalled();
+    expect(api.db.rollbackTransaction).toHaveBeenCalledWith('tx-1');
+    expect(api.state.slides[1]).toMatchObject({ title: 'Concurrent edit', blockType: 'statement' });
+  });
+
+  it('uses draft content only for the selected slide and rejects identity mismatch', async () => {
+    const api = payload();
+    const selected = presentation.slides[1]!;
+    const result = await executeSlideLayoutCommand({
+      command: {
+        action: 'apply',
+        deckId: 42,
+        slideIndex: 1,
+        targetLayout: 'section',
+        expectedFingerprint: slideLayoutFingerprint(selected),
+        draft: { slideId: 'slide-row', slide: { ...selected, title: 'Unsaved edit' } },
+      },
+      payload: api,
+      user,
+    });
+    expect(result.slide).toMatchObject({ title: 'Unsaved edit', blockType: 'section' });
+    expect(api.state.slides[0]).toEqual(presentation.slides[0]);
+    expect(api.state.slides[2]).toEqual(presentation.slides[2]);
+
+    const mismatched = payload();
+    await expect(
+      executeSlideLayoutCommand({
+        command: {
+          action: 'apply',
+          deckId: 42,
+          slideIndex: 1,
+          targetLayout: 'section',
+          expectedFingerprint: slideLayoutFingerprint(selected),
+          draft: { slideId: 'other-row', slide: { ...selected, id: 'other-row' } },
+        },
+        payload: mismatched,
+        user,
+      }),
+    ).rejects.toMatchObject({ status: 409, code: 'identity_mismatch' });
+    expect(mismatched.update).not.toHaveBeenCalled();
   });
 
   it('rejects stale and mismatched undo attempts without persistence', async () => {
