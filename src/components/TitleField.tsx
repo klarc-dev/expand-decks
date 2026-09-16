@@ -16,11 +16,14 @@ const TitleField: TextFieldClientComponent = ({ field, path }) => {
   const { errorMessage, setValue, showError, value } = useField<string>({ path });
 
   useEffect(() => {
+    // Inline style, not the hidden attribute: Payload's `.render-title` sets
+    // `display: inline-block`, which would win over the attribute.
     const headerTitle = document.querySelector<HTMLElement>('.doc-header__title');
     if (!headerTitle) return;
-    headerTitle.hidden = true;
+    const previous = headerTitle.style.display;
+    headerTitle.style.display = 'none';
     return () => {
-      headerTitle.hidden = false;
+      headerTitle.style.display = previous;
     };
   }, []);
 
