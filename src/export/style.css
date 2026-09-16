@@ -1216,10 +1216,12 @@
   --ag-gap: 1.6rem;
   --ag-row-pad: 1.05rem;
   --ag-band-bleed: 1rem;
-  --ag-num-size: 0.9rem;
+  --ag-num-size: 0.95rem;
   --ag-label-size: var(--t-h3);
   --ag-desc-size: var(--t-body);
   --ag-dim: color-mix(in srgb, var(--fg-muted) 78%, var(--bg));
+  --ag-label-track: 11fr;
+  --ag-desc-track: 9fr;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1232,6 +1234,8 @@
    canvas instead of floating in it. */
 .k-agenda--roomy {
   --ag-num-col: 3.6rem;
+  --ag-label-track: 12fr;
+  --ag-desc-track: 8fr;
   --ag-row-pad: 1.6rem;
   --ag-num-size: 1rem;
   --ag-label-size: var(--t-sub);
@@ -1266,7 +1270,10 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: var(--ag-num-col) minmax(0, 11fr) minmax(0, 9fr);
+  grid-template-columns: var(--ag-num-col) minmax(0, var(--ag-label-track)) minmax(
+      0,
+      var(--ag-desc-track)
+    );
   column-gap: var(--ag-gap);
   align-items: baseline;
   padding: var(--ag-row-pad) 0;
@@ -1281,11 +1288,13 @@
   font-weight: 400;
   font-size: var(--ag-num-size);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   color: var(--fg-muted);
 }
 
-.k-ag-label {
+/* Matches the shared heading reset's specificity so the label keeps its own
+   medium weight: the title above is the bold voice, chapters answer quieter. */
+.slidev-layout .k-ag-label {
   font-family: var(--k-font-heading);
   font-weight: 500;
   font-size: var(--ag-label-size);
@@ -1318,16 +1327,15 @@
 
 .k-agenda--fit.k-density-compact .k-ag-item,
 .k-agenda--fit.k-density-dense .k-ag-item {
-  grid-template-columns: calc(var(--ag-num-col) * var(--density-space)) minmax(0, 11fr) minmax(
-      0,
-      9fr
-    );
+  grid-template-columns:
+    calc(var(--ag-num-col) * var(--density-space)) minmax(0, var(--ag-label-track))
+    minmax(0, var(--ag-desc-track));
   column-gap: calc(var(--ag-gap) * var(--density-space));
   padding: calc(var(--ag-row-pad) * var(--density-space)) 0;
 }
 .k-agenda--fit.k-density-compact .k-ag-num,
 .k-agenda--fit.k-density-dense .k-ag-num {
-  font-size: calc(var(--ag-num-size) * var(--density-scale));
+  font-size: max(calc(var(--ag-num-size) * var(--density-scale)), 0.72rem);
 }
 .k-agenda--fit.k-density-compact .k-ag-label,
 .k-agenda--fit.k-density-dense .k-ag-label {
@@ -1372,7 +1380,7 @@
 .k-dark .k-ag-item {
   border-color: rgba(255, 255, 255, 0.18);
 }
-.k-dark .k-ag-label {
+.slidev-layout.k-dark .k-ag-label {
   color: #fff;
 }
 .k-dark .k-ag-num,
@@ -1386,28 +1394,11 @@
 .k-dark .k-ag-item--active .k-ag-desc {
   color: #fff;
 }
-.k-dark .k-ag-item--dim .k-ag-label {
+.slidev-layout.k-dark .k-ag-item--dim .k-ag-label {
   color: var(--fg-muted);
 }
 .k-dark .k-ag-item--dim .k-ag-num {
   color: color-mix(in srgb, var(--fg-muted) 70%, var(--bg));
-}
-
-.k-dark .k-ag-item {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-.k-dark .k-ag-num {
-  color: var(--k-rose);
-}
-.k-dark .k-ag-label {
-  color: #fff;
-}
-.k-dark .k-ag-desc {
-  color: var(--fg-muted);
-}
-.k-dark .k-ag-item--active {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.32);
 }
 
 .k-divider {

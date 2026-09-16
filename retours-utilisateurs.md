@@ -12,7 +12,7 @@ Ajouter un sommaire cliquable permettant d’accéder directement à l’experti
 
 Recentrer sur la propriété intellectuelle le contenu de la slide 2, intitulée « Vous souhaitez protéger votre innovation ou votre image ». →
 
-Éviter les répétitions dans les encadrés « À retenir ». → Encadrés redondants supprimés des slides d’expertise dans le seed.
+Éviter les répétitions dans les encadrés « À retenir ». → Encadrés conservés et reformulés pour montrer l’apport concret de la pluridisciplinarité dans chaque expertise : opérations, protection des actifs, fiscalité et financement de la R&D.
 
 Remplacer « Contrats » par « Protection, valorisation et défense » sur la slide 6. → Fait dans le seed.
 

@@ -12,7 +12,9 @@ const base = {
 
 describe('renderAgenda', () => {
   it('auto-derives the list from ctx.sections when items are empty', () => {
-    const out = renderAgenda(base, { sections: ['Comprendre', 'Sécuriser', 'Décider'] });
+    const out = renderAgenda(base, {
+      sections: ['Comprendre', 'Sécuriser', 'Décider'],
+    });
     expect(out).toContain('Comprendre');
     expect(out).toContain('Sécuriser');
     expect(out).toContain('Décider');
@@ -49,10 +51,38 @@ describe('renderAgenda', () => {
   });
 
   it('switches to the height-fitted layout once the list can crowd the canvas', () => {
-    const out = renderAgenda(base, { sections: ['One', 'Two', 'Three', 'Four', 'Five'] });
+    const out = renderAgenda(base, {
+      sections: ['One', 'Two', 'Three', 'Four', 'Five'],
+    });
     // Fitted mode: list fills the content-main row and shares it across rows, so
     // the canvas bounds the layout regardless of count — no overflow into chrome.
     expect(out).toContain('k-agenda--fit');
     expect(out).toContain('k-content-main--stretch');
+  });
+
+  it('gives short uncrowded lists the roomy ledger type and spans labels when nothing is described', () => {
+    const roomy = renderAgenda(base, {
+      sections: ['One', 'Two', 'Three', 'Four'],
+    });
+    expect(roomy).toContain('k-agenda--roomy');
+    expect(roomy).toContain('k-agenda--plain');
+
+    const described = renderAgenda(
+      {
+        ...base,
+        items: [
+          { label: 'One', description: 'A line under the chapter' },
+          { label: 'Two', description: null },
+        ],
+      },
+      {},
+    );
+    expect(described).toContain('k-agenda--roomy');
+    expect(described).not.toContain('k-agenda--plain');
+
+    const long = renderAgenda(base, {
+      sections: ['One', 'Two', 'Three', 'Four', 'Five', 'Six'],
+    });
+    expect(long).not.toContain('k-agenda--roomy');
   });
 });

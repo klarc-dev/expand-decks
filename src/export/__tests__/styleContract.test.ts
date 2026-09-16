@@ -89,6 +89,27 @@ describe('style.css richText normalization (regression: cover footerLeft circle)
   });
 });
 
+describe('style.css agenda ledger', () => {
+  it('rules rows with hairlines instead of boxing them', () => {
+    const item = css.match(/\n\.k-ag-item \{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(item).toMatch(/border-top:\s*1px solid var\(--k-line\)/);
+    expect(item).not.toMatch(/border-radius/);
+    expect(item).toMatch(/align-items:\s*baseline/);
+    expect(css).toMatch(/\.k-ag-desc\s*\{[\s\S]*?grid-column:\s*3/);
+  });
+
+  it('recedes inactive rows by colour, never opacity', () => {
+    const dim = css.match(/\.k-ag-item--dim[^{]*\{[\s\S]*?\}/g)?.join('\n') ?? '';
+    expect(dim).not.toMatch(/opacity/);
+    expect(dim).toMatch(/color:/);
+  });
+
+  it('keeps the active band a pseudo-element the content clip lets through', () => {
+    expect(css).toMatch(/\.k-ag-item--active::before\s*\{[\s\S]*?background:\s*var\(--k-teal-50\)/);
+    expect(css).toMatch(/\.k-content-main:has\(> \.k-agenda\)\s*\{[\s\S]*?overflow-clip-margin/);
+  });
+});
+
 describe('style.css fitted agenda layout (regression: agenda rows overflow footer)', () => {
   it('lets fitted agenda rows share the measured content row height', () => {
     expect(css).toMatch(/\.k-agenda--fit\s*\{[\s\S]*height:\s*100%/);
@@ -180,7 +201,7 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
   });
 
   it('uses one fixed heading-description size across content, hero, cover, section, and CTA slides', () => {
-    const token = css.match(/--t-heading-subtext:\s*([^;]+);/)?.[1]?.trim();
+    const token = css.match(/--t-heading-subtext:\s*([^;]+);/)?.[1]?.replace(/\s+/g, '');
     expect(token).toBe('var(--t-lead)');
     expect(css).toMatch(
       /:is\(\.k-header-lead, \.k-hero-body, \.k-hero-sub, \.k-section-sub, \.k-cta-sub\)\s*\{[^}]*font-size:\s*var\(--t-heading-subtext\)/,
@@ -230,7 +251,7 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
 
   it('uses an explicit numbered role for comfortable two-column cards', () => {
     expect(css).toMatch(
-      /\.k-card-stack--grid\.k-grid-2:not\([^)]*\) \.k-card--numbered p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/,
+      /\.k-card-stack--grid\.k-grid-2:not\([^)]*\)\s+\.k-card--numbered\s+p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/,
     );
     expect(css).not.toContain(':has(> .k-num)');
   });

@@ -151,6 +151,8 @@ const slides = [
     lead: 'Contrats, gouvernance, opérations et différends : notre accompagnement.',
     intro:
       'Nos avocats interviennent en conseil et en contentieux, en lien avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
+    leftFooter:
+      'Avocats, Conseils en Propriété Industrielle et fiscaliste croisent leurs analyses pour négocier vos opérations en tenant compte des droits sur vos innovations et de leurs effets fiscaux.',
     rightCards: [
       {
         title: 'Vos contrats et partenariats',
@@ -182,6 +184,8 @@ const slides = [
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
       'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, valorisation et défense de vos actifs.',
+    leftFooter:
+      'Les Conseils en Propriété Industrielle définissent les protections ; les avocats organisent leur exploitation et leur défense. Vos dépôts, licences et recours suivent une même stratégie.',
     rightCards: [
       {
         title: 'Vos brevets et inventions',
@@ -213,6 +217,8 @@ const slides = [
     lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
     intro:
       'L’avocat fiscaliste construit avec vous une stratégie adaptée à vos opérations et vous défend en cas de contrôle. Avec l’équipe scientifique, il établit la position fiscale à partir de vos travaux de R&D.',
+    leftFooter:
+      'Docteurs, ingénieurs et avocat fiscaliste relient vos travaux de R&D aux critères fiscaux : les arguments scientifiques et juridiques se répondent, du dossier justificatif à la défense en contrôle.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
@@ -244,6 +250,8 @@ const slides = [
     lead: 'Une équipe scientifique pour structurer vos travaux de R&D et préparer vos demandes de financement.',
     intro:
       'Docteurs et ingénieurs construisent avec vous le cadre scientifique et financier de vos projets, documentent vos travaux et préparent les dossiers en lien avec l’avocat fiscaliste.',
+    leftFooter:
+      'L’équipe scientifique construit vos dossiers de financement avec l’appui des avocats et des Conseils en Propriété Industrielle, pour articuler budget, engagements contractuels et droits sur les résultats.',
     rightCards: [
       {
         title: 'Vos aides et financements',
