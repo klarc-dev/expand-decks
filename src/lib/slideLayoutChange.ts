@@ -57,6 +57,23 @@ export const slideLayoutCommandSchema = z.discriminatedUnion('action', [
   }),
 ]);
 
+export type SlideLayoutCommand = z.infer<typeof slideLayoutCommandSchema>;
+type SlideLayoutMutationCommand = Extract<SlideLayoutCommand, { action: 'apply' | 'undo-layout' }>;
+type SlideLayoutReadCommand = Exclude<SlideLayoutCommand, SlideLayoutMutationCommand>;
+
+type SlideLayoutMutationResponse = {
+  action: 'apply' | 'undo-layout';
+  analysis: ReturnType<typeof analyzeSlideLayouts>[number] | undefined;
+  deckId: unknown;
+  slideIndex: number;
+  slideId: unknown;
+  slide: Record<string, unknown>;
+  fingerprint: string;
+  undoToken: string | undefined;
+  buildQueued: true;
+  presentation: any;
+};
+
 export class SlideLayoutCommandError extends Error {
   constructor(
     message: string,
@@ -102,10 +119,25 @@ function sameSlideIdentity(left: unknown, right: unknown): boolean {
  */
 // fallow-ignore-next-line complexity
 export async function executeSlideLayoutCommand(args: {
-  command: z.infer<typeof slideLayoutCommandSchema>;
+  command: SlideLayoutMutationCommand;
   payload: any;
   user: any;
-}) {
+}): Promise<SlideLayoutMutationResponse>;
+export async function executeSlideLayoutCommand(args: {
+  command: SlideLayoutReadCommand;
+  payload: any;
+  user: any;
+}): Promise<Record<string, any>>;
+export async function executeSlideLayoutCommand(args: {
+  command: SlideLayoutCommand;
+  payload: any;
+  user: any;
+}): Promise<Record<string, any> | SlideLayoutMutationResponse>;
+export async function executeSlideLayoutCommand(args: {
+  command: SlideLayoutCommand;
+  payload: any;
+  user: any;
+}): Promise<Record<string, any> | SlideLayoutMutationResponse> {
   const { command, payload, user } = args;
   const presentation = await payload.findByID({
     collection: COLLECTIONS.presentations,
