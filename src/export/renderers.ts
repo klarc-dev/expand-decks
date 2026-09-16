@@ -3,7 +3,6 @@ import { renderAgenda, type AgendaBlockData } from './blocks/agenda';
 import { renderCardGrid, type CardGridBlockData } from './blocks/cardGrid';
 import { renderCover, type CoverBlockData } from './blocks/cover';
 import { renderCta, type CtaBlockData } from './blocks/cta';
-import { renderMarkdown, type MarkdownBlockData } from './blocks/markdown';
 import { renderMermaid, type MermaidBlockData } from './blocks/mermaid';
 import { renderQuotes, type QuotesBlockData } from './blocks/quotes';
 import { renderSection, type SectionBlockData } from './blocks/section';
@@ -25,8 +24,7 @@ export type SlideBlock =
   | CtaBlockData
   | TableBlockData
   | TimelineBlockData
-  | MermaidBlockData
-  | MarkdownBlockData;
+  | MermaidBlockData;
 
 // Renderers take the resolved per-slide context (tone) as an optional 2nd arg.
 // Optional so call sites can omit it and renderers can ignore it during the
@@ -49,7 +47,6 @@ export const RENDERERS = {
   table: renderTable as Renderer,
   timeline: renderTimeline as Renderer,
   mermaid: renderMermaid as Renderer,
-  markdown: renderMarkdown as Renderer,
 } satisfies Record<SlideBlock['blockType'], Renderer>;
 
 // Runtime lookup by an arbitrary string (callers handle the undefined case).

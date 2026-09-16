@@ -26,10 +26,11 @@ export function renderStatement(block: StatementBlockData, ctx?: RenderCtx): str
   // against an out-of-enum value from a pre-variant DB row by validating against
   // the known set before indexing VARIANT_LAYOUT.
   const explicit = block.variant && VARIANTS.includes(block.variant) ? block.variant : null;
-  const variant: StatementVariant =
-    explicit ?? VARIANTS[(ctx?.variantIndex ?? 0) % VARIANTS.length]!;
-  const layout = VARIANT_LAYOUT[variant];
   const bodyHtml = richTextToHTML(block.body);
+  const requestedVariant: StatementVariant =
+    explicit ?? VARIANTS[(ctx?.variantIndex ?? 0) % VARIANTS.length]!;
+  const variant = requestedVariant === 'split' && !bodyHtml ? 'centered-hero' : requestedVariant;
+  const layout = VARIANT_LAYOUT[variant];
   const footerHtml = richTextToHTML(block.footer);
   const takeaway = footerHtml ? splitTakeaway(footerHtml, ctx?.language) : null;
   const density = heroSurfaceFit({

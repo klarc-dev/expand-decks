@@ -19,7 +19,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { optionalRender, optionalRichTextRender } from '../../dsl';
+import { optionalRender, optionalRichTextRender, sharedRenderFields } from '../../dsl';
 import { type Equal, type Expect, type InferRender } from '../renderType';
 
 import type { CardGridBlockData } from '../../../../export/blocks/cardGrid';
@@ -38,6 +38,7 @@ const statementRenderSchema = z.object({
   body: optionalRichTextRender(),
   footer: optionalRichTextRender(),
   variant: optionalRender(z.enum(['centered-hero', 'pull-quote', 'big-statement', 'split'])),
+  ...sharedRenderFields(true),
 });
 
 type DerivedStatement = InferRender<typeof statementRenderSchema>;
@@ -133,6 +134,7 @@ const twoColsRenderSchema = z.object({
     .optional(),
   image: z.object({ url: z.string() }).nullable().optional(),
   imagePosition: optionalRender(z.enum(['right', 'left'])),
+  ...sharedRenderFields(true),
 });
 
 type DerivedTwoCols = InferRender<typeof twoColsRenderSchema>;
@@ -160,6 +162,7 @@ const cardGridRenderSchema = z.object({
     .nullable()
     .optional(),
   intervenants: coverIntervenants,
+  ...sharedRenderFields(true),
 });
 
 type DerivedCardGrid = InferRender<typeof cardGridRenderSchema>;

@@ -5,7 +5,6 @@ type PreviewResponse = {
     width: number;
     height: number;
     aspectRatio: string;
-    orientation: 'landscape' | 'portrait' | 'square';
   };
   chrome: unknown;
   compatibility?: unknown;

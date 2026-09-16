@@ -1,16 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { slideTone } from '../slideTone';
-import type { Surface } from '../utils';
-
 describe('slideTone()', () => {
   it('owns a gradient surface for cover slides', () => {
-    expect(slideTone('cover', null)).toBe('gradient');
+    expect(slideTone('cover')).toBe('gradient');
   });
 
   it('owns dark surfaces for full-bleed emphasis templates', () => {
     for (const blockType of ['section', 'statement', 'cta']) {
-      expect(slideTone(blockType, 'light')).toBe('dark');
+      expect(slideTone(blockType)).toBe('dark');
     }
   });
 
@@ -24,19 +22,12 @@ describe('slideTone()', () => {
       'timeline',
       'quotes',
       'mermaid',
-      'markdown',
     ]) {
-      expect(slideTone(blockType, 'dark')).toBe('light');
+      expect(slideTone(blockType)).toBe('light');
     }
   });
 
-  it('does not vary a template surface based on neighbouring slides', () => {
-    const previousTones: Array<Surface | null> = [null, 'light', 'dark', 'gradient'];
-    expect(previousTones.map((tone) => slideTone('statement', tone))).toEqual([
-      'dark',
-      'dark',
-      'dark',
-      'dark',
-    ]);
+  it('does not accept neighbouring tone state', () => {
+    expect(slideTone.length).toBe(1);
   });
 });

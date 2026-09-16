@@ -4,7 +4,6 @@ import { renderAgenda } from '../blocks/agenda';
 import { renderCardGrid } from '../blocks/cardGrid';
 import { renderCover } from '../blocks/cover';
 import { renderCta } from '../blocks/cta';
-import { renderMarkdown } from '../blocks/markdown';
 import { renderMermaid } from '../blocks/mermaid';
 import { renderQuotes } from '../blocks/quotes';
 import { renderSection } from '../blocks/section';
@@ -375,6 +374,14 @@ describe('renderStatement() — variant dispatch (U8)', () => {
       variant: 'split',
     });
     expect(split).toContain('k-split');
+
+    const emptySplit = renderStatement({
+      blockType: 'statement',
+      title: 'T',
+      variant: 'split',
+    });
+    expect(emptySplit).toContain('k-hero--center');
+    expect(emptySplit).not.toContain('k-split');
   });
 
   it('an UNSET variant rotates through all four layouts by ctx.variantIndex, wrapping — KTD6b', () => {
@@ -383,7 +390,7 @@ describe('renderStatement() — variant dispatch (U8)', () => {
     expect(at(0)).toContain('k-hero--center'); // centered-hero
     expect(at(1)).toContain('k-divider'); // pull-quote (accent rule)
     expect(at(2)).toContain('k-hero--display'); // big-statement
-    expect(at(3)).toContain('k-hero--left'); // split (no body → left fallback)
+    expect(at(3)).toContain('k-hero--center'); // split without body → centered fallback
     expect(at(4)).toContain('k-hero--center'); // wraps back to centered-hero
   });
 
@@ -606,7 +613,7 @@ describe('renderCardGrid()', () => {
         { number: '06', title: 'F', description: lexical('Desc F') },
       ],
     });
-    expect(result).toContain('k-grid-3');
+    expect(result).toContain('k-grid-4');
     expect(result).toContain('<div class="k-card k-card--numbered">');
     for (const n of ['01', '02', '03', '04', '05', '06']) {
       expect(result).toContain(`>${n}<`);
@@ -1292,42 +1299,6 @@ describe('renderMermaid()', () => {
         source: 'flowchart TD\nA-->B\n---\nB-->C',
       }),
     ).toThrow(/slide separators/);
-  });
-});
-
-describe('renderMarkdown()', () => {
-  it('passes content through without escaping and adds a safe default class', () => {
-    const result = renderMarkdown({
-      blockType: 'markdown',
-      layout: 'center',
-      content: '<div class="custom">Raw HTML</div>',
-    });
-    expect(result).toContain('layout: center');
-    expect(result).toContain('class: relative k-markdown-slide');
-    expect(result).toContain('<div class="custom">Raw HTML</div>');
-  });
-
-  it('includes frontmatter YAML and preserves the mandatory markdown rail class', () => {
-    const result = renderMarkdown({
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative k-dark',
-      content: '# Hello',
-    });
-    expect(result).toContain('layout: default');
-    expect(result).toContain('class: relative k-dark k-markdown-slide');
-    expect(result).toContain('# Hello');
-  });
-
-  it('rejects frontmatter boundary injection', () => {
-    expect(() =>
-      renderMarkdown({
-        blockType: 'markdown',
-        layout: 'default',
-        frontmatter: 'class: ok\n---\nlayout: injected',
-        content: '# Hello',
-      }),
-    ).toThrow(/YAML boundary/);
   });
 });
 

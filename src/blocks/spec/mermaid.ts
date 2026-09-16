@@ -12,6 +12,7 @@ import {
   optionalLimitedAi,
   optionalLimitedRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
   type InferRender,
 } from './dsl';
@@ -30,6 +31,7 @@ export const mermaidSpec = block({
   slug: 'mermaid',
   blockType: 'mermaid',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Diagramme', plural: 'Diagrammes' },
   imageURL: '/block-previews/mermaid.svg',
   fields: [
@@ -79,6 +81,7 @@ export const mermaidRenderSchema = z.object({
   lead: leadRender(),
   source,
   caption,
+  ...sharedRenderFields(true),
 });
 
 export type MermaidBlockData = InferRender<typeof mermaidRenderSchema>;

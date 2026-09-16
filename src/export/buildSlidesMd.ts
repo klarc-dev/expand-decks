@@ -91,13 +91,9 @@ function foldSlides(
     }
     resetDefs();
     // Seed authored "Sources / Notes" before rendering so they're numbered
-    // ahead of any inline {{def:…}} refs; markdown and cover blocks carry no
-    // footnotes field and never flush the band.
-    if (block.blockType !== 'markdown' && block.blockType !== 'cover') {
-      seedFootnotes(
-        (block as { footnotes?: ({ text?: string | null } | null)[] | null }).footnotes,
-      );
-    }
+    // ahead of any inline {{def:…}} refs. Cover is the only layout without
+    // the shared field.
+    if (block.blockType !== 'cover') seedFootnotes(block.footnotes);
     return renderer(block as never, { ...contexts[i], language });
   });
 

@@ -65,7 +65,6 @@ export const K = {
   contentHeader: 'k-content-header',
   headerLead: 'k-header-lead',
   headerAccent: 'k-header-accent',
-  contentHeaderSplit: 'k-content-header--split',
   contentHeaderCenter: 'k-content-header--center',
   contentMain: 'k-content-main',
   contentMainCenter: 'k-content-main--center',

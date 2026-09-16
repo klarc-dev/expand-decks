@@ -14,6 +14,7 @@ import {
   optionalLimitedRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
   type InferRender,
 } from './dsl';
@@ -38,6 +39,7 @@ export const agendaSpec = block({
   slug: 'agenda',
   blockType: 'agenda',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Programme', plural: 'Programmes' },
   imageURL: '/block-previews/agenda.svg',
   fields: [
@@ -73,7 +75,7 @@ export const agendaSpec = block({
         ),
       ],
     }),
-    rawField('active', active, false, {
+    rawField('active', active, optionalAi(z.number().int().positive()), {
       type: 'number',
       label: 'Section active',
       description:
@@ -89,6 +91,7 @@ export const agendaSpec = block({
     lines: [
       'eyebrow, title (obligatoire), lead',
       'items: [{label, description}] — dans l’ordre, numérotées automatiquement',
+      'active: position (1, 2, 3…) de la section à mettre en avant ; laisser vide pour une vue d’ensemble',
     ],
   },
 });
@@ -100,6 +103,7 @@ export const agendaRenderSchema = z.object({
   lead: leadRender(),
   items,
   active,
+  ...sharedRenderFields(true),
 });
 
 export type AgendaBlockData = InferRender<typeof agendaRenderSchema>;

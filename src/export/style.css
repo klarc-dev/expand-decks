@@ -280,7 +280,6 @@
    rails; component-specific rules below only define internal composition. The
    hard clip is a last paint boundary, not a fitting strategy: authoring limits
    and shared density must still keep every child within the measured frame. */
-.k-markdown-slide,
 .k-content,
 .k-hero,
 .k-center-hero,
@@ -292,11 +291,6 @@
   min-height: 0;
   padding: var(--header-top) var(--content-inset) var(--content-bottom);
   overflow: clip;
-}
-
-.k-markdown-slide {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
 }
 
 .slidev-layout h1,
@@ -394,15 +388,6 @@
 .k-content.k-density-dense .k-h-lg {
   font-size: calc(var(--t-title) * 0.8);
 }
-.k-h-md.k-density-compact,
-.k-content.k-density-compact .k-h-md {
-  font-size: calc(var(--t-sub) * 0.9);
-}
-.k-h-md.k-density-dense,
-.k-content.k-density-dense .k-h-md {
-  font-size: calc(var(--t-sub) * 0.8);
-}
-
 /* Dark variant for cover / section -------------- */
 .k-dark {
   background: var(--k-teal) !important;
@@ -420,8 +405,7 @@
 }
 
 .k-dark p,
-.k-dark li,
-.k-dark .muted {
+.k-dark li {
   color: var(--fg-muted); /* solid #C7D6D6 ≈ 8:1 — was rgba .72 (AA fail) */
 }
 
@@ -553,25 +537,6 @@
   color: var(--k-ink);
   background: var(--k-paper);
   border-color: var(--k-paper);
-}
-
-.k-logo {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  font-family: var(--k-font-heading);
-  font-weight: 500;
-  font-size: 1.6rem;
-  letter-spacing: -0.03em;
-  color: var(--k-teal);
-}
-
-.k-dark .k-logo {
-  color: #fff;
-}
-
-.k-logo::after {
-  content: none;
 }
 
 .k-card {
@@ -806,6 +771,15 @@
 }
 .k-table--has-status col.k-table-col--status {
   width: 12%;
+}
+.k-table--matrix {
+  border: 1px solid color-mix(in srgb, var(--k-teal) 28%, transparent);
+}
+.k-table--matrix th {
+  background: var(--k-teal);
+}
+.k-table--matrix tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--k-teal-50) 76%, transparent);
 }
 .k-table.k-table--fit td ul,
 .k-table.k-table--fit td ol {
@@ -1695,12 +1669,6 @@
   min-width: 0;
   align-self: start;
 }
-.k-content-header--split {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 2rem;
-}
 .k-content-header--center {
   text-align: center;
   max-width: 64rem;
@@ -1809,9 +1777,6 @@
 }
 .k-cardgrid-body > .k-card-stack {
   flex: 1 1 auto;
-}
-.k-cardgrid-lead strong {
-  color: var(--fg);
 }
 /* Discreet contact strip under the grid — reuses the shared person-card
    anatomy from the cover intervenants band. flex:none keeps the card stack as
@@ -1969,15 +1934,6 @@
   font-size: var(--t-title);
   line-height: 1.05;
 }
-.k-h-md {
-  font-size: var(--t-sub);
-  line-height: 1.1;
-}
-/* Header sidebar note (e.g. cardGrid sidebarText) — solid muted, was opacity-70. */
-.k-side-note {
-  color: var(--fg-muted);
-}
-
 /* heroFrame — statement-only emphasis surface (U8 consumer). The scale modifier
    sets the title size; the body column clamps against the fixed canvas so a long
    body at display scale scales down rather than overflowing. */
@@ -2139,13 +2095,6 @@
   letter-spacing: -0.03em;
   margin: 0 0 2rem;
 }
-.k-center-hero-sub {
-  font-size: var(--t-lead);
-  color: var(--fg-muted);
-  line-height: 1.55;
-  margin-top: 1.5rem;
-}
-
 /* Section subtitle — composition owns alignment/width through modifiers so the
    renderer stops emitting max-w / mx-auto utilities. */
 .k-section-sub {
@@ -2429,13 +2378,6 @@
   outline-offset: 3px;
   border-radius: 2px;
 }
-.k-cover-footer {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  min-width: 0;
-}
 /* Dark ground uses the same restrained surface and a visible portrait keyline. */
 .k-dark .k-person-card {
   color: #fff;
@@ -2458,7 +2400,6 @@
    rendered globally by global-top.vue / global-bottom.vue. Inactive on slides
    marked `hideChrome: true` (cover, section dividers, cta).
    ----------------------------------------------------------------- */
-.k-slide-header,
 .k-slide-footer {
   position: absolute;
   left: 0;
@@ -2474,9 +2415,6 @@
   color: var(--fg-footer); /* solid AA token — was opacity:0.45 (severe AA fail) */
   pointer-events: none;
   z-index: 5;
-}
-.k-slide-header {
-  top: 1.1rem;
 }
 .k-slide-footer {
   bottom: var(--chrome-footer-bottom);
@@ -2494,17 +2432,14 @@
 .k-slide-footer .page {
   flex: none;
 }
-.k-slide-header .brand,
 .k-slide-footer .page {
   font-weight: 600;
   color: var(--k-teal);
 }
-.k-dark .k-slide-header,
 .k-dark .k-slide-footer,
 .k-slide-footer--dark {
   color: #eaf2f2;
 }
-.k-dark .k-slide-header .brand,
 .k-dark .k-slide-footer .page,
 .k-slide-footer--dark .page {
   color: #fff;
@@ -2857,30 +2792,6 @@
 .k-content.k-density-dense .k-copy-stack--lead {
   font-size: calc(var(--t-lead) * var(--density-scale));
   line-height: calc(1.5 * var(--density-leading));
-}
-
-.k-copy-stack--note {
-  border-top: 1px solid var(--k-line);
-  padding-top: 1rem;
-  font-size: var(--t-small);
-}
-.k-content.k-density-compact .k-copy-stack--note,
-.k-content.k-density-dense .k-copy-stack--note {
-  padding-top: calc(1rem * var(--density-space));
-  font-size: calc(var(--t-small) * var(--density-scale));
-  line-height: calc(1.5 * var(--density-leading));
-}
-
-/* Inline label (used in service detail slides) */
-.k-label {
-  font-size: var(--t-small);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--k-teal);
-  font-weight: 500;
-  display: block;
-  padding: 0.6rem 0;
-  border-top: 1px solid var(--k-line);
 }
 
 /* RichText normalization -------------------------------------------------- */

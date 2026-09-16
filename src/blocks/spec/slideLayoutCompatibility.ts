@@ -7,7 +7,7 @@ export type LayoutCompatibilityClassification =
   | 'unavailable';
 
 export type LayoutCompatibilityIssue = {
-  code: 'capacity' | 'mapping' | 'missing-required' | 'non-portable' | 'unsupported';
+  code: 'capacity' | 'mapping' | 'missing-required' | 'unsupported';
   field?: string;
   message: string;
   role?: SlideContentRole;
@@ -46,7 +46,6 @@ type SlideContentRole =
 type LayoutProfile = {
   fields: Readonly<Record<string, SlideContentRole>>;
   maxItems?: Readonly<Partial<Record<SlideContentRole, number>>>;
-  portable?: boolean;
   required?: readonly SlideContentRole[];
   supportsCitations?: boolean;
 };
@@ -163,10 +162,6 @@ const LAYOUT_PROFILES: Readonly<Record<string, LayoutProfile>> = {
     required: ['heading.title'],
     supportsCitations: true,
   },
-  markdown: {
-    fields: {},
-    portable: false,
-  },
 };
 
 function hasContent(value: unknown): boolean {
@@ -185,19 +180,6 @@ function profileOf(layout: string, kind: 'source' | 'cible'): LayoutProfile {
 
 function targetFieldForRole(profile: LayoutProfile, role: SlideContentRole): string | undefined {
   return Object.entries(profile.fields).find(([, candidate]) => candidate === role)?.[0];
-}
-
-function unavailableResult(layout: string, message: string): SlideLayoutCompatibility {
-  const spec = SPEC_BY_TYPE.get(layout)!;
-  return {
-    classification: 'unavailable',
-    imageURL: spec.imageURL,
-    issues: [{ code: 'non-portable', message }],
-    label: spec.labels.singular,
-    layout,
-    mappedFields: [],
-    unsupportedFields: [],
-  };
 }
 
 type CompatibilityAccumulator = {
@@ -314,15 +296,6 @@ function assessPortableLayout({
   sourceLayout: string;
 }): SlideLayoutCompatibility {
   const target = profileOf(layout, 'cible');
-  if (layout !== sourceLayout && (source.portable === false || target.portable === false)) {
-    return unavailableResult(
-      layout,
-      source.portable === false
-        ? 'Le contenu Markdown avancé ne possède pas de contrat portable.'
-        : 'Le layout Markdown avancé ne peut pas recevoir automatiquement ce contenu.',
-    );
-  }
-
   const result = collectFieldCompatibility(slide, source, target);
   addCitationCompatibility(slide, target, result);
   addRequiredRoleCompatibility(slide, source, target, result);

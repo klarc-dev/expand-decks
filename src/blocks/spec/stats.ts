@@ -15,6 +15,7 @@ import {
   optionalLimitedRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
   type InferRender,
 } from './dsl';
@@ -36,6 +37,7 @@ export const statsSpec = block({
   slug: 'stats',
   blockType: 'stats',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Statistiques', plural: 'Statistiques' },
   imageURL: '/block-previews/stats.svg',
   fields: [
@@ -98,6 +100,7 @@ export const statsRenderSchema = z.object({
   title,
   lead: leadRender(),
   stats,
+  ...sharedRenderFields(true),
 });
 
 export type StatsBlockData = InferRender<typeof statsRenderSchema>;

@@ -10,8 +10,8 @@ import {
   optionalLimitedRender,
   optionalLimitedRichTextRender,
   optionalRender,
-  optionalUnknownRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
@@ -26,6 +26,7 @@ export const sectionSpec = block({
   slug: 'section',
   blockType: 'section',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Section', plural: 'Sections' },
   imageURL: '/block-previews/section.svg',
   fields: [
@@ -46,7 +47,18 @@ export const sectionSpec = block({
       description: 'Description complémentaire sous le titre',
       maxLength: SLIDE_LIMITS.section.subtitle.max,
     }),
-    factoryField('image', 'image', optionalUnknownRender(), false),
+    factoryField('image', 'image', image, false),
+    rawField('imagePosition', imagePosition, false, {
+      type: 'select',
+      label: 'Position de l’image',
+      defaultValue: 'right',
+      description: 'Côté où l’image s’affiche quand une image est renseignée',
+      adminCondition: true,
+      options: [
+        { label: 'Droite', value: 'right' },
+        { label: 'Gauche', value: 'left' },
+      ],
+    }),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {
@@ -64,6 +76,7 @@ export const sectionRenderSchema = z.object({
   subtitle,
   image,
   imagePosition,
+  ...sharedRenderFields(true),
 });
 
 export type SectionBlockData = InferRender<typeof sectionRenderSchema>;

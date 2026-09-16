@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { CardGridBlock } from '../../CardGridBlock';
 import { CoverBlock } from '../../CoverBlock';
 import { CtaBlock } from '../../CtaBlock';
-import { MarkdownBlock } from '../../MarkdownBlock';
 import { QuotesBlock } from '../../QuotesBlock';
 import { SectionBlock } from '../../SectionBlock';
 import { StatementBlock } from '../../StatementBlock';
@@ -111,7 +110,7 @@ Layouts disponibles :
 
 1. **cover** — Diapositive d'ouverture
    - pills: [{text}] — libellés courts indépendants au-dessus du titre, une entrée par pastille
-   - pillVariant: default | primary | secondary | ink | paper — rôle de couleur commun aux pastilles
+   - pillVariant: primary | secondary | ink | paper — rôle de couleur commun aux pastilles
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
 
@@ -165,6 +164,7 @@ Layouts disponibles :
 12. **agenda** — Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire
    - eyebrow, title (obligatoire), lead
    - items: [{label, description}] — dans l’ordre, numérotées automatiquement
+   - active: position (1, 2, 3…) de la section à mettre en avant ; laisser vide pour une vue d’ensemble
 
 Règles :
 - Commence TOUJOURS par un bloc "cover"
@@ -204,7 +204,6 @@ const BLOCKS = {
   timeline: TimelineBlock,
   mermaid: MermaidBlock,
   agenda: AgendaBlock,
-  markdown: MarkdownBlock,
 } as const;
 
 // Payload admin condition closures are recreated per emit; compare structure by
@@ -226,9 +225,7 @@ describe('ALL_SPECS parity', () => {
         ],
       }).success,
     ).toBe(true);
-    expect(RENDER_SLIDE_SCHEMA.safeParse({ blockType: 'markdown', content: '# Raw' }).success).toBe(
-      true,
-    );
+    expect(RENDER_SLIDE_SCHEMA.safeParse({ blockType: 'unknown' }).success).toBe(false);
   });
 
   it('emits a Payload block structurally identical to each registered block', () => {
@@ -287,7 +284,7 @@ describe('ALL_SPECS parity', () => {
     }
   });
 
-  it('rejects an unknown blockType and the non-draftable markdown block', () => {
+  it('rejects unknown block types', () => {
     const schema = emitSlidesArraySchema(ALL_SPECS);
     const filler = [minimalSlide(DRAFTABLE[0]!), minimalSlide(DRAFTABLE[0]!)];
     expect(
@@ -295,21 +292,10 @@ describe('ALL_SPECS parity', () => {
         slides: [{ blockType: 'nope', title: 'x' }, ...filler],
       }).success,
     ).toBe(false);
-    expect(
-      schema.safeParse({
-        slides: [{ blockType: 'markdown', title: 'x' }, ...filler],
-      }).success,
-    ).toBe(false);
   });
 
   it('exposes one union member per AI-draftable spec, blockType literals matching', () => {
     expect(unionBlockTypes(emitSlidesArraySchema(ALL_SPECS))).toEqual([...EXPECTED_DRAFTABLE]);
-  });
-
-  it('marks markdown as not AI-draftable and excludes it from prompt + schema', () => {
-    const markdown = ALL_SPECS.find((s) => s.blockType === 'markdown');
-    expect(markdown?.aiDraftable).toBe(false);
-    expect(markdown?.promptMeta).toBeUndefined();
   });
 
   it('keeps exactly the 12 AI-draftable layouts in the draft union', () => {

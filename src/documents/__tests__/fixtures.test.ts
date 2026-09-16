@@ -18,6 +18,19 @@ describe('document template fixtures', () => {
     }
   });
 
+  it('keeps the sales-sheet CTA copy on fields the renderer consumes', () => {
+    const [slide] = documentTemplateFixture('sales-sheet').slides;
+    expect(slide).toMatchObject({
+      blockType: 'cta',
+      subtitle: expect.any(String),
+      primaryAction: 'Planifier un échange',
+      secondaryAction: 'Recevoir le détail',
+    });
+    expect(slide).not.toHaveProperty('body');
+    expect(slide).not.toHaveProperty('primaryCtaLabel');
+    expect(slide).not.toHaveProperty('secondaryCtaLabel');
+  });
+
   it('fails closed for an unknown fixture id', () => {
     expect(() => documentTemplateFixture('unknown' as never)).toThrow(
       'Fixture de document inconnue',

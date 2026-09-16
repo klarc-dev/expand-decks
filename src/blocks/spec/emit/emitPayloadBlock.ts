@@ -14,13 +14,12 @@ import { isAdminField } from '../../../access/roles';
 import {
   cardTitleDescFields,
   eyebrowField,
-  footnotesField,
-  imageFields,
+  imageField,
   previewField,
   slideRichTextEditor,
   titleField,
 } from '../../_shared';
-import type { FieldSpec, BlockSpec, PayloadFieldMeta } from '../dsl';
+import { fieldsOf, type FieldSpec, type BlockSpec, type PayloadFieldMeta } from '../dsl';
 import { validateSerializedTextLength } from '../limitValidation';
 
 function emitAdminMeta(payload: PayloadFieldMeta): Record<string, unknown> {
@@ -110,7 +109,7 @@ function emitField(field: FieldSpec): Field[] {
     case 'title':
       return [titleField(field.factoryArgs?.description, field.factoryArgs?.maxLength)];
     case 'image':
-      return imageFields(field.factoryArgs?.description);
+      return [imageField(field.factoryArgs?.description)];
     case 'cardTitleDesc':
       return cardTitleDescFields({
         titleMaxLength: field.factoryArgs?.titleMaxLength,
@@ -129,20 +128,7 @@ export function emitPayloadBlock(spec: BlockSpec): Block {
   // from that title (instead of the default "Untitled"). Title-less blocks
   // keep Payload's default label.
   const hasTitle = spec.fields.some((f) => f.factory === 'title');
-
-  // Every block except `markdown` and `cover` gets the shared "Sources / Notes"
-  // repeater. Cover/title slides should stay presentation metadata, not source
-  // carriers. It is injected here at L1 only — once — instead of in 11 spec
-  // field arrays, and renderSchemaOf projects the same synthetic contract.
-  // Placed before
-  // any trailing `preview` UI field so the form ends on the live preview.
-  const fields = spec.fields.flatMap(emitField);
-  if (spec.slug !== 'markdown' && spec.slug !== 'cover') {
-    const previewIdx = fields.findIndex((f) => 'name' in f && f.name === 'preview');
-    const note = footnotesField();
-    if (previewIdx === -1) fields.push(note);
-    else fields.splice(previewIdx, 0, note);
-  }
+  const fields = fieldsOf(spec).flatMap(emitField);
 
   return {
     slug: spec.slug,

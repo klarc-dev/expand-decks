@@ -23,6 +23,7 @@ import {
   optionalLimitedRichTextRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
@@ -44,6 +45,7 @@ export const statementSpec = block({
   slug: 'statement',
   blockType: 'statement',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Affirmation', plural: 'Affirmations' },
   imageURL: '/block-previews/statement.svg',
   fields: [
@@ -90,6 +92,7 @@ export const statementRenderSchema = z.object({
   body,
   footer,
   variant,
+  ...sharedRenderFields(true),
 });
 
 export type StatementBlockData = InferRender<typeof statementRenderSchema>;

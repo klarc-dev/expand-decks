@@ -15,6 +15,7 @@ import {
   optionalLimitedRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
   type InferRender,
 } from './dsl';
@@ -39,6 +40,7 @@ export const timelineSpec = block({
   slug: 'timeline',
   blockType: 'timeline',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Frise', plural: 'Frises' },
   imageURL: '/block-previews/timeline.svg',
   fields: [
@@ -109,6 +111,7 @@ export const timelineRenderSchema = z.object({
   lead: leadRender(),
   steps,
   footer,
+  ...sharedRenderFields(true),
 });
 
 export type TimelineBlockData = InferRender<typeof timelineRenderSchema>;

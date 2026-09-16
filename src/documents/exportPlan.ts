@@ -20,9 +20,7 @@ export function documentExportPlan(template: DocumentTemplateDefinition): Docume
       pdf: true,
       web: true,
       coverImage: true,
-      pageImages: images.some(
-        (artifact) => artifact.repeat === 'per-page' || (artifact.pageIndex ?? 0) > 0,
-      ),
+      pageImages: images.some((artifact) => artifact.repeat === 'per-page'),
     },
     pdf: template.artifacts.filter((artifact) => artifact.kind === 'pdf'),
     web: template.artifacts.filter((artifact) => artifact.kind === 'web'),

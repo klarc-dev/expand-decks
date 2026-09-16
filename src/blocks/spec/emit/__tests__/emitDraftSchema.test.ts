@@ -38,6 +38,7 @@ const statementSpec: BlockSpec = block({
   imageURL: '',
   aiDraftable: true,
   blockType: 'statement',
+  footnotes: true,
   fields: [
     factoryField('eyebrow', 'eyebrow', render, optionalAi(z.string())),
     factoryField('title', 'title', render, z.string()),
@@ -52,6 +53,7 @@ const cardGridSpec: BlockSpec = block({
   imageURL: '',
   aiDraftable: true,
   blockType: 'cardGrid',
+  footnotes: true,
   fields: [
     factoryField('eyebrow', 'eyebrow', render, optionalAi(z.string())),
     factoryField('title', 'title', render, z.string()),
@@ -76,17 +78,17 @@ const cardGridSpec: BlockSpec = block({
   ],
 });
 
-// Non-draftable block — must be absent from the emitted union.
-const markdownSpec: BlockSpec = block({
-  slug: 'markdown',
-  labels: { singular: 'Markdown', plural: 'Markdown' },
+// Generic non-draftable block — must be absent from the emitted union.
+const manualSpec: BlockSpec = block({
+  slug: 'manual',
+  labels: { singular: 'Manual', plural: 'Manual' },
   imageURL: '',
   aiDraftable: false,
-  blockType: 'markdown',
-  fields: [rawField('content', render, false, { type: 'code', language: 'markdown' })],
+  blockType: 'manual',
+  fields: [rawField('content', render, false, { type: 'code' })],
 });
 
-const allSpecs = [coverSpec, statementSpec, cardGridSpec, markdownSpec];
+const allSpecs = [coverSpec, statementSpec, cardGridSpec, manualSpec];
 
 // ---------------------------------------------------------------------------
 // Current hand-written schemas, copied VERBATIM from route.ts (not exported).
@@ -185,9 +187,9 @@ describe('emitDraftSchema() — union shape', () => {
     expect(js).not.toHaveProperty('oneOf');
   });
 
-  it('produces one union member per AI-draftable block (markdown excluded)', () => {
+  it('produces one union member per AI-draftable block', () => {
     const js = jsonSchema(emitDraftSchema(allSpecs)) as { anyOf: unknown[] };
-    // cover, statement, cardGrid → 3 members; markdown is dropped.
+    // cover, statement, cardGrid → 3 members; the manual block is dropped.
     expect(js.anyOf).toHaveLength(3);
   });
 
@@ -200,14 +202,14 @@ describe('emitDraftSchema() — union shape', () => {
   });
 });
 
-describe('emitDraftSchema() — markdown exclusion', () => {
-  it('omits markdown (aiDraftable: false) even when present in specs', () => {
+describe('emitDraftSchema() — non-draftable exclusion', () => {
+  it('omits non-draftable specs', () => {
     const js = jsonSchema(emitDraftSchema(allSpecs)) as { anyOf: unknown[] };
     const blockTypes = js.anyOf.map((member) => {
       const m = member as { properties?: { blockType?: { const?: string } } };
       return m.properties?.blockType?.const;
     });
-    expect(blockTypes).not.toContain('markdown');
+    expect(blockTypes).not.toContain('manual');
     expect(blockTypes.sort()).toEqual(['cardGrid', 'cover', 'statement']);
   });
 });

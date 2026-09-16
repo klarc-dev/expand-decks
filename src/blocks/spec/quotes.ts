@@ -17,6 +17,7 @@ import {
   optionalLimitedRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
   type InferRender,
 } from './dsl';
@@ -36,12 +37,33 @@ const quotes = optionalRender(
   ),
 );
 
+function hasText(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function validatePairedLink(value: Record<string, unknown>, ctx: z.RefinementCtx): void {
+  if (hasText(value.linkLabel) === hasText(value.linkUrl)) return;
+  ctx.addIssue({
+    code: 'custom',
+    message: 'Renseignez ensemble le libellé et l’URL du lien.',
+    path: [hasText(value.linkLabel) ? 'linkUrl' : 'linkLabel'],
+  });
+}
+
+function validatePairedPayloadField(counterpart: 'linkLabel' | 'linkUrl', missingMessage: string) {
+  return (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) =>
+    hasText(value) === hasText(siblingData?.[counterpart]) || missingMessage;
+}
+
 export const quotesSpec = block({
   slug: 'quotes',
   blockType: 'quotes',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Citations', plural: 'Citations' },
   imageURL: '/block-previews/quotes.svg',
+  aiRefine: (schema) => schema.superRefine(validatePairedLink),
+  renderRefine: (schema) => schema.superRefine(validatePairedLink),
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre de la diapositive'),
@@ -115,7 +137,8 @@ export const quotesSpec = block({
       limitedTextPayload(SLIDE_LIMITS.cta.action, {
         type: 'text',
         label: 'Libellé du lien',
-        description: 'Texte du lien vers la liste complète des témoignages (optionnel)',
+        description: 'Texte du lien ; renseigner aussi l’URL correspondante',
+        validate: validatePairedPayloadField('linkUrl', 'Renseignez aussi l’URL du lien.'),
       }),
     ),
     rawField(
@@ -125,7 +148,8 @@ export const quotesSpec = block({
       limitedTextPayload(SLIDE_LIMITS.cta.actionUrl, {
         type: 'text',
         label: 'URL du lien',
-        description: 'URL https vers la liste complète des témoignages (optionnel)',
+        description: 'URL https du lien ; renseigner aussi son libellé',
+        validate: validatePairedPayloadField('linkLabel', 'Renseignez aussi le libellé du lien.'),
       }),
     ),
     factoryField('preview', 'preview', z.never(), false),
@@ -142,14 +166,17 @@ export const quotesSpec = block({
   },
 });
 
-export const quotesRenderSchema = z.object({
-  blockType: z.literal('quotes'),
-  eyebrow,
-  title,
-  lead: leadRender(),
-  quotes,
-  linkLabel: optionalLimitedRender(SLIDE_LIMITS.cta.action),
-  linkUrl: optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl),
-});
+export const quotesRenderSchema = z
+  .object({
+    blockType: z.literal('quotes'),
+    eyebrow,
+    title,
+    lead: leadRender(),
+    quotes,
+    linkLabel: optionalLimitedRender(SLIDE_LIMITS.cta.action),
+    linkUrl: optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl),
+    ...sharedRenderFields(true),
+  })
+  .superRefine(validatePairedLink);
 
 export type QuotesBlockData = InferRender<typeof quotesRenderSchema>;

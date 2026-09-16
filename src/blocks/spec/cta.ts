@@ -11,6 +11,7 @@ import {
   optionalLimitedRender,
   optionalLimitedRichTextRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
@@ -24,12 +25,35 @@ const primaryAction = optionalLimitedRender(SLIDE_LIMITS.cta.action);
 const primaryActionUrl = optionalLimitedRender(SLIDE_LIMITS.cta.actionUrl);
 const footerNote = optionalLimitedRichTextRender(SLIDE_LIMITS.cta.footerNote);
 
+function hasText(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function validateActionTargets(value: Record<string, unknown>, ctx: z.RefinementCtx): void {
+  if (!hasText(value.primaryActionUrl) || hasText(value.primaryAction)) return;
+  ctx.addIssue({
+    code: 'custom',
+    message: 'Une URL d’action exige le libellé du bouton correspondant.',
+    path: ['primaryAction'],
+  });
+}
+
+function validateActionUrl(labelField: 'primaryAction') {
+  return (value: unknown, { siblingData }: { siblingData?: Record<string, unknown> }) =>
+    !hasText(value) ||
+    hasText(siblingData?.[labelField]) ||
+    'Renseignez le libellé de l’action avant son URL.';
+}
+
 export const ctaSpec = block({
   slug: 'cta',
   blockType: 'cta',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Appel à l’action', plural: 'Appels à l’action' },
   imageURL: '/block-previews/cta.svg',
+  aiRefine: (schema) => schema.superRefine(validateActionTargets),
+  renderRefine: (schema) => schema.superRefine(validateActionTargets),
   fields: [
     eyebrowFieldSpec(eyebrow),
     titleFieldSpec(title, 'Titre principal centré (ex. "Merci", "Et maintenant ?")'),
@@ -57,7 +81,8 @@ export const ctaSpec = block({
         type: 'text',
         label: 'Lien de l’action principale',
         description:
-          'URL https, mailto: ou tel: ; rend le bouton cliquable dans le PDF (ex. {org.bookingUrl})',
+          'URL https, mailto: ou tel: ; exige le libellé principal et rend le bouton cliquable dans le PDF (ex. {org.bookingUrl})',
+        validate: validateActionUrl('primaryAction'),
       }),
     ),
     rawField('footerNote', footerNote, optionalLimitedAi(SLIDE_LIMITS.cta.footerNote), {
@@ -81,14 +106,17 @@ export const ctaSpec = block({
   },
 });
 
-export const ctaRenderSchema = z.object({
-  blockType: z.literal('cta'),
-  eyebrow,
-  title,
-  subtitle,
-  primaryAction,
-  primaryActionUrl,
-  footerNote,
-});
+export const ctaRenderSchema = z
+  .object({
+    blockType: z.literal('cta'),
+    eyebrow,
+    title,
+    subtitle,
+    primaryAction,
+    primaryActionUrl,
+    footerNote,
+    ...sharedRenderFields(true),
+  })
+  .superRefine(validateActionTargets);
 
 export type CtaBlockData = InferRender<typeof ctaRenderSchema>;

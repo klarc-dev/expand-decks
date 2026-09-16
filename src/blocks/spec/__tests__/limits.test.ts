@@ -79,6 +79,61 @@ describe('canonical slide authoring limits', () => {
         items: [{ label: 'Only' }],
       }).success,
     ).toBe(false);
+    expect(schema.safeParse({ blockType: 'agenda', title: 'Plan', active: 2 }).success).toBe(true);
+  });
+
+  it('uses strict image objects and exposes image position in Payload', () => {
+    for (const blockType of ['cover', 'section', 'twoCols']) {
+      expect(
+        RENDER_SLIDE_SCHEMA.safeParse({ blockType, title: 'Image', image: '/media/x.jpg' }).success,
+      ).toBe(false);
+      expect(
+        RENDER_SLIDE_SCHEMA.safeParse({ blockType, title: 'Image', image: { url: '/media/x.jpg' } })
+          .success,
+      ).toBe(true);
+      expect(field(blockType, 'imagePosition')).toMatchObject({
+        type: 'select',
+        defaultValue: 'right',
+      });
+    }
+  });
+
+  it('requires paired quote links and labels for action URLs', () => {
+    const quotes = AI_SPEC_BY_TYPE.get('quotes')!;
+    expect(
+      aiSchemaOf(quotes).safeParse({
+        blockType: 'quotes',
+        title: 'Quotes',
+        quotes: [{ quote: 'Exact', authorName: 'Author' }],
+        linkLabel: 'More',
+      }).success,
+    ).toBe(false);
+    expect(
+      aiSchemaOf(quotes).safeParse({
+        blockType: 'quotes',
+        title: 'Quotes',
+        quotes: [{ quote: 'Exact', authorName: 'Author' }],
+        linkLabel: 'More',
+        linkUrl: 'https://example.test',
+      }).success,
+    ).toBe(true);
+
+    const cta = AI_SPEC_BY_TYPE.get('cta')!;
+    expect(
+      aiSchemaOf(cta).safeParse({
+        blockType: 'cta',
+        title: 'Act',
+        primaryActionUrl: 'https://example.test',
+      }).success,
+    ).toBe(false);
+    expect(
+      aiSchemaOf(cta).safeParse({
+        blockType: 'cta',
+        title: 'Act',
+        primaryAction: 'Book',
+        primaryActionUrl: 'https://example.test',
+      }).success,
+    ).toBe(true);
   });
 
   it('rejects rich text above its visible-text limit in render schemas and Payload validators', () => {
@@ -137,13 +192,16 @@ describe('canonical slide authoring limits', () => {
     expect(limit).toBe(80);
     const quotesField = field('quotes', 'quotes');
     const fields = quotesField && 'fields' in quotesField ? quotesField.fields : [];
-    const company = fields.find((candidate) => 'name' in candidate && candidate.name === 'authorCompany');
+    const company = fields.find(
+      (candidate) => 'name' in candidate && candidate.name === 'authorCompany',
+    );
     expect(company).toMatchObject({ type: 'text', maxLength: limit });
     expect(company).not.toHaveProperty('required', true);
     const schema = aiSchemaOf(AI_SPEC_BY_TYPE.get('quotes')!);
     for (const authorCompany of [undefined, '', repeat(limit), repeat(limit + 1)]) {
       const slide = {
-        blockType: 'quotes', title: 'Attribution',
+        blockType: 'quotes',
+        title: 'Attribution',
         quotes: [{ quote: 'Exact quotation', authorName: 'Author', authorCompany }],
       };
       const expected = authorCompany === undefined || authorCompany.length <= limit;
@@ -154,12 +212,16 @@ describe('canonical slide authoring limits', () => {
       if (ai.success) expect(ai.data).toMatchObject({ quotes: [{ authorCompany }] });
       if (render.success) expect(render.data).toMatchObject({ quotes: [{ authorCompany }] });
       if (!ai.success) expect(ai.error.issues[0]?.path).toEqual(['quotes', 0, 'authorCompany']);
-      if (!render.success) expect(render.error.issues[0]?.path).toEqual(['quotes', 0, 'authorCompany']);
+      if (!render.success)
+        expect(render.error.issues[0]?.path).toEqual(['quotes', 0, 'authorCompany']);
     }
-    expect(RENDER_SLIDE_SCHEMA.safeParse({
-      blockType: 'quotes', title: 'Legacy',
-      quotes: [{ quote: 'Exact quotation', authorName: 'Author', authorCompany: null }],
-    }).success).toBe(true);
+    expect(
+      RENDER_SLIDE_SCHEMA.safeParse({
+        blockType: 'quotes',
+        title: 'Legacy',
+        quotes: [{ quote: 'Exact quotation', authorName: 'Author', authorCompany: null }],
+      }).success,
+    ).toBe(true);
     expect(promptMetaOf(SPEC_BY_TYPE.get('quotes')!)?.lines).toContain(
       `quotes[].authorCompany: ${limit} caractères max`,
     );
@@ -188,6 +250,9 @@ describe('canonical slide authoring limits', () => {
       `stats: ${SLIDE_LIMITS.stats.items.min}–${SLIDE_LIMITS.stats.items.max} éléments`,
     );
     expect(meta.lines).toContain(`title: ${SLIDE_LIMITS.common.title.max} caractères max`);
+    expect(meta.lines).toContain(
+      'footnotes: [{text}] — sources ou notes numérotées ; place [^1], [^2]… dans le contenu pour leurs appels',
+    );
   });
 
   it('rejects fenced Mermaid source at canonical AI and render boundaries', () => {

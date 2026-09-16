@@ -6,7 +6,7 @@ import { coverSpec, coverRenderSchema } from '../../blocks/spec/cover';
 import { aiSchemaOf, renderSchemaOf } from '../../blocks/spec/dsl';
 import { emitPayloadBlock } from '../../blocks/spec/emit/emitPayloadBlock';
 import { SLIDE_LIMITS } from '../../blocks/spec/limits';
-import { eyebrow, eyebrowGroup, slideHeader, heroFrame } from '../utils';
+import { eyebrow, eyebrowGroup } from '../utils';
 import { renderCover } from '../blocks/cover';
 import { buildThemeCss } from '../theme';
 
@@ -31,7 +31,6 @@ describe('semantic pill variants', () => {
     ).toMatchObject({
       type: 'select',
       options: PILL_VARIANT_OPTIONS,
-      defaultValue: 'default',
     });
     for (const schema of [coverRenderSchema, renderSchemaOf(coverSpec), aiSchemaOf(coverSpec)]) {
       for (const pillVariant of PILL_VARIANTS)
@@ -39,26 +38,17 @@ describe('semantic pill variants', () => {
       expect(schema.safeParse({ ...base, pillVariant: 'red' }).success).toBe(false);
       expect(schema.safeParse(base).success).toBe(true);
     }
+    expect(coverRenderSchema.safeParse({ ...base, pillVariant: 'default' }).success).toBe(true);
+    expect(aiSchemaOf(coverSpec).safeParse({ ...base, pillVariant: 'default' }).success).toBe(
+      false,
+    );
   });
-  it('preserves default markup and composes explicit props on both primitives and legacy covers', () => {
+  it('preserves automatic markup and composes explicit cover palette roles', () => {
     expect(eyebrow('Text')).toBe('\n<div class="k-eyebrow">Text</div>');
-    expect(eyebrow('Text', '', { variant: 'default' })).toBe(eyebrow('Text'));
-    for (const variant of PILL_VARIANTS.filter((v) => v !== 'default')) {
+    for (const variant of PILL_VARIANTS) {
       expect(eyebrow('Text', '', { variant, extraClass: 'k-eyebrow-dark' })).not.toContain(
         'k-eyebrow-dark',
       );
-      expect(slideHeader({ title: 'Title', eyebrow: 'Text', pillVariant: variant })).toContain(
-        `k-eyebrow--${variant}`,
-      );
-      expect(
-        heroFrame({
-          title: 'Title',
-          eyebrow: 'Text',
-          pillVariant: variant,
-          scale: 'hero',
-          align: 'center',
-        }),
-      ).toContain(`k-eyebrow--${variant}`);
       expect(eyebrow('<Text>', '', { variant })).toContain(`k-eyebrow--${variant}">&lt;Text&gt;`);
       expect(
         eyebrowGroup(['One', 'Two'], '', { variant }).match(
@@ -75,6 +65,7 @@ describe('semantic pill variants', () => {
         }),
       ).toContain(`k-eyebrow--${variant}">Legacy`);
     }
+    expect(renderCover({ ...base, pillVariant: 'default' })).not.toContain('k-eyebrow--default');
   });
   it('renders every role in light/dark with real org colors, readable contrast and unclipped max-length labels', async () => {
     const browser = await chromium.launch();

@@ -7,7 +7,7 @@ import { defFooterSlot, eyebrowGroup, md, wrapSlide, type RenderCtx } from '../u
 
 export type { CoverBlockData };
 
-export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
+export function renderCover(block: CoverBlockData, ctx?: RenderCtx): string {
   // Prefer the staged local media path over the hydrated Payload API URL: the
   // Slidev export browser has no authenticated session (see
   // authenticated-media-embedding); stageBuildDir copies /media/<filename>
@@ -24,7 +24,9 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
     : block.eyebrow
       ? [block.eyebrow]
       : [];
-  const eyebrow = eyebrowGroup(pillTexts, 'k-eyebrow--cover', { variant: block.pillVariant });
+  const eyebrow = eyebrowGroup(pillTexts, 'k-eyebrow--cover', {
+    variant: block.pillVariant === 'default' ? undefined : block.pillVariant,
+  });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';
@@ -67,5 +69,10 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
   ${defFooterSlot()}
 </div>`;
 
-  return wrapSlide({ layout: 'cover', surface: 'gradient', hideChrome: true, body });
+  return wrapSlide({
+    layout: 'cover',
+    surface: ctx?.surface ?? 'gradient',
+    hideChrome: true,
+    body,
+  });
 }

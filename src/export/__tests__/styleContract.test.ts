@@ -18,16 +18,16 @@ describe('style.css fixed-canvas safe frame', () => {
 
   it('uses one canonical safe-area padding contract across every template frame', () => {
     expect(css).toMatch(
-      /\.k-markdown-slide,\s*\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*padding:\s*var\(--header-top\) var\(--content-inset\) var\(--content-bottom\)/,
+      /\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*padding:\s*var\(--header-top\) var\(--content-inset\) var\(--content-bottom\)/,
     );
   });
 
   it('bounds every template frame to the fixed canvas so content cannot paint through chrome', () => {
     expect(css).toMatch(
-      /\.k-markdown-slide,\s*\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*height:\s*100%/,
+      /\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*height:\s*100%/,
     );
     expect(css).toMatch(
-      /\.k-markdown-slide,\s*\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*overflow:\s*clip/,
+      /\.k-content,\s*\.k-hero,\s*\.k-center-hero,\s*\.k-cover,\s*\.k-diagram-slide\s*\{[\s\S]*overflow:\s*clip/,
     );
   });
 
@@ -39,9 +39,7 @@ describe('style.css fixed-canvas safe frame', () => {
   });
 
   it('makes the declared footer height authoritative, non-wrapping, and technical', () => {
-    expect(css).toMatch(
-      /\.k-slide-header,\s*\.k-slide-footer\s*\{[\s\S]*font-family:\s*var\(--k-font-technical\)/,
-    );
+    expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*font-family:\s*var\(--k-font-technical\)/);
     expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*height:\s*var\(--chrome-footer-height\)/);
     expect(css).toMatch(/\.k-slide-footer\s*\{[\s\S]*white-space:\s*nowrap/);
     expect(css).toMatch(/\.k-slide-footer\s*>\s*\*\s*\{[\s\S]*text-overflow:\s*ellipsis/);
@@ -109,6 +107,8 @@ describe('style.css oversized export fitting', () => {
       /\.k-table--fit th,[\s\S]*?\.k-table--fit td\s*\{[\s\S]*overflow-wrap:\s*break-word/,
     );
     expect(css).not.toMatch(/\.k-table--matrix td:not\(:first-child\)/);
+    expect(css).toMatch(/\.k-table--matrix\s*\{[^}]*border:/);
+    expect(css).toMatch(/\.k-table--matrix th\s*\{[^}]*background:\s*var\(--k-teal\)/);
     expect(css).toMatch(
       /\.k-dark \.k-btn-ghost\s*\{[\s\S]*border-color:\s*rgba\(255, 255, 255, 0\.58\)/,
     );

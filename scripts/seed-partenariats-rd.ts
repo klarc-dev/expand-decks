@@ -116,12 +116,9 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
 
     // PDF page 5 — Chronologie d'un partenariat (process flow → markdown)
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Chronologie d'un partenariat
-
-**Étape préalable :** Horodater ses connaissances propres.
+      blockType: 'statement',
+      title: "Chronologie d'un partenariat",
+      body: rt(`**Étape préalable :** Horodater ses connaissances propres.
 
 **Phases principales :**
 
@@ -133,7 +130,7 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
 6. Exploitation des livrables
 7. Révision du projet → Amélioration continue
 
-**Branches d'arrêt :** Négociation → Abandon des négociations · Abandon du projet`,
+**Branches d'arrêt :** Négociation → Abandon des négociations · Abandon du projet`),
     },
 
     // PDF page 6 — Sécuriser et Optimiser
@@ -178,12 +175,9 @@ function buildSlides(media: Record<AssetKey, number>, rt: RichTextConverter): Sl
 
     // PDF page 8 — Notions à maîtriser (4 sections de définitions → markdown)
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Notions à maîtriser
-
-<div class="text-sm opacity-60 mb-6">Notions indispensables</div>
+      blockType: 'statement',
+      title: 'Notions à maîtriser',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Notions indispensables</div>
 
 **Connaissances Propres**
 
@@ -205,17 +199,14 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
 
 - Droit de propriété (en totalité ou quote-part)
 - Droit d'exploitation (gratuit ou onéreux, exclusif ou non, périmètre géographique / sectoriel / temporel)
-- Désignation comme inventeur (impact la notoriété et la rémunération des salariés)`,
+- Désignation comme inventeur (impact la notoriété et la rémunération des salariés)`),
     },
 
     // PDF page 9 — Droits de propriété intellectuelle (table)
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Droits de propriété intellectuelle
-
-<div class="text-sm opacity-60 mb-6">Notions indispensables</div>
+      blockType: 'statement',
+      title: 'Droits de propriété intellectuelle',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Notions indispensables</div>
 
 | Type | Critères |
 |------|----------|
@@ -223,7 +214,7 @@ Sauf stipulation contraire, la propriété des Connaissances Nouvelles n'entraî
 | **Inventions** | Nouveauté + Caractère inventif + Application industrielle. Protégeable à partir de la date du dépôt de la demande de brevet ou du certificat d'utilité (avant cela : secret des affaires). |
 | **Droits d'auteurs** | Originalité. Protégé dès sa création sans formalités. Ne protège pas les informations techniques contenues dans le document (cas du rapport, poster, etc.). |
 | **Droit sui generis des bases de données** | Prise d'initiative + risque des investissements (L341-1 CPI). Protège le contenu de la base de données. Se cumule avec le droit d'auteurs. |
-| **Autres droits selon prestation** | Selon les prestations, une partie peut être amenée à générer d'autres actifs PI. Exemples : topographies de semi-conducteurs, COV, dessins & modèles, marques, noms de domaine… |`,
+| **Autres droits selon prestation** | Selon les prestations, une partie peut être amenée à générer d'autres actifs PI. Exemples : topographies de semi-conducteurs, COV, dessins & modèles, marques, noms de domaine… |`),
     },
 
     // PDF page 10 — section divider Sécurisation des échanges
@@ -253,12 +244,9 @@ Sans contrat, *les informations obtenues dans le cadre des négociations sont co
 
     // PDF page 12 — Mettre en place un accord de confidentialité — Que définir ?
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Mettre en place un accord de confidentialité
-
-<div class="text-sm opacity-60 mb-6">Sécurisation des échanges</div>
+      blockType: 'statement',
+      title: 'Mettre en place un accord de confidentialité',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Sécurisation des échanges</div>
 
 **Que définir ?**
 
@@ -269,17 +257,14 @@ Sans contrat, *les informations obtenues dans le cadre des négociations sont co
    - a. La période d'échange d'informations confidentielles (en général un an). Possibilité de fixer une date de départ rétroactive.
    - b. La période de secret (en général 5 à 10 ans) à compter de la fin de la période d'échange, ou jusqu'à ce que l'information tombe dans le champ de l'une des exceptions au contrat (e.g. divulgation publique sans défaillance).
 3. **Divulgateur(s) et bénéficiaire(s).** Exemple : un contrat de sous-traitance aura rarement le sous-traitant comme divulgateur.
-4. **Utilisation autorisée.**`,
+4. **Utilisation autorisée.**`),
     },
 
     // PDF page 13 — Mettre en place un accord de transfert de matériel
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Mettre en place un accord de transfert de matériel
-
-<div class="text-sm opacity-60 mb-6">Sécurisation des échanges</div>
+      blockType: 'statement',
+      title: 'Mettre en place un accord de transfert de matériel',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Sécurisation des échanges</div>
 
 **Pourquoi ?**
 
@@ -295,17 +280,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 3. Durée de l'évaluation du matériel
 4. Livrables attendus (rapport d'évaluation du matériel)
 5. Modalités de retour / destruction du matériel
-6. Régime de propriété industrielle des données afférentes au matériel (modifications, améliorations, applications)`,
+6. Régime de propriété industrielle des données afférentes au matériel (modifications, améliorations, applications)`),
     },
 
     // PDF page 14 — Focus L151-1 et suivants
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Focus L151-1 et suivants
-
-> **Article L151-1** — Création LOI n° 2018-670 du 30 juillet 2018 - art. 1
+      blockType: 'statement',
+      title: 'Focus L151-1 et suivants',
+      body: rt(`> **Article L151-1** — Création LOI n° 2018-670 du 30 juillet 2018 - art. 1
 >
 > Est protégée au titre du secret des affaires toute information répondant aux critères suivants :
 >
@@ -325,7 +307,7 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 >
 > 1° Une découverte ou une création indépendante ;
 >
-> 2° L'observation, l'étude, le démontage ou le test d'un produit ou d'un objet qui a été mis à la disposition du public ou qui est de façon licite en possession de la personne qui obtient l'information, sauf stipulation contractuelle interdisant ou limitant l'obtention du secret.`,
+> 2° L'observation, l'étude, le démontage ou le test d'un produit ou d'un objet qui a été mis à la disposition du public ou qui est de façon licite en possession de la personne qui obtient l'information, sauf stipulation contractuelle interdisant ou limitant l'obtention du secret.`),
     },
 
     // PDF page 15 — section divider Cadrage du projet
@@ -360,12 +342,9 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 
     // PDF page 17 — Thématiques à encadrer (table)
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Thématiques à encadrer
-
-<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
+      blockType: 'statement',
+      title: 'Thématiques à encadrer',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
 | | |
 |--|--|
@@ -374,17 +353,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 | **Phases** | Tâches \\| Milestones \\| go ou no-go \\| Livrables |
 | **Tâches** | Travaux \\| Date \\| Durée \\| Ressources \\| Lieux \\| Entité responsable \\| Tiers impliqués |
 | **Pilotage** | Comité technique \\| comité stratégique \\| coordinateur \\| mandataire commun |
-| **Moyens** | Financiers \\| humains \\| matériels \\| connaissances propres |`,
+| **Moyens** | Financiers \\| humains \\| matériels \\| connaissances propres |`),
     },
 
     // PDF page 18 — Définir le contexte
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Définir le contexte
-
-<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
+      blockType: 'statement',
+      title: 'Définir le contexte',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
 **Que définir ?**
 
@@ -400,17 +376,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 - Appuyer le recours à l'imprévision ;
 - Annexe du contrat permettant de contextualiser les clauses ;
 - Appui aux demandes de financements (EIC, PIA, BFT, ect.) ;
-- Justification des dispositifs fiscaux (CICO, CIR, CII, IP BOX, etc.).`,
+- Justification des dispositifs fiscaux (CICO, CIR, CII, IP BOX, etc.).`),
     },
 
     // PDF page 19 — Définir les parties
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Définir les parties
-
-<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
+      blockType: 'statement',
+      title: 'Définir les parties',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
 **Que définir ?**
 
@@ -427,17 +400,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
   - Éviter que votre partenaire ne sous-traite à votre concurrent.
 - Estimer les chances de réparation d'une défaillance du partenaire (e.g divulgation d'un brevet avant dépôt) ;
 - Assurer l'optimisation de vos financements (éligibilité CICo, sous-traitants déclarés dans les demandes, etc.) ;
-- Éviter la découverte d'un agrément expiré sans moyen de recours (30% de manque à gagner).`,
+- Éviter la découverte d'un agrément expiré sans moyen de recours (30% de manque à gagner).`),
     },
 
     // PDF page 20 — Définir les tâches
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Définir les tâches
-
-<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
+      blockType: 'statement',
+      title: 'Définir les tâches',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
 **Que définir ?**
 
@@ -453,17 +423,14 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
 - Maîtriser le flux de vos connaissances propres (quel tiers à accès à quelles informations) ;
 - Définir clairement les responsabilités (et donc les éventuelles défaillances) ;
 - Définir clairement les apports (si défini comme critère de la propriété des résultats) ;
-- Anticiper les problématiques de transport / d'export de matériel.`,
+- Anticiper les problématiques de transport / d'export de matériel.`),
     },
 
     // PDF page 21 — Définir les comités de pilotage
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Définir les comités de pilotage
-
-<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
+      blockType: 'statement',
+      title: 'Définir les comités de pilotage',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Cadrage du projet</div>
 
 **Que définir ?**
 
@@ -485,7 +452,7 @@ Or, est détenteur légitime d'un secret des affaires celui qui le contrôle de 
   - Titres de propriété industrielle & publication ;
   - Exclusion d'une partie défaillante ;
   - Remplacement d'un sous-traitant ;
-  - etc.`,
+  - etc.`),
     },
 
     // PDF page 22 — Définir les moyens (Que définir, deux colonnes)
@@ -588,12 +555,9 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 
     // PDF page 27 — Tableau types de contrats
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Types de contrats R&D
-
-<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
+      blockType: 'statement',
+      title: 'Types de contrats R&D',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
 | Type de contrat | Principal cas d'usage |
 |---|---|
@@ -603,34 +567,28 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 | **Contrat de sous-traitance de travaux R&D** | Faire appel à un sous-traitant qui réalise les travaux et transfère la propriété des résultats |
 | **Accord-cadre de fourniture de services R&D** | Encadrer les conditions globales qui seront appliquées à des "contrats d'applications" (e.g. pour faire appel de manière récurrente à une CRO) |
 | **Contrat de co-traitance de travaux R&D** | Mutualisation des moyens nécessaires aux travaux R&D à réaliser pour le compte d'un tiers (e.g se grouper pour répondre à un appel d'offre). |
-| **Convention CIFRE** | Contrat spécifique permettant le financement d'un doctorant en partenariat avec l'école doctorale sous le contrôle de l'ANRT. |`,
+| **Convention CIFRE** | Contrat spécifique permettant le financement d'un doctorant en partenariat avec l'école doctorale sous le contrôle de l'ANRT. |`),
     },
 
     // PDF page 28 — Autres outils de négociation
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Autres outils de négociations
-
-<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
+      blockType: 'statement',
+      title: 'Autres outils de négociations',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
 | Outil | Effet |
 |---|---|
 | **Pacte de préférence** | Une partie s'engage à proposer prioritairement à une autre de traiter avec elle si elle décide de mener le projet. |
 | **Lettre d'intention (LoI)** / **Memorandum d'entente (MoU)** | Les parties s'engagent à entrer en négociation. |
 | **Accord partiel / provisoire** | Les parties s'engagent sur certains points déterminants dans le contrat définitif. |
-| **Promesse de contrat** | Une partie s'engage à contracter avec une autre selon des éléments essentiels déterminés si cette autre partie donne son consentement dans une certaine période fixée. |`,
+| **Promesse de contrat** | Une partie s'engage à contracter avec une autre selon des éléments essentiels déterminés si cette autre partie donne son consentement dans une certaine période fixée. |`),
     },
 
     // PDF page 29 — Principaux points de négociation
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Principaux points de négociation
-
-<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
+      blockType: 'statement',
+      title: 'Principaux points de négociation',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
 - **Pilotage**
   - Rôles des comités, coordinateurs, mandataires
@@ -642,7 +600,7 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 - **Confidentialité & publication**
 - **Effets des milestones**
   - Sur les paiements
-  - Sur la résiliation`,
+  - Sur la résiliation`),
     },
 
     // PDF page 30 — section divider Points particuliers
@@ -678,12 +636,9 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 
     // PDF page 32 — Pilotage (négociation du contrat)
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Pilotage
-
-<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
+      blockType: 'statement',
+      title: 'Pilotage',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Négociation du contrat</div>
 
 **Pour chaque comité :**
 
@@ -695,17 +650,14 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
 
 **Rôles et pouvoir du mandataire commun** (ou "unique" si implication du public)
 
-**Rôles du coordinateur**`,
+**Rôles du coordinateur**`),
     },
 
     // PDF page 33 — Résultats non-brevetables
     {
-      blockType: 'markdown',
-      layout: 'default',
-      frontmatter: 'class: relative',
-      content: `# Résultats non-brevetables
-
-<div class="text-sm opacity-60 mb-6">Points particuliers</div>
+      blockType: 'statement',
+      title: 'Résultats non-brevetables',
+      body: rt(`<div class="text-sm opacity-60 mb-6">Points particuliers</div>
 
 **Les résultats non-brevetés se gèrent avec la même liberté que les résultats brevetés. Ils peuvent être :**
 
@@ -716,7 +668,7 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
   - Pour tous les domaines / marchés / typologies clients / territoires, ou non
 - Nantis
 - Apportés en nature
-- Valorisés aux actifs de l'entreprise et immobilisés`,
+- Valorisés aux actifs de l'entreprise et immobilisés`),
     },
 
     // PDF page 34 — section divider Q&R

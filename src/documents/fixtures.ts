@@ -72,9 +72,10 @@ export const DOCUMENT_TEMPLATE_FIXTURES: readonly DocumentTemplateFixture[] = [
         blockType: 'cta',
         eyebrow: 'Proposition',
         title: 'Une proposition claire sur une seule page',
-        body: 'Une promesse lisible, trois bénéfices concrets et une prochaine étape sans ambiguïté.',
-        primaryCtaLabel: 'Planifier un échange',
-        secondaryCtaLabel: 'Recevoir le détail',
+        subtitle:
+          'Une promesse lisible, trois bénéfices concrets et une prochaine étape sans ambiguïté.',
+        primaryAction: 'Planifier un échange',
+        secondaryAction: 'Recevoir le détail',
       },
     ],
   },

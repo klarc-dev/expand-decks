@@ -83,7 +83,7 @@ export function renderBlockPreview(
   let md: string;
   let mermaid: { source: string } | undefined;
   try {
-    md = renderer(block as never, ctx ?? { surface: slideTone(blockType, null), sections: [] });
+    md = renderer(block as never, ctx ?? { surface: slideTone(blockType), sections: [] });
     if (blockType === 'mermaid') {
       const source = bareMermaidSource((block as { source?: string | null }).source ?? '');
       if (source) mermaid = { source };

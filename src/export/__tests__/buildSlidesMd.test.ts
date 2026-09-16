@@ -164,19 +164,6 @@ describe('buildSlidesMd()', () => {
     expect(result).not.toContain('k-def-footer');
   });
 
-  it('does not flush a footnote band for markdown blocks', () => {
-    // markdown carries no footnotes field and never calls wrapSlide; seedFootnotes
-    // is skipped for it, so even a stray value must not produce a band.
-    const result = build([
-      {
-        blockType: 'markdown',
-        content: '# Hi',
-        footnotes: [{ text: 'x' }],
-      } as never,
-    ]);
-    expect(result).not.toContain('k-def-footer');
-  });
-
   it('resolves {path} variables against the build vars context', () => {
     const result = buildSlidesMd(
       {
@@ -389,17 +376,6 @@ describe('buildSlidesMd()', () => {
         expect(result).not.toContain('k-def-footer-slot');
       });
     }
-
-    it('markdown is intentionally excluded from the sources repeater', () => {
-      const result = build([
-        {
-          blockType: 'markdown',
-          content: '# Hi',
-          footnotes: [{ text: 'x' }],
-        } as never,
-      ]);
-      expect(result).not.toContain('k-def-footer');
-    });
   });
 
   it('handles a full deck with all block types', () => {
@@ -478,11 +454,10 @@ describe('buildSlidesMd()', () => {
           { label: 'Two', description: null },
         ],
       },
-      { blockType: 'markdown', layout: 'center', content: '# Raw' },
     ];
 
     const md = build(slides);
     const parsed = parseDeck(md);
-    expect(parsed.slides.length).toBe(13);
+    expect(parsed.slides.length).toBe(12);
   });
 });

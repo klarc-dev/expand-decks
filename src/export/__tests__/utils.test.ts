@@ -37,10 +37,6 @@ describe('slideHeader()', () => {
     expect(h).toContain('Title');
   });
 
-  it('uses the md scale when requested', () => {
-    expect(slideHeader({ title: 'T', size: 'md' })).toContain('k-h-md');
-  });
-
   it('omits the eyebrow cleanly when null', () => {
     const h = slideHeader({ eyebrow: null, title: 'T' });
     expect(h).not.toContain('k-eyebrow');
@@ -50,12 +46,6 @@ describe('slideHeader()', () => {
   it('adds a secondary-color accent line after the heading group', () => {
     const h = slideHeader({ eyebrow: 'TAG', title: 'Title', lead: '<p>Subtext</p>' });
     expect(h).toMatch(/Subtext[\s\S]*k-header-accent/);
-  });
-
-  it('places a sidebar in the semantic split header when provided', () => {
-    const h = slideHeader({ title: 'T', sidebar: '<aside>side</aside>' });
-    expect(h).toContain('k-content-header--split');
-    expect(h).toContain('side');
   });
 });
 
@@ -151,7 +141,7 @@ describe('cardStack()', () => {
     expect(result.density).toBe('compact');
   });
 
-  it('balances five and six cards into three columns behind the stack interface', () => {
+  it('honors four requested columns for five and six cards', () => {
     for (const count of [5, 6]) {
       const result = cardStack(
         Array.from({ length: count }, (_, index) => String(index)),
@@ -162,13 +152,13 @@ describe('cardStack()', () => {
           itemPressures: Array.from({ length: count }, () => 1),
         },
       );
-      expect(result.cols).toBe(3);
+      expect(result.cols).toBe(4);
       expect(result.rows).toBe(2);
-      expect(result.html).toContain('k-grid-3');
+      expect(result.html).toContain('k-grid-4');
     }
   });
 
-  it('marks only five-card three-column grids for a centered final row', () => {
+  it('does not center a four-column grid as though it were three columns', () => {
     const five = cardStack(['a', 'b', 'c', 'd', 'e'], {
       layout: 'grid',
       maxCols: 4,
@@ -181,7 +171,7 @@ describe('cardStack()', () => {
       profile: 'card-grid',
       itemPressures: [1, 1, 1, 1, 1, 1],
     });
-    expect(five.html).toContain('k-card-stack--centered-last-row');
+    expect(five.html).not.toContain('k-card-stack--centered-last-row');
     expect(six.html).not.toContain('k-card-stack--centered-last-row');
   });
 

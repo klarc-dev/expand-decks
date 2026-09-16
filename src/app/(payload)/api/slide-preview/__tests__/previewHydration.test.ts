@@ -289,7 +289,6 @@ describe('POST /api/slide-preview hydration + access', () => {
       width: 1080,
       height: 1080,
       aspectRatio: '1/1',
-      orientation: 'square',
     });
   });
 

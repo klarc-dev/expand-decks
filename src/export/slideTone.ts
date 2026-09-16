@@ -14,9 +14,8 @@ const TEMPLATE_SURFACES: Record<string, Surface> = {
   table: 'light',
   timeline: 'light',
   mermaid: 'light',
-  markdown: 'light',
 };
 
-export function slideTone(blockType: string, _prevTone: Surface | null): Surface {
+export function slideTone(blockType: string): Surface {
   return TEMPLATE_SURFACES[blockType] ?? 'light';
 }

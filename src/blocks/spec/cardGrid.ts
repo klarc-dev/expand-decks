@@ -16,6 +16,7 @@ import {
   optionalLimitedRichTextRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
@@ -47,6 +48,7 @@ export const cardGridSpec = block({
   slug: 'cardGrid',
   blockType: 'cardGrid',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Grille de cartes', plural: 'Grilles de cartes' },
   imageURL: '/block-previews/cardGrid.svg',
   fields: [
@@ -62,7 +64,7 @@ export const cardGridSpec = block({
       type: 'select',
       label: 'Colonnes',
       defaultValue: '4',
-      description: 'Nombre de colonnes dans la grille',
+      description: 'Nombre maximal de colonnes dans la grille',
       options: [
         { label: '2 colonnes', value: '2' },
         { label: '3 colonnes', value: '3' },
@@ -128,6 +130,7 @@ export const cardGridRenderSchema = z.object({
   columns,
   cards,
   intervenants,
+  ...sharedRenderFields(true),
 });
 
 export type CardGridBlockData = InferRender<typeof cardGridRenderSchema>;

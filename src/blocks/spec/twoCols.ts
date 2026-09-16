@@ -16,8 +16,8 @@ import {
   optionalLimitedRender,
   optionalLimitedRichTextRender,
   optionalRender,
-  optionalUnknownRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
   type InferRender,
 } from './dsl';
@@ -43,6 +43,7 @@ export const twoColsSpec = block({
   slug: 'twoCols',
   blockType: 'twoCols',
   aiDraftable: true,
+  footnotes: true,
   labels: { singular: 'Deux colonnes', plural: 'Deux colonnes' },
   imageURL: '/block-previews/twoCols.svg',
   fields: [
@@ -91,9 +92,20 @@ export const twoColsSpec = block({
         ],
       }),
     ),
-    factoryField('image', 'image', optionalUnknownRender(), false, {
+    factoryField('image', 'image', image, false, {
       description:
-        'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Remplace les rightCards si renseignée.',
+        'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Les cartes restent affichées dans la colonne de contenu.',
+    }),
+    rawField('imagePosition', imagePosition, false, {
+      type: 'select',
+      label: 'Position de l’image',
+      defaultValue: 'right',
+      description: 'Côté où l’image s’affiche quand une image est renseignée',
+      adminCondition: true,
+      options: [
+        { label: 'Droite', value: 'right' },
+        { label: 'Gauche', value: 'left' },
+      ],
     }),
     factoryField('preview', 'preview', z.never(), false),
   ],
@@ -118,6 +130,7 @@ export const twoColsRenderSchema = z.object({
   rightCards,
   image,
   imagePosition,
+  ...sharedRenderFields(true),
 });
 
 export type TwoColsBlockData = InferRender<typeof twoColsRenderSchema>;

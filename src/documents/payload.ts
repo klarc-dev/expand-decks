@@ -3,13 +3,14 @@ import type { Block, SelectField } from 'payload';
 import { emitPayloadBlock } from '../blocks/spec/emit/emitPayloadBlock';
 import { DOCUMENT_TEMPLATES, resolveDocumentTemplate, specsForDocumentTemplate } from './templates';
 
-export function payloadBlocksForTemplate(templateValue: unknown): Block[] {
-  const template = resolveDocumentTemplate(templateValue);
-  return specsForDocumentTemplate(template).map(emitPayloadBlock) as Block[];
+export function payloadBlocksForTemplate(): Block[] {
+  return specsForDocumentTemplate(resolveDocumentTemplate('presentation')).map(
+    emitPayloadBlock,
+  ) as Block[];
 }
 
 export function payloadBlockSlugsForTemplate(templateValue: unknown): string[] {
-  return payloadBlocksForTemplate(templateValue).map((block) => block.slug);
+  return specsForDocumentTemplate(resolveDocumentTemplate(templateValue)).map((spec) => spec.slug);
 }
 
 export const documentTemplateField: SelectField = {

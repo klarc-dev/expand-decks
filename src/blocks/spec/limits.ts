@@ -89,11 +89,6 @@ export const SLIDE_LIMITS = {
     label: { max: 70 },
     description: { max: 180 },
   },
-  markdown: {
-    layout: { max: 40 },
-    frontmatter: { max: 4_000 },
-    content: { max: 20_000 },
-  },
 } as const satisfies Record<
   string,
   Record<string, TextLimit | RangeLimit | Record<string, unknown>>

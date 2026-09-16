@@ -432,7 +432,7 @@ export const Presentations: CollectionConfig = {
                 description:
                   'Une page par bloc. Les layouts proposés dépendent du template de document.',
               },
-              blocks: payloadBlocksForTemplate('presentation'),
+              blocks: payloadBlocksForTemplate(),
               filterOptions: ({ data }) =>
                 payloadBlockSlugsForTemplate(
                   (data as { documentTemplate?: unknown } | undefined)?.documentTemplate,

@@ -21,14 +21,11 @@ const DOCUMENT_TEMPLATE_IDS = {
 export type DocumentTemplateId = (typeof DOCUMENT_TEMPLATE_IDS)[keyof typeof DOCUMENT_TEMPLATE_IDS];
 
 export type DocumentArtifactKind = 'pdf' | 'web' | 'image';
-export type DocumentArtifactLocation = 'file' | 'url';
-
 export type DocumentArtifactDefinition = {
   key: string;
   kind: DocumentArtifactKind;
   label: string;
   actionLabel: string;
-  location: DocumentArtifactLocation;
   requiredWhen: 'always' | 'has-pages';
   pageIndex?: number;
   repeat?: 'per-page';
@@ -41,7 +38,6 @@ export type DocumentTemplateDefinition = {
     width: number;
     height: number;
     aspectRatio: string;
-    orientation: 'landscape' | 'portrait' | 'square';
   };
   allowedLayouts: readonly string[];
   pageCount: { min: number; max: number | null };
@@ -82,7 +78,6 @@ const PRESENTATION_TEMPLATE = {
       kind: 'pdf',
       label: 'PDF',
       actionLabel: 'Télécharger le PDF',
-      location: 'file',
       requiredWhen: 'always',
     },
     {
@@ -90,7 +85,6 @@ const PRESENTATION_TEMPLATE = {
       kind: 'web',
       label: 'Présentation web',
       actionLabel: 'Ouvrir la présentation web',
-      location: 'url',
       requiredWhen: 'always',
     },
     {
@@ -98,7 +92,6 @@ const PRESENTATION_TEMPLATE = {
       kind: 'image',
       label: 'Image de couverture',
       actionLabel: 'Ouvrir l’image de couverture',
-      location: 'file',
       requiredWhen: 'has-pages',
       pageIndex: 0,
     },
@@ -118,7 +111,6 @@ const LINKEDIN_CAROUSEL_TEMPLATE = {
     width: 1080,
     height: 1350,
     aspectRatio: '4/5',
-    orientation: 'portrait',
   },
   allowedLayouts: [
     'cover',
@@ -142,7 +134,6 @@ const LINKEDIN_CAROUSEL_TEMPLATE = {
       kind: 'image',
       label: 'Image de page',
       actionLabel: 'Télécharger la page',
-      location: 'file',
       requiredWhen: 'has-pages',
       repeat: 'per-page',
     },
@@ -162,7 +153,6 @@ const STANDARD_REPORT_TEMPLATE = {
     width: 794,
     height: 1123,
     aspectRatio: '794/1123',
-    orientation: 'portrait',
   },
   allowedLayouts: ['cover', 'agenda', 'section', 'statement', 'twoCols', 'stats', 'table', 'cta'],
   pageCount: { min: 6, max: 12 },
@@ -189,7 +179,6 @@ const STANDARD_REPORT_TEMPLATE = {
       kind: 'pdf',
       label: 'PDF',
       actionLabel: 'Télécharger le rapport',
-      location: 'file',
       requiredWhen: 'always',
     },
     {
@@ -197,7 +186,6 @@ const STANDARD_REPORT_TEMPLATE = {
       kind: 'web',
       label: 'Rapport web',
       actionLabel: 'Ouvrir le rapport web',
-      location: 'url',
       requiredWhen: 'always',
     },
     {
@@ -205,7 +193,6 @@ const STANDARD_REPORT_TEMPLATE = {
       kind: 'image',
       label: 'Image de couverture',
       actionLabel: 'Ouvrir l’image de couverture',
-      location: 'file',
       requiredWhen: 'has-pages',
       pageIndex: 0,
     },
@@ -225,7 +212,6 @@ const VISUAL_PUBLICATION_TEMPLATE = {
     width: 1080,
     height: 1080,
     aspectRatio: '1/1',
-    orientation: 'square',
   },
   allowedLayouts: ['statement', 'cardGrid', 'stats', 'quotes', 'cta'],
   pageCount: { min: 1, max: 1 },
@@ -240,7 +226,6 @@ const VISUAL_PUBLICATION_TEMPLATE = {
       kind: 'image',
       label: 'Image PNG',
       actionLabel: 'Télécharger l’image',
-      location: 'file',
       requiredWhen: 'always',
       pageIndex: 0,
     },
@@ -260,7 +245,6 @@ const SALES_SHEET_TEMPLATE = {
     width: 794,
     height: 1123,
     aspectRatio: '794/1123',
-    orientation: 'portrait',
   },
   allowedLayouts: ['statement', 'twoCols', 'cardGrid', 'stats', 'quotes', 'cta', 'table'],
   pageCount: { min: 1, max: 1 },
@@ -275,7 +259,6 @@ const SALES_SHEET_TEMPLATE = {
       kind: 'pdf',
       label: 'PDF',
       actionLabel: 'Télécharger le PDF',
-      location: 'file',
       requiredWhen: 'always',
     },
   ],

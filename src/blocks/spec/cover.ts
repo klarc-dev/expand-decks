@@ -14,7 +14,6 @@ import {
   optionalLimitedRender,
   optionalLimitedRichTextRender,
   optionalRender,
-  optionalUnknownRender,
   rawField,
   titleFieldSpec,
 } from './dsl';
@@ -23,7 +22,7 @@ import { PILL_VARIANTS, PILL_VARIANT_OPTIONS } from './pillVariants';
 
 import { intervenantsFieldSpec, intervenantsRender } from './person';
 
-const pillVariant = optionalRender(z.enum(PILL_VARIANTS));
+const pillVariant = optionalRender(z.enum(['default', ...PILL_VARIANTS]));
 
 const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const pillText = nonBlankLimitedString(SLIDE_LIMITS.cover.pills.text);
@@ -43,6 +42,7 @@ export const coverSpec = block({
   slug: 'cover',
   blockType: 'cover',
   aiDraftable: true,
+  footnotes: false,
   labels: { singular: 'Couverture', plural: 'Couvertures' },
   imageURL: '/block-previews/cover.svg',
   fields: [
@@ -77,7 +77,6 @@ export const coverSpec = block({
       label: 'Couleur des pastilles',
       description: 'Rôle de la palette de l’organisation, commun à toutes les pastilles.',
       options: PILL_VARIANT_OPTIONS,
-      defaultValue: 'default',
     }),
     // Keep the saved column and an editable fallback: legacy covers remain intact.
     rawField('eyebrow', eyebrow, false, {
@@ -98,7 +97,18 @@ export const coverSpec = block({
       SLIDE_LIMITS.cover.speakers,
       'Personnes affichées sur la diapositive de couverture',
     ),
-    factoryField('image', 'image', optionalUnknownRender(), false),
+    factoryField('image', 'image', image, false),
+    rawField('imagePosition', imagePosition, false, {
+      type: 'select',
+      label: 'Position de l’image',
+      defaultValue: 'right',
+      description: 'Côté où l’image s’affiche quand une image est renseignée',
+      adminCondition: true,
+      options: [
+        { label: 'Droite', value: 'right' },
+        { label: 'Gauche', value: 'left' },
+      ],
+    }),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {

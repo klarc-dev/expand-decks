@@ -23,12 +23,12 @@ describe('document template registry', () => {
     expect(PRESENTATION_DOCUMENT_TEMPLATE).toMatchObject({
       id: 'presentation',
       label: 'Présentation 16:9',
-      canvas: { width: 1280, height: 720, aspectRatio: '16/9', orientation: 'landscape' },
+      canvas: { width: 1280, height: 720, aspectRatio: '16/9' },
       pageCount: { min: 0, max: null },
       chrome: { footer: true, logo: true, pageNumbers: true },
       artifacts: [
-        expect.objectContaining({ key: 'pdf', kind: 'pdf', location: 'file' }),
-        expect.objectContaining({ key: 'web-presentation', kind: 'web', location: 'url' }),
+        expect.objectContaining({ key: 'pdf', kind: 'pdf' }),
+        expect.objectContaining({ key: 'web-presentation', kind: 'web' }),
         expect.objectContaining({ key: 'cover-image', kind: 'image', pageIndex: 0 }),
       ],
       primaryArtifact: 'web-presentation',
@@ -102,14 +102,13 @@ describe('document template registry', () => {
   it('defines the LinkedIn carousel as a portrait, image-per-page document', () => {
     expect(LINKEDIN_CAROUSEL_DOCUMENT_TEMPLATE).toMatchObject({
       id: 'linkedin-carousel',
-      canvas: { width: 1080, height: 1350, aspectRatio: '4/5', orientation: 'portrait' },
+      canvas: { width: 1080, height: 1350, aspectRatio: '4/5' },
       pageCount: { min: 2, max: 20 },
       chrome: { footer: false, logo: false, pageNumbers: false },
       artifacts: [
         expect.objectContaining({
           key: 'page-image',
           kind: 'image',
-          location: 'file',
           repeat: 'per-page',
         }),
       ],
@@ -143,7 +142,7 @@ describe('document template registry', () => {
   it('declares both one-page document templates without new layouts', () => {
     expect(VISUAL_PUBLICATION_DOCUMENT_TEMPLATE).toMatchObject({
       id: 'visual-publication',
-      canvas: { width: 1080, height: 1080, aspectRatio: '1/1', orientation: 'square' },
+      canvas: { width: 1080, height: 1080, aspectRatio: '1/1' },
       pageCount: { min: 1, max: 1 },
       chrome: { footer: false, logo: true, pageNumbers: false },
       artifacts: [expect.objectContaining({ key: 'page-image', kind: 'image', pageIndex: 0 })],
@@ -156,7 +155,6 @@ describe('document template registry', () => {
         width: 794,
         height: 1123,
         aspectRatio: '794/1123',
-        orientation: 'portrait',
       },
       pageCount: { min: 1, max: 1 },
       chrome: { footer: true, logo: true, pageNumbers: false },

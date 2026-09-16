@@ -67,17 +67,6 @@ describe('reviseSlide', () => {
     ).toEqual(expect.arrayContaining([expect.stringContaining('métadiscours de production')]));
   });
 
-  it('rejects non-draftable slide layouts', async () => {
-    await expect(
-      reviseSlide({
-        instruction: 'Rewrite it',
-        language: 'en',
-        slide: { blockType: 'markdown', content: '# Raw' },
-      }),
-    ).rejects.toThrow('not AI-draftable');
-    expect(mockedGenerateStructured).not.toHaveBeenCalled();
-  });
-
   it('revalidates the slide after restoring its locked layout', async () => {
     mockedGenerateStructured.mockResolvedValue({
       blockType: 'statement',

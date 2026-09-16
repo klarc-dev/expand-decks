@@ -14,8 +14,7 @@
  * serializes to the accepted `anyOf`. The `blockType` literal in each member
  * keeps validation equivalent to a discriminated union.
  *
- * `markdown` (and any other `aiDraftable: false` block) is excluded from the
- * union — it is an admin-only escape-hatch block, not AI-draftable.
+ * Any `aiDraftable: false` block is excluded from the union.
  */
 
 import { z } from 'zod';
@@ -25,8 +24,7 @@ import { MAX_SLIDES, MIN_SLIDES } from '../../../lib/draftConfig';
 
 /**
  * Build the AI-draft union: a plain `z.union` of `aiSchemaOf(spec)` for every
- * block with `aiDraftable === true`. Non-draftable blocks (e.g. markdown) are
- * dropped.
+ * block with `aiDraftable === true`. Non-draftable blocks are dropped.
  */
 export function emitDraftSchema(specs: BlockSpec[]): z.ZodType {
   const members: z.ZodType[] = specs

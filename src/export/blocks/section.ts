@@ -14,7 +14,7 @@ import {
 
 export type { SectionBlockData };
 
-export function renderSection(block: SectionBlockData, ctx?: RenderCtx): string {
+export function renderSection(block: SectionBlockData, _ctx?: RenderCtx): string {
   const image: SlideImage | null = block.image?.url
     ? { url: block.image.url, position: block.imagePosition ?? 'right' }
     : null;
@@ -56,7 +56,7 @@ ${md(block.title)}
 
   return wrapSlide({
     layout: 'center',
-    classAttr: surfaceClass(ctx?.surface ?? 'dark'),
+    classAttr: surfaceClass('dark'),
     hideChrome: true,
     image,
     body,

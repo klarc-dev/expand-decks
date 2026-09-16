@@ -22,14 +22,12 @@ export function buildDeckRenderContexts(
   slides: readonly ContextInput[],
   sectionsOverride?: string[],
 ): SlideRenderContext[] {
-  let prevTone: Surface | null = null;
   let statementIndex = 0;
   const sections = sectionsOverride ?? collectSectionTitles(slides);
   const total = slides.length;
 
   return slides.map((block, index) => {
-    const surface = slideTone(block.blockType, prevTone);
-    prevTone = surface;
+    const surface = slideTone(block.blockType);
     const variantIndex = block.blockType === 'statement' ? statementIndex++ : undefined;
     return {
       surface,

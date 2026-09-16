@@ -79,8 +79,8 @@ Règles :
 - Liens : dans un champ texte, [libellé](url) avec https, mailto: ou tel: rend le libellé cliquable dans le PDF ; utilise-les pour une source citée ou une coordonnée (site, email, téléphone, prise de rendez-vous) fournie dans le contexte ou le brief, jamais pour une URL inventée`;
 
 /**
- * Inline PromptMeta[] for the 8 AI-draftable blocks (markdown is excluded — it
- * is not AI-draftable). Bullets reproduce the current prompt's field lines.
+ * Inline PromptMeta[] for the AI-draftable blocks. Bullets reproduce the
+ * current prompt's field lines.
  */
 const metas: PromptMeta[] = [
   {

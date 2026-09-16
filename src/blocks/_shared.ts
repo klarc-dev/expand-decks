@@ -14,7 +14,6 @@ import {
 import { COLLECTIONS } from '../lib/collections';
 import { VarMentionFeature } from './features/varMention.server';
 import { validateSerializedTextLength } from './spec/limitValidation';
-import { SLIDE_LIMITS } from './spec/limits';
 
 // Shared minimal inline editor for all rich-text slide fields: paragraphs +
 // bold/italic/underline/link/lists + a floating toolbar + the `@` variable
@@ -90,56 +89,13 @@ export const cardTitleDescFields = (limits?: {
   },
 ];
 
-// Shared "Sources / Notes" repeater appended to every layout block (except
-// markdown) by the L1 emitter. Each note renders as a numbered entry in the
-// slide-bottom footnote band, in author order. Authors place the corresponding
-// superscript in content with `[^1]`, `[^2]`, etc. The single `text` subfield
-// accepts inline markdown links/emphasis (e.g. `[texte](https://…)`) via md().
-export const footnotesField = (): Field => ({
-  name: 'footnotes',
-  type: 'array',
-  label: 'Sources / Notes',
-  labels: { singular: 'Note', plural: 'Notes' },
-  admin: {
-    description:
-      'Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).',
-    components: { RowLabel: '/components/RepeaterRowLabel#default' },
-  },
-  minRows: SLIDE_LIMITS.common.footnotes.min,
-  maxRows: SLIDE_LIMITS.common.footnotes.max,
-  fields: [
-    {
-      name: 'text',
-      type: 'text',
-      required: true,
-      label: 'Texte',
-      maxLength: SLIDE_LIMITS.common.footnotes.text.max,
-    },
-  ],
-});
-
-export const imageFields = (
+export const imageField = (
   description = 'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left)',
-): Field[] => [
-  {
+): Field =>
+  ({
     name: 'image',
     type: 'upload',
     relationTo: COLLECTIONS.media,
     label: 'Image',
     admin: { description },
-  },
-  {
-    name: 'imagePosition',
-    type: 'select',
-    label: 'Position de l’image',
-    defaultValue: 'right',
-    admin: {
-      description: 'Côté où l’image s’affiche quand une image est renseignée',
-      condition: (_, siblingData) => Boolean(siblingData?.image),
-    },
-    options: [
-      { label: 'Droite', value: 'right' },
-      { label: 'Gauche', value: 'left' },
-    ],
-  },
-];
+  }) as Field;

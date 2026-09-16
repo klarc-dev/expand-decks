@@ -18,6 +18,7 @@ import {
   optionalLimitedRender,
   optionalRender,
   rawField,
+  sharedRenderFields,
   titleFieldSpec,
 } from './dsl';
 import {
@@ -76,6 +77,7 @@ export const tableSpec = block({
   slug: 'table',
   blockType: 'table',
   aiDraftable: true,
+  footnotes: true,
   aiRefine: refineTableAi,
   renderRefine: refineTableRender,
   labels: { singular: 'Tableau', plural: 'Tableaux' },
@@ -175,6 +177,7 @@ export const tableRenderSchema = z.object({
   tableVariant,
   columns,
   rows,
+  ...sharedRenderFields(true),
 });
 
 export type TableBlockData = InferRender<typeof tableRenderSchema>;

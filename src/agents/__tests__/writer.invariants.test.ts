@@ -188,17 +188,6 @@ describe('writeSlide invariants', () => {
     expect(prompt).toContain('Garner, Legal Writing in Plain English');
   });
 
-  it('returns a minimal block for non-aiDraftable types without calling the model', async () => {
-    const md: OutlineStub = {
-      blockType: 'markdown',
-      title: 'Raw',
-      intent: 'x',
-    };
-    const out = await writeSlide(md, dossier, []);
-    expect(out).toEqual({ blockType: 'markdown', title: 'Raw' });
-    expect(mocked).not.toHaveBeenCalled();
-  });
-
   it('supplies the existing deck and preservation rule during a revision', async () => {
     mocked.mockResolvedValue({
       blockType: 'statement',

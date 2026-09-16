@@ -44,8 +44,7 @@ export function eyebrow(
 ): string {
   if (!text) return '';
   const indent = opts?.indent ?? '';
-  const variantClass =
-    opts?.variant && opts.variant !== 'default' ? `k-eyebrow--${opts.variant}` : '';
+  const variantClass = opts?.variant ? `k-eyebrow--${opts.variant}` : '';
   // A legacy forced-dark class must not override an explicit palette role.
   const extraClass = variantClass
     ? opts?.extraClass
@@ -320,34 +319,21 @@ export type RenderCtx = {
  */
 export function slideHeader(opts: {
   eyebrow?: string | null;
-  pillVariant?: PillVariant | null;
   title: string;
   /** Already-converted rich-text HTML: the description line under the title. */
   lead?: string;
-  size?: 'lg' | 'md';
-  sidebar?: string;
   align?: 'left' | 'center';
   density?: SlideDensity;
 }): string {
   const eb = eyebrow(opts.eyebrow, 'k-eyebrow--header', {
     indent: '    ',
-    variant: opts.pillVariant,
   });
-  const sizeClass = opts.size === 'md' ? 'k-h-md' : 'k-h-lg';
   const headingDensity = densityClass(opts.density ?? 'comfortable');
-  const heading = `<h2 class="${[sizeClass, headingDensity].filter(Boolean).join(' ')}">${md(opts.title)}</h2>`;
+  const heading = `<h2 class="${['k-h-lg', headingDensity].filter(Boolean).join(' ')}">${md(opts.title)}</h2>`;
   // Unified content header: pill + title + description + accent, identical on
   // every content template so the deck reads as one system.
   const lead = opts.lead ? `\n  <div class="${K.headerLead}">${opts.lead}</div>` : '';
   const accent = `\n  <div class="${K.headerAccent}" aria-hidden="true"></div>`;
-  const headingGroup = `${eb}\n    ${heading}${lead}${accent}`;
-  if (opts.sidebar) {
-    return `<header class="${K.contentHeader} ${K.contentHeaderSplit}">
-  <div>${headingGroup}
-  </div>
-  ${opts.sidebar}
-</header>`;
-  }
   const alignClass = opts.align === 'center' ? ` ${K.contentHeaderCenter}` : '';
   return `<header class="${K.contentHeader}${alignClass}">${eb}
   ${heading}${lead}${accent}
@@ -359,10 +345,9 @@ export function card(opts: {
   number?: string | null;
   title: string;
   body?: string; // already-converted HTML (richTextToHTML output), or ''
-  titleClass?: string;
 }): string {
   const num = opts.number ? `\n  <span class="${K.num}">${escape(opts.number)}</span>` : '';
-  const h3 = `<h3${opts.titleClass ? ` class="${opts.titleClass}"` : ''}>${md(opts.title)}</h3>`;
+  const h3 = `<h3>${md(opts.title)}</h3>`;
   const body = opts.body ? `\n  <div>${opts.body}</div>` : '';
   const classes = [K.card, opts.number ? K.cardNumbered : ''].filter(Boolean).join(' ');
   return `<div class="${classes}">${num}\n  ${h3}${body}\n</div>`;
@@ -461,7 +446,7 @@ export function cardStack(
   if (opts.layout === 'grid') {
     const requested = Math.min(Math.max(opts.maxCols ?? 4, 1), 4);
     const capped = Math.min(requested, cards.length);
-    const cols = requested >= 4 && cards.length >= 5 && cards.length <= 6 ? 3 : capped;
+    const cols = capped;
     const rows = Math.ceil(cards.length / cols);
     const density = cardLayoutDensity({
       profile: opts.profile,
@@ -624,7 +609,6 @@ function heroCaption(captionHtml: string, label?: string): string {
  */
 export function heroFrame(opts: {
   eyebrow?: string | null;
-  pillVariant?: PillVariant | null;
   title: string;
   body?: string; // already-converted HTML
   caption?: string; // in-flow footer caption HTML
@@ -635,7 +619,7 @@ export function heroFrame(opts: {
   accentRule?: boolean;
   density?: SlideDensity;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero', { variant: opts.pillVariant });
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption ? heroCaption(opts.caption, opts.captionLabel) : '';
   const sharedDensityClass = densityClass(opts.density ?? 'comfortable');

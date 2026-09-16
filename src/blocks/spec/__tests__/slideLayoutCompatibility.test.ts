@@ -13,7 +13,7 @@ describe('assessSlideLayoutCompatibility()', () => {
         footer: { root: { children: [{ type: 'paragraph' }] } },
         footnotes: [{ text: 'Source primaire' }],
       },
-      ['cover', 'statement', 'twoCols', 'cardGrid', 'table', 'markdown'],
+      ['cover', 'statement', 'twoCols', 'cardGrid', 'table'],
     );
 
     expect(results.map((result) => result.layout)).toEqual([
@@ -22,7 +22,6 @@ describe('assessSlideLayoutCompatibility()', () => {
       'twoCols',
       'cardGrid',
       'table',
-      'markdown',
     ]);
     expect(results.find((result) => result.layout === 'statement')).toMatchObject({
       classification: 'compatible',
@@ -41,9 +40,6 @@ describe('assessSlideLayoutCompatibility()', () => {
       unsupportedFields: ['footer', 'footnotes'],
     });
     expect(results.find((result) => result.layout === 'table')).toMatchObject({
-      classification: 'unavailable',
-    });
-    expect(results.find((result) => result.layout === 'markdown')).toMatchObject({
       classification: 'unavailable',
     });
   });

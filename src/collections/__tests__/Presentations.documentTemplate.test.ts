@@ -149,7 +149,6 @@ describe('Presentations document template contract', () => {
       'timeline',
       'mermaid',
       'agenda',
-      'markdown',
     ]);
 
     const filterOptions = slidesField!.filterOptions as (args: {

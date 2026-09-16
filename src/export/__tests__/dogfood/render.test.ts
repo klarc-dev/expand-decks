@@ -279,12 +279,6 @@ describe('dogfood all templates', () => {
           primaryAction: 'Run dogfood',
           footerNote: lexical('Use this deck whenever layout primitives change.'),
         },
-        {
-          blockType: 'markdown',
-          layout: 'default',
-          content:
-            '<div class="k-content-frame"><div class="k-content-header"><h1>Markdown escape hatch</h1></div><div class="k-content-main"><p>Raw content still shares the deck rails when authors opt in.</p></div></div>',
-        },
       ] as never,
     };
     const md = buildSlidesMd(deck);

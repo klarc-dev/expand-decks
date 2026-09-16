@@ -113,13 +113,10 @@ export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
 export type LexicalRichText = import('@payloadcms/richtext-lexical/lexical').SerializedEditorState;
 export const richTextRender = () => z.custom<LexicalRichText>();
 export const optionalRichTextRender = () => z.custom<LexicalRichText>().nullable().optional();
-export const optionalUnknownRender = () => z.unknown().nullable().optional();
 const footnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });
 const aiFootnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });
-export const footnotesRender = () =>
-  optionalRender(limitedArray(footnote, SLIDE_LIMITS.common.footnotes));
-export const footnotesAi = () =>
-  optionalAi(limitedArray(aiFootnote, SLIDE_LIMITS.common.footnotes));
+const footnotesRender = () => optionalRender(limitedArray(footnote, SLIDE_LIMITS.common.footnotes));
+const footnotesAi = () => optionalAi(limitedArray(aiFootnote, SLIDE_LIMITS.common.footnotes));
 export const limitedRichTextRender = (limit: TextLimit) =>
   z
     .custom<LexicalRichText>()
@@ -305,12 +302,19 @@ function fieldLimitLines(field: FieldSpec, prefix = ''): string[] {
 
 export function promptLinesOf(spec: BlockSpec): string[] {
   const authored = spec.promptMeta?.lines ?? [];
+  const shared = spec.footnotes
+    ? [
+        'footnotes: [{text}] — sources ou notes numérotées ; place [^1], [^2]… dans le contenu pour leurs appels',
+      ]
+    : [];
   // A non-draftable top-level field stays invisible to the writer. Nested
   // fields are not filtered: inside a draftable array they are part of the
   // item the writer must emit, even when the child itself carries `ai: false`
   // (composite factories declare their limits, not an AI schema).
-  const limits = spec.fields.flatMap((field) => (field.ai === false ? [] : fieldLimitLines(field)));
-  return [...authored, ...limits];
+  const limits = fieldsOf(spec).flatMap((field) =>
+    field.ai === false ? [] : fieldLimitLines(field),
+  );
+  return [...authored, ...shared, ...limits];
 }
 
 /**
@@ -327,6 +331,8 @@ export interface BlockSpec {
   blockType: string;
   /** ORDERED list of field specs. */
   fields: FieldSpec[];
+  /** Include the shared Sources / Notes field in every projection. */
+  footnotes?: boolean;
   /** Optional cross-field refinement over the AI object projected from fields. */
   aiRefine?: (schema: z.ZodObject) => z.ZodType;
   /** Optional render-only cross-field refinement. */
@@ -376,6 +382,45 @@ export function factoryField(
 /** Assemble a `BlockSpec`. Thin identity helper for inference at the call site. */
 export function block(spec: BlockSpec): BlockSpec {
   return spec;
+}
+
+const FOOTNOTES_FIELD = rawField('footnotes', footnotesRender(), footnotesAi(), {
+  type: 'array',
+  label: 'Sources / Notes',
+  labels: { singular: 'Note', plural: 'Notes' },
+  description:
+    'Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).',
+  minRows: SLIDE_LIMITS.common.footnotes.min,
+  maxRows: SLIDE_LIMITS.common.footnotes.max,
+  fields: [
+    rawField('text', footnote.shape.text, aiFootnote.shape.text, {
+      type: 'text',
+      required: true,
+      label: 'Texte',
+      maxLength: SLIDE_LIMITS.common.footnotes.text.max,
+    }),
+  ],
+});
+
+/** Ordered fields for all projections, with shared fields before preview. */
+export function fieldsOf(spec: BlockSpec): FieldSpec[] {
+  if (!spec.footnotes) return spec.fields;
+  const previewIndex = spec.fields.findIndex((field) => field.factory === 'preview');
+  if (previewIndex < 0) return [...spec.fields, FOOTNOTES_FIELD];
+  return [
+    ...spec.fields.slice(0, previewIndex),
+    FOOTNOTES_FIELD,
+    ...spec.fields.slice(previewIndex),
+  ];
+}
+
+/** Precise shared render shape for per-spec render-schema literals. */
+export function sharedRenderFields(enabled: true): {
+  footnotes: ReturnType<typeof footnotesRender>;
+};
+export function sharedRenderFields(enabled?: false): Record<never, never>;
+export function sharedRenderFields(enabled = false) {
+  return enabled ? { footnotes: footnotesRender() } : {};
 }
 
 // ---------------------------------------------------------------------------
@@ -457,12 +502,9 @@ export function renderSchemaOf(spec: BlockSpec): z.ZodType<Record<string, unknow
   const shape: Record<string, z.ZodType> = {
     blockType: z.literal(spec.blockType),
   };
-  for (const field of spec.fields) {
+  for (const field of fieldsOf(spec)) {
     if (field.factory === 'preview') continue;
     shape[field.name] = field.render;
-  }
-  if (spec.slug !== 'markdown' && spec.slug !== 'cover') {
-    shape.footnotes = footnotesRender();
   }
   const schema = z.object(shape);
   return (spec.renderRefine ? spec.renderRefine(schema) : schema) as z.ZodType<
@@ -479,13 +521,10 @@ export function aiSchemaOf(spec: BlockSpec): z.ZodType<Record<string, unknown>> 
   const shape: Record<string, z.ZodType> = {
     blockType: z.literal(spec.blockType),
   };
-  for (const field of spec.fields) {
+  for (const field of fieldsOf(spec)) {
     if (field.factory === 'preview') continue;
     if (field.ai === false) continue;
     shape[field.name] = field.ai;
-  }
-  if (spec.slug !== 'markdown' && spec.slug !== 'cover') {
-    shape.footnotes = footnotesAi();
   }
   const schema = z.object(shape);
   return (spec.aiRefine ? spec.aiRefine(schema) : schema) as z.ZodType<Record<string, unknown>>;

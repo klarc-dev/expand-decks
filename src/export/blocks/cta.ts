@@ -29,7 +29,7 @@ export type { CtaBlockData };
 
 export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   const eyebrow = renderEyebrow(block.eyebrow, 'k-eyebrow--cta', {
-    extraClass: ctx?.surface === 'light' ? undefined : K.eyebrowDark,
+    extraClass: K.eyebrowDark,
     multiline: true,
   });
 
@@ -78,7 +78,7 @@ ${content}
   // cta is the dark closing slide by default; a resolved tone can still override.
   return wrapSlide({
     layout: 'center',
-    classAttr: surfaceClass(ctx?.surface ?? 'dark'),
+    classAttr: surfaceClass('dark'),
     hideChrome: false,
     body,
   });
