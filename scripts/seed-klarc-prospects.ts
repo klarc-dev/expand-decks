@@ -318,7 +318,7 @@ const slides = [
     eyebrow: 'UN PREMIER ÉCHANGE',
     title: 'Parlons de votre situation',
     subtitle:
-      'Nous vous proposons un premier échange de 30 minutes pour examiner un contrat, un actif, une question fiscale, un projet de R&D ou un différend, et préciser les points à approfondir.',
+      'Nous vous proposons un premier échange de 30 minutes pour examiner un contrat, un actif, une question fiscale, un projet de R&D ou un différend, et poser les premières orientations.',
     // Buttons and office details carry their own targets so the exported PDF
     // is clickable: booking page and one tel:/mailto: per office.
     primaryAction: 'Prendre rendez-vous',

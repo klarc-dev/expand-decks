@@ -159,7 +159,7 @@ describe('style.css shared density system', () => {
   it('gives cover branding more weight and keeps long cover titles to a restrained scale', () => {
     const coverTitle = css.match(/\.slidev-layout \.k-cover \.k-hero-big\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(coverTitle).toContain('font-size: calc(var(--t-display) * 0.778)');
-    expect(coverTitle).toContain('line-height: 0.98');
+    expect(coverTitle).toContain('line-height: 1.12');
 
     const coverLogo =
       css.match(

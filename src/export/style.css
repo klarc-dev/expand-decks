@@ -2163,7 +2163,7 @@
    display title one step quieter so descriptive titles can hold two lines. */
 .slidev-layout .k-cover .k-hero-big {
   font-size: calc(var(--t-display) * 0.778);
-  line-height: 0.98;
+  line-height: 1.12;
 }
 
 .k-hero-big em {
