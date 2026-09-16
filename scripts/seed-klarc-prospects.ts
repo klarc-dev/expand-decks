@@ -143,7 +143,28 @@ const slides = [
     footer:
       'Les actions et les livrables sont définis selon votre situation et le périmètre de la mission.',
   },
-  // Page 5 — droit des affaires
+  // Page 5 — sommaire des quatre expertises, juste avant leur présentation
+  {
+    blockType: 'agenda',
+    eyebrow: 'Nos expertises',
+    title: 'Quatre expertises, une seule équipe',
+    items: [
+      { label: 'Droit des affaires', description: 'Sécuriser vos contrats et votre société' },
+      {
+        label: 'Propriété industrielle',
+        description: 'Protéger et exploiter vos actifs immatériels',
+      },
+      {
+        label: 'Droit fiscal',
+        description: 'Construire votre stratégie fiscale et vous défendre',
+      },
+      {
+        label: 'Management de l’innovation',
+        description: 'Structurer et financer vos projets de R&D',
+      },
+    ],
+  },
+  // Page 6 — droit des affaires
   {
     blockType: 'twoCols',
     eyebrow: 'Droit des affaires',
@@ -176,7 +197,7 @@ const slides = [
       },
     ],
   },
-  // Page 6 — propriété industrielle
+  // Page 7 — propriété industrielle
   {
     blockType: 'twoCols',
     eyebrow: 'Propriété industrielle',
@@ -209,7 +230,7 @@ const slides = [
       },
     ],
   },
-  // Page 7 — droit fiscal, avec une expertise particulière de l'innovation
+  // Page 8 — droit fiscal, avec une expertise particulière de l'innovation
   {
     blockType: 'twoCols',
     eyebrow: 'Droit fiscal',
@@ -242,7 +263,7 @@ const slides = [
       },
     ],
   },
-  // Page 8 — management de l'innovation
+  // Page 9 — management de l'innovation
   {
     blockType: 'twoCols',
     eyebrow: 'Management de l’innovation',
@@ -275,7 +296,7 @@ const slides = [
       },
     ],
   },
-  // Page 9 — témoignages (extraits fidèles du deck historique livré)
+  // Page 10 — témoignages (extraits fidèles du deck historique livré)
   {
     blockType: 'quotes',
     eyebrow: 'TÉMOIGNAGES',
@@ -307,7 +328,7 @@ const slides = [
     linkLabel: 'Voir d’autres témoignages',
     linkUrl: 'https://klarc.com/identite/temoignages',
   },
-  // Page 10 — vos contacts (shared person-card grid; people wired at seed time)
+  // Page 11 — vos contacts (shared person-card grid; people wired at seed time)
   {
     blockType: 'cardGrid',
     eyebrow: 'POUR DÉMARRER',
@@ -315,7 +336,7 @@ const slides = [
     sidebarText:
       'Choisissez votre point d’entrée selon votre besoin ; il mobilise les compétences utiles à votre dossier.',
   },
-  // Page 11 — cta
+  // Page 12 — cta
   {
     blockType: 'cta',
     eyebrow: 'UN PREMIER ÉCHANGE',
@@ -495,9 +516,9 @@ await runPayloadScript(async (payload) => {
       description: people[key].description,
     }));
   };
-  // The four expertise slides carry no person card: the contacts grid (page 10)
+  // The four expertise slides carry no person card: the contacts grid (page 11)
   // is the single place where the referents appear.
-  wire(10, ['joachim', 'lucien', 'benjamin', 'carine']);
+  wire(11, ['joachim', 'lucien', 'benjamin', 'carine']);
   const data = {
     title,
     organisation: org[0].id,
@@ -542,7 +563,7 @@ await runPayloadScript(async (payload) => {
     depth: 0,
     overrideAccess: true,
   });
-  if (verified.slides?.length !== 11) throw new Error('Expected 11 persisted slides');
+  if (verified.slides?.length !== 12) throw new Error('Expected 12 persisted slides');
   console.log(
     JSON.stringify({
       id: verified.id,
