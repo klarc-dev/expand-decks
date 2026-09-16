@@ -1221,7 +1221,6 @@
   --ag-band-bleed: 1rem;
   --ag-label-size: var(--t-h3);
   --ag-desc-size: var(--t-body);
-  --ag-dim: color-mix(in srgb, var(--fg-muted) 78%, var(--bg));
   --ag-label-track: 11fr;
   --ag-desc-track: 9fr;
   list-style: none;
@@ -1362,17 +1361,15 @@
   border-radius: 0.65rem;
   background: var(--k-teal-50);
 }
-.k-ag-item--active .k-ag-num {
-  color: var(--k-teal);
-}
 .k-ag-item--active .k-ag-desc {
   color: var(--k-teal-700);
 }
 
-/* Receded rows: same type, quieter colour. Numerals stay above 3:1, labels and
-   descriptions keep the muted body colour, so nothing dissolves. */
+/* Receded rows: same type, quieter colour. The rose numeral fades toward the
+   ground; labels and descriptions keep the muted body colour, so nothing
+   dissolves. */
 .k-ag-item--dim .k-ag-num {
-  color: var(--ag-dim);
+  color: color-mix(in srgb, var(--k-rose) 55%, var(--bg));
 }
 .k-ag-item--dim .k-ag-label,
 .k-ag-item--dim .k-ag-desc {
@@ -1386,14 +1383,15 @@
 .slidev-layout.k-dark .k-ag-label {
   color: #fff;
 }
-.k-dark .k-ag-num,
+.k-dark .k-ag-num {
+  color: var(--k-rose);
+}
 .k-dark .k-ag-desc {
   color: var(--fg-muted);
 }
 .k-dark .k-ag-item--active::before {
   background: rgba(255, 255, 255, 0.09);
 }
-.k-dark .k-ag-item--active .k-ag-num,
 .k-dark .k-ag-item--active .k-ag-desc {
   color: #fff;
 }
