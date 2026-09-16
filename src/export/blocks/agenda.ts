@@ -49,10 +49,18 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
     density,
   });
   const fitted = fit.mode === 'fitted';
+  // Ledger geometry: rows share one column grid (numeral, label, description).
+  // A short chapter list (centered mode) earns larger type so three rows still
+  // hold the canvas; a list with no descriptions lets labels span the free
+  // column instead of leaving an empty axis on the right.
+  const roomy = !fitted && items.length <= 3;
+  const plain = items.every((item) => !item.description);
   const agendaClass = [
     K.agenda,
-    fit.crowded ? 'k-agenda--dense' : '',
-    fitted ? 'k-agenda--fit' : '',
+    fit.crowded ? K.agendaDense : '',
+    fitted ? K.agendaFit : '',
+    roomy ? K.agendaRoomy : '',
+    plain ? K.agendaPlain : '',
     densityClass(density),
   ]
     .filter(Boolean)

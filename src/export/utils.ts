@@ -38,6 +38,7 @@ export function eyebrow(
   opts?: {
     indent?: string;
     extraClass?: string;
+    icon?: boolean;
     multiline?: boolean;
     variant?: PillVariant | null;
   },

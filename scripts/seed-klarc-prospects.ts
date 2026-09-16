@@ -181,7 +181,7 @@ const slides = [
     title: 'Protéger et exploiter vos [actifs immatériels]',
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
-      'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
+      'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, valorisation et défense de vos actifs.',
     rightCards: [
       {
         title: 'Vos brevets et inventions',
@@ -244,8 +244,6 @@ const slides = [
     lead: 'Une équipe scientifique pour structurer vos travaux de R&D et préparer vos demandes de financement.',
     intro:
       'Docteurs et ingénieurs construisent avec vous le cadre scientifique et financier de vos projets, documentent vos travaux et préparent les dossiers en lien avec l’avocat fiscaliste.',
-    leftFooter:
-      'En lien avec le droit fiscal pour les dispositifs propres à l’innovation et à la R&D.',
     rightCards: [
       {
         title: 'Vos aides et financements',

@@ -1207,19 +1207,41 @@
   color: #eaf2f2;
 }
 
-/* Agenda / plan — vertical numbered list of sections, with optional
-   "you are here" emphasis (active row solid, others dimmed). */
+/* Agenda / plan — a ruled ledger. Every row sets its numeral, label and
+   description on one baseline, and every row shares one column grid, so the
+   slide reads down three aligned axes: the rail axis the title also sits on
+   (numerals), the label axis, and the description axis. Hairlines separate
+   rows; no boxes, no cards. The optional "you are here" state tints the active
+   row and recedes the others by colour, never opacity, so every row stays
+   legible on a projector. */
 .k-agenda {
+  --ag-num-col: 3rem;
+  --ag-gap: 1.6rem;
+  --ag-row-pad: 1.05rem;
+  --ag-band-bleed: 1rem;
+  --ag-num-size: 1.25rem;
+  --ag-label-size: var(--t-h3);
+  --ag-desc-size: calc(var(--t-body) * 0.95);
+  --ag-dim: color-mix(in srgb, var(--fg-muted) 78%, var(--bg));
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  border-bottom: 1px solid var(--k-line);
+}
+
+/* Two or three chapters: larger type so a short list still holds the canvas. */
+.k-agenda--roomy {
+  --ag-num-col: 3.6rem;
+  --ag-row-pad: 1.45rem;
+  --ag-num-size: 1.5rem;
+  --ag-label-size: var(--t-sub);
+  --ag-desc-size: calc(var(--t-lead) * 0.9);
 }
 
 .k-agenda--dense {
-  gap: 0.45rem;
+  --ag-row-pad: 0.55rem;
 }
 
 /* Fitted agenda: the list owns the full content-main row (a `1fr` track in the
@@ -1228,104 +1250,146 @@
    or ellipses that can hide a section's meaning. */
 .k-agenda--fit {
   height: 100%;
-  gap: 0.45rem;
+  --ag-row-pad: 0.5rem;
 }
 .k-agenda--fit .k-ag-item {
   flex: 1 1 0;
   min-height: 0;
-  align-items: center;
+  align-content: center;
 }
 
 .k-ag-item {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: 3.4rem 1fr;
+  grid-template-columns: var(--ag-num-col) minmax(0, 11fr) minmax(0, 9fr);
+  column-gap: var(--ag-gap);
   align-items: baseline;
-  column-gap: 1.2rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 0.9rem;
-  border: 1px solid var(--k-line);
-  transition: none;
+  padding: var(--ag-row-pad) 0;
+  border-top: 1px solid var(--k-line);
 }
 
-.k-agenda--dense .k-ag-item {
-  grid-template-columns: 2.7rem 1fr;
-  column-gap: 0.8rem;
-  padding: 0.48rem 0.8rem;
-  border-radius: 0.75rem;
-}
-
+/* Numerals sit on the rail axis in the heading face, a small echo of the
+   section divider's large numeral, so the plan and its chapters rhyme. */
 .k-ag-num {
   font-family: var(--k-font-heading);
-  font-weight: 600;
-  font-size: var(--t-sub);
+  font-weight: 400;
+  font-size: var(--ag-num-size);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.02em;
   line-height: 1;
-  color: var(--k-rose);
-}
-
-.k-agenda--dense .k-ag-num {
-  font-size: var(--t-h3);
+  color: var(--fg-muted);
 }
 
 .k-ag-label {
   font-family: var(--k-font-heading);
-  font-size: var(--t-h3);
+  font-weight: 500;
+  font-size: var(--ag-label-size);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   color: var(--k-teal);
   margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
-.k-agenda--dense .k-ag-label {
-  font-size: var(--t-body);
-  line-height: 1.15;
+/* No descriptions anywhere: labels take the free axis instead of leaving an
+   empty column on the right. */
+.k-agenda--plain .k-ag-label {
+  grid-column: 2 / -1;
 }
 
 .k-ag-desc {
-  grid-column: 2;
-  font-size: var(--t-small);
-  color: var(--k-ink-soft);
+  grid-column: 3;
+  font-size: var(--ag-desc-size);
   line-height: 1.4;
-  margin: 0.25rem 0 0;
+  color: var(--fg-muted);
+  margin: 0;
+  min-width: 0;
+  max-inline-size: 34rem;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
-.k-agenda--dense .k-ag-desc {
-  line-height: 1.25;
-  margin-top: 0.15rem;
-}
-.k-agenda--fit .k-ag-label,
-.k-agenda--fit .k-ag-desc {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
 .k-agenda--fit.k-density-compact .k-ag-item,
 .k-agenda--fit.k-density-dense .k-ag-item {
-  grid-template-columns: calc(3.4rem * var(--density-space)) minmax(0, 1fr);
-  column-gap: calc(1.2rem * var(--density-space));
-  padding: calc(0.7rem * var(--density-space)) calc(1.1rem * var(--density-space));
+  grid-template-columns: calc(var(--ag-num-col) * var(--density-space)) minmax(0, 11fr) minmax(
+      0,
+      9fr
+    );
+  column-gap: calc(var(--ag-gap) * var(--density-space));
+  padding: calc(var(--ag-row-pad) * var(--density-space)) 0;
 }
 .k-agenda--fit.k-density-compact .k-ag-num,
 .k-agenda--fit.k-density-dense .k-ag-num {
-  font-size: calc(var(--t-sub) * var(--density-scale));
+  font-size: calc(var(--ag-num-size) * var(--density-scale));
 }
 .k-agenda--fit.k-density-compact .k-ag-label,
 .k-agenda--fit.k-density-dense .k-ag-label {
-  font-size: calc(var(--t-h3) * var(--density-scale));
+  font-size: calc(var(--ag-label-size) * var(--density-scale));
   line-height: calc(1.15 * var(--density-leading));
 }
 .k-agenda--fit.k-density-compact .k-ag-desc,
 .k-agenda--fit.k-density-dense .k-ag-desc {
-  font-size: calc(var(--t-small) * var(--density-scale));
-  line-height: calc(1.3 * var(--density-leading));
-  margin-top: calc(0.25rem * var(--density-space));
+  font-size: calc(var(--ag-desc-size) * var(--density-scale));
+  line-height: calc(1.4 * var(--density-leading));
 }
 
-/* Active row: filled teal surface so the current section stands out. */
-.k-ag-item--active {
+/* Active row: a tinted band drawn behind the row, bleeding past the text axes
+   so the copy keeps its alignment. Inset from the hairlines so the ledger's
+   rules stay continuous above and below it. */
+.k-ag-item--active::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0.32rem calc(-1 * var(--ag-band-bleed));
+  border-radius: 0.65rem;
   background: var(--k-teal-50);
-  border-color: var(--k-teal);
+}
+.k-ag-item--active .k-ag-num {
+  color: var(--k-teal);
+}
+.k-ag-item--active .k-ag-desc {
+  color: var(--k-teal-700);
 }
 
-/* Dimmed rows: present but receded, so the eye lands on the active one. */
-.k-ag-item--dim {
-  opacity: 0.45;
+/* Receded rows: same type, quieter colour. Numerals stay above 3:1, labels and
+   descriptions keep the muted body colour, so nothing dissolves. */
+.k-ag-item--dim .k-ag-num {
+  color: var(--ag-dim);
+}
+.k-ag-item--dim .k-ag-label {
+  color: var(--fg-muted);
+}
+.k-ag-item--dim .k-ag-desc {
+  color: var(--ag-dim);
+}
+
+.k-dark .k-agenda,
+.k-dark .k-ag-item {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.k-dark .k-ag-label {
+  color: #fff;
+}
+.k-dark .k-ag-num,
+.k-dark .k-ag-desc {
+  color: var(--fg-muted);
+}
+.k-dark .k-ag-item--active::before {
+  background: rgba(255, 255, 255, 0.09);
+}
+.k-dark .k-ag-item--active .k-ag-num,
+.k-dark .k-ag-item--active .k-ag-desc {
+  color: #fff;
+}
+.k-dark .k-ag-item--dim .k-ag-label {
+  color: var(--fg-muted);
+}
+.k-dark .k-ag-item--dim .k-ag-num,
+.k-dark .k-ag-item--dim .k-ag-desc {
+  color: color-mix(in srgb, var(--fg-muted) 70%, var(--bg));
 }
 
 .k-dark .k-ag-item {
@@ -2937,7 +3001,6 @@
 .k-dark .k-person-card,
 .k-dark .k-def-item,
 .k-dark .k-tl-band,
-.k-dark .k-ag-item--active,
 .k-dark.k-diagram-slide .mermaid {
   background: #1f5e61 !important;
   border-color: #4b7c7e !important;
