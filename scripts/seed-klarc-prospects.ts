@@ -151,7 +151,6 @@ const slides = [
     lead: 'Contrats, gouvernance, opérations et différends : notre accompagnement.',
     intro:
       'Nos avocats interviennent en conseil et en contentieux, en lien avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
-    leftFooter: 'En lien avec la propriété industrielle pour vos résultats de R&D.',
     rightCards: [
       {
         title: 'Vos contrats et partenariats',
@@ -183,7 +182,6 @@ const slides = [
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
       'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
-    leftFooter: 'En lien avec le droit des affaires pour vos licences et vos contrats.',
     rightCards: [
       {
         title: 'Vos brevets et inventions',
@@ -215,7 +213,6 @@ const slides = [
     lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
     intro:
       'L’avocat fiscaliste construit avec vous une stratégie adaptée à vos opérations et vous défend en cas de contrôle. Avec l’équipe scientifique, il établit la position fiscale à partir de vos travaux de R&D.',
-    leftFooter: 'En lien avec le management de l’innovation pour vos preuves de R&D.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
