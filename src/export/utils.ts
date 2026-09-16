@@ -651,11 +651,8 @@ export function heroFrame(opts: {
   surface?: Surface | null;
   accentRule?: boolean;
   density?: SlideDensity;
-  pillVariant?: PillVariant;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero', {
-    variant: opts.pillVariant,
-  });
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption ? heroCaption(opts.caption, opts.captionLabel) : '';
   const sharedDensityClass = densityClass(opts.density ?? 'comfortable');

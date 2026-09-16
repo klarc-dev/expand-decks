@@ -349,6 +349,7 @@ export async function POST(req: NextRequest) {
           candidateTypes,
           Math.min(slideIndex, candidateTypes.length - 1),
           body.sections ?? [],
+          body.slideRefs,
         );
         const candidatePreview = renderPreviewWithVars(
           parsedCandidate.data as SlideBlock,
