@@ -26,7 +26,9 @@ type DownloadDocument = {
 export const DownloadPdfButton: React.FC = () => {
   const { id } = useDocumentInfo();
   const [{ data }, { setParams }] = usePayloadAPI(id ? `/api/presentations/${id}` : '', {
-    initialParams: { depth: 0 },
+    // depth 1 populates the artifact file: at depth 0 it is a bare id with no
+    // url, so no link can be built and the button never renders.
+    initialParams: { depth: 1 },
   });
   const document = (data ?? null) as DownloadDocument | null;
   const pdf =
@@ -36,13 +38,13 @@ export const DownloadPdfButton: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    const timer = setInterval(() => setParams({ depth: 0, t: Date.now() }), DOWNLOAD_REFRESH_MS);
+    const timer = setInterval(() => setParams({ depth: 1, t: Date.now() }), DOWNLOAD_REFRESH_MS);
     return () => clearInterval(timer);
   }, [id, setParams]);
 
   useEffect(() => {
     if (!id) return;
-    const refresh = () => setParams({ depth: 0, t: Date.now() });
+    const refresh = () => setParams({ depth: 1, t: Date.now() });
     window.addEventListener('presentation-build-requested', refresh);
     return () => window.removeEventListener('presentation-build-requested', refresh);
   }, [id, setParams]);
