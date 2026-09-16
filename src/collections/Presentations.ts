@@ -419,6 +419,15 @@ export const Presentations: CollectionConfig = {
       ],
     },
     {
+      name: 'buildStatusLive',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '/components/BuildStatusField#default',
+        },
+      },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
@@ -643,63 +652,47 @@ export const Presentations: CollectionConfig = {
             },
           ],
         },
-        {
-          label: 'Sortie',
-          description:
-            'Artefacts générés automatiquement par le build (disponibles après publication).',
-          fields: [
-            {
-              name: 'buildStatusLive',
-              type: 'ui',
-              admin: {
-                components: {
-                  Field: '/components/BuildStatusField#default',
-                },
-              },
-            },
-            {
-              name: 'lastBuildStatus',
-              type: 'select',
-              defaultValue: BUILD_STATUS.idle,
-              options: Object.values(BUILD_STATUS),
-              admin: { readOnly: true, hidden: true },
-            },
-            {
-              name: 'artifacts',
-              type: 'array',
-              label: 'Artefacts du build',
-              admin: {
-                description: 'Sorties ordonnées définies par le template du document.',
-                readOnly: true,
-              },
-              access: { create: () => false, update: () => false },
-              fields: [
-                { name: 'key', type: 'text', required: true },
-                { name: 'actionLabel', type: 'text', required: true },
-                { name: 'buildId', type: 'text', required: true, index: true },
-                { name: 'file', type: 'upload', relationTo: COLLECTIONS.media },
-                { name: 'url', type: 'text' },
-                { name: 'pageIndex', type: 'number', min: 0 },
-              ],
-            },
-            {
-              name: 'lastBuildError',
-              type: 'textarea',
-              admin: { readOnly: true, hidden: true },
-            },
-            {
-              name: 'lastBuildRequestedAt',
-              type: 'date',
-              admin: { readOnly: true, hidden: true },
-            },
-            {
-              name: 'lastBuildToken',
-              type: 'text',
-              admin: { readOnly: true, hidden: true },
-            },
-          ],
-        },
       ],
+    },
+    {
+      name: 'lastBuildStatus',
+      type: 'select',
+      defaultValue: BUILD_STATUS.idle,
+      options: Object.values(BUILD_STATUS),
+      admin: { readOnly: true, hidden: true },
+    },
+    {
+      name: 'artifacts',
+      type: 'array',
+      label: 'Artefacts du build',
+      admin: {
+        hidden: true,
+        readOnly: true,
+      },
+      access: { create: () => false, update: () => false },
+      fields: [
+        { name: 'key', type: 'text', required: true },
+        { name: 'actionLabel', type: 'text', required: true },
+        { name: 'buildId', type: 'text', required: true, index: true },
+        { name: 'file', type: 'upload', relationTo: COLLECTIONS.media },
+        { name: 'url', type: 'text' },
+        { name: 'pageIndex', type: 'number', min: 0 },
+      ],
+    },
+    {
+      name: 'lastBuildError',
+      type: 'textarea',
+      admin: { readOnly: true, hidden: true },
+    },
+    {
+      name: 'lastBuildRequestedAt',
+      type: 'date',
+      admin: { readOnly: true, hidden: true },
+    },
+    {
+      name: 'lastBuildToken',
+      type: 'text',
+      admin: { readOnly: true, hidden: true },
     },
   ],
 };

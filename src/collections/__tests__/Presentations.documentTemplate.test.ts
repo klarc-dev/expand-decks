@@ -182,7 +182,25 @@ describe('Presentations document template contract', () => {
     ]);
   });
 
-  it('declares only canonical ordered build artifacts', () => {
+  it('keeps build feedback visible without a dedicated output tab', () => {
+    const tabsField = (Presentations.fields as Array<Record<string, unknown>>).find(
+      (field) => field.type === 'tabs',
+    );
+    expect(
+      (tabsField?.tabs as Array<{ label?: string }> | undefined)?.map((tab) => tab.label),
+    ).toEqual(['Contenu', 'IA', 'Réglages']);
+
+    const buildStatusIndex = (Presentations.fields as Array<Record<string, unknown>>).findIndex(
+      (field) => field.name === 'buildStatusLive',
+    );
+    const tabsIndex = (Presentations.fields as Array<Record<string, unknown>>).findIndex(
+      (field) => field.type === 'tabs',
+    );
+    expect(buildStatusIndex).toBeGreaterThanOrEqual(0);
+    expect(buildStatusIndex).toBeLessThan(tabsIndex);
+  });
+
+  it('declares only canonical ordered build artifacts and keeps them out of authoring UI', () => {
     const visit = (fields: unknown[]): Array<Record<string, unknown>> => {
       const matches: Array<Record<string, unknown>> = [];
       for (const field of fields as Array<Record<string, unknown>>) {
@@ -201,7 +219,10 @@ describe('Presentations document template contract', () => {
 
     const fields = visit(Presentations.fields as unknown[]);
     const artifacts = fields.find((field) => field.name === 'artifacts');
-    expect(artifacts).toMatchObject({ type: 'array', admin: { readOnly: true } });
+    expect(artifacts).toMatchObject({
+      type: 'array',
+      admin: { hidden: true, readOnly: true },
+    });
     expect((artifacts!.fields as Array<{ name?: string }>).map((field) => field.name)).toEqual([
       'key',
       'actionLabel',
@@ -245,6 +266,11 @@ describe('Presentations document template contract', () => {
         ],
       }),
     ).toThrow('artefact principal');
-    expect(preview({ documentTemplate: 'presentation', lastBuildStatus: 'building' })).toBeNull();
+    expect(
+      preview({
+        documentTemplate: 'presentation',
+        lastBuildStatus: 'building',
+      }),
+    ).toBeNull();
   });
 });
