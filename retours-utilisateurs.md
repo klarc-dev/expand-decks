@@ -28,7 +28,7 @@ Envisager de présenter l’équipe et les expertises de chacun en début de pr�
 
 Revoir la mise en page de la deuxième carte de la slide 2 : le texte sur trois lignes gêne la lecture. →
 
-Revoir la slide 4 : le processus présenté ne différencie pas le cabinet. Mettre en évidence la synergie entre les expertises, en précisant qui intervient à chaque étape et comment ; envisager de remplacer cette slide par un cas concret mobilisant les quatre expertises. →
+Revoir la slide 4 : le processus présenté ne différencie pas le cabinet. Mettre en évidence la synergie entre les expertises, en précisant qui intervient à chaque étape et comment ; envisager de remplacer cette slide par un cas concret mobilisant les quatre expertises. → L’objectif était surtout de montrer l’étendue de nos interventions : audit, conseil, rédaction d’actes, défense et représentation. Nous ne sommes pas uniquement un cabinet de conseil. Un cas concret me paraît trop long pour cette présentation généraliste ; je me suis donc limité à une présentation synthétique, inspirée des recommandations trouvées en ligne pour un pitch de cabinet.
 
 Envisager d’ajouter quelques chiffres clés, notamment l’effectif et le nombre de dossiers traités : malgré une réserve sur ce type de présentation, la question revient souvent, surtout concernant l’effectif. →
 

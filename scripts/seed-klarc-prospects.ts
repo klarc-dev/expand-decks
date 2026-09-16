@@ -88,7 +88,7 @@ const slides = [
     intro:
       'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement. Consulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
     leftFooter:
-      'L’enjeu : examiner ensemble les conséquences juridiques, techniques et financières de vos choix.',
+      'L’enjeu : construire votre stratégie en mesurant ensemble ses conséquences juridiques, techniques et financières.',
     rightCards: [
       {
         title: 'Des professions réglementées',
@@ -253,7 +253,7 @@ const slides = [
       {
         title: 'Vos aides et financements',
         description:
-          'Bpifrance, subventions, appels à projets régionaux et européens : examiner les dispositifs adaptés, préparer les demandes et suivre les obligations liées aux financements obtenus.',
+          'Bpifrance, subventions, appels à projets régionaux et européens : sélectionner les dispositifs adaptés, préparer les demandes et suivre les obligations liées aux financements obtenus.',
       },
       {
         title: 'La structuration de vos projets',
