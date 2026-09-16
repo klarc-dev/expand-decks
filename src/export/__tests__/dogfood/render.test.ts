@@ -277,7 +277,6 @@ describe('dogfood all templates', () => {
           title: 'Keep dogfooding',
           subtitle: lexical('Every template should earn its place with real rendered evidence.'),
           primaryAction: 'Run dogfood',
-          secondaryAction: 'Inspect PNGs',
           footerNote: lexical('Use this deck whenever layout primitives change.'),
         },
         {

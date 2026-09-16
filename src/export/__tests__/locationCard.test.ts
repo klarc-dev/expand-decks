@@ -111,6 +111,9 @@ describe('location card', () => {
         { surface },
       );
       expect(result).toContain('k-location-grid');
+      expect(result).toContain('k-cta-frame--locations');
+      expect(result).toContain('k-cta-invitation');
+      expect(result).toContain('</a><br><a href="mailto:');
       expect(result).toContain('Prendre rendez-vous');
       expect(result).toContain('maps/dir/?api=1&amp;destination=');
       expect(result).not.toContain('k-cta-caption');

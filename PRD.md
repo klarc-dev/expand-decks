@@ -357,7 +357,7 @@ Why Payload is the entire MVP frontend:
   eyebrow: text               // "Prêt à concrétiser votre projet ?"
   title: text                 // "Parlons de votre innovation."
   primaryAction: text         // "Prendre rendez-vous →"
-  secondaryAction: text       // "+33 5 25 63 09 36"
+  primaryActionUrl: text      // URL de l’unique CTA (https, mailto: ou tel:)
   contactRows: array of {
     label: text               // "Web" / "Lyon" / "Toulouse"
     value: text

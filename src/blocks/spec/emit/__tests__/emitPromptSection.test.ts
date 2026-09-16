@@ -49,8 +49,8 @@ Layouts disponibles :
 
 8. **cta** — Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
    - eyebrow, title (obligatoire), subtitle
-   - primaryAction / secondaryAction: libellés de boutons
-   - primaryActionUrl / secondaryActionUrl: cible du bouton (https, mailto: ou tel:), uniquement une coordonnée fournie dans le contexte ou le brief, jamais inventée
+   - primaryAction: libellé de l’unique bouton (optionnel)
+   - primaryActionUrl: cible du bouton (https, mailto: ou tel:), uniquement une coordonnée fournie dans le contexte ou le brief, jamais inventée
    - footerNote: petit texte en bas
 
 Règles :
@@ -135,7 +135,10 @@ const metas: PromptMeta[] = [
     index: 7,
     heading: 'quotes',
     summary: 'Grille de citations',
-    lines: ['eyebrow, title (obligatoire), lead', 'quotes: [{quote, authorName, authorRole, authorCompany}]'],
+    lines: [
+      'eyebrow, title (obligatoire), lead',
+      'quotes: [{quote, authorName, authorRole, authorCompany}]',
+    ],
   },
   {
     index: 8,
@@ -143,8 +146,8 @@ const metas: PromptMeta[] = [
     summary: "Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)",
     lines: [
       'eyebrow, title (obligatoire), subtitle',
-      'primaryAction / secondaryAction: libellés de boutons',
-      'primaryActionUrl / secondaryActionUrl: cible du bouton (https, mailto: ou tel:), uniquement une coordonnée fournie dans le contexte ou le brief, jamais inventée',
+      'primaryAction: libellé de l’unique bouton (optionnel)',
+      'primaryActionUrl: cible du bouton (https, mailto: ou tel:), uniquement une coordonnée fournie dans le contexte ou le brief, jamais inventée',
       'footerNote: petit texte en bas',
     ],
   },

@@ -36,17 +36,13 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n\n<div class="${K.ctaSub}">\n  ${subtitleHtml}\n</div>` : '';
 
-  const buttons: string[] = [];
-  if (block.primaryAction) {
-    buttons.push(actionButton(block.primaryAction, block.primaryActionUrl, K.btn));
-  }
-  if (block.secondaryAction) {
-    buttons.push(actionButton(block.secondaryAction, block.secondaryActionUrl, K.btnGhost));
-  }
-  const buttonsHtml =
-    buttons.length > 0
-      ? `\n\n<div class="${K.ctaActions}">\n  ${buttons.join('\n  ')}\n</div>`
-      : '';
+  const buttonHtml = block.primaryAction
+    ? `
+
+<div class="${K.ctaActions}">
+  ${actionButton(block.primaryAction, block.primaryActionUrl, K.btn)}
+</div>`
+    : '';
 
   // Closing-slide footnote; uses the AA-safe k-caption token plus a CTA-context
   // modifier that owns alignment and spacing in CSS (no inline utilities).
@@ -62,17 +58,19 @@ export function renderCta(block: CtaBlockData, ctx?: RenderCtx): string {
     title: block.title,
     subtitle: subtitleHtml,
     footer: footerNoteHtml,
-    actionLabels: [block.primaryAction, block.secondaryAction].filter((label): label is string =>
-      Boolean(label),
-    ),
+    actionLabels: block.primaryAction ? [block.primaryAction] : [],
   });
 
-  const body = `<div class="${['k-center-hero', K.ctaFrame, densityClass(density)].filter(Boolean).join(' ')}">
-  <div class="k-center-hero-main">
-${eyebrow}
+  const invitation = `${eyebrow}
 <h1 class="${[K.ctaTitle, densityClass(density)].filter(Boolean).join(' ')}">
 ${md(block.title)}
-</h1>${subtitle}${buttonsHtml}${footerNote}
+</h1>${subtitle}${buttonHtml}`;
+  const content = locations
+    ? `<div class="k-cta-invitation">${invitation}</div>${locations.replace(/<\/a>\s*·\s*<a/g, '</a><br><a')}`
+    : `${invitation}${footerNote}`;
+  const body = `<div class="${['k-center-hero', K.ctaFrame, locations ? 'k-cta-frame--locations' : '', densityClass(density)].filter(Boolean).join(' ')}">
+  <div class="k-center-hero-main">
+${content}
   </div>
   ${defFooterSlot()}
 </div>`;

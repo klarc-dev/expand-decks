@@ -1068,52 +1068,49 @@ describe('renderQuotes()', () => {
 });
 
 describe('renderCta()', () => {
-  it('renders with dark surface and buttons', () => {
-    const result = renderCta({
-      blockType: 'cta',
+  it('renders only the primary action even for legacy two-action data', () => {
+    const block = {
+      blockType: 'cta' as const,
       title: 'Thank you',
       primaryAction: 'Get in touch',
       secondaryAction: 'Learn more',
-    });
+      secondaryActionUrl: 'https://example.com/legacy',
+    };
+    const result = renderCta(block);
     expect(result).toContain('k-dark');
-    expect(result).toContain('k-btn');
-    expect(result).toContain('Get in touch');
-    expect(result).toContain('k-btn-ghost');
-  });
-
-  it('renders an action with a safe URL as a link and one without as a plain pill', () => {
-    const result = renderCta({
-      blockType: 'cta',
-      title: 'Parlons-en',
-      primaryAction: 'Prendre rendez-vous',
-      primaryActionUrl: 'https://cal.klarc.com/team',
-      secondaryAction: 'Nous écrire',
-    });
-    expect(result).toContain(
-      '<a class="k-btn" href="https://cal.klarc.com/team">Prendre rendez-vous</a>',
+    expect(result).toContain('<div class="k-btn">Get in touch</div>');
+    expect(result).not.toContain('k-btn-ghost');
+    expect(result).not.toContain('Learn more');
+    expect(result).not.toContain('/legacy');
+    expect(result).toBe(
+      renderCta({ blockType: 'cta', title: block.title, primaryAction: block.primaryAction }),
     );
-    expect(result).toContain('<div class="k-btn-ghost">Nous écrire</div>');
+    expect(renderCta({ ...block, primaryAction: null })).not.toContain('k-cta-actions');
   });
 
-  it('accepts mailto: and tel: targets and refuses unsafe schemes', () => {
+  it.each(['https://example.com/book', 'mailto:contact@example.com', 'tel:+33561000000'])(
+    'renders the sole action with a safe target: %s',
+    (url) => {
+      const result = renderCta({
+        blockType: 'cta',
+        title: 'Contact',
+        primaryAction: 'Contact us',
+        primaryActionUrl: url,
+      });
+      expect(result).toContain(`<a class="k-btn" href="${url}">Contact us</a>`);
+      expect(result.match(/class="k-btn"/g)).toHaveLength(1);
+    },
+  );
+
+  it('refuses unsafe action targets', () => {
     const result = renderCta({
-      blockType: 'cta',
-      title: 'Contact',
-      primaryAction: 'Écrire',
-      primaryActionUrl: 'mailto:contact@klarc.com',
-      secondaryAction: 'Appeler',
-      secondaryActionUrl: 'tel:+33561000000',
-    });
-    expect(result).toContain('<a class="k-btn" href="mailto:contact@klarc.com">Écrire</a>');
-    expect(result).toContain('<a class="k-btn-ghost" href="tel:+33561000000">Appeler</a>');
-    const unsafe = renderCta({
       blockType: 'cta',
       title: 'Contact',
       primaryAction: 'Cliquer',
       primaryActionUrl: 'javascript:alert(1)',
     });
-    expect(unsafe).toContain('<div class="k-btn">Cliquer</div>');
-    expect(unsafe).not.toContain('javascript:');
+    expect(result).toContain('<div class="k-btn">Cliquer</div>');
+    expect(result).not.toContain('javascript:');
   });
 
   it('resolves a {org.bookingUrl} variable before linking the button', () => {

@@ -26,8 +26,6 @@ export type SlideLayoutCompatibility = {
 type SlideContentRole =
   | 'action.primary'
   | 'action.primaryUrl'
-  | 'action.secondary'
-  | 'action.secondaryUrl'
   | 'attribution.people'
   | 'citations'
   | 'collection.cards'
@@ -133,8 +131,6 @@ const LAYOUT_PROFILES: Readonly<Record<string, LayoutProfile>> = {
       footerNote: 'takeaway',
       primaryAction: 'action.primary',
       primaryActionUrl: 'action.primaryUrl',
-      secondaryAction: 'action.secondary',
-      secondaryActionUrl: 'action.secondaryUrl',
       subtitle: 'prose.support',
     },
     required: ['heading.title'],

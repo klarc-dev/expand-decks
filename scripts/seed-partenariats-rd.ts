@@ -732,7 +732,7 @@ Cependant, connaître la typologie de contrat permet d'harmoniser la nomenclatur
       title: 'Joachim BRINDEAU',
       subtitle: rt('Avocat'),
       primaryAction: '(+33) 7 87 87 60 83',
-      secondaryAction: 'joachim.brindeau@bloom-legal.com',
+      footerNote: rt('joachim.brindeau@bloom-legal.com'),
     },
   ];
 }

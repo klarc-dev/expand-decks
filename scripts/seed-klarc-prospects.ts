@@ -56,9 +56,9 @@ const slides = [
       },
       {
         number: '02',
-        title: 'Vous souhaitez protéger votre innovation ou votre image',
+        title: 'Vous préparez le lancement d’un produit ou d’une marque',
         description:
-          'Levée de fonds, partenariat, salon ou publication : avant toute divulgation, nous vérifions les protections disponibles, organisons la confidentialité et arrêtons la stratégie de dépôt.',
+          'Brevets, marques, dessins et modèles : nous définissons les protections adaptées, préparons les dépôts utiles et organisons la confidentialité avant divulgation.',
       },
       {
         number: '03',
@@ -248,7 +248,7 @@ const slides = [
   {
     blockType: 'twoCols',
     eyebrow: 'Management de l’innovation',
-    title: 'Structurer et piloter vos projets de [R&D]',
+    title: 'Structurer et financer vos projets de [R&D]',
     lead: 'Financements, organisation et preuves de R&D, tenus par une équipe scientifique intégrée au cabinet.',
     intro:
       'Docteurs et ingénieurs structurent vos projets et leur documentation, en amont des aides et des déclarations fiscales préparées avec l’avocat fiscaliste.',
@@ -326,11 +326,9 @@ const slides = [
     subtitle:
       'Nous vous proposons un premier échange de 30 minutes pour examiner un contrat, un actif, une question fiscale, un projet de R&D ou un différend, et préciser les points à approfondir.',
     // Buttons and office details carry their own targets so the exported PDF
-    // is clickable: booking page, site, and one tel:/mailto: per office.
+    // is clickable: booking page and one tel:/mailto: per office.
     primaryAction: 'Prendre rendez-vous',
     primaryActionUrl: '{org.bookingUrl}',
-    secondaryAction: 'klarc.com',
-    secondaryActionUrl: '{org.website}',
     footerNote:
       '**Toulouse** · 15 rue d’Alsace-Lorraine, 31000 · [+33 (0)5 61 38 53 52](tel:+33561385352) · [toulouse@klarc.com](mailto:toulouse@klarc.com)\n\n**Lyon** · 3 rue de Genève, 69006 · [+33 (0)5 25 63 09 36](tel:+33525630936) · [lyon@klarc.com](mailto:lyon@klarc.com)',
   },

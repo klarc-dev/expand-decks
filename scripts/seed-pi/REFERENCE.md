@@ -34,7 +34,7 @@ Chaque fichier `export default` une fonction `(ctx) => Slide | Slide[]`.
 | `table` | tableau de référence | title, eyebrow, surface, columns:[{header}], rows:[{cells:[{value}]}] |
 | `timeline` | frise horizontale 2-6 étapes | title, steps:[{label,description}], footer |
 | `mermaid` | diagramme/arbre de décision | title, source (code mermaid brut), caption |
-| `cta` | clôture/contact | title, subtitle, primaryAction, secondaryAction, footerNote |
+| `cta` | clôture/contact | title, subtitle, primaryAction, primaryActionUrl, footerNote |
 
 ## Règles de qualité (irréprochable)
 

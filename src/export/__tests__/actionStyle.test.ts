@@ -37,14 +37,16 @@ it('shares action geometry, tone and keyboard focus across preview and export ma
             };
           }),
         );
-        expect(metrics[0]!.height).toBe(metrics[1]!.height);
+        expect(metrics).toHaveLength(1);
+        expect(await page.locator('.k-cta-actions a').getAttribute('href')).toBe(
+          block.primaryActionUrl,
+        );
+        expect(await page.locator('.k-cta-actions').textContent()).not.toContain(
+          block.secondaryAction,
+        );
         expect(metrics[0]!.height).toBeGreaterThanOrEqual(44);
-        expect(metrics[0]!.letterSpacing).toBe(metrics[1]!.letterSpacing);
         expect(metrics[0]!.color).toBe(
           surface === 'dark' ? 'rgb(2, 88, 92)' : 'rgb(255, 255, 255)',
-        );
-        expect(metrics[1]!.color).toBe(
-          surface === 'dark' ? 'rgb(255, 255, 255)' : 'rgb(2, 88, 92)',
         );
         await page.keyboard.press('Tab');
         expect(
