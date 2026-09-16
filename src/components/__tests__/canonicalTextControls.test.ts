@@ -127,7 +127,7 @@ describe('canonical custom admin controls', () => {
     // Same element and class as Payload's native preview control beside it.
     expect(sourceContains(path, 'className="preview-btn"')).toBe(true);
     expect(sourceContains(path, 'title="Télécharger le PDF"')).toBe(true);
-    expect(sourceContains(path, '<DownloadIcon />')).toBe(true);
+    expect(sourceContains(path, "import { Download } from 'lucide-react';")).toBe(true);
     expect(sourceContains(path, '<svg')).toBe(false);
     expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
     expect(sourceContains(path, 'presentation-build-requested')).toBe(true);

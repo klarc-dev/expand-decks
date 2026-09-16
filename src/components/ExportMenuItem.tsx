@@ -2,9 +2,9 @@
 // fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { Download } from 'lucide-react';
 import { PopupList, toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
-import { DownloadIcon } from '@/components/adminUi/DownloadIcon';
 import { artifactLinkKey, availableArtifactLinks } from '@/documents/artifacts';
 import { adminPost } from '@/lib/adminFetch';
 import { BUILD_STATUS } from '@/lib/status';
@@ -55,7 +55,7 @@ export const DownloadPdfButton: React.FC = () => {
       href={pdf.href}
       title="Télécharger le PDF"
     >
-      <DownloadIcon />
+      <Download aria-hidden className="icon" size={20} strokeWidth={1.5} />
     </a>
   );
 };
