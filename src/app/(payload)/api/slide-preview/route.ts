@@ -16,11 +16,13 @@ import { applyPageNumberChrome, isDarkSurfaceClass } from '@/export/chrome';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
+import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
 import {
   buildPreviewResponseCacheKey,
   getPreviewResponse,
   setPreviewResponse,
 } from '@/lib/previewResponseCache';
+import { slideLayoutFingerprint } from '@/blocks/spec/slideContent';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,6 +35,7 @@ type PreviewRequestBody = {
   blockTypes?: string[];
   sections?: string[];
   slideIndex?: number;
+  includeLayoutCandidates?: boolean;
 };
 
 type AuthedUser = { id: string | number };
@@ -209,6 +212,7 @@ export async function POST(req: NextRequest) {
     blockTypes: body.blockTypes,
     documentTemplate: template.id,
     fields,
+    includeLayoutCandidates: body.includeLayoutCandidates,
     previewFieldPath,
     sections: body.sections,
     slideIndex,
@@ -255,10 +259,61 @@ export async function POST(req: NextRequest) {
     logoUrl: template.chrome.logo ? resolvedChrome.logoUrl : undefined,
   };
   const compatibility = slideLayoutCompatibilityForTemplate(parsedBlock.data, template.id);
+  const rawCandidates = compatibility.flatMap((candidate) =>
+    body.includeLayoutCandidates && candidate.candidate
+      ? [structuredClone(candidate.candidate)]
+      : [],
+  );
+  const lexicalCandidates = rawCandidates.length
+    ? await convertSlidesMarkdownToLexical(rawCandidates, payload)
+    : [];
+  let lexicalCandidateIndex = 0;
+  const compatibilityWithPreviews = await Promise.all(
+    compatibility.map(async (candidate) => {
+      if (!body.includeLayoutCandidates || !candidate.candidate) return candidate;
+      try {
+        const lexicalCandidate = lexicalCandidates[lexicalCandidateIndex++];
+        if (!lexicalCandidate) return candidate;
+        const candidateBlock = await hydratePreviewBlock(
+          lexicalCandidate as Record<string, unknown>,
+          payload,
+          user,
+          authedUser.id,
+        );
+        const parsedCandidate =
+          documentTemplateSchemas(template).renderPage.safeParse(candidateBlock);
+        if (!parsedCandidate.success) return candidate;
+        const candidateTypes = previewPages
+          ? previewPages.map((page, index) =>
+              index === slideIndex ? candidate.layout : String(page.blockType),
+            )
+          : [candidate.layout];
+        const candidateContext = buildPreviewRenderContext(
+          candidateTypes,
+          Math.min(slideIndex, candidateTypes.length - 1),
+          body.sections ?? [],
+        );
+        return {
+          ...candidate,
+          preview: renderBlockPreview(parsedCandidate.data as SlideBlock, candidateContext),
+        };
+      } catch {
+        return candidate;
+      }
+    }),
+  );
   const response = setPreviewResponse(cacheKey, {
     canvas: template.canvas,
     chrome,
-    compatibility,
+    compatibility: compatibilityWithPreviews,
+    fingerprint: slideLayoutFingerprint(
+      Array.isArray((presentation as { slides?: unknown }).slides)
+        ? (((presentation as { slides: unknown[] }).slides[slideIndex] as Record<
+            string,
+            unknown
+          >) ?? previewBlock)
+        : previewBlock,
+    ),
     preview,
   });
 

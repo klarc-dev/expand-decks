@@ -15,6 +15,7 @@ import {
   cardTitleDescFields,
   eyebrowField,
   imageField,
+  layoutContentField,
   previewField,
   slideRichTextEditor,
   titleField,
@@ -129,6 +130,10 @@ export function emitPayloadBlock(spec: BlockSpec): Block {
   // keep Payload's default label.
   const hasTitle = spec.fields.some((f) => f.factory === 'title');
   const fields = fieldsOf(spec).flatMap(emitField);
+  const previewIndex = fields.findIndex((field) => 'name' in field && field.name === 'preview');
+  const portable = layoutContentField();
+  if (previewIndex < 0) fields.push(portable);
+  else fields.splice(previewIndex, 0, portable);
 
   return {
     slug: spec.slug,

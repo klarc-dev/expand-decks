@@ -8,6 +8,7 @@ import { agendaSpec } from './agenda';
 import { cardGridSpec } from './cardGrid';
 import { coverSpec } from './cover';
 import { ctaSpec } from './cta';
+import { attachLayoutContract } from './layoutContracts';
 import { mermaidSpec } from './mermaid';
 import { quotesSpec } from './quotes';
 import { sectionSpec } from './section';
@@ -32,7 +33,7 @@ export const ALL_SPECS: BlockSpec[] = [
   timelineSpec,
   mermaidSpec,
   agendaSpec,
-];
+].map(attachLayoutContract);
 
 const AI_SPECS = ALL_SPECS.filter((spec) => spec.aiDraftable);
 export const SPEC_BY_TYPE = new Map(ALL_SPECS.map((spec) => [spec.blockType, spec]));

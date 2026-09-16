@@ -89,6 +89,13 @@ export const cardTitleDescFields = (limits?: {
   },
 ];
 
+export const layoutContentField = (): Field => ({
+  name: 'layoutContent',
+  type: 'json',
+  label: 'Contenu portable',
+  admin: { hidden: true },
+});
+
 export const imageField = (
   description = 'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left)',
 ): Field =>

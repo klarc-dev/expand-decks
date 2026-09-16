@@ -45,6 +45,7 @@ import * as migration_20260916_084523_issues_51_55_data_model_debloat from './20
 import * as migration_20260916_084906_issue_61_65_block_debloat from './20260916_084906_issue_61_65_block_debloat';
 import * as migration_20260916_085705_remove_unreachable_producer_sources from './20260916_085705_remove_unreachable_producer_sources';
 import * as migration_20260916_085921_single_cta from './20260916_085921_single_cta';
+import * as migration_20260916_101917_slide_layout_content_12_blocks from './20260916_101917_slide_layout_content_12_blocks';
 
 export const migrations = [
   {
@@ -281,5 +282,10 @@ export const migrations = [
     up: migration_20260916_085921_single_cta.up,
     down: migration_20260916_085921_single_cta.down,
     name: '20260916_085921_single_cta',
+  },
+  {
+    up: migration_20260916_101917_slide_layout_content_12_blocks.up,
+    down: migration_20260916_101917_slide_layout_content_12_blocks.down,
+    name: '20260916_101917_slide_layout_content_12_blocks',
   },
 ];

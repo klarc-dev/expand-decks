@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Button, Modal, useDocumentInfo, useFormFields, useModal } from '@payloadcms/ui';
+import {
+  Button,
+  Modal,
+  toast,
+  useDocumentInfo,
+  useForm,
+  useFormFields,
+  useModal,
+} from '@payloadcms/ui';
 
 import type { SlideLayoutCompatibility } from '@/blocks/spec/slideLayoutCompatibility';
 import { AdminNotice } from '@/components/adminUi/AdminSurface';
@@ -12,6 +20,7 @@ import {
   type PreviewRequest,
 } from '@/components/slidePreviewState';
 import { SlideFrame, type SlideChrome } from '@/components/SlideFrame';
+import { adminPost } from '@/lib/adminFetch';
 
 import '@/export/style.css';
 import './SlidePreview.scss';
@@ -27,26 +36,38 @@ const COMPATIBILITY_LABELS: Record<SlideLayoutCompatibility['classification'], s
 
 function LayoutCompatibilityModal({
   currentLayout,
+  applying,
+  applyLayout,
+  canvas,
+  chrome,
   modalSlug,
   results,
 }: {
   currentLayout?: string;
+  applying: boolean;
+  applyLayout: (result: SlideLayoutCompatibility, mapping?: { proseSourceField?: string }) => void;
+  canvas: PreviewResult['canvas'];
+  chrome?: SlideChrome;
   modalSlug: string;
   results: SlideLayoutCompatibility[];
 }) {
   const { closeModal, isModalOpen } = useModal();
+  const [proseMapping, setProseMapping] = useState<Record<string, string>>({});
   if (!isModalOpen(modalSlug)) return null;
+
+  const ranked = [...results].sort(
+    (a, b) => b.recommendation.score - a.recommendation.score || a.layout.localeCompare(b.layout),
+  );
 
   return (
     <Modal className="slide-layout-compatibility" closeOnBlur slug={modalSlug}>
       <div className="slide-layout-compatibility__surface">
         <header className="slide-layout-compatibility__header">
           <div>
-            <p className="slide-layout-compatibility__eyebrow">Analyse sans modification</p>
             <h2>Changer la mise en page</h2>
             <p>
-              Comparez les layouts autorisés pour cette slide. Aucun contenu ne sera modifié à cette
-              étape.
+              Comparez les layouts avec le contenu réel. Les informations non affichées restent
+              attachées à la slide.
             </p>
           </div>
           <Button
@@ -61,15 +82,41 @@ function LayoutCompatibilityModal({
           </Button>
         </header>
         <div className="slide-layout-compatibility__grid">
-          {results.map((result) => (
+          {ranked.map((result, rank) => (
             <article
               className={`slide-layout-compatibility__card slide-layout-compatibility__card--${result.classification}`}
               key={result.layout}
             >
-              <img alt="" aria-hidden="true" src={result.imageURL} />
+              {result.preview ? (
+                <div
+                  className="slide-layout-compatibility__candidate"
+                  style={{ aspectRatio: canvas.aspectRatio }}
+                >
+                  <div
+                    className="slide-layout-compatibility__candidate-scaler"
+                    style={{
+                      height: canvas.height,
+                      transform: `scale(${280 / canvas.width})`,
+                      width: canvas.width,
+                    }}
+                  >
+                    <SlideFrame
+                      className={result.preview.className}
+                      chrome={chrome}
+                      html={result.preview.html}
+                      image={result.preview.image}
+                      layout={result.preview.layout}
+                      mermaid={result.preview.mermaid}
+                      style={slideStyle(canvas)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <img alt="" aria-hidden="true" src={result.imageURL} />
+              )}
               <div className="slide-layout-compatibility__card-heading">
                 <strong>{result.label}</strong>
-                {result.layout === currentLayout ? <span>Actuel</span> : null}
+                <span>{result.layout === currentLayout ? 'Actuel' : `Choix ${rank + 1}`}</span>
               </div>
               <p className="slide-layout-compatibility__classification">
                 {COMPATIBILITY_LABELS[result.classification]}
@@ -87,6 +134,56 @@ function LayoutCompatibilityModal({
                   Tous les contenus affichés par cette slide sont pris en charge.
                 </p>
               )}
+              {result.hidden.length > 0 ? (
+                <p className="slide-layout-compatibility__detail">
+                  {result.hidden.length} contenu(s) conservé(s), non affiché(s) par ce layout.
+                </p>
+              ) : null}
+              {result.layout === 'twoCols' &&
+              result.issues.some((issue) => issue.code === 'mapping') ? (
+                <label className="slide-layout-compatibility__mapping">
+                  Texte à placer dans la colonne gauche
+                  <select
+                    value={proseMapping[result.layout] ?? ''}
+                    onChange={(event) =>
+                      setProseMapping((current) => ({
+                        ...current,
+                        [result.layout]: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Choix automatique</option>
+                    {result.mappedFields
+                      .filter((mapping) => mapping.role === 'prose.support')
+                      .map((mapping) => (
+                        <option key={mapping.from} value={mapping.from}>
+                          {mapping.from}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              ) : null}
+              <Button
+                buttonStyle={rank === 0 ? 'primary' : 'secondary'}
+                disabled={
+                  applying ||
+                  result.classification === 'unavailable' ||
+                  result.layout === currentLayout
+                }
+                margin={false}
+                onClick={() =>
+                  applyLayout(
+                    result,
+                    proseMapping[result.layout]
+                      ? { proseSourceField: proseMapping[result.layout] }
+                      : undefined,
+                  )
+                }
+                size="small"
+                type="button"
+              >
+                {applying ? 'Application…' : 'Appliquer ce layout'}
+              </Button>
             </article>
           ))}
         </div>
@@ -99,6 +196,7 @@ type PreviewResult = {
   canvas: { width: number; height: number; aspectRatio: string };
   chrome?: SlideChrome;
   compatibility: SlideLayoutCompatibility[];
+  fingerprint: string;
   preview: {
     className: string;
     html: string;
@@ -109,6 +207,14 @@ type PreviewResult = {
   };
 };
 
+type LayoutMutationResult = {
+  fingerprint: string;
+  presentation?: Record<string, unknown>;
+  slide?: Record<string, unknown>;
+  undoToken?: string;
+};
+
+// Preview fetching, atomic layout mutation, and undo share one Payload field lifecycle.
 const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const { id } = useDocumentInfo();
   // Subscribe to form state so the preview re-renders while the author types.
@@ -125,8 +231,83 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const [result, setResult] = useState<PreviewResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { openModal } = useModal();
+  const [applyingLayout, setApplyingLayout] = useState(false);
+  const [includeLayoutCandidates, setIncludeLayoutCandidates] = useState(false);
+  const [undo, setUndo] = useState<{ fingerprint: string; token: string } | null>(null);
+  const { getData, reset } = useForm();
+  const { closeModal, openModal } = useModal();
   const modalSlug = `slide-layout-compatibility-${path.replace(/[^a-zA-Z0-9]/g, '-')}`;
+
+  async function refreshDocument() {
+    const docResponse = await fetch(`/api/presentations/${request.presentationId}?depth=0`, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    if (!docResponse.ok) throw new Error('Le formulaire n’a pas pu être actualisé.');
+    await reset(await docResponse.json());
+  }
+
+  async function applyLayout(
+    candidate: SlideLayoutCompatibility,
+    mapping?: { proseSourceField?: string },
+  ) {
+    if (!request.presentationId || !result?.fingerprint) return;
+    if (
+      candidate.requiresConfirmation &&
+      !window.confirm('Ce layout masque ou transforme une partie du contenu visible. Continuer ?')
+    ) {
+      return;
+    }
+    setApplyingLayout(true);
+    setError('');
+    try {
+      const response = await adminPost('/api/slide-layout', {
+        action: 'apply',
+        deckId: request.presentationId,
+        slideIndex: request.slideIndex,
+        targetLayout: candidate.layout,
+        expectedFingerprint: result.fingerprint,
+        confirmLossy: candidate.requiresConfirmation,
+        mapping,
+        draft: getData(),
+      });
+      if (!response.ok) throw new Error(response.data.error || 'Changement de layout impossible.');
+      const data = response.data as LayoutMutationResult;
+      if (data.presentation) await reset(data.presentation);
+      else await refreshDocument();
+      if (data.undoToken) setUndo({ fingerprint: data.fingerprint, token: data.undoToken });
+      toast.success(`Layout « ${candidate.label} » appliqué.`);
+      closeModal(modalSlug);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Changement de layout impossible.');
+    } finally {
+      setApplyingLayout(false);
+    }
+  }
+
+  async function undoLayout() {
+    if (!request.presentationId || !undo) return;
+    setApplyingLayout(true);
+    try {
+      const response = await adminPost('/api/slide-layout', {
+        action: 'undo-layout',
+        deckId: request.presentationId,
+        slideIndex: request.slideIndex,
+        expectedFingerprint: undo.fingerprint,
+        undoToken: undo.token,
+      });
+      if (!response.ok) throw new Error(response.data.error || 'Annulation impossible.');
+      const data = response.data as LayoutMutationResult;
+      if (data.presentation) await reset(data.presentation);
+      else await refreshDocument();
+      setUndo(null);
+      toast.success('Le layout précédent a été restauré.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Annulation impossible.');
+    } finally {
+      setApplyingLayout(false);
+    }
+  }
 
   useEffect(() => {
     if (!(request.block as { blockType?: string })?.blockType) {
@@ -155,7 +336,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
-            body: requestKey,
+            body: JSON.stringify({ ...request, includeLayoutCandidates }),
           });
           if (!res.ok) {
             const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -176,7 +357,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [request, requestKey]);
+  }, [includeLayoutCandidates, request]);
 
   if (!result && !loading && !error) return null;
 
@@ -206,12 +387,27 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
             buttonStyle="secondary"
             disabled={!result?.compatibility?.length}
             margin={false}
-            onClick={() => openModal(modalSlug)}
+            onClick={() => {
+              setIncludeLayoutCandidates(true);
+              openModal(modalSlug);
+            }}
             size="small"
             type="button"
           >
             Changer la mise en page
           </Button>
+          {undo ? (
+            <Button
+              buttonStyle="secondary"
+              disabled={applyingLayout}
+              margin={false}
+              onClick={() => void undoLayout()}
+              size="small"
+              type="button"
+            >
+              Annuler le changement
+            </Button>
+          ) : null}
         </div>
       </div>
       {error ? (
@@ -220,6 +416,16 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
         </AdminNotice>
       ) : null}
       <LayoutCompatibilityModal
+        applying={applyingLayout}
+        applyLayout={(candidate, mapping) => void applyLayout(candidate, mapping)}
+        canvas={
+          result?.canvas ?? {
+            width: SLIDE_CANVAS_WIDTH,
+            height: SLIDE_CANVAS_HEIGHT,
+            aspectRatio: '16/9',
+          }
+        }
+        chrome={result?.chrome}
         currentLayout={(request.block as { blockType?: string })?.blockType}
         modalSlug={modalSlug}
         results={result?.compatibility ?? []}

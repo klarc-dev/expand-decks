@@ -5,9 +5,11 @@ type PreviewResponse = {
     width: number;
     height: number;
     aspectRatio: string;
+    orientation?: 'landscape' | 'portrait' | 'square';
   };
   chrome: unknown;
   compatibility?: unknown;
+  fingerprint?: string;
   preview: unknown;
 };
 
@@ -17,6 +19,7 @@ type CacheEntry = {
 };
 
 const DEFAULT_TTL_MS = 2_000;
+const MAX_ENTRIES = 64;
 const cache = new Map<string, CacheEntry>();
 let now = () => Date.now();
 
@@ -35,6 +38,7 @@ export function buildPreviewResponseCacheKey(input: {
   blockTypes?: string[];
   documentTemplate?: string;
   fields: Record<string, unknown>;
+  includeLayoutCandidates?: boolean;
   previewFieldPath: string;
   sections?: string[];
   slideIndex?: number;
@@ -60,6 +64,14 @@ export function setPreviewResponse(
   value: PreviewResponse,
   ttlMs = DEFAULT_TTL_MS,
 ): PreviewResponse {
+  for (const [entryKey, entry] of cache) {
+    if (entry.expiresAt <= now()) cache.delete(entryKey);
+  }
+  while (cache.size >= MAX_ENTRIES) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
   cache.set(key, { value, expiresAt: now() + ttlMs });
   return value;
 }

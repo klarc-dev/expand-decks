@@ -244,6 +244,41 @@ export interface FieldSpec {
 // ---------------------------------------------------------------------------
 
 /** Per-block prose record the L4 emitter turns into "N. **slug** — …" bullets. */
+export type SlideContentRole =
+  | 'action.primary.label'
+  | 'action.primary.url'
+  | 'action.supporting.label'
+  | 'action.supporting.url'
+  | 'citations'
+  | 'collection.items'
+  | 'diagram.source'
+  | 'heading.eyebrow'
+  | 'heading.number'
+  | 'heading.title'
+  | 'media.placement'
+  | 'media.primary'
+  | 'people'
+  | 'presentation.hint'
+  | 'prose.lead'
+  | 'prose.support'
+  | 'table.columns'
+  | 'table.rows'
+  | 'takeaway';
+
+export type LayoutConversionKind = 'prose' | 'collection' | 'composition' | 'specialized';
+
+export interface LayoutAdapterContract {
+  kind: LayoutConversionKind;
+  fields: Readonly<Record<string, SlideContentRole>>;
+  capacities?: Readonly<Partial<Record<SlideContentRole, number>>>;
+  required?: readonly SlideContentRole[];
+  supportsCitations?: boolean;
+  media?: {
+    aspectRatio?: string;
+    placements: readonly string[];
+  };
+}
+
 export interface PromptMeta {
   /** 1-based position in the prompt's numbered layout list. */
   index: number;
@@ -338,6 +373,8 @@ export interface BlockSpec {
   renderRefine?: (schema: z.ZodObject) => z.ZodType;
   /** Optional prose record for L4 prompt generation. */
   promptMeta?: PromptMeta;
+  /** Unified semantic/layout-change adapter contract, attached at registration. */
+  layout?: LayoutAdapterContract;
 }
 
 // ---------------------------------------------------------------------------
@@ -505,6 +542,7 @@ export function renderSchemaOf(spec: BlockSpec): z.ZodType<Record<string, unknow
     if (field.factory === 'preview') continue;
     shape[field.name] = field.render;
   }
+  shape.layoutContent = z.unknown().optional();
   const schema = z.object(shape);
   return (spec.renderRefine ? spec.renderRefine(schema) : schema) as z.ZodType<
     Record<string, unknown>
