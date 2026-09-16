@@ -1923,6 +1923,11 @@
   padding: 1rem;
   background: var(--k-surface-raised);
 }
+.k-cardgrid-people--grid .k-person-card > a:has(> .k-person-avatar) {
+  align-self: stretch;
+  height: 100%;
+  border-radius: var(--k-radius-card);
+}
 .k-cardgrid-people--grid .k-person-avatar {
   width: 5.5rem;
   height: 100%;

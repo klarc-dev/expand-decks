@@ -10,7 +10,7 @@ type AdminTextFieldProps = {
   description?: React.ReactNode;
   errorMessage?: string;
   fontFamilyPreview?: string;
-  inputVariant?: 'default' | 'code' | 'compact-edit';
+  inputVariant?: 'default' | 'code' | 'compact-edit' | 'title';
   leadingControl?: React.ReactNode;
   labelVisibility?: 'visible' | 'screen-reader';
   margin?: 'default' | 'none';

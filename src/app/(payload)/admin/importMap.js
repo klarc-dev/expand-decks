@@ -1,5 +1,6 @@
 import { default as default_b786b405fcd9412302ce8d29e6c441af } from '../../../components/ColorField'
 import { default as default_760fd892cbf0749249332edaa6bef1b4 } from '../../../components/GoogleFontField'
+import { default as default_31a0a096a421171d00710a61bcbb7872 } from '../../../components/TitleField'
 import { default as default_49d2b627e93b48e36f9059279bd151a7 } from '../../../components/BuildStatusField'
 import { default as default_0c595d5827677db4d426c8dda5793141 } from '../../../components/RepeaterRowLabel'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -31,6 +32,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 export const importMap = {
   "/components/ColorField#default": default_b786b405fcd9412302ce8d29e6c441af,
   "/components/GoogleFontField#default": default_760fd892cbf0749249332edaa6bef1b4,
+  "/components/TitleField#default": default_31a0a096a421171d00710a61bcbb7872,
   "/components/BuildStatusField#default": default_49d2b627e93b48e36f9059279bd151a7,
   "/components/RepeaterRowLabel#default": default_0c595d5827677db4d426c8dda5793141,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,

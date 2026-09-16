@@ -134,6 +134,12 @@ describe('shared person cards', () => {
     expect(rule('.k-cardgrid-people--grid .k-person-title')).toContain('margin-top: 0.12rem');
     expect(rule('.k-cardgrid-people--grid')).toContain('grid-auto-rows: minmax(0, 1fr)');
     expect(rule('.k-cardgrid-people--grid')).toContain('max-height: 100%');
+    expect(rule('.k-cardgrid-people--grid .k-person-card > a:has(> .k-person-avatar)')).toContain(
+      'align-self: stretch',
+    );
+    expect(rule('.k-cardgrid-people--grid .k-person-card > a:has(> .k-person-avatar)')).toContain(
+      'height: 100%',
+    );
     expect(rule('.k-cardgrid-people--grid .k-person-avatar')).toContain(
       'object-position: center 14%',
     );

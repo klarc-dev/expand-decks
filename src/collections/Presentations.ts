@@ -352,45 +352,13 @@ export const Presentations: CollectionConfig = {
   },
   fields: [
     {
-      // Title and organisation share one row so the charte graphique is picked
-      // inline, right next to the title, instead of hiding in the Réglages tab.
-      type: 'row',
-      fields: [
-        {
-          name: 'title',
-          type: 'text',
-          required: true,
-          label: 'Titre',
-          admin: {
-            width: '70%',
-          },
-        },
-        {
-          name: 'organisation',
-          type: 'relationship',
-          relationTo: COLLECTIONS.organisations,
-          required: true,
-          index: true,
-          label: 'Organisation',
-          // Pre-select the author's default organisation so a new deck opens
-          // with its charte graphique already applied.
-          defaultValue: ({ user }) => defaultOrganisationId(user),
-          // The read/update policy keys off this field, so a non-admin must not
-          // be able to move a deck into — or out of — an organisation they are
-          // not a member of.
-          validate: (value: unknown, { req }: { req?: PayloadRequest }) =>
-            !req?.user || userIsOrganisationMember(req.user, value)
-              ? true
-              : 'Vous n’êtes pas membre de cette organisation.',
-          admin: {
-            width: '30%',
-            description:
-              'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
-          },
-        },
-      ],
+      name: 'title',
+      type: 'text',
+      required: true,
+      label: 'Titre',
+      // Edited in place as the document heading (see TitleField).
+      admin: { components: { Field: '/components/TitleField#default' } },
     },
-    documentTemplateField,
     {
       name: 'buildStatusLive',
       type: 'ui',
@@ -566,6 +534,29 @@ export const Presentations: CollectionConfig = {
         {
           label: 'Réglages',
           fields: [
+            {
+              name: 'organisation',
+              type: 'relationship',
+              relationTo: COLLECTIONS.organisations,
+              required: true,
+              index: true,
+              label: 'Organisation',
+              // Pre-select the author's default organisation so a new deck opens
+              // with its charte graphique already applied.
+              defaultValue: ({ user }) => defaultOrganisationId(user),
+              // The read/update policy keys off this field, so a non-admin must not
+              // be able to move a deck into — or out of — an organisation they are
+              // not a member of.
+              validate: (value: unknown, { req }: { req?: PayloadRequest }) =>
+                !req?.user || userIsOrganisationMember(req.user, value)
+                  ? true
+                  : 'Vous n’êtes pas membre de cette organisation.',
+              admin: {
+                description:
+                  'Charte graphique (couleurs, logo, polices) appliquée à cette présentation',
+              },
+            },
+            documentTemplateField,
             {
               name: 'status',
               type: 'select',

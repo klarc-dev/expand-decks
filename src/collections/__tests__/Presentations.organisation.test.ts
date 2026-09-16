@@ -2,31 +2,34 @@ import { describe, expect, it } from 'vitest';
 
 import { Presentations } from '../Presentations';
 
-function findNamedField(name: string) {
-  for (const field of Presentations.fields) {
+import type { Field } from 'payload';
+
+/** Depth-first lookup through rows, groups and tabs. */
+function findNamedField(name: string, fields: Field[] = Presentations.fields): Field | undefined {
+  for (const field of fields) {
     if ('name' in field && field.name === name) return field;
     if ('fields' in field && Array.isArray(field.fields)) {
-      const nested = field.fields.find(
-        (candidate) => 'name' in candidate && candidate.name === name,
-      );
+      const nested = findNamedField(name, field.fields);
       if (nested) return nested;
+    }
+    if ('tabs' in field) {
+      for (const tab of field.tabs) {
+        const nested = findNamedField(name, tab.fields);
+        if (nested) return nested;
+      }
     }
   }
   return undefined;
 }
 
-describe('Presentations title and organisation row', () => {
-  it('renders organisation inline with title and defaults it from the user profile', () => {
+describe('Presentations title and organisation', () => {
+  it('edits the title in place as the heading and keeps organisation in the settings tab', () => {
     const firstField = Presentations.fields[0];
-    expect(firstField).toMatchObject({ type: 'row' });
-    if (!firstField || !('fields' in firstField) || !Array.isArray(firstField.fields)) {
-      throw new Error('Expected the first presentation field to be a row');
-    }
-
-    expect(firstField.fields.map((field) => ('name' in field ? field.name : undefined))).toEqual([
-      'title',
-      'organisation',
-    ]);
+    expect(firstField).toMatchObject({
+      name: 'title',
+      type: 'text',
+      admin: { components: { Field: '/components/TitleField#default' } },
+    });
 
     const organisation = findNamedField('organisation');
     expect(organisation).toMatchObject({
