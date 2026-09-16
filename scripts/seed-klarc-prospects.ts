@@ -86,7 +86,7 @@ const slides = [
     title: 'Le problème des expertises dispersées',
     lead: 'Une stratégie construite ensemble, à partir de votre situation.',
     intro:
-      'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement. Consulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
+      'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement.\n\nConsulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
     leftFooter:
       'L’enjeu : construire votre stratégie en mesurant ensemble ses conséquences juridiques, techniques et financières.',
     rightCards: [
@@ -150,7 +150,7 @@ const slides = [
     title: 'Sécuriser vos [contrats] et votre société',
     lead: 'Contrats, gouvernance, opérations et différends : notre accompagnement.',
     intro:
-      'Nos avocats interviennent en conseil et en contentieux, en lien avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
+      'Nos avocats interviennent en conseil et en contentieux.\n\nIls travaillent avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
     leftFooter:
       'Avocats, Conseils en Propriété Industrielle et fiscaliste croisent leurs analyses pour négocier vos opérations en tenant compte des droits sur vos innovations et de leurs effets fiscaux.',
     rightCards: [
@@ -216,7 +216,7 @@ const slides = [
     title: 'Construire votre stratégie [fiscale] et vous défendre',
     lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
     intro:
-      'L’avocat fiscaliste construit avec vous une stratégie adaptée à vos opérations et vous défend en cas de contrôle. Avec l’équipe scientifique, il établit la position fiscale à partir de vos travaux de R&D.',
+      'L’avocat fiscaliste construit avec vous une stratégie adaptée à vos opérations et vous défend en cas de contrôle.\n\nAvec l’équipe scientifique, il établit la position fiscale à partir de vos travaux de R&D.',
     leftFooter:
       'Docteurs, ingénieurs et avocat fiscaliste relient vos travaux de R&D aux critères fiscaux : les arguments scientifiques et juridiques se répondent, du dossier justificatif à la défense en contrôle.',
     rightCards: [
@@ -249,7 +249,7 @@ const slides = [
     title: 'Structurer et financer vos projets de [R&D]',
     lead: 'Une équipe scientifique pour structurer vos travaux de R&D et préparer vos demandes de financement.',
     intro:
-      'Docteurs et ingénieurs construisent avec vous le cadre scientifique et financier de vos projets, documentent vos travaux et préparent les dossiers en lien avec l’avocat fiscaliste.',
+      'Docteurs et ingénieurs construisent avec vous le cadre scientifique et financier de vos projets.\n\nIls documentent vos travaux et préparent les dossiers en lien avec l’avocat fiscaliste.',
     leftFooter:
       'L’équipe scientifique construit vos dossiers de financement avec l’appui des avocats et des Conseils en Propriété Industrielle, pour articuler budget, engagements contractuels et droits sur les résultats.',
     rightCards: [
