@@ -137,13 +137,16 @@ describe('canonical slide authoring limits', () => {
     expect(limit).toBe(80);
     const quotesField = field('quotes', 'quotes');
     const fields = quotesField && 'fields' in quotesField ? quotesField.fields : [];
-    const company = fields.find((candidate) => 'name' in candidate && candidate.name === 'authorCompany');
+    const company = fields.find(
+      (candidate) => 'name' in candidate && candidate.name === 'authorCompany',
+    );
     expect(company).toMatchObject({ type: 'text', maxLength: limit });
     expect(company).not.toHaveProperty('required', true);
     const schema = aiSchemaOf(AI_SPEC_BY_TYPE.get('quotes')!);
     for (const authorCompany of [undefined, '', repeat(limit), repeat(limit + 1)]) {
       const slide = {
-        blockType: 'quotes', title: 'Attribution',
+        blockType: 'quotes',
+        title: 'Attribution',
         quotes: [{ quote: 'Exact quotation', authorName: 'Author', authorCompany }],
       };
       const expected = authorCompany === undefined || authorCompany.length <= limit;
@@ -154,12 +157,16 @@ describe('canonical slide authoring limits', () => {
       if (ai.success) expect(ai.data).toMatchObject({ quotes: [{ authorCompany }] });
       if (render.success) expect(render.data).toMatchObject({ quotes: [{ authorCompany }] });
       if (!ai.success) expect(ai.error.issues[0]?.path).toEqual(['quotes', 0, 'authorCompany']);
-      if (!render.success) expect(render.error.issues[0]?.path).toEqual(['quotes', 0, 'authorCompany']);
+      if (!render.success)
+        expect(render.error.issues[0]?.path).toEqual(['quotes', 0, 'authorCompany']);
     }
-    expect(RENDER_SLIDE_SCHEMA.safeParse({
-      blockType: 'quotes', title: 'Legacy',
-      quotes: [{ quote: 'Exact quotation', authorName: 'Author', authorCompany: null }],
-    }).success).toBe(true);
+    expect(
+      RENDER_SLIDE_SCHEMA.safeParse({
+        blockType: 'quotes',
+        title: 'Legacy',
+        quotes: [{ quote: 'Exact quotation', authorName: 'Author', authorCompany: null }],
+      }).success,
+    ).toBe(true);
     expect(promptMetaOf(SPEC_BY_TYPE.get('quotes')!)?.lines).toContain(
       `quotes[].authorCompany: ${limit} caractères max`,
     );
