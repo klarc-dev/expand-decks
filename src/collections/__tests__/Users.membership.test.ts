@@ -45,9 +45,9 @@ describe('Users membership approval', () => {
   });
 });
 
-describe('Users native API keys', () => {
-  it('uses Payload authentication so a generated key is shown and can authenticate requests', () => {
-    expect(Users.auth).toMatchObject({ useAPIKey: true });
+describe('Users authentication', () => {
+  it('does not expose native API-key controls in the user editor', () => {
+    expect(Users.auth).not.toMatchObject({ useAPIKey: true });
   });
 });
 

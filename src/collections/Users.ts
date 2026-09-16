@@ -101,7 +101,6 @@ export const Users: CollectionConfig = {
   slug: COLLECTIONS.users,
   auth: {
     depth: 0,
-    useAPIKey: true,
   },
   admin: {
     useAsTitle: 'email',
