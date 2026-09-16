@@ -1,16 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { auth, findByID, getPayload } = vi.hoisted(() => {
+const { auth, findByID, getPayload, convertSlidesMarkdownToLexical } = vi.hoisted(() => {
   const authMock = vi.fn();
   const findByIDMock = vi.fn();
   return {
     auth: authMock,
     findByID: findByIDMock,
     getPayload: vi.fn(async () => ({ auth: authMock, findByID: findByIDMock })),
+    convertSlidesMarkdownToLexical: vi.fn(async (slides: unknown[]) => slides),
   };
 });
 
 vi.mock('payload', () => ({ getPayload }));
+vi.mock('@/lib/richTextWrite', () => ({ convertSlidesMarkdownToLexical }));
 vi.mock('@payload-config', () => ({ default: {} }));
 
 import { POST } from '../route';
@@ -39,6 +41,7 @@ describe('POST /api/slide-preview hydration + access', () => {
     auth.mockReset();
     findByID.mockReset();
     getPayload.mockClear();
+    convertSlidesMarkdownToLexical.mockClear();
     __resetPreviewHydrationCacheForTests();
     __resetPreviewResponseCacheForTests();
   });
@@ -290,6 +293,67 @@ describe('POST /api/slide-preview hydration + access', () => {
       height: 1080,
       aspectRatio: '1/1',
     });
+  });
+
+  it('renders candidate previews with hydrated theme, variables, citations, and a single semantic frame', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockImplementation(async ({ collection }: { collection: string }) =>
+      collection === 'presentations'
+        ? { id: 'p1', documentTemplate: 'presentation' }
+        : {
+            id: 1,
+            name: 'Klarc',
+            primary: '#02585C',
+            secondary: '#F5A3B0',
+            ink: '#0F2A2B',
+            paper: '#FAFBFB',
+            logo: { filename: 'logo.svg' },
+            logoWhite: { filename: 'logo-white.svg' },
+            headingFont: 'Newsreader',
+            bodyFont: 'IBM Plex Sans',
+          },
+    );
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: {
+          blockType: 'statement',
+          title: '{org.name} décide',
+          body: {
+            root: {
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [{ type: 'text', text: 'Preuve {{def:Rapport 2026}}', version: 1 }],
+                  version: 1,
+                },
+              ],
+              version: 1,
+            },
+          },
+          footnotes: [{ text: 'Rapport 2026' }],
+        },
+        blockTypes: ['statement'],
+        fields: { organisation: 1, title: 'Deck réel', language: 'fr' },
+        includeLayoutCandidates: true,
+        previewFieldPath: 'slides.0.preview',
+        slideIndex: 0,
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.themeCss).toContain('--k-teal: #02585C');
+    expect(body.themeCss).toContain('--k-font-heading: "Newsreader"');
+    const statement = body.compatibility.find(
+      (candidate: { layout: string }) => candidate.layout === 'statement',
+    );
+    expect(statement.preview.html).toContain('Klarc décide');
+    expect(statement.preview.html).toContain('Rapport 2026');
+    expect(statement.preview.html).not.toContain('slidev-layout');
+    expect(statement.preview.className.match(/\bk-dark\b/g)).toHaveLength(1);
+    expect(statement.preview.chrome.logoUrl).toBe('/media/logo-white.svg');
   });
 
   it('fails explicitly when the persisted template is unknown', async () => {

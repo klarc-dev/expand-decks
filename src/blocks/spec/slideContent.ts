@@ -73,6 +73,7 @@ export type LayoutChangeAnalysis = {
   };
   preview?: {
     className: string;
+    chrome?: unknown;
     html: string;
     hideChrome: boolean;
     image?: string;

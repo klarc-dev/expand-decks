@@ -12,6 +12,7 @@ import {
 } from '@payloadcms/ui';
 
 import type { SlideLayoutCompatibility } from '@/blocks/spec/slideLayoutCompatibility';
+import { candidateThemeVariables } from '@/components/candidateThemeVariables';
 import { AdminNotice } from '@/components/adminUi/AdminSurface';
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import {
@@ -40,6 +41,7 @@ function LayoutCompatibilityModal({
   applyLayout,
   canvas,
   chrome,
+  themeCss,
   modalSlug,
   results,
 }: {
@@ -51,6 +53,7 @@ function LayoutCompatibilityModal({
   ) => void;
   canvas: PreviewResult['canvas'];
   chrome?: SlideChrome;
+  themeCss?: string;
   modalSlug: string;
   results: SlideLayoutCompatibility[];
 }) {
@@ -98,15 +101,11 @@ function LayoutCompatibilityModal({
                 >
                   <div
                     className="slide-layout-compatibility__candidate-scaler"
-                    style={{
-                      height: canvas.height,
-                      transform: `scale(${280 / canvas.width})`,
-                      width: canvas.width,
-                    }}
+                    style={candidateScalerStyle(canvas, themeCss)}
                   >
                     <SlideFrame
                       className={result.preview.className}
-                      chrome={chrome}
+                      chrome={(result.preview.chrome as SlideChrome | undefined) ?? chrome}
                       html={result.preview.html}
                       image={result.preview.image}
                       layout={result.preview.layout}
@@ -139,9 +138,15 @@ function LayoutCompatibilityModal({
                 </p>
               )}
               {result.hidden.length > 0 ? (
-                <p className="slide-layout-compatibility__detail">
-                  {result.hidden.length} contenu(s) conservé(s), non affiché(s) par ce layout.
-                </p>
+                <div className="slide-layout-compatibility__warning" role="note">
+                  <strong>Non affiché dans cet aperçu :</strong>
+                  <ul>
+                    {result.hidden.map((item) => (
+                      <li key={`${item.role}-${item.field}`}>{item.field}</li>
+                    ))}
+                  </ul>
+                  <span>Ce contenu reste attaché à la slide.</span>
+                </div>
               ) : null}
               {result.layout === 'twoCols' ? (
                 <div className="slide-layout-compatibility__mapping">
@@ -224,6 +229,7 @@ function LayoutCompatibilityModal({
 type PreviewResult = {
   canvas: { width: number; height: number; aspectRatio: string };
   chrome?: SlideChrome;
+  themeCss?: string;
   compatibility: SlideLayoutCompatibility[];
   fingerprint: string;
   preview: {
@@ -458,6 +464,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
           }
         }
         chrome={result?.chrome}
+        themeCss={result?.themeCss}
         currentLayout={(request.block as { blockType?: string })?.blockType}
         modalSlug={modalSlug}
         results={result?.compatibility ?? []}
@@ -486,6 +493,13 @@ function PreviewFrame({ result }: { result: PreviewResult }) {
     </div>
   );
 }
+
+const candidateScalerStyle = (canvas: PreviewResult['canvas'], themeCss?: string) => ({
+  ...candidateThemeVariables(themeCss),
+  height: canvas.height,
+  transform: `scale(${280 / canvas.width})`,
+  width: canvas.width,
+});
 
 const slideStyle = (canvas: PreviewResult['canvas']) => ({
   width: `${canvas.width}px`,

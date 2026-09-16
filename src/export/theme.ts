@@ -48,12 +48,15 @@ function mix(base: string, pct: number, towards: 'black' | 'white' | 'transparen
  * Build the `:root { … }` override for an organisation's brand. Returns '' when
  * the brand is null or colors are invalid, so the base CSS stays authoritative.
  */
-export function buildThemeCss(brand: Partial<OrgBrand> | null | undefined): string {
+export function buildThemeCss(
+  brand: Partial<OrgBrand> | null | undefined,
+  selector = ':root',
+): string {
   if (!brand) return '';
   const { primary, secondary, ink, paper } = brand;
   if (!isHex(primary) || !isHex(secondary) || !isHex(ink) || !isHex(paper)) return '';
 
-  return `:root {
+  return `${selector} {
   --k-teal: ${primary};
   --k-teal-600: ${mix(primary, 88, 'black')};
   --k-teal-700: ${mix(primary, 75, 'black')};

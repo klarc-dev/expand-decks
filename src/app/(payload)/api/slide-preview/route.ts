@@ -13,6 +13,9 @@ import {
   resolveDocumentTemplate,
 } from '@/documents/templates';
 import { applyPageNumberChrome, isDarkSurfaceClass } from '@/export/chrome';
+import { buildThemeCss, type OrgBrand } from '@/export/theme';
+import { resetDefs, seedFootnotes } from '@/export/utils';
+import { setVarDoc } from '@/export/vars';
 import { buildSlidePreviewChrome } from '@/lib/slidePreviewChrome';
 import { COLLECTIONS } from '@/lib/collections';
 import { getOrLoadPreviewHydration } from '@/lib/previewHydrationCache';
@@ -138,6 +141,39 @@ async function hydrateChromeFields(
   return organisation ? { ...fields, organisation } : fields;
 }
 
+function previewVars(
+  fields: Record<string, unknown>,
+  organisation: Record<string, unknown> | null,
+  slideIndex: number,
+  total: number,
+) {
+  const language = fields.language === 'en' ? 'en-GB' : 'fr-FR';
+  return {
+    ...fields,
+    organisation: organisation ?? undefined,
+    org: organisation ?? undefined,
+    date: new Date().toLocaleDateString(language),
+    page: slideIndex + 1,
+    total,
+  };
+}
+
+function renderPreviewWithVars(
+  block: SlideBlock,
+  context: ReturnType<typeof buildPreviewRenderContext> | undefined,
+  vars: Record<string, unknown>,
+) {
+  setVarDoc(vars);
+  resetDefs();
+  if (block.blockType !== 'cover') seedFootnotes(block.footnotes);
+  try {
+    return renderBlockPreview(block, context);
+  } finally {
+    resetDefs();
+    setVarDoc(null);
+  }
+}
+
 // This route intentionally coordinates preview validation, authorization, and rendering at one boundary.
 // fallow-ignore-next-line complexity
 export async function POST(req: NextRequest) {
@@ -238,7 +274,13 @@ export async function POST(req: NextRequest) {
       { status: 422 },
     );
   }
-  const preview = renderBlockPreview(parsedBlock.data as SlideBlock, renderContext);
+  const total = previewPages?.length ?? 1;
+  const organisation =
+    hydratedFields.organisation && typeof hydratedFields.organisation === 'object'
+      ? (hydratedFields.organisation as Record<string, unknown>)
+      : null;
+  const vars = previewVars(hydratedFields, organisation, slideIndex, total);
+  const preview = renderPreviewWithVars(parsedBlock.data as SlideBlock, renderContext, vars);
   if (!preview)
     return NextResponse.json({ error: 'Prévisualisation indisponible' }, { status: 422 });
 
@@ -293,9 +335,30 @@ export async function POST(req: NextRequest) {
           Math.min(slideIndex, candidateTypes.length - 1),
           body.sections ?? [],
         );
+        const candidatePreview = renderPreviewWithVars(
+          parsedCandidate.data as SlideBlock,
+          candidateContext,
+          vars,
+        );
+        if (!candidatePreview) return candidate;
+        const candidateChrome = buildSlidePreviewChrome(
+          formFields,
+          previewFieldPath,
+          candidatePreview.hideChrome,
+          isDarkSurfaceClass(candidatePreview.className),
+        );
         return {
           ...candidate,
-          preview: renderBlockPreview(parsedCandidate.data as SlideBlock, candidateContext),
+          preview: {
+            ...candidatePreview,
+            chrome: {
+              ...candidateChrome,
+              footer: template.chrome.footer
+                ? applyPageNumberChrome(candidateChrome.footer, template.chrome.pageNumbers)
+                : undefined,
+              logoUrl: template.chrome.logo ? candidateChrome.logoUrl : undefined,
+            },
+          },
         };
       } catch {
         return candidate;
@@ -305,6 +368,7 @@ export async function POST(req: NextRequest) {
   const response = setPreviewResponse(cacheKey, {
     canvas: template.canvas,
     chrome,
+    themeCss: buildThemeCss(organisation as Partial<OrgBrand> | null, '&'),
     compatibility: compatibilityWithPreviews,
     fingerprint: slideLayoutFingerprint(
       Array.isArray((presentation as { slides?: unknown }).slides)

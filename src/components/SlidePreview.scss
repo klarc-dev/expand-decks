@@ -131,6 +131,20 @@
     text-transform: uppercase;
   }
 
+  &__warning {
+    background: var(--theme-warning-100);
+    border: 1px solid var(--theme-warning-400);
+    border-radius: var(--style-radius-s);
+    color: var(--theme-elevation-800);
+    font-size: 13px;
+    margin-top: 10px;
+    padding: 10px;
+
+    ul {
+      margin: 5px 0;
+    }
+  }
+
   &__detail {
     color: var(--theme-elevation-600);
     font-size: 13px;

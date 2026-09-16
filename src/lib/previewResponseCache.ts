@@ -8,6 +8,7 @@ type PreviewResponse = {
     orientation?: 'landscape' | 'portrait' | 'square';
   };
   chrome: unknown;
+  themeCss?: string;
   compatibility?: unknown;
   fingerprint?: string;
   preview: unknown;
