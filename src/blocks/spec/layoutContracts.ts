@@ -44,6 +44,7 @@ const LAYOUT_CONTRACTS = {
       ...LEAD,
       intro: 'prose.support',
       leftFooter: 'takeaway',
+      collectionSide: 'collection.side',
       rightCards: 'collection.items',
       image: 'media.primary',
       imagePosition: 'media.placement',

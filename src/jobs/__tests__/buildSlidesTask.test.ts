@@ -14,14 +14,24 @@ describe('buildSlidesTask', () => {
     expect(buildSlidesTask.outputSchema).toEqual([{ name: 'success', type: 'checkbox' }]);
   });
 
-  it('serializes builds for the same presentation across worker replicas', () => {
-    expect(buildSlidesTask.concurrency).toBeTypeOf('function');
-
-    const concurrencyKey = (buildSlidesTask.concurrency as Function)({
-      input: { presentationId: '42' },
-      queue: 'default',
-    });
-
-    expect(concurrencyKey).toBe('buildSlides:42');
+  it('supersedes pending builds for the same presentation so change then undo builds final state', () => {
+    expect(buildSlidesTask.concurrency).toMatchObject({ supersedes: true });
+    if (typeof buildSlidesTask.concurrency !== 'object') throw new Error('missing concurrency');
+    expect(buildSlidesTask.concurrency.key({ input: { presentationId: 'deck-42' } } as never)).toBe(
+      'buildSlides:deck-42:generic',
+    );
+    expect(buildSlidesTask.concurrency.key({ input: { presentationId: 'deck-7' } } as never)).toBe(
+      'buildSlides:deck-7:generic',
+    );
+    expect(
+      buildSlidesTask.concurrency.key({
+        input: { presentationId: 'deck-42', mediaProductionRequestId: 'request-9' },
+      } as never),
+    ).toBe('buildSlides:deck-42:producer:request-9');
+    expect(
+      buildSlidesTask.concurrency.key({
+        input: { presentationId: 'deck-42', publicationId: 'publication-3' },
+      } as never),
+    ).toBe('buildSlides:deck-42:producer:publication-3');
   });
 });

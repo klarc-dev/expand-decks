@@ -45,7 +45,10 @@ function LayoutCompatibilityModal({
 }: {
   currentLayout?: string;
   applying: boolean;
-  applyLayout: (result: SlideLayoutCompatibility, mapping?: { proseSourceField?: string }) => void;
+  applyLayout: (
+    result: SlideLayoutCompatibility,
+    mapping?: { collectionSide?: 'left' | 'right'; proseSourceField?: string },
+  ) => void;
   canvas: PreviewResult['canvas'];
   chrome?: SlideChrome;
   modalSlug: string;
@@ -53,6 +56,7 @@ function LayoutCompatibilityModal({
 }) {
   const { closeModal, isModalOpen } = useModal();
   const [proseMapping, setProseMapping] = useState<Record<string, string>>({});
+  const [collectionSide, setCollectionSide] = useState<Record<string, 'left' | 'right'>>({});
   if (!isModalOpen(modalSlug)) return null;
 
   const ranked = [...results].sort(
@@ -139,29 +143,47 @@ function LayoutCompatibilityModal({
                   {result.hidden.length} contenu(s) conservé(s), non affiché(s) par ce layout.
                 </p>
               ) : null}
-              {result.layout === 'twoCols' &&
-              result.issues.some((issue) => issue.code === 'mapping') ? (
-                <label className="slide-layout-compatibility__mapping">
-                  Texte à placer dans la colonne gauche
-                  <select
-                    value={proseMapping[result.layout] ?? ''}
-                    onChange={(event) =>
-                      setProseMapping((current) => ({
-                        ...current,
-                        [result.layout]: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Choix automatique</option>
-                    {result.mappedFields
-                      .filter((mapping) => mapping.role === 'prose.support')
-                      .map((mapping) => (
-                        <option key={mapping.from} value={mapping.from}>
-                          {mapping.from}
-                        </option>
-                      ))}
-                  </select>
-                </label>
+              {result.layout === 'twoCols' ? (
+                <div className="slide-layout-compatibility__mapping">
+                  <label>
+                    Côté de la collection
+                    <select
+                      value={collectionSide[result.layout] ?? 'right'}
+                      onChange={(event) =>
+                        setCollectionSide((current) => ({
+                          ...current,
+                          [result.layout]: event.target.value as 'left' | 'right',
+                        }))
+                      }
+                    >
+                      <option value="right">Droite</option>
+                      <option value="left">Gauche</option>
+                    </select>
+                  </label>
+                  {result.issues.some((issue) => issue.code === 'mapping') ? (
+                    <label>
+                      Texte de la colonne de prose
+                      <select
+                        value={proseMapping[result.layout] ?? ''}
+                        onChange={(event) =>
+                          setProseMapping((current) => ({
+                            ...current,
+                            [result.layout]: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Choix automatique</option>
+                        {result.mappedFields
+                          .filter((mapping) => mapping.role === 'prose.support')
+                          .map((mapping) => (
+                            <option key={mapping.from} value={mapping.from}>
+                              {mapping.from}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  ) : null}
+                </div>
               ) : null}
               <Button
                 buttonStyle={rank === 0 ? 'primary' : 'secondary'}
@@ -174,9 +196,16 @@ function LayoutCompatibilityModal({
                 onClick={() =>
                   applyLayout(
                     result,
-                    proseMapping[result.layout]
-                      ? { proseSourceField: proseMapping[result.layout] }
-                      : undefined,
+                    result.layout === 'twoCols'
+                      ? {
+                          collectionSide: collectionSide[result.layout] ?? 'right',
+                          ...(proseMapping[result.layout]
+                            ? { proseSourceField: proseMapping[result.layout] }
+                            : {}),
+                        }
+                      : proseMapping[result.layout]
+                        ? { proseSourceField: proseMapping[result.layout] }
+                        : undefined,
                   )
                 }
                 size="small"
@@ -249,7 +278,7 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
 
   async function applyLayout(
     candidate: SlideLayoutCompatibility,
-    mapping?: { proseSourceField?: string },
+    mapping?: { collectionSide?: 'left' | 'right'; proseSourceField?: string },
   ) {
     if (!request.presentationId || !result?.fingerprint) return;
     if (

@@ -24,9 +24,22 @@ export type LayoutContentState = {
 };
 
 export type LayoutMappingPreference = {
+  collectionSide?: 'left' | 'right';
   collectionSourceField?: string;
   proseSourceField?: string;
 };
+
+export type NormalizedMedia = {
+  crop: 'cover' | 'contain' | 'preserve';
+  decorative: boolean;
+  focalPoint?: { x: number; y: number };
+  identity: string;
+  intent: string;
+  media: unknown;
+  placement?: string;
+};
+
+type SpecializedLayoutBehavior = 'compatible' | 'transformable' | 'lossy' | 'unavailable';
 
 export type LayoutChangeIssue = {
   code: 'capacity' | 'crop-risk' | 'mapping' | 'missing-required' | 'non-portable' | 'unsupported';
@@ -47,7 +60,17 @@ export type LayoutChangeAnalysis = {
   layout: string;
   lossiness: 'none' | 'display-only' | 'confirmed-transform';
   mappedFields: Array<{ from: string; role: SlideContentRole; to: string }>;
-  recommendation: { explanation: string[]; score: number };
+  recommendation: {
+    dimensions: {
+      capacity: number;
+      current: number;
+      loss: number;
+      media: number;
+      semantic: number;
+    };
+    explanation: string[];
+    score: number;
+  };
   preview?: {
     className: string;
     html: string;
@@ -113,9 +136,132 @@ function normalizeRoleValue(role: SlideContentRole, value: unknown): unknown {
   return role === 'collection.items' ? normalizeCollection(value) : structuredClone(value);
 }
 
+function mediaIdentity(media: unknown): string {
+  if (media && typeof media === 'object') {
+    const record = media as Record<string, unknown>;
+    const id = record.id ?? record.url ?? record.filename;
+    if (typeof id === 'string' || typeof id === 'number') return String(id);
+  }
+  return createHash('sha1').update(JSON.stringify(media)).digest('hex');
+}
+
+export function normalizeMedia(media: unknown, placement?: unknown): NormalizedMedia | undefined {
+  if (!hasContent(media)) return undefined;
+  const record = media && typeof media === 'object' ? (media as Record<string, unknown>) : {};
+  const focalX = record.focalX;
+  const focalY = record.focalY;
+  const decorative = record.decorative === true || record.intent === 'decorative';
+  return {
+    crop:
+      record.crop === 'contain' || record.crop === 'preserve' || record.crop === 'cover'
+        ? record.crop
+        : 'preserve',
+    decorative,
+    ...(typeof focalX === 'number' && typeof focalY === 'number'
+      ? { focalPoint: { x: focalX, y: focalY } }
+      : {}),
+    identity: mediaIdentity(media),
+    intent:
+      typeof record.intent === 'string'
+        ? record.intent
+        : decorative
+          ? 'decorative'
+          : typeof record.alt === 'string' && record.alt.trim()
+            ? record.alt
+            : 'informative',
+    media: structuredClone(media),
+    ...(typeof placement === 'string' ? { placement } : {}),
+  };
+}
+
+function mediaValue(fragment: CanonicalFragment | undefined): NormalizedMedia | undefined {
+  if (!fragment) return undefined;
+  const value = fragment.value;
+  if (value && typeof value === 'object' && 'identity' in value && 'media' in value) {
+    return value as NormalizedMedia;
+  }
+  return normalizeMedia(value);
+}
+
+function contactDetails(slide: Record<string, unknown>): Record<string, string> | undefined {
+  const values = Object.fromEntries(
+    ['email', 'phone', 'linkedin', 'website', 'bookingUrl']
+      .map((field) => [field, slide[field]])
+      .filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].length > 0,
+      ),
+  );
+  for (const [labelField, urlField] of [
+    ['primaryAction', 'primaryActionUrl'],
+    ['secondaryAction', 'secondaryActionUrl'],
+    ['linkLabel', 'linkUrl'],
+  ]) {
+    const url = slide[urlField];
+    if (typeof url === 'string' && /^(?:mailto:|tel:)/.test(url)) {
+      values[urlField] = url;
+      if (typeof slide[labelField] === 'string') values[labelField] = slide[labelField] as string;
+    }
+  }
+  return Object.keys(values).length ? values : undefined;
+}
+
+function quoteAttributions(value: unknown): unknown[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const attributions = value.map((item) => {
+    const record = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
+    return {
+      id: canonicalItemId(item, 0),
+      authorName: record.authorName,
+      authorRole: record.authorRole,
+      authorCompany: record.authorCompany,
+    };
+  });
+  return attributions.some((item) => hasContent(item.authorName)) ? attributions : undefined;
+}
+
 function stateWithoutUndo(state: LayoutContentState): Omit<LayoutContentState, 'lastChange'> {
   const { lastChange: _, ...rest } = structuredClone(state);
   return rest;
+}
+
+function refreshExistingMedia(
+  state: LayoutContentState,
+  contract: LayoutAdapterContract,
+  slide: Record<string, unknown>,
+): void {
+  const mediaField = Object.entries(contract.fields).find(
+    ([, role]) => role === 'media.primary',
+  )?.[0];
+  if (mediaField && hasContent(slide[mediaField])) {
+    state.roles['media.primary'] = [
+      { field: mediaField, value: normalizeMedia(slide[mediaField], slide.imagePosition)! },
+    ];
+    delete state.roles['media.placement'];
+    return;
+  }
+  const legacyMedia = valueForRole(state, 'media.primary', 'image');
+  if (!legacyMedia) return;
+  const normalizedLegacy = mediaValue(legacyMedia);
+  const separatePlacement = valueForRole(state, 'media.placement', 'imagePosition')?.value;
+  const legacyPlacement =
+    typeof separatePlacement === 'string' ? separatePlacement : normalizedLegacy?.placement;
+  state.roles['media.primary'] = [
+    {
+      field: legacyMedia.field,
+      value: normalizeMedia(normalizedLegacy?.media ?? legacyMedia.value, legacyPlacement)!,
+    },
+  ];
+  delete state.roles['media.placement'];
+}
+
+function enrichSemanticRoles(
+  roles: LayoutContentState['roles'],
+  slide: Record<string, unknown>,
+): void {
+  const contacts = contactDetails(slide);
+  if (contacts) roles['contact.details'] = [{ field: 'contactDetails', value: contacts }];
+  const attributions = quoteAttributions(slide.quotes);
+  if (attributions) roles.attributions = [{ field: 'quoteAttributions', value: attributions }];
 }
 
 export function normalizeSlideContent(slide: Record<string, unknown>): LayoutContentState {
@@ -125,7 +271,7 @@ export function normalizeSlideContent(slide: Record<string, unknown>): LayoutCon
   if (
     existing &&
     typeof existing === 'object' &&
-    (existing as { version?: unknown }).version === 1
+    (existing as Record<string, unknown>).version === 1
   ) {
     const state = structuredClone(existing as LayoutContentState);
     state.layouts[layout] = storedProjection(slide);
@@ -133,11 +279,20 @@ export function normalizeSlideContent(slide: Record<string, unknown>): LayoutCon
     for (const [field, role] of Object.entries(contract.fields)) {
       const value = slide[field];
       if (!hasContent(value)) continue;
+      if (role === 'media.placement') continue;
       const fragments = visibleRoles.get(role) ?? [];
-      fragments.push({ field, value: normalizeRoleValue(role, value) });
+      fragments.push({
+        field,
+        value:
+          role === 'media.primary'
+            ? normalizeMedia(value, slide.imagePosition)
+            : normalizeRoleValue(role, value),
+      });
       visibleRoles.set(role, fragments);
     }
     for (const [role, fragments] of visibleRoles) state.roles[role] = fragments;
+    refreshExistingMedia(state, contract, slide);
+    enrichSemanticRoles(state.roles, slide);
     if (hasContent(slide.footnotes)) {
       state.roles.citations = [
         { field: 'footnotes', value: structuredClone(slide.footnotes) },
@@ -152,8 +307,15 @@ export function normalizeSlideContent(slide: Record<string, unknown>): LayoutCon
     const value = slide[field];
     if (!hasContent(value)) continue;
     if (!roles[role]) roles[role] = [];
-    roles[role]!.push({ field, value: normalizeRoleValue(role, value) });
+    const normalized =
+      role === 'media.primary'
+        ? normalizeMedia(value, slide.imagePosition)
+        : role === 'media.placement'
+          ? undefined
+          : normalizeRoleValue(role, value);
+    if (normalized !== undefined) roles[role]!.push({ field, value: normalized });
   }
+  enrichSemanticRoles(roles, slide);
   if (hasContent(slide.footnotes)) {
     roles.citations = [{ field: 'footnotes', value: structuredClone(slide.footnotes) }];
   }
@@ -286,6 +448,37 @@ function collectionForTarget(value: unknown, targetField: string): unknown {
   });
 }
 
+function projectMappedValue(
+  role: SlideContentRole,
+  fragment: CanonicalFragment,
+  field: string,
+): unknown {
+  if (role === 'collection.items') return collectionForTarget(fragment.value, field);
+  if (role === 'media.primary') return mediaValue(fragment)?.media ?? fragment.value;
+  if (RICH_TEXT_TARGET_FIELDS.has(field)) return lexical(structuredClone(fragment.value));
+  return structuredClone(fragment.value);
+}
+
+function projectSpecialField(
+  slide: Record<string, unknown>,
+  state: LayoutContentState,
+  field: string,
+  role: SlideContentRole,
+  mapping?: LayoutMappingPreference,
+): boolean {
+  if (role === 'collection.side') {
+    slide[field] = mapping?.collectionSide ?? valueForRole(state, role, field)?.value ?? 'right';
+    return true;
+  }
+  if (role !== 'media.placement') return false;
+  const normalized = mediaValue(valueForRole(state, 'media.primary', 'image'));
+  const legacyPlacement = valueForRole(state, role, field)?.value;
+  const placement =
+    normalized?.placement ?? (typeof legacyPlacement === 'string' ? legacyPlacement : undefined);
+  if (placement) slide[field] = placement;
+  return true;
+}
+
 function projectFromRoles(
   state: LayoutContentState,
   targetLayout: string,
@@ -307,15 +500,10 @@ function projectFromRoles(
         : role === 'prose.support'
           ? mapping?.proseSourceField
           : undefined;
+    if (projectSpecialField(slide, state, field, role, mapping)) continue;
     const fragment = valueForRole(state, role, field, preferredSourceField);
     if (!fragment) continue;
-    const value =
-      role === 'collection.items'
-        ? collectionForTarget(fragment.value, field)
-        : RICH_TEXT_TARGET_FIELDS.has(field)
-          ? lexical(structuredClone(fragment.value))
-          : structuredClone(fragment.value);
-    slide[field] = value;
+    slide[field] = projectMappedValue(role, fragment, field);
     used.add(`${role}:${fragment.field}`);
     if (fragment.field !== field) mappedFields.push({ from: fragment.field, role, to: field });
   }
@@ -354,16 +542,69 @@ function omittedCollectionItemFields(
   return [...omitted].sort();
 }
 
-function hiddenFragments(state: LayoutContentState, used: Set<string>) {
+function hiddenFragments(
+  state: LayoutContentState,
+  used: Set<string>,
+  target: LayoutAdapterContract,
+) {
   const hidden: Array<{ field: string; role: SlideContentRole }> = [];
+  const renderedSourceFields = new Set([...used].map((key) => key.slice(key.indexOf(':') + 1)));
+  const targetCollectionField = Object.entries(target.fields).find(
+    ([, role]) => role === 'collection.items',
+  )?.[0];
   for (const [role, fragments] of Object.entries(state.roles) as Array<
     [SlideContentRole, CanonicalFragment[]]
   >) {
     for (const fragment of fragments) {
+      if (
+        role === 'attributions' &&
+        targetCollectionField === 'quotes' &&
+        used.has('collection.items:quotes')
+      ) {
+        continue;
+      }
+      if (
+        role === 'contact.details' &&
+        fragment.value &&
+        typeof fragment.value === 'object' &&
+        Object.keys(fragment.value as Record<string, unknown>).every((field) =>
+          renderedSourceFields.has(field),
+        )
+      ) {
+        continue;
+      }
       if (!used.has(`${role}:${fragment.field}`)) hidden.push({ field: fragment.field, role });
     }
   }
   return hidden;
+}
+
+export const SPECIALIZED_LAYOUT_BEHAVIOR = {
+  table: {
+    table: 'compatible',
+    statement: 'lossy',
+    mermaid: 'unavailable',
+    default: 'lossy',
+  },
+  mermaid: {
+    mermaid: 'compatible',
+    statement: 'transformable',
+    table: 'unavailable',
+    default: 'lossy',
+  },
+} as const satisfies Record<
+  string,
+  Partial<Record<string, SpecializedLayoutBehavior>> & { default: SpecializedLayoutBehavior }
+>;
+
+function specializedLayoutBehavior(
+  sourceLayout: string,
+  targetLayout: string,
+): SpecializedLayoutBehavior | undefined {
+  const row = SPECIALIZED_LAYOUT_BEHAVIOR[sourceLayout as keyof typeof SPECIALIZED_LAYOUT_BEHAVIOR];
+  return row
+    ? ((row[targetLayout as keyof typeof row] ?? row.default) as SpecializedLayoutBehavior)
+    : undefined;
 }
 
 /**
@@ -376,6 +617,31 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
   const source = layoutContract(sourceLayout);
   const target = layoutContract(targetLayout);
   const spec = SPEC_BY_TYPE.get(targetLayout)!;
+  const specializedBehavior = specializedLayoutBehavior(sourceLayout, targetLayout);
+  if (targetLayout !== sourceLayout && specializedBehavior === 'unavailable') {
+    return {
+      classification: 'unavailable',
+      hidden: [],
+      imageURL: spec.imageURL,
+      issues: [
+        {
+          code: 'non-portable',
+          message: 'Le Markdown avancé ne possède pas de conversion automatique sûre.',
+        },
+      ],
+      label: spec.labels.singular,
+      layout: targetLayout,
+      lossiness: 'none',
+      mappedFields: [],
+      recommendation: {
+        score: -1000,
+        dimensions: { capacity: 0, current: 0, loss: -1000, media: 0, semantic: 0 },
+        explanation: ['Structure avancée non portable'],
+      },
+      requiresConfirmation: false,
+      unsupportedFields: [],
+    };
+  }
 
   const state = normalizeSlideContent(slide);
   const exact = state.layouts[targetLayout];
@@ -438,12 +704,12 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
       });
     }
   }
-  const media = valueForRole(state, 'media.primary', 'image');
-  const placement = valueForRole(state, 'media.placement', 'imagePosition');
+  const media = mediaValue(valueForRole(state, 'media.primary', 'image'));
+  const placement = media?.placement;
   if (media && !target.media) {
     issues.push({
       code: 'unsupported',
-      field: media.field,
+      field: 'image',
       role: 'media.primary',
       message: 'L’image restera attachée mais ne sera pas affichée.',
     });
@@ -455,15 +721,15 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
   ) {
     issues.push({
       code: 'crop-risk',
-      field: media.field,
+      field: 'image',
       role: 'media.primary',
       message: 'Le cadrage change ; le point focal et la préférence de recadrage seront conservés.',
     });
   }
-  if (placement && target.media && !target.media.placements.includes(String(placement.value))) {
+  if (placement && target.media && !target.media.placements.includes(placement)) {
     issues.push({
       code: 'unsupported',
-      field: placement.field,
+      field: 'imagePosition',
       role: 'media.placement',
       message: 'La position demandée n’est pas disponible dans ce layout.',
     });
@@ -508,11 +774,14 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
     }
   }
 
-  const hidden = hiddenFragments(state, projection.used);
+  const hidden = hiddenFragments(state, projection.used, target);
   const unavailable = issues.some((issue) => issue.code === 'missing-required');
   const specializedConfirmation =
     targetLayout !== sourceLayout &&
-    (source.kind === 'specialized' || target.kind === 'specialized');
+    (specializedBehavior === 'lossy' ||
+      specializedBehavior === 'transformable' ||
+      source.kind === 'specialized' ||
+      target.kind === 'specialized');
   const requiresConfirmation =
     !unavailable &&
     (specializedConfirmation ||
@@ -525,12 +794,33 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
       : projection.mappedFields.length > 0 || issues.length > 0
         ? 'adjustments'
         : 'compatible';
-  const score =
-    (targetLayout === sourceLayout ? 100 : 60) -
-    hidden.length * 2 -
-    issues.filter((issue) => issue.code === 'crop-risk' || issue.code === 'mapping').length * 5 -
-    (classification === 'lossy' ? 100 : 0) -
-    (classification === 'unavailable' ? 1000 : 0);
+  const dimensions = {
+    current: targetLayout === sourceLayout ? 40 : 0,
+    semantic:
+      target.kind === source.kind
+        ? 30
+        : target.kind === 'composition' || source.kind === 'composition'
+          ? 20
+          : target.kind === 'specialized' || source.kind === 'specialized'
+            ? -20
+            : 10,
+    capacity: -issues.filter((issue) => issue.code === 'capacity').length * 40,
+    media:
+      media && target.media
+        ? issues.some((issue) => issue.code === 'crop-risk')
+          ? 10
+          : 20
+        : media && !target.media
+          ? -40
+          : 0,
+    loss:
+      classification === 'unavailable'
+        ? -1000
+        : classification === 'lossy'
+          ? -150
+          : -hidden.length * 5,
+  };
+  const score = Object.values(dimensions).reduce((total, value) => total + value, 0);
   const candidate = unavailable ? undefined : { ...projection.slide, layoutContent: state };
   return {
     candidate,
@@ -548,8 +838,15 @@ function analyzeOne(slide: Record<string, unknown>, targetLayout: string): Layou
     mappedFields: projection.mappedFields,
     recommendation: {
       score,
+      dimensions,
       explanation: [
         targetLayout === sourceLayout ? 'Layout actuel' : `Compatibilité sémantique ${target.kind}`,
+        `Capacité ${dimensions.capacity >= 0 ? 'adaptée' : 'dépassée'}`,
+        media
+          ? dimensions.media >= 0
+            ? 'Média pris en charge'
+            : 'Média conservé hors affichage'
+          : 'Sans média',
         hidden.length
           ? `${hidden.length} contenu(s) conservé(s) hors affichage`
           : 'Tout le contenu utile est affichable',
@@ -605,7 +902,13 @@ export function applyLayoutProjection(args: {
     beforeState: stateWithoutUndo(normalizeSlideContent(args.slide)),
   };
   const mappedCandidate = args.mapping
-    ? { ...projectFromRoles(state, args.targetLayout, args.mapping).slide, layoutContent: state }
+    ? {
+        ...projectFromRoles(state, args.targetLayout, args.mapping).slide,
+        ...(args.targetLayout === 'twoCols' && args.mapping.collectionSide
+          ? { collectionSide: args.mapping.collectionSide }
+          : {}),
+        layoutContent: state,
+      }
     : { ...analysis.candidate, layoutContent: state };
   const projected = validateProjectedSlide(mappedCandidate);
   return { analysis, slide: { ...projected, layoutContent: state }, undoToken };

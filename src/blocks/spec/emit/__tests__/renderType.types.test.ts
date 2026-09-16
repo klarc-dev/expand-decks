@@ -123,6 +123,7 @@ const twoColsRenderSchema = z.object({
   lead: optionalRichTextRender(),
   intro: optionalRichTextRender(),
   leftFooter: optionalRichTextRender(),
+  collectionSide: optionalRender(z.enum(['left', 'right'])),
   rightCards: z
     .array(
       z.object({

@@ -4,10 +4,33 @@ import { runBuildSlidesTask } from './buildSlidesRunner';
 
 export const BUILD_SLIDES_TASK = 'buildSlides' as const;
 
+type BuildSlidesConcurrencyInput = {
+  presentationId: string;
+  mediaProductionRequestId?: string;
+  mediaRequestId?: string;
+  publicationId?: string;
+  revisionSha256?: string;
+};
+
+function buildConcurrencyKey(input: BuildSlidesConcurrencyInput): string {
+  const producerBinding =
+    input.mediaProductionRequestId ??
+    input.mediaRequestId ??
+    input.publicationId ??
+    input.revisionSha256;
+  return producerBinding
+    ? `buildSlides:${input.presentationId}:producer:${producerBinding}`
+    : `buildSlides:${input.presentationId}:generic`;
+}
+
 export const buildSlidesTask: TaskConfig = {
   slug: BUILD_SLIDES_TASK,
   label: 'Build Slidev Presentation',
-  concurrency: ({ input }) => `buildSlides:${(input as { presentationId: string }).presentationId}`,
+  concurrency: {
+    key: ({ input }: { input: unknown }) =>
+      buildConcurrencyKey(input as BuildSlidesConcurrencyInput),
+    supersedes: true,
+  },
   inputSchema: [
     {
       name: 'presentationId',

@@ -85,8 +85,9 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   }
 
   const rightCol = cards.length ? `\n<div class="k-split-cards">${stack.html}\n</div>` : '';
-  const leftCol = leftBody || (rightCol ? '<div></div>' : '');
-  const main = `<div class="${K.split} k-split--body">\n${leftCol}${rightCol}\n</div>`;
+  const copyCol = leftBody || (rightCol ? '<div></div>' : '');
+  const collectionFirst = block.collectionSide === 'left';
+  const main = `<div class="${K.split} k-split--body${collectionFirst ? ' k-split--collection-left' : ''}">\n${collectionFirst ? `${rightCol}${copyCol}` : `${copyCol}${rightCol}`}\n</div>`;
   const body = contentFrame(main, {
     header,
     crowded: stack.crowded,

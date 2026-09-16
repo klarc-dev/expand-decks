@@ -38,6 +38,7 @@ const rightCards = optionalRender(
 );
 const image = optionalRender(z.object({ url: z.string() }));
 const imagePosition = optionalRender(z.enum(['right', 'left']));
+const collectionSide = optionalRender(z.enum(['left', 'right']));
 
 export const twoColsSpec = block({
   slug: 'twoCols',
@@ -70,6 +71,17 @@ export const twoColsSpec = block({
         description: 'Texte ou statistique en bas de la colonne gauche',
       }),
     ),
+    rawField('collectionSide', collectionSide, false, {
+      type: 'select',
+      label: 'Côté de la collection',
+      description:
+        'Place les cartes à gauche ou à droite lorsque les deux compositions sont valides',
+      defaultValue: 'right',
+      options: [
+        { label: 'Gauche', value: 'left' },
+        { label: 'Droite', value: 'right' },
+      ],
+    }),
     rawField(
       'rightCards',
       rightCards,
@@ -127,6 +139,7 @@ const twoColsRenderSchema = z.object({
   lead: leadRender(),
   intro,
   leftFooter,
+  collectionSide,
   rightCards,
   image,
   imagePosition,
