@@ -108,7 +108,7 @@ const slides = [
       {
         title: 'Une cohérence par construction',
         description:
-          'Les dimensions juridiques, techniques et fiscales de votre projet sont examinées au sein d’une même structure, pour construire une stratégie commune.',
+          'Les dimensions juridiques, techniques et fiscales de votre projet sont examinées au sein d’une même structure, pour construire une stratégie adaptée à votre projet.',
       },
     ],
   },
@@ -244,7 +244,7 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: 'Management de l’innovation',
     title: 'Structurer et financer vos projets de [R&D]',
-    lead: 'Une équipe scientifique pour structurer vos travaux de R&D et construire vos demandes de financement.',
+    lead: 'Une équipe scientifique pour structurer vos travaux de R&D et préparer vos demandes de financement.',
     intro:
       'Docteurs et ingénieurs construisent avec vous le cadre scientifique et financier de vos projets, documentent vos travaux et préparent les dossiers en lien avec l’avocat fiscaliste.',
     leftFooter:
