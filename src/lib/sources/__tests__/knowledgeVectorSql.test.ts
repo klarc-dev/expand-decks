@@ -24,6 +24,8 @@ describe('queryKnowledgeRows', () => {
     expect(sql).toContain("metadata->>'knowledgeBaseId' = $1");
     expect(sql).toContain("metadata->>'retrievalVersion' = $2");
     expect(sql).toContain('LIMIT $4');
+    expect(sql).toContain('regexp_split_to_array');
+    expect(sql).not.toContain('regexp_replace');
     expect(values).toEqual(['42', '4', ['zx', '9917'], 7]);
     expect(sql).not.toContain('ZX-9917');
   });

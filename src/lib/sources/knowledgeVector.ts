@@ -72,8 +72,12 @@ export async function queryKnowledgeRows(
       ), scored AS (
         SELECT vector_id AS id, metadata,
           COALESCE(sum(query_terms.weight) FILTER (
-            WHERE lower(concat_ws(' ', metadata->>'headingPath', metadata->>'text'))
-              ~ ('(^|[^[:alnum:]])' || regexp_replace(query_terms.term, '([\\.\\+\\*\\?\\[\\]\\(\\)\\{\\}\\^\\$\\|\\-])', '\\\\1', 'g') || '([^[:alnum:]]|$)')
+            WHERE query_terms.term = ANY(
+              regexp_split_to_array(
+                lower(concat_ws(' ', metadata->>'headingPath', metadata->>'text')),
+                '[^[:alnum:]]+'
+              )
+            )
           ), 0) / NULLIF(sum(query_terms.weight), 0) AS score
         FROM ${table}
         CROSS JOIN query_terms
