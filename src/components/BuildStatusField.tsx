@@ -26,33 +26,6 @@ const STATUS_LABELS: Record<string, { label: string; pillStyle: BuildStatusPillS
 const BUILDING_POLL_MS = 2000;
 const RECENT_REQUEST_MS = 90_000;
 
-function formatRequestedAt(iso: string | null | undefined): string | null {
-  if (!iso) return null;
-  const ts = Date.parse(iso);
-  if (Number.isNaN(ts)) return null;
-  return new Date(ts).toLocaleString('fr-FR');
-}
-
-function BuildMetadata({
-  requestedAt,
-  requestedAtLabel,
-}: {
-  requestedAt?: string | null;
-  requestedAtLabel: string | null;
-}) {
-  if (!requestedAtLabel || !requestedAt) return null;
-  return (
-    <dl aria-label="Informations du build" className="build-status__metadata">
-      <div>
-        <dt>Demandé</dt>
-        <dd>
-          <time dateTime={requestedAt}>{requestedAtLabel}</time>
-        </dd>
-      </div>
-    </dl>
-  );
-}
-
 function BuildErrorNotice({ error }: { error: string }) {
   const summary = error.split('\n')[0];
   return (
@@ -107,10 +80,6 @@ const BuildStatusField: React.FC = () => {
           {meta.label}
         </Pill>
       </span>
-      <BuildMetadata
-        requestedAt={info.lastBuildRequestedAt}
-        requestedAtLabel={formatRequestedAt(info.lastBuildRequestedAt)}
-      />
       {status === BUILD_STATUS.failed && info.lastBuildError ? (
         <BuildErrorNotice error={info.lastBuildError} />
       ) : null}

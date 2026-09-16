@@ -313,12 +313,12 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'useAllFormFields')).toBe(false);
   });
 
-  it('keeps build metadata in one labeled definition-list owner', () => {
+  it('shows only the build status and its error, no request timestamp or metadata list', () => {
     const path = 'src/components/BuildStatusField.tsx';
-    expect(sourceContains(path, 'function BuildMetadata')).toBe(true);
-    expect(sourceContains(path, 'aria-label="Informations du build"')).toBe(true);
-    expect(sourceContains(path, '<time dateTime={requestedAt}>')).toBe(true);
-    expect(sourceContains(path, 'className="build-status__meta"')).toBe(false);
+    expect(sourceContains(path, 'BuildMetadata')).toBe(false);
+    expect(sourceContains(path, 'Demandé')).toBe(false);
+    expect(sourceContains(path, 'toLocaleString')).toBe(false);
+    expect(sourceContains('src/components/BuildStatusField.scss', '__metadata')).toBe(false);
   });
 
   it('keeps SlidePreview errors in the canonical alert notice', () => {

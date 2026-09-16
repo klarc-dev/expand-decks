@@ -363,7 +363,6 @@ export const Presentations: CollectionConfig = {
           label: 'Titre',
           admin: {
             width: '70%',
-            description: 'Titre de la présentation (ex. "Klarc — L\'innovation à 360°")',
           },
         },
         {
@@ -573,9 +572,7 @@ export const Presentations: CollectionConfig = {
               required: true,
               defaultValue: PRESENTATION_STATUS.draft,
               label: 'Statut',
-              admin: {
-                description: 'État de publication',
-              },
+              admin: {},
               options: [
                 { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
                 { label: 'Publiée', value: PRESENTATION_STATUS.published },
@@ -619,7 +616,7 @@ export const Presentations: CollectionConfig = {
               required: true,
               defaultValue: 'fr',
               label: 'Langue',
-              admin: { description: 'Langue du contenu de la présentation' },
+
               options: [
                 { label: 'Français', value: 'fr' },
                 { label: 'Anglais', value: 'en' },

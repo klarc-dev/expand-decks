@@ -11,42 +11,7 @@
     font-weight: 600;
   }
 
-  &__metadata {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin: 0;
-    padding: 0;
-    color: var(--theme-elevation-500);
-    font-size: 12px;
 
-    div {
-      display: flex;
-      gap: 0.35em;
-    }
-
-    dt,
-    dd {
-      margin: 0;
-    }
-
-    dt::after {
-      content: ' le';
-    }
-  }
-
-  &__artifacts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
-    a {
-      font-size: 13px;
-    }
-  }
 
   &__error {
     width: 100%;
