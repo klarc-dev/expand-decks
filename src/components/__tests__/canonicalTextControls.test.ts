@@ -124,9 +124,10 @@ describe('canonical custom admin controls', () => {
     const path = 'src/components/ExportMenuItem.tsx';
     expect(rawButtonsIn(path)).toEqual([]);
     expect(sourceContains(path, 'aria-label="Télécharger le PDF"')).toBe(true);
-    expect(sourceContains(path, 'tooltip="Télécharger le PDF"')).toBe(true);
-    expect(sourceContains(path, 'extraButtonProps={{ download: true }}')).toBe(true);
-    expect(sourceContains(path, 'icon={<DocumentIcon />}')).toBe(true);
+    // Same element and class as Payload's native preview control beside it.
+    expect(sourceContains(path, 'className="preview-btn"')).toBe(true);
+    expect(sourceContains(path, 'title="Télécharger le PDF"')).toBe(true);
+    expect(sourceContains(path, '<DownloadIcon />')).toBe(true);
     expect(sourceContains(path, '<svg')).toBe(false);
     expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
     expect(sourceContains(path, 'presentation-build-requested')).toBe(true);

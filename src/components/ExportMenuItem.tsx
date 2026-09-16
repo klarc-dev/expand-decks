@@ -2,15 +2,9 @@
 // fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Button,
-  DocumentIcon,
-  PopupList,
-  toast,
-  useDocumentInfo,
-  usePayloadAPI,
-} from '@payloadcms/ui';
+import { PopupList, toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
+import { DownloadIcon } from '@/components/adminUi/DownloadIcon';
 import { artifactLinkKey, availableArtifactLinks } from '@/documents/artifacts';
 import { adminPost } from '@/lib/adminFetch';
 import { BUILD_STATUS } from '@/lib/status';
@@ -51,19 +45,18 @@ export const DownloadPdfButton: React.FC = () => {
 
   if (!id || !pdf) return null;
 
+  // Same element and class as Payload's own preview control beside it, so the
+  // two read as one row of document actions; `download` saves instead of opening.
   return (
-    <Button
+    <a
       aria-label="Télécharger le PDF"
-      buttonStyle="transparent"
-      el="anchor"
-      extraButtonProps={{ download: true }}
-      margin={false}
-      round
-      size="small"
-      tooltip="Télécharger le PDF"
-      url={pdf.href}
-      icon={<DocumentIcon />}
-    />
+      className="preview-btn"
+      download
+      href={pdf.href}
+      title="Télécharger le PDF"
+    >
+      <DownloadIcon />
+    </a>
   );
 };
 
