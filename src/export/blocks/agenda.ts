@@ -10,10 +10,30 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
   // Authored items win; an empty agenda auto-derives its list from the deck's
   // `section` titles (passed in via ctx.sections) — drop the block in and it
   // stays in sync with the structure, no manual fill.
+  // Links resolve through the deck fold: an authored row points at a slide by
+  // block id, a derived row at its own section slide. Missing targets (deleted
+  // slide, standalone preview) fall back to plain text, never a dead link.
+  const refs = ctx?.slideRefs ?? [];
+  const pageOf = (slideId: string | null | undefined): number | null => {
+    if (!slideId) return null;
+    const index = refs.findIndex((ref) => ref.id === slideId);
+    return index >= 0 ? index + 1 : null;
+  };
+  const sectionPages = refs
+    .map((ref, index) => (ref.blockType === 'section' && ref.title?.trim() ? index + 1 : null))
+    .filter((page): page is number => page !== null);
   const items =
     block.items && block.items.length > 0
-      ? block.items
-      : (ctx?.sections ?? []).map((label) => ({ label, description: null }));
+      ? block.items.map((item) => ({
+          label: item.label,
+          description: item.description,
+          page: pageOf(item.slideId),
+        }))
+      : (ctx?.sections ?? []).map((label, index) => ({
+          label,
+          description: null,
+          page: sectionPages[index] ?? null,
+        }));
   const leadHtml = richTextToHTML(block.lead);
   const fit = sequenceFrameFit({
     profile: 'agenda',
@@ -35,9 +55,14 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
       const desc = item.description
         ? `\n    <p class="${K.agendaDesc}">${md(item.description)}</p>`
         : '';
+      // Slidev's <Link> is a router link in the SPA and `<a href="#page">` in
+      // print, where foldSlides plants a matching page anchor on every slide.
+      const label = item.page
+        ? `<Link :to="${item.page}" class="${K.agendaLink}">${md(item.label)}</Link>`
+        : md(item.label);
       return `  <li class="${K.agendaItem}${state}">
     <span class="${K.agendaNum}">${num}</span>
-    <h3 class="${K.agendaLabel}">${md(item.label)}</h3>${desc}
+    <h3 class="${K.agendaLabel}">${label}</h3>${desc}
   </li>`;
     })
     .join('\n');

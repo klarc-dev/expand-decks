@@ -104,6 +104,13 @@ describe('style.css agenda ledger', () => {
     expect(dim).toMatch(/color:/);
   });
 
+  it('keeps linked labels unmarked at rest and zero-sizes page anchors', () => {
+    expect(css).toMatch(/\.slidev-layout \.k-ag-link\s*\{[^}]*text-decoration:\s*none/);
+    expect(css).toMatch(
+      /\.k-page-anchor\s*\{[^}]*position:\s*absolute[^}]*width:\s*0[^}]*height:\s*0/,
+    );
+  });
+
   it('keeps the active band a pseudo-element the content clip lets through', () => {
     expect(css).toMatch(/\.k-ag-item--active::before\s*\{[\s\S]*?background:\s*var\(--k-teal-50\)/);
     expect(css).toMatch(/\.k-content-main:has\(> \.k-agenda\)\s*\{[\s\S]*?overflow-clip-margin/);

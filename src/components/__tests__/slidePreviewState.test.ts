@@ -7,6 +7,7 @@ import {
   selectSectionTitles,
   selectSlideCount,
   selectSlideIndex,
+  selectSlideRefs,
   selectPreviewRequest,
   type FormFields,
 } from '../slidePreviewState';
@@ -34,6 +35,28 @@ describe('slidePreviewState selectors', () => {
     expect(selectSectionTitles(fields)).toEqual(['Plan']);
   });
 
+  it('lists slide refs in order with ids from the row field or the row metadata', () => {
+    const withIds: FormFields = {
+      ...fields,
+      'slides.0.id': { value: 'row-a' },
+      slides: { rows: [{ id: 'row-a' }, { id: 'row-b' }, { id: 'row-c' }] },
+    };
+    expect(selectSlideRefs(withIds)).toEqual([
+      { id: 'row-a', blockType: 'cover', title: 'Cover' },
+      { id: 'row-b', blockType: 'statement', title: 'Msg' },
+      { id: 'row-c', blockType: 'section', title: 'Plan' },
+    ]);
+    expect(selectSlideRefs(fields).map((ref) => ref.id)).toEqual([null, null, null]);
+  });
+
+  it('changes the request key when a slide id changes', () => {
+    const before = previewRequestKey(selectPreviewRequest(fields, 'slides.1.preview'));
+    const after = previewRequestKey(
+      selectPreviewRequest({ ...fields, 'slides.2.id': { value: 'row-c' } }, 'slides.1.preview'),
+    );
+    expect(before).not.toBe(after);
+  });
+
   it('derives slide index from the preview field path', () => {
     expect(selectSlideIndex('slides.2.preview')).toBe(2);
     expect(selectSlideIndex('weird')).toBe(0);
@@ -46,7 +69,11 @@ describe('slidePreviewState selectors', () => {
 
   it('extracts only chrome-relevant fields', () => {
     const chrome = selectChromeFields(fields);
-    expect(chrome).toMatchObject({ organisation: 'org-1', title: 'Deck', language: 'fr' });
+    expect(chrome).toMatchObject({
+      organisation: 'org-1',
+      title: 'Deck',
+      language: 'fr',
+    });
     expect(chrome['footer.enabled']).toBe(true);
   });
 

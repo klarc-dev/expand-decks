@@ -39,6 +39,7 @@ export function buildPreviewResponseCacheKey(input: {
   previewFieldPath: string;
   sections?: string[];
   slideIndex?: number;
+  slideRefs?: unknown;
   userId: string | number;
 }): string {
   return createHash('sha256')

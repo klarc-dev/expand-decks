@@ -314,10 +314,19 @@ ${bodyWithFooter}`;
  * `section` titles, which the agenda block falls back to when its own `items`
  * are empty (auto-plan from the deck structure).
  */
+/** One deck slide as the fold sees it: index + 1 is its page number. */
+export type SlideRef = {
+  id?: string | null;
+  blockType: string;
+  title?: string | null;
+};
+
 export type RenderCtx = {
   surface?: Surface | null;
   variantIndex?: number;
   sections?: string[];
+  /** Every slide of the deck in order, so a renderer can turn a block id into a page. */
+  slideRefs?: SlideRef[];
   /** Deck output language; drives the localized labels a renderer emits. */
   language?: DeckLanguage | null;
 };
@@ -411,7 +420,13 @@ export function locationCardsFromNote(html: string, language?: DeckLanguage | nu
     text.replace(
       /&(amp|lt|gt|quot|#39);/g,
       (entity) =>
-        ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" })[entity] ?? entity,
+        ({
+          '&amp;': '&',
+          '&lt;': '<',
+          '&gt;': '>',
+          '&quot;': '"',
+          '&#39;': "'",
+        })[entity] ?? entity,
     );
   const cards: string[] = [];
   for (const paragraph of paragraphs) {
@@ -452,7 +467,13 @@ export function cardStack(
     occupancy?: CardFrameOccupancy;
     dense?: boolean;
   },
-): { html: string; crowded: boolean; cols: number; rows: number; density: SlideDensity } {
+): {
+  html: string;
+  crowded: boolean;
+  cols: number;
+  rows: number;
+  density: SlideDensity;
+} {
   if (opts.itemPressures.length !== cards.length) {
     throw new Error('cardStack itemPressures must match cards');
   }
@@ -644,7 +665,9 @@ export function heroFrame(opts: {
   accentRule?: boolean;
   density?: SlideDensity;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero', { variant: opts.pillVariant });
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero', {
+    variant: opts.pillVariant,
+  });
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption ? heroCaption(opts.caption, opts.captionLabel) : '';
   const sharedDensityClass = densityClass(opts.density ?? 'comfortable');

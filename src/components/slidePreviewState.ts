@@ -9,7 +9,17 @@ import { formStateToBlockData } from '@/lib/formStateToBlockData';
  * `FormFields` mirrors the shape Payload's useFormFields exposes: a flat map of
  * dotted field paths to `{ value }`. Selectors read only the scalar `value`.
  */
-export type FormFields = Record<string, { value?: unknown } | undefined>;
+export type FormFields = Record<
+  string,
+  { value?: unknown; rows?: Array<{ id?: string } | undefined> } | undefined
+>;
+
+/** One slide as the agenda link resolver needs it: block id, type, title. */
+export type SlideRef = {
+  id: string | null;
+  blockType: string;
+  title: string | null;
+};
 
 const BLOCK_TYPE_KEY = /^slides\.(\d+)\.blockType$/;
 
@@ -29,6 +39,34 @@ export function selectSectionTitles(fields: FormFields): string[] {
     if (typeof title === 'string' && title.trim()) out.push({ i, title: title.trim() });
   }
   return out.sort((a, b) => a.i - b.i).map((s) => s.title);
+}
+
+/**
+ * Every slide in order with its block id (from the row's `id` field, or the
+ * array's row metadata when the field is absent), so preview links resolve to
+ * the same page numbers as the export.
+ */
+export function selectSlideRefs(fields: FormFields): SlideRef[] {
+  const rows = fields.slides?.rows ?? [];
+  const out: { i: number; ref: SlideRef }[] = [];
+  for (const key of Object.keys(fields)) {
+    const m = BLOCK_TYPE_KEY.exec(key);
+    if (!m) continue;
+    const i = Number(m[1]);
+    const blockType = fields[key]?.value;
+    if (typeof blockType !== 'string' || !blockType) continue;
+    const id = fields[`slides.${i}.id`]?.value ?? rows[i]?.id;
+    const title = fields[`slides.${i}.title`]?.value;
+    out.push({
+      i,
+      ref: {
+        id: typeof id === 'string' && id ? id : null,
+        blockType,
+        title: typeof title === 'string' ? title : null,
+      },
+    });
+  }
+  return out.sort((a, b) => a.i - b.i).map((s) => s.ref);
 }
 
 /**
@@ -83,6 +121,7 @@ export type PreviewRequest = {
   previewFieldPath: string;
   sections: string[];
   slideIndex: number;
+  slideRefs: SlideRef[];
 };
 
 /** Assemble the full preview request payload from form state. */
@@ -99,6 +138,7 @@ export function selectPreviewRequest(
     previewFieldPath: path,
     sections: selectSectionTitles(fields),
     slideIndex: selectSlideIndex(path),
+    slideRefs: selectSlideRefs(fields),
   };
 }
 

@@ -279,6 +279,35 @@ describe('buildSlidesMd()', () => {
     expect(parsed.headmatter.title).toBe('Test Deck');
   });
 
+  it('resolves agenda slide links to page numbers from the raw block ids', () => {
+    const md = build([
+      { blockType: 'cover', title: 'Cover' },
+      {
+        blockType: 'agenda',
+        title: 'Plan',
+        items: [
+          { label: 'Produit', description: null, slideId: 'blk-produit' },
+          { label: 'Suite', description: null, slideId: 'blk-suite' },
+        ],
+      },
+      { id: 'blk-produit', blockType: 'statement', title: 'Produit' },
+      { id: 'blk-suite', blockType: 'statement', title: 'Suite' },
+    ] as never);
+    expect(md).toContain('<Link :to="3" class="k-ag-link">Produit</Link>');
+    expect(md).toContain('<Link :to="4" class="k-ag-link">Suite</Link>');
+  });
+
+  it('plants a page anchor at the top of every slide body for internal PDF links', () => {
+    const md = build([
+      { blockType: 'cover', title: 'Cover' },
+      { blockType: 'statement', title: 'Statement' },
+    ]);
+    expect(md).toContain('<div id="1" class="k-page-anchor"></div>');
+    expect(md).toContain('<div id="2" class="k-page-anchor"></div>');
+    // The anchor sits right after the frontmatter fence, before the slide body.
+    expect(md).toMatch(/\n---\n\n<div id="2" class="k-page-anchor"><\/div>\n\n<div/);
+  });
+
   it('bakes 1-indexed kPage and a constant kTotal into every slide frontmatter', () => {
     // These let the footer counter resolve from frontmatter instead of live nav,
     // which is what makes the single-pass (no --per-slide) PDF export number
