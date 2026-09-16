@@ -36,7 +36,10 @@ function topicOnlyRetriever(ranking: KnowledgeRankingConfig, topK: number) {
             return hits
               .map((hit) => {
                 const scores = byDocument.get(String(hit.metadata!.documentId))!;
-                return { ...hit, score: scores.reduce((a, b) => a + b, 0) / scores.length };
+                return {
+                  ...hit,
+                  score: scores.reduce((a, b) => a + b, 0) / scores.length,
+                };
               })
               .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
           },
@@ -54,6 +57,7 @@ const evaluate = (ranking: KnowledgeRankingConfig, cases = ANSWERABLE_CASES, top
     strategy: 'measured',
     cases,
     documentOf: (chunkId) => chunkId.split(':')[0]!,
+    bytesOf: (returned) => Buffer.byteLength(JSON.stringify(returned)),
     retrieve: topicOnlyRetriever(ranking, topK),
   });
 

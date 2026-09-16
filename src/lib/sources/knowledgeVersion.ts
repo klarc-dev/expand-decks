@@ -1,0 +1,1 @@
+export const KNOWLEDGE_RETRIEVAL_VERSION = 4;

@@ -1,22 +1,6 @@
 import type { KnowledgeQueryResult, KnowledgeVectorStore } from './knowledgeVector';
+import { KNOWLEDGE_RETRIEVAL_VERSION } from './knowledgeVersion';
 
-/**
- * Similarity floor below which a passage is not returned at all. This is the
- * pipeline's only abstention mechanism: on a question the corpus cannot answer,
- * it is what stops the nearest topical passage being handed over as evidence.
- *
- * The floor is calibrated against the shipped multilingual query/passage model
- * pair and exact retrieval pipeline by
- * `scripts/evals/retrieval-embedding-threshold.mts`. The selected 0.86 floor:
- * - preserves every labelled supporting passage in the answerable fixtures,
- * - abstains on one of two unsupported questions,
- * - improves context precision to 0.65 while nDCG remains 0.96.
- *
- * The next tested floor, 0.87, abstains on both unsupported questions but drops
- * answerable recall to 0.6875. Retrieval quality takes priority over fitting two
- * negative fixtures, so 0.86 is the highest recall-safe floor. Re-run the script
- * whenever the embedding model or dataset changes.
- */
 export const KNOWLEDGE_MIN_SCORE = 0.86;
 export const KNOWLEDGE_DEFAULT_TOP_K = 5;
 export const KNOWLEDGE_MAX_TOP_K = 10;
@@ -24,30 +8,21 @@ const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;
 /**
  * Maximum passages any single document may contribute to the final evidence set.
  *
- * Measured on the retrieval dataset: a cap of
- * 2 costs recall on multi-passage questions, where three parts of one document
- * are all required. 3 reaches full recall with the best context precision;
- * raising it to 5 changes nothing, so 3 is the smallest value that wins.
+ * Measured on the retrieval dataset: a cap of 2 costs recall on multi-passage
+ * questions, while 3 reaches full recall with the best context precision.
  */
 const KNOWLEDGE_MAX_PER_DOCUMENT = 3;
 /** Jaccard token overlap above which two passages count as near-duplicates. */
 const KNOWLEDGE_DUPLICATE_OVERLAP = 0.9;
-/**
- * Ranking weights.
- *
- * Measured across retrieval query classes. When the
- * vector signal already separates chunks sharply, lexical weight is neutral or
- * mildly harmful. When it does not — a topic-only embedding, which is the
- * realistic case for rare codes, references and amounts — a lexical weight of
- * 0.35 is the peak: it lifts exact-term MRR from 0.83 to 1.00 and semantic MRR
- * from 0.44 to 0.67, while 0.55 starts to over-weight surface tokens and loses
- * ground again. The position term only breaks ties and stays small.
- */
+/** Evaluated hybrid ranking weights; see docs/knowledge/retrieval-strategy.md. */
 const KNOWLEDGE_SEMANTIC_WEIGHT = 0.6;
 const KNOWLEDGE_LEXICAL_WEIGHT = 0.35;
 const KNOWLEDGE_POSITION_WEIGHT = 0.05;
+const KNOWLEDGE_MAX_QUERY_FORMULATIONS = 3;
+const KNOWLEDGE_MAX_QUERY_LENGTH = 2_000;
+const KNOWLEDGE_MAX_NEIGHBORS = 2;
+const KNOWLEDGE_MIN_LEXICAL_SCORE = 0.35;
 
-/** Tunable ranking configuration, selected by measurement (see retrievalEval). */
 export type KnowledgeRankingConfig = {
   semanticWeight: number;
   lexicalWeight: number;
@@ -67,20 +42,36 @@ export type KnowledgeRetrievalSource = {
   indexName: string;
 };
 
+export type KnowledgeLexicalStore = {
+  search(args: {
+    indexName: string;
+    knowledgeBaseId: string;
+    retrievalVersion: number;
+    query: string;
+    topK: number;
+  }): Promise<KnowledgeQueryResult[]>;
+  byIds(args: {
+    indexName: string;
+    knowledgeBaseId: string;
+    retrievalVersion: number;
+    ids: string[];
+  }): Promise<KnowledgeQueryResult[]>;
+};
+
 export type KnowledgeRetrievalDependencies = {
   vectorStore: KnowledgeVectorStore;
+  lexicalStore?: KnowledgeLexicalStore;
+  expandQuery?: (query: string) => Promise<string[]>;
   embedQuery: (query: string) => Promise<number[]>;
+  now?: () => number;
 };
 
 export type KnowledgeRankingComponents = {
-  /** Vector similarity as returned by the store. */
   semantic: number;
-  /** Weighted share of query terms found verbatim in the passage. */
   lexical: number;
-  /** 1-based position among the store's candidates before reranking. */
   position: number;
-  /** Fused score the passages were ordered by. */
   score: number;
+  candidateSources: ('semantic' | 'lexical' | 'neighbor')[];
 };
 
 export type KnowledgeEvidenceItem = {
@@ -89,20 +80,20 @@ export type KnowledgeEvidenceItem = {
   documentTitle: string;
   chunkIndex: number;
   chunkId: string;
+  contentHash?: string;
+  sourceVersion?: string;
   headingPath?: string;
+  parentSectionId?: string;
+  previousChunkId?: string;
+  nextChunkId?: string;
   score: number;
   ranking: KnowledgeRankingComponents;
 };
 
-/** Lexical tokens used for exact-term matching (names, codes, dates, amounts). */
 function tokens(value: string): string[] {
   return value.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
 }
 
-/**
- * Deterministic lexical score: share of query terms present in the passage,
- * weighted so rarer, more specific terms (digits, long words) count for more.
- */
 function lexicalScore(queryTerms: readonly string[], text: string): number {
   if (queryTerms.length === 0) return 0;
   const textTerms = new Set(tokens(text));
@@ -133,17 +124,156 @@ function evidenceItem(
     documentTitle: metadata.title,
     chunkIndex: metadata.chunkIndex,
     chunkId: typeof metadata.chunkId === 'string' ? metadata.chunkId : hit.id,
+    ...(typeof metadata.contentHash === 'string' ? { contentHash: metadata.contentHash } : {}),
+    ...(typeof metadata.sourceVersion === 'string'
+      ? { sourceVersion: metadata.sourceVersion }
+      : {}),
     ...(typeof metadata.headingPath === 'string' && metadata.headingPath
       ? { headingPath: metadata.headingPath }
       : {}),
+    ...(typeof metadata.parentSectionId === 'string'
+      ? { parentSectionId: metadata.parentSectionId }
+      : {}),
+    ...(typeof metadata.previousChunkId === 'string'
+      ? { previousChunkId: metadata.previousChunkId }
+      : {}),
+    ...(typeof metadata.nextChunkId === 'string' ? { nextChunkId: metadata.nextChunkId } : {}),
     score: hit.score,
   };
 }
 
-/**
- * Server-owned retrieval contract: the caller supplies the authorized knowledge
- * base; index name and metadata filter are never taken from model input.
- */
+function mergeCandidates(
+  semanticHits: readonly KnowledgeQueryResult[],
+  lexicalHits: readonly KnowledgeQueryResult[],
+  query: string,
+  ranking: KnowledgeRankingConfig,
+): KnowledgeEvidenceItem[] {
+  const queryTerms = tokens(query);
+  const merged = new Map<
+    string,
+    {
+      hit: KnowledgeQueryResult;
+      semantic: number;
+      lexical: number;
+      position: number;
+      sources: Set<'semantic' | 'lexical'>;
+    }
+  >();
+  semanticHits.forEach((hit, index) => {
+    merged.set(hit.id, {
+      hit,
+      semantic: hit.score,
+      lexical: 0,
+      position: index + 1,
+      sources: new Set(['semantic']),
+    });
+  });
+  lexicalHits.forEach((hit, index) => {
+    const current = merged.get(hit.id);
+    if (current) {
+      current.lexical = Math.max(current.lexical, hit.score);
+      current.sources.add('lexical');
+    } else if (hit.score >= KNOWLEDGE_MIN_LEXICAL_SCORE) {
+      merged.set(hit.id, {
+        hit,
+        semantic: 0,
+        lexical: hit.score,
+        position: semanticHits.length + index + 1,
+        sources: new Set(['lexical']),
+      });
+    }
+  });
+
+  const items: KnowledgeEvidenceItem[] = [];
+  for (const candidate of merged.values()) {
+    const item = evidenceItem(candidate.hit);
+    if (!item) continue;
+    const lexical = Math.max(candidate.lexical, lexicalScore(queryTerms, item.text));
+    const score =
+      candidate.semantic * ranking.semanticWeight +
+      lexical * ranking.lexicalWeight +
+      (1 / candidate.position) * ranking.positionWeight;
+    items.push({
+      ...item,
+      ranking: {
+        semantic: candidate.semantic,
+        lexical,
+        position: candidate.position,
+        score,
+        candidateSources: [...candidate.sources].sort(),
+      },
+    });
+  }
+  return items.sort(
+    (a, b) =>
+      b.ranking.score - a.ranking.score || b.score - a.score || a.chunkId.localeCompare(b.chunkId),
+  );
+}
+
+async function expandNeighbors(args: {
+  selected: KnowledgeEvidenceItem[];
+  source: KnowledgeRetrievalSource;
+  topK: number;
+  lexicalStore?: KnowledgeLexicalStore;
+}): Promise<KnowledgeEvidenceItem[]> {
+  if (!args.lexicalStore || args.topK <= 0) return args.selected;
+  const ids: string[] = [];
+  for (const item of args.selected) {
+    if (item.previousChunkId) ids.push(item.previousChunkId);
+    if (item.nextChunkId) ids.push(item.nextChunkId);
+  }
+  const wanted = [...new Set(ids)].slice(0, KNOWLEDGE_MAX_NEIGHBORS);
+  if (!wanted.length) return args.selected;
+  const hits = await args.lexicalStore.byIds({
+    indexName: args.source.indexName,
+    knowledgeBaseId: String(args.source.knowledgeBaseId),
+    retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
+    ids: wanted,
+  });
+  const selectedIds = new Set(args.selected.map((item) => item.chunkId));
+  const parents = new Set(args.selected.map((item) => item.parentSectionId).filter(Boolean));
+  const neighbors = hits
+    .map((hit) => evidenceItem(hit))
+    .filter((item): item is Omit<KnowledgeEvidenceItem, 'ranking'> => Boolean(item))
+    .filter(
+      (item) =>
+        !selectedIds.has(item.chunkId) &&
+        Boolean(item.parentSectionId) &&
+        parents.has(item.parentSectionId),
+    )
+    .map(
+      (item) =>
+        ({
+          ...item,
+          ranking: {
+            semantic: 0,
+            lexical: 0,
+            position: Number.MAX_SAFE_INTEGER,
+            score: 0,
+            candidateSources: ['neighbor'],
+          },
+        }) satisfies KnowledgeEvidenceItem,
+    );
+  if (!neighbors.length) return args.selected;
+  const directBudget = Math.max(0, args.topK - neighbors.length);
+  return [...args.selected.slice(0, directBudget), ...neighbors].slice(0, args.topK);
+}
+
+function defaultQueryExpansion(query: string): string[] {
+  const exactProbe = tokens(query)
+    .filter((term) => /\d/.test(term) || term.length >= 8)
+    .join(' ');
+  return exactProbe && exactProbe !== query.toLocaleLowerCase() ? [exactProbe] : [];
+}
+
+function queryFormulations(query: string, expanded: readonly string[]): string[] {
+  const normalized = [query, ...expanded]
+    .map((item) => item.trim().slice(0, KNOWLEDGE_MAX_QUERY_LENGTH))
+    .filter(Boolean);
+  return [...new Set(normalized)].slice(0, KNOWLEDGE_MAX_QUERY_FORMULATIONS);
+}
+
+/** Server-owned, bounded hybrid retrieval contract. */
 export async function retrieveKnowledgeEvidence(args: {
   source: KnowledgeRetrievalSource;
   query: string;
@@ -153,46 +283,67 @@ export async function retrieveKnowledgeEvidence(args: {
   minScore?: number;
 }): Promise<KnowledgeEvidenceItem[]> {
   const ranking = args.ranking ?? KNOWLEDGE_RANKING;
-  const topK = Math.min(args.topK ?? KNOWLEDGE_DEFAULT_TOP_K, KNOWLEDGE_MAX_TOP_K);
-  const queryVector = await args.deps.embedQuery(args.query);
-  const hits = await args.deps.vectorStore.query({
-    indexName: args.source.indexName,
-    queryVector,
-    topK: Math.min(
-      KNOWLEDGE_MAX_TOP_K * KNOWLEDGE_CANDIDATE_MULTIPLIER,
-      topK * KNOWLEDGE_CANDIDATE_MULTIPLIER,
+  const topK = Math.min(Math.max(args.topK ?? KNOWLEDGE_DEFAULT_TOP_K, 1), KNOWLEDGE_MAX_TOP_K);
+  const candidateK = Math.min(
+    KNOWLEDGE_MAX_TOP_K * KNOWLEDGE_CANDIDATE_MULTIPLIER,
+    topK * KNOWLEDGE_CANDIDATE_MULTIPLIER,
+  );
+  const expanded = args.deps.expandQuery
+    ? await args.deps.expandQuery(args.query)
+    : defaultQueryExpansion(args.query);
+  const formulations = queryFormulations(args.query, expanded);
+  const sourceFilter = {
+    knowledgeBaseId: String(args.source.knowledgeBaseId),
+    retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
+  };
+  const semanticGroups = await Promise.all(
+    formulations.map(async (query) => {
+      const queryVector = await args.deps.embedQuery(query);
+      return args.deps.vectorStore.query({
+        indexName: args.source.indexName,
+        queryVector,
+        topK: candidateK,
+        minScore: args.minScore ?? KNOWLEDGE_MIN_SCORE,
+        filter: sourceFilter,
+      });
+    }),
+  );
+  const lexicalGroups = await Promise.all(
+    formulations.map(
+      (query) =>
+        args.deps.lexicalStore?.search({
+          indexName: args.source.indexName,
+          knowledgeBaseId: String(args.source.knowledgeBaseId),
+          retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
+          query,
+          topK: candidateK,
+        }) ?? Promise.resolve([]),
     ),
-    minScore: args.minScore ?? KNOWLEDGE_MIN_SCORE,
-    filter: { knowledgeBaseId: String(args.source.knowledgeBaseId) },
+  );
+  const bestHits = (groups: readonly KnowledgeQueryResult[][]) => {
+    const byId = new Map<string, KnowledgeQueryResult>();
+    for (const group of groups) {
+      for (const hit of group) {
+        const current = byId.get(hit.id);
+        if (!current || hit.score > current.score) byId.set(hit.id, hit);
+      }
+    }
+    return [...byId.values()]
+      .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
+      .slice(0, candidateK);
+  };
+  const semanticHits = bestHits(semanticGroups);
+  const lexicalHits = bestHits(lexicalGroups);
+  const ranked = mergeCandidates(semanticHits, lexicalHits, formulations.join(' '), ranking);
+  const selected = selectDiverseEvidence(ranked, topK, ranking.maxPerDocument);
+  return expandNeighbors({
+    selected,
+    source: args.source,
+    topK,
+    lexicalStore: args.deps.lexicalStore,
   });
-
-  const queryTerms = tokens(args.query);
-  const ranked = hits
-    .map((hit, position) => {
-      const item = evidenceItem(hit);
-      if (!item) return undefined;
-      const lexical = lexicalScore(queryTerms, item.text);
-      const score =
-        hit.score * ranking.semanticWeight +
-        lexical * ranking.lexicalWeight +
-        (1 / (position + 1)) * ranking.positionWeight;
-      return {
-        ...item,
-        ranking: { semantic: hit.score, lexical, position: position + 1, score },
-      } satisfies KnowledgeEvidenceItem;
-    })
-    .filter((entry): entry is KnowledgeEvidenceItem => Boolean(entry))
-    .sort(
-      (a, b) =>
-        b.ranking.score - a.ranking.score ||
-        b.score - a.score ||
-        a.chunkId.localeCompare(b.chunkId),
-    );
-
-  return selectDiverseEvidence(ranked, topK, ranking.maxPerDocument);
 }
 
-/** Jaccard overlap between two pre-computed token sets. */
 function overlapRatio(left: ReadonlySet<string>, right: ReadonlySet<string>): number {
   if (left.size === 0 || right.size === 0) return 0;
   let shared = 0;
@@ -201,22 +352,21 @@ function overlapRatio(left: ReadonlySet<string>, right: ReadonlySet<string>): nu
 }
 
 /**
- * Relevance-ordered selection that drops near-duplicates outright and prevents a
- * single document from monopolising the bounded evidence budget. Passages held
- * back only by the per-document cap may backfill unused budget; near-duplicates
- * never can, since they add no information.
+ * Relevance-ordered selection that drops near-duplicates and prevents one
+ * document from monopolising the bounded evidence budget.
  */
 function selectDiverseEvidence(
   ranked: readonly KnowledgeEvidenceItem[],
   topK: number,
   maxPerDocument: number = KNOWLEDGE_MAX_PER_DOCUMENT,
 ): KnowledgeEvidenceItem[] {
-  // Tokenize once per candidate; duplicate detection then compares prepared sets.
-  const candidates = ranked.map((item) => ({ item, terms: new Set(tokens(item.text)) }));
+  const candidates = ranked.map((item) => ({
+    item,
+    terms: new Set(tokens(item.text)),
+  }));
   const selected: typeof candidates = [];
   const overflow: typeof candidates = [];
   const perDocument = new Map<string, number>();
-
   const isDuplicate = (candidate: (typeof candidates)[number]) =>
     selected.some(
       (chosen) => overlapRatio(chosen.terms, candidate.terms) >= KNOWLEDGE_DUPLICATE_OVERLAP,
@@ -233,11 +383,9 @@ function selectDiverseEvidence(
     selected.push(candidate);
     perDocument.set(candidate.item.documentId, used + 1);
   }
-
   for (const candidate of overflow) {
     if (selected.length >= topK) break;
-    if (isDuplicate(candidate)) continue;
-    selected.push(candidate);
+    if (!isDuplicate(candidate)) selected.push(candidate);
   }
   return selected.map((candidate) => candidate.item);
 }

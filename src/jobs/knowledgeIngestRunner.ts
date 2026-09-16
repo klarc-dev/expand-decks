@@ -16,6 +16,8 @@ import {
   KNOWLEDGE_EMBEDDING_DIMENSION,
   knowledgeVectorStore,
 } from '../lib/sources/knowledgeVector';
+import { KNOWLEDGE_RETRIEVAL_VERSION } from '../lib/sources/knowledgeVersion';
+export { KNOWLEDGE_RETRIEVAL_VERSION } from '../lib/sources/knowledgeVersion';
 const EMBEDDING_BATCH_SIZE = 256;
 const CHUNK_MAX_SIZE = 1_200;
 const CHUNK_OVERLAP = 150;
@@ -29,13 +31,6 @@ type DocumentRecord = {
   title?: string | null;
   knowledgeBase?: number | string | { id: number | string } | null;
 };
-
-/**
- * Version of the indexed retrieval representation (chunking + embedding input).
- * Bump whenever chunk boundaries or embedded text change so previously indexed
- * documents are recognisably stale and can be reindexed.
- */
-export const KNOWLEDGE_RETRIEVAL_VERSION = 3;
 
 /**
  * A document indexed under an older representation cannot be compared against
@@ -59,7 +54,9 @@ type ChunkMetadata = {
   text: string;
   retrievalVersion: number;
   contentHash: string;
+  sourceVersion: string;
   chunkId: string;
+  parentSectionId: string;
   headingPath?: string;
   previousChunkId?: string;
   nextChunkId?: string;
@@ -129,7 +126,10 @@ function chunkIdentities(
     const occurrence = seen.get(contentHash) ?? 0;
     seen.set(contentHash, occurrence + 1);
     const suffix = occurrence === 0 ? '' : `-${occurrence}`;
-    return { chunkId: `${documentId}:${contentHash.slice(0, 16)}${suffix}`, contentHash };
+    return {
+      chunkId: `${documentId}:${contentHash.slice(0, 16)}${suffix}`,
+      contentHash,
+    };
   });
 }
 
@@ -137,6 +137,7 @@ export function buildChunkMetadata(
   document: Pick<DocumentRecord, 'id' | 'filename' | 'title'>,
   knowledgeBaseId: number | string,
   chunks: readonly KnowledgeChunk[],
+  sourceVersion = 'unknown',
 ): ChunkMetadata[] {
   const identities = chunkIdentities(String(document.id), chunks);
   return chunks.map((chunk, chunkIndex) => ({
@@ -146,8 +147,13 @@ export function buildChunkMetadata(
     chunkIndex,
     text: chunk.text,
     retrievalVersion: KNOWLEDGE_RETRIEVAL_VERSION,
+    sourceVersion,
     chunkId: identities[chunkIndex]!.chunkId,
     contentHash: identities[chunkIndex]!.contentHash,
+    parentSectionId: createHash('sha256')
+      .update(`${document.id}\u0000${chunk.headingPath ?? `chunk:${chunkIndex}`}`)
+      .digest('hex')
+      .slice(0, 24),
     ...(chunk.headingPath ? { headingPath: chunk.headingPath } : {}),
     ...(chunkIndex > 0 ? { previousChunkId: identities[chunkIndex - 1]!.chunkId } : {}),
     ...(chunkIndex < chunks.length - 1 ? { nextChunkId: identities[chunkIndex + 1]!.chunkId } : {}),
@@ -175,7 +181,10 @@ export async function extractKnowledgeText(filePath: string, mimeType: string): 
 /** Splits markdown into heading-bounded sections so retrieval keeps section context. */
 function markdownSections(text: string): { heading?: string; level: number; body: string }[] {
   const sections: { heading?: string; level: number; body: string }[] = [];
-  let current: { heading?: string; level: number; body: string } = { level: 0, body: '' };
+  let current: { heading?: string; level: number; body: string } = {
+    level: 0,
+    body: '',
+  };
   for (const line of text.split('\n')) {
     const heading = /^(#{1,6})\s+(.*\S)\s*$/.exec(line);
     if (heading) {
@@ -277,7 +286,9 @@ export async function chunkKnowledgeText(
 ): Promise<KnowledgeChunk[]> {
   const isMarkdown = mimeType.split(';')[0].trim() === 'text/markdown';
   if (!isMarkdown) {
-    return (await splitText(text, 'recursive')).map((chunk) => ({ text: chunk }));
+    return (await splitText(text, 'recursive')).map((chunk) => ({
+      text: chunk,
+    }));
   }
 
   const stack: string[] = [];
@@ -385,10 +396,6 @@ export async function runKnowledgeIngestTask(
       metric: 'cosine',
       metadataIndexes: ['knowledgeBaseId', 'documentId', 'chunkId'],
     });
-    await deps.vectorStore.deleteVectors({
-      indexName,
-      filter: { documentId: String(documentId) },
-    });
     const filePath = join(KNOWLEDGE_DIR, document.filename);
     const source = await readFile(filePath);
     const sourceHash = createHash('sha256').update(source).digest('hex');
@@ -431,7 +438,7 @@ export async function runKnowledgeIngestTask(
       return { output: { success: false, chunkCount: 0 } };
     }
 
-    const metadata = buildChunkMetadata(document, knowledgeBaseId, chunks);
+    const metadata = buildChunkMetadata(document, knowledgeBaseId, chunks, sourceHash);
     await deps.vectorStore.upsert({
       indexName,
       vectors,

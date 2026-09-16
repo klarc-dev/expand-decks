@@ -13,7 +13,9 @@ import {
   KNOWLEDGE_MAX_TOP_K,
   retrieveKnowledgeEvidence,
   type KnowledgeEvidenceItem,
+  type KnowledgeRetrievalDependencies,
 } from './knowledgeRetrieval';
+import { createKnowledgeLexicalStore } from './knowledgeLexical';
 import { sanitizeToolResult } from './toolPolicy';
 import {
   evidenceId,
@@ -49,6 +51,7 @@ type OpenedSourceToolsets = {
 
 export type SourceConnectorDependencies = {
   vectorStore: KnowledgeVectorStore;
+  lexicalStore?: KnowledgeRetrievalDependencies['lexicalStore'];
   embedQuery: (query: string) => Promise<number[]>;
 };
 
@@ -123,7 +126,10 @@ function knowledgeTool(
     execute: async ({ query, topK = KNOWLEDGE_DEFAULT_TOP_K }) => {
       // Index name and knowledge-base filter are server-owned, never model input.
       const items = await retrieveKnowledgeEvidence({
-        source: { knowledgeBaseId: source.knowledgeBaseId, indexName: source.indexName },
+        source: {
+          knowledgeBaseId: source.knowledgeBaseId,
+          indexName: source.indexName,
+        },
         query,
         topK,
         deps,
@@ -154,7 +160,15 @@ function toolFailureCode(error: unknown): SourceFailure['code'] {
   return 'unknown';
 }
 
-type EvidenceProvenance = Pick<Evidence, 'documentId' | 'documentTitle' | 'chunkIndex'>;
+type EvidenceProvenance = Pick<
+  Evidence,
+  | 'documentId'
+  | 'documentTitle'
+  | 'chunkIndex'
+  | 'chunkId'
+  | 'passageContentSha256'
+  | 'sourceVersion'
+>;
 
 function wrapTool(
   source: ResolvedSource,
@@ -203,7 +217,9 @@ function wrapTool(
       for (const [itemIndex, rawItem] of rawItems.entries()) {
         let sanitized: ReturnType<typeof sanitizeToolResult>;
         try {
-          sanitized = sanitizeToolResult(rawItem, { maxBytes: source.maxResultBytes });
+          sanitized = sanitizeToolResult(rawItem, {
+            maxBytes: source.maxResultBytes,
+          });
         } catch (error) {
           throw new SourceConnectorError(
             `Source ${source.id} tool ${advertisedName} result could not be sanitized`,
@@ -254,8 +270,10 @@ async function openOneSource(
   failure?: SourceFailure;
   disconnect: () => Promise<void>;
 }> {
+  const vectorStore = dependencies.vectorStore ?? knowledgeVectorStore();
   const deps: SourceConnectorDependencies = {
-    vectorStore: dependencies.vectorStore ?? knowledgeVectorStore(),
+    vectorStore,
+    lexicalStore: dependencies.lexicalStore ?? createKnowledgeLexicalStore(vectorStore),
     embedQuery: dependencies.embedQuery ?? embedKnowledgeQuery,
   };
   const tool = knowledgeTool(source, deps);
@@ -277,11 +295,18 @@ async function openOneSource(
             documentId?: unknown;
             documentTitle?: unknown;
             chunkIndex?: unknown;
+            chunkId?: unknown;
+            contentHash?: unknown;
+            sourceVersion?: unknown;
           };
           return {
             documentId: typeof item.documentId === 'string' ? item.documentId : undefined,
             documentTitle: typeof item.documentTitle === 'string' ? item.documentTitle : undefined,
             chunkIndex: typeof item.chunkIndex === 'number' ? item.chunkIndex : undefined,
+            chunkId: typeof item.chunkId === 'string' ? item.chunkId : undefined,
+            passageContentSha256:
+              typeof item.contentHash === 'string' ? item.contentHash : undefined,
+            sourceVersion: typeof item.sourceVersion === 'string' ? item.sourceVersion : undefined,
           };
         },
       }),

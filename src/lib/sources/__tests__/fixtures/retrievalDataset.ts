@@ -17,7 +17,14 @@ export type DatasetChunk = {
   text: string;
 };
 
-export type QueryClass = 'exact-term' | 'semantic' | 'multi-document' | 'no-answer';
+export type QueryClass =
+  | 'exact-term'
+  | 'semantic'
+  | 'table-list'
+  | 'neighbor-context'
+  | 'multi-document'
+  | 'multilingual'
+  | 'no-answer';
 
 export type DatasetCase = {
   id: string;
@@ -98,6 +105,27 @@ export const DATASET_CHUNKS: DatasetChunk[] = [
     headingPath: 'Contrôle d’accès',
     text: 'L’authentification à deux facteurs est obligatoire pour tout accès administrateur aux données.',
   },
+  {
+    chunkId: 'catalogue:tarifs',
+    documentId: 'catalogue',
+    documentTitle: 'Catalogue de services',
+    headingPath: 'Tarifs',
+    text: '| Offre | Prix |\n| --- | --- |\n| Essentiel | 12 500 EUR |\n| Avancé | 24 000 EUR |',
+  },
+  {
+    chunkId: 'plan:validation',
+    documentId: 'plan',
+    documentTitle: 'Plan de déploiement 2026',
+    headingPath: 'Pilote > Calendrier',
+    text: 'À l’issue des six semaines, le comité valide le passage au déploiement général.',
+  },
+  {
+    chunkId: 'security:english',
+    documentId: 'security-en',
+    documentTitle: 'Security policy',
+    headingPath: 'Administrative access',
+    text: 'Multi-factor authentication is mandatory for every administrator accessing customer data.',
+  },
 ];
 
 export const DATASET_CASES: DatasetCase[] = [
@@ -148,6 +176,24 @@ export const DATASET_CASES: DatasetCase[] = [
     queryClass: 'multi-document',
     query: 'satisfaction et adoption des utilisateurs',
     expectedChunkIds: ['rapport:satisfaction', 'rapport:adoption'],
+  },
+  {
+    id: 'price-table',
+    queryClass: 'table-list',
+    query: 'prix de l’offre Avancé 24 000 EUR',
+    expectedChunkIds: ['catalogue:tarifs'],
+  },
+  {
+    id: 'pilot-decision-context',
+    queryClass: 'neighbor-context',
+    query: 'que se passe-t-il après les six semaines du pilote',
+    expectedChunkIds: ['plan:duree', 'plan:validation'],
+  },
+  {
+    id: 'cross-language-security',
+    queryClass: 'multilingual',
+    query: 'authentification multifacteur des administrateurs',
+    expectedChunkIds: ['securite:acces', 'security:english'],
   },
   // Questions this corpus genuinely cannot answer. Retrieval must return
   // nothing rather than the nearest topical passage, otherwise the deck gets

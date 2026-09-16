@@ -57,6 +57,35 @@ describe('knowledge retrieval contract', () => {
     expect(query).toHaveBeenCalledWith(expect.objectContaining({ minScore: 0.72 }));
   });
 
+  it('bounds and deduplicates query expansion while preserving server-owned filters', async () => {
+    const query = vi.fn().mockResolvedValue([]);
+    const embedQuery = vi.fn().mockResolvedValue(Array(384).fill(0.1));
+    await retrieveKnowledgeEvidence({
+      source,
+      query: 'original',
+      deps: {
+        vectorStore: { query },
+        embedQuery,
+        expandQuery: vi
+          .fn()
+          .mockResolvedValue([' original ', 'alias one', 'alias two', 'ignored fourth']),
+      },
+    });
+
+    expect(embedQuery.mock.calls.map(([value]) => value)).toEqual([
+      'original',
+      'alias one',
+      'alias two',
+    ]);
+    expect(query).toHaveBeenCalledTimes(3);
+    for (const [call] of query.mock.calls) {
+      expect(call).toMatchObject({
+        indexName: 'knowledge_42',
+        filter: { knowledgeBaseId: '42' },
+      });
+    }
+  });
+
   it('ranks an exact-term passage above a higher-scoring paraphrase', async () => {
     const { deps: dependencies } = deps([
       [
@@ -152,8 +181,49 @@ describe('knowledge retrieval contract', () => {
       lexical: expect.any(Number),
       position: 1,
       score: expect.any(Number),
+      candidateSources: ['semantic'],
     });
     expect(item!.ranking.score).toBeGreaterThan(0);
+  });
+
+  it('fuses lexical-only candidates and expands same-section neighbors within the final bound', async () => {
+    const semantic = hit('section:direct', 0.88, {
+      documentId: '1',
+      parentSectionId: 'section-a',
+      nextChunkId: 'section:neighbor',
+      text: 'Le dispositif comporte une étape initiale.',
+    });
+    const lexical = hit('section:exact', 0.9, {
+      documentId: '2',
+      text: 'Identifiant exact ZX-9917.',
+    });
+    const neighbor = hit('section:neighbor', 0, {
+      documentId: '1',
+      chunkIndex: 1,
+      parentSectionId: 'section-a',
+      text: 'La seconde étape valide le résultat.',
+    });
+    const { deps: dependencies } = deps([[semantic]]);
+    const items = await retrieveKnowledgeEvidence({
+      source,
+      query: 'ZX-9917 étapes du dispositif',
+      topK: 3,
+      deps: {
+        ...dependencies,
+        lexicalStore: {
+          search: vi.fn().mockResolvedValue([lexical]),
+          byIds: vi.fn().mockResolvedValue([neighbor]),
+        },
+      },
+    });
+
+    expect(items.map((item) => item.chunkId)).toEqual([
+      'section:direct',
+      'section:exact',
+      'section:neighbor',
+    ]);
+    expect(items[1]!.ranking.candidateSources).toEqual(['lexical']);
+    expect(items[2]!.ranking.candidateSources).toEqual(['neighbor']);
   });
 
   it('returns the section heading path so passages keep their context', async () => {

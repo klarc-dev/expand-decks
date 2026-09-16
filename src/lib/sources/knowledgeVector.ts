@@ -17,10 +17,11 @@ export type KnowledgeQueryResult = {
 export type KnowledgeVectorStore = {
   query(args: {
     indexName: string;
-    queryVector: number[];
+    queryVector?: number[];
     topK: number;
-    minScore: number;
-    filter: { knowledgeBaseId: string };
+    minScore?: number;
+    includeVector?: boolean;
+    filter: { knowledgeBaseId: string; retrievalVersion?: number };
   }): Promise<KnowledgeQueryResult[]>;
 };
 

@@ -35,6 +35,10 @@ describe('openSourceToolsets', () => {
           documentId: '9',
           title: 'Contrat cadre',
           chunkIndex: 3,
+          chunkId: 'chunk-1',
+          contentHash: 'a'.repeat(64),
+          sourceVersion: 'source-v4',
+          retrievalVersion: 4,
           text: '  Clause résolutoire verbatim.  ',
         },
       },
@@ -49,13 +53,15 @@ describe('openSourceToolsets', () => {
       { toolCallId: 'kb-call' } as never,
     );
 
-    expect(query).toHaveBeenCalledWith({
-      indexName: 'knowledge_42',
-      queryVector: Array(384).fill(0.1),
-      topK: 30,
-      minScore: KNOWLEDGE_MIN_SCORE,
-      filter: { knowledgeBaseId: '42' },
-    });
+    expect(query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        indexName: 'knowledge_42',
+        queryVector: Array(384).fill(0.1),
+        topK: 30,
+        minScore: KNOWLEDGE_MIN_SCORE,
+        filter: { knowledgeBaseId: '42', retrievalVersion: 4 },
+      }),
+    );
     expect(result).toMatchObject({
       data: [{ text: '  Clause résolutoire verbatim.  ' }],
       evidenceIds: [expect.stringMatching(/^ev_[a-f0-9]{24}$/)],
@@ -68,6 +74,9 @@ describe('openSourceToolsets', () => {
         documentId: '9',
         documentTitle: 'Contrat cadre',
         chunkIndex: 3,
+        chunkId: 'chunk-1',
+        passageContentSha256: 'a'.repeat(64),
+        sourceVersion: 'source-v4',
       }),
     ]);
   });
@@ -106,7 +115,9 @@ describe('openSourceToolsets', () => {
 
   it('wraps vector failures as unavailable source failures', async () => {
     const opened = await openSourceToolsets([source()], {
-      vectorStore: { query: vi.fn().mockRejectedValue(new Error('pgvector offline')) },
+      vectorStore: {
+        query: vi.fn().mockRejectedValue(new Error('pgvector offline')),
+      },
       embedQuery: vi.fn().mockResolvedValue(Array(384).fill(0.1)),
     });
 
@@ -114,7 +125,11 @@ describe('openSourceToolsets', () => {
       opened.toolsets.knowledge_42!.search!.execute?.({ query: 'x' }, {} as never),
     ).rejects.toMatchObject({
       failures: [
-        expect.objectContaining({ sourceId: 'knowledge_42', stage: 'tool', code: 'unavailable' }),
+        expect.objectContaining({
+          sourceId: 'knowledge_42',
+          stage: 'tool',
+          code: 'unavailable',
+        }),
       ],
     });
   });

@@ -359,7 +359,7 @@ describe('exclusive source admin-to-worker acceptance', () => {
     expect(state.knowledgeQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         indexName: 'knowledge_42',
-        filter: { knowledgeBaseId: '42' },
+        filter: { knowledgeBaseId: '42', retrievalVersion: 4 },
         minScore: KNOWLEDGE_MIN_SCORE,
       }),
     );

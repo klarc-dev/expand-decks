@@ -149,10 +149,7 @@ describe('knowledge ingestion runner', () => {
       ),
     ).rejects.toThrow(/Aucun texte exploitable/);
     expect(state.updates.at(-1)).toMatchObject({ indexingStatus: 'failed' });
-    expect(state.dependencies.vectorStore.deleteVectors).toHaveBeenCalledWith({
-      indexName: 'knowledge_7',
-      filter: { documentId: '12' },
-    });
+    expect(state.dependencies.vectorStore.deleteVectors).not.toHaveBeenCalled();
   });
 
   it('marks vector-store failures as failed', async () => {
@@ -266,6 +263,8 @@ describe('knowledge ingestion helpers', () => {
 
     const metadata = buildChunkMetadata({ id: '9', filename: 'notes.md' }, 3, chunks);
     expect(metadata[0]!.chunkId).toMatch(/^9:[0-9a-f]{16}$/);
+    expect(metadata[0]!.parentSectionId).toMatch(/^[0-9a-f]{24}$/);
+    expect(metadata[0]!.sourceVersion).toBe('unknown');
     expect(metadata[0]!.previousChunkId).toBeUndefined();
     expect(metadata[0]!.nextChunkId).toBe(metadata[1]!.chunkId);
     expect(metadata.at(-1)!.nextChunkId).toBeUndefined();
