@@ -517,6 +517,9 @@
 .k-eyebrow--cover {
   margin-bottom: 1.65rem;
 }
+.k-eyebrow--cover::before {
+  content: none;
+}
 .k-eyebrow--cta {
   margin-bottom: 2.1rem;
 }
