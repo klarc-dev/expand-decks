@@ -50,7 +50,7 @@ This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors c
    - calls `buildSlidesMd(presentation)` to produce a single `slides.md` string,
    - writes it to a tmpdir with `style.css`, `headmatter.yaml`, and optional `fonts/` copied from `src/export/`,
    - shells out to Slidev via `execFile` against `slidev-workspace/node_modules/.bin/slidev` (build + export PDF),
-   - uploads the PDF to the `media` collection, copies the SPA `dist/` to `media/spa/<slug>/`, and patches `spaUrl` / `pdfFile` / `lastBuildStatus` back onto the presentation.
+   - uploads generated files to `media`, copies the SPA `dist/` to `media/spa/<slug>/`, and patches the canonical ordered `artifacts` array plus `lastBuildStatus` back onto the presentation.
    - On failure it writes `lastBuildStatus: 'failed'` + `lastBuildError`. The tmpdir is always cleaned up in `finally`.
 
 5. **Rendering** — Block renderers in `src/export/blocks/*.ts` are **pure functions** that return Slidev-flavored markdown strings (per-slide frontmatter + HTML). `buildSlidesMd.ts` wires them through a `RENDERERS` record keyed by `blockType` and joins slides with `---`. The same renderers are reused by:
@@ -107,7 +107,7 @@ Smoke commands before changing export plumbing:
 
 ### Access control
 
-`src/access/roles.ts` centralizes role checks, organisation membership filters and user self-access. Collections wire these into their `access` blocks. `Presentations.createdBy` is stamped in a `beforeChange` field hook on create only.
+`src/access/roles.ts` centralizes role checks, organisation membership filters and user self-access. Collections wire these into their `access` blocks; presentation access is organisation-scoped rather than creator-stamped.
 
 ### Routing layout
 
