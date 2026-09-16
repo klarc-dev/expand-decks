@@ -1219,13 +1219,13 @@
   --ag-gap: 1.6rem;
   --ag-row-pad: 1.05rem;
   --ag-band-bleed: 1rem;
-  --ag-num-size: 0.95rem;
   --ag-label-size: var(--t-h3);
   --ag-desc-size: var(--t-body);
   --ag-dim: color-mix(in srgb, var(--fg-muted) 78%, var(--bg));
   --ag-label-track: 11fr;
   --ag-desc-track: 9fr;
   list-style: none;
+  --ag-num-size: var(--ag-label-size);
   margin: 0;
   padding: 0;
   display: flex;
@@ -1240,7 +1240,6 @@
   --ag-label-track: 12fr;
   --ag-desc-track: 8fr;
   --ag-row-pad: 1.6rem;
-  --ag-num-size: 1rem;
   --ag-label-size: var(--t-sub);
   --ag-desc-size: calc(var(--t-lead) * 0.9);
 }
@@ -1284,8 +1283,9 @@
 }
 
 /* Numerals sit on the rail axis in the technical face the eyebrow already
-   speaks: small, tabular, on the baseline. (Newsreader ships oldstyle figures
-   only, which would bounce a numeral column.) */
+   speaks, tabular and at the label's own size so both share one baseline and
+   one optical height. (Newsreader ships oldstyle figures only, which would
+   bounce a numeral column.) */
 .k-ag-num {
   font-family: var(--k-font-technical);
   font-weight: 400;
