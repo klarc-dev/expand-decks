@@ -120,6 +120,20 @@ describe('canonical custom admin controls', () => {
     expect(rawTextControls()).toEqual(['src/components/adminUi/AdminTextField.tsx:75:<input>']);
   });
 
+  it('keeps export actions in Payload controls with an accessible PDF download', () => {
+    const path = 'src/components/ExportMenuItem.tsx';
+    expect(rawButtonsIn(path)).toEqual([]);
+    expect(sourceContains(path, 'aria-label="Télécharger le PDF"')).toBe(true);
+    expect(sourceContains(path, 'tooltip="Télécharger le PDF"')).toBe(true);
+    expect(sourceContains(path, 'extraButtonProps={{ download: true }}')).toBe(true);
+    expect(sourceContains(path, 'icon={<DocumentIcon />}')).toBe(true);
+    expect(sourceContains(path, '<svg')).toBe(false);
+    expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
+    expect(sourceContains(path, 'presentation-build-requested')).toBe(true);
+    expect(sourceContains(path, 'document?.lastBuildStatus === BUILD_STATUS.success')).toBe(true);
+    expect(sourceContains(path, "artifact.key === 'pdf'")).toBe(true);
+  });
+
   it('keeps TableEditor compact action semantics in the Payload Button owner', () => {
     expect(rawButtonsIn('src/components/TableEditor.tsx')).toEqual([]);
     expect(sourceContains('src/components/TableEditor.tsx', 'table-editor__action-glyph')).toBe(
@@ -289,11 +303,12 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'Artefacts du build')).toBe(false);
   });
 
-  it('reads export artifacts from the document data without a second API poll', () => {
+  it('refreshes the native PDF action from current server artifacts', () => {
     const path = 'src/components/ExportMenuItem.tsx';
     expect(sourceContains(path, 'data: documentData')).toBe(true);
     expect(sourceContains(path, 'availableArtifactLinks(documentData ?? {})')).toBe(true);
-    expect(sourceContains(path, 'usePayloadAPI')).toBe(false);
+    expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
+    expect(sourceContains(path, 'DOWNLOAD_REFRESH_MS')).toBe(true);
     expect(sourceContains(path, 'useAllFormFields')).toBe(false);
   });
 

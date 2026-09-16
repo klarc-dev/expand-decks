@@ -245,6 +245,13 @@ describe('Presentations document template contract', () => {
     expect(fields).toHaveLength(1);
   });
 
+  it('places a PDF download control beside the native document controls', () => {
+    expect(Presentations.admin?.components?.edit).toMatchObject({
+      beforeDocumentControls: ['/components/ExportMenuItem#DownloadPdfButton'],
+      editMenuItems: ['/components/ExportMenuItem#default'],
+    });
+  });
+
   it('resolves admin preview from the template primary artifact and rejects stale artifacts', () => {
     const preview = Presentations.admin?.preview as (data: Record<string, unknown>) => string;
     expect(
