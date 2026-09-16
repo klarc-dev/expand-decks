@@ -24,7 +24,7 @@ async function authenticatedPage(
   return { context, page };
 }
 
-test.describe('agent run status, commands, and feedback', () => {
+test.describe('agent run status and commands', () => {
   const baseURL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4317';
 
   test('anonymous requests are rejected', async ({ request }) => {
@@ -34,13 +34,6 @@ test.describe('agent run status, commands, and feedback', () => {
       (
         await request.post(`/api/agent-draft/${data.agentRunId}`, {
           data: { action: 'cancel' },
-        })
-      ).status(),
-    ).toBe(401);
-    expect(
-      (
-        await request.post('/api/agent-draft/feedback', {
-          data: { presentationId: data.presentationId, type: 'thumbs', value: 1 },
         })
       ).status(),
     ).toBe(401);
@@ -70,23 +63,18 @@ test.describe('agent run status, commands, and feedback', () => {
     });
   }
 
-  test('viewer cannot control an agent run or submit feedback', async ({ browser }) => {
+  test('viewer cannot control an agent run', async ({ browser }) => {
     const data = await fixtures();
     const { context, page } = await authenticatedPage(browser, E2E_VIEWER_AUTH_FILE, baseURL);
-    const statuses = await page.evaluate(async ({ agentRunId, presentationId }) => {
+    const status = await page.evaluate(async (agentRunId) => {
       const cancel = await fetch(`/api/agent-draft/${agentRunId}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ action: 'cancel' }),
       });
-      const feedback = await fetch('/api/agent-draft/feedback', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ presentationId, type: 'thumbs', value: 1 }),
-      });
-      return { cancel: cancel.status, feedback: feedback.status };
-    }, data);
-    expect(statuses).toEqual({ cancel: 403, feedback: 403 });
+      return cancel.status;
+    }, data.agentRunId);
+    expect(status).toBe(403);
     await context.close();
   });
 
@@ -120,28 +108,19 @@ test.describe('agent run status, commands, and feedback', () => {
   test('rejects malformed commands and missing runs without side effects', async ({ browser }) => {
     const data = await fixtures();
     const { context, page } = await authenticatedPage(browser, E2E_ADMIN_AUTH_FILE, baseURL);
-    const statuses = await page.evaluate(
-      async ({ runId, presentationId }) => {
-        const malformed = await fetch(`/api/agent-draft/${runId}`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ action: 'unknown' }),
-        });
-        const missing = await fetch('/api/agent-draft/e2e-missing-run');
-        const invalidFeedback = await fetch('/api/agent-draft/feedback', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ presentationId, type: 'rating', value: 6 }),
-        });
-        return {
-          malformed: malformed.status,
-          missing: missing.status,
-          invalidFeedback: invalidFeedback.status,
-        };
-      },
-      { runId: data.agentRunId, presentationId: data.presentationId },
-    );
-    expect(statuses).toEqual({ malformed: 400, missing: 404, invalidFeedback: 400 });
+    const statuses = await page.evaluate(async (runId) => {
+      const malformed = await fetch(`/api/agent-draft/${runId}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'unknown' }),
+      });
+      const missing = await fetch('/api/agent-draft/e2e-missing-run');
+      return {
+        malformed: malformed.status,
+        missing: missing.status,
+      };
+    }, data.agentRunId);
+    expect(statuses).toEqual({ malformed: 400, missing: 404 });
     await context.close();
   });
 });

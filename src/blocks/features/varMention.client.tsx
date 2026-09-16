@@ -1,4 +1,5 @@
 'use client';
+// fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
 /**
  * `@`-mention feature: type `@` in any slide rich-text field to insert a

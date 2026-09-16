@@ -11,7 +11,7 @@ export type SlideRenderContext = RenderCtx & {
   total: number;
 };
 
-export function collectSectionTitles(slides: readonly ContextInput[]): string[] {
+function collectSectionTitles(slides: readonly ContextInput[]): string[] {
   return slides
     .filter((b) => b.blockType === 'section')
     .map((b) => (typeof b.title === 'string' ? b.title : ''))

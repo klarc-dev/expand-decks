@@ -12,7 +12,7 @@ type SweepPayload = {
 /** A job still flagged `processing` after this long has lost its worker. */
 export const STALLED_JOB_AFTER_MS = 30 * 60 * 1000;
 /** How often the owner process re-checks for stalled jobs. */
-export const STALLED_JOB_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+const STALLED_JOB_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
 
 /**
  * Releases jobs whose worker died mid-run. Payload flags a job `processing`

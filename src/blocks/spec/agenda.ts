@@ -96,7 +96,7 @@ export const agendaSpec = block({
   },
 });
 
-export const agendaRenderSchema = z.object({
+const agendaRenderSchema = z.object({
   blockType: z.literal('agenda'),
   eyebrow,
   title,

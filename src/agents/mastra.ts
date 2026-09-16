@@ -12,7 +12,7 @@ import { deckWorkflow } from './workflow';
 const databaseUrl = process.env.DATABASE_URL ?? '';
 const observabilityDatabaseUrl = process.env.OBSERVABILITY_DATABASE_URL ?? databaseUrl;
 
-export const AGENT_RETENTION: RetentionConfig = {
+const AGENT_RETENTION: RetentionConfig = {
   observability: {
     spans: { maxAge: '30d', batchSize: 500 },
     metrics: { maxAge: '90d', batchSize: 500 },
@@ -48,7 +48,7 @@ export async function initializeAgentStorage(): Promise<void> {
   await agentStorage.stores?.observability?.init();
 }
 
-export const agentObservability = new Observability({
+const agentObservability = new Observability({
   configs: {
     default: {
       serviceName: 'expand-decks-agent',

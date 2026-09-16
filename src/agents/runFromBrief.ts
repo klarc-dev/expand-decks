@@ -1,6 +1,6 @@
 /**
  * Drives deckWorkflow from a plain brief string — the single entry point the
- * diagnostic scripts (draft-smoke, draft-eval, e2e-verify) use to draft a deck.
+ * programmatic callers use to draft a deck.
  */
 import { resolveTargetLanguage } from './language';
 import { mastra } from './mastra';

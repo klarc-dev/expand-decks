@@ -34,30 +34,17 @@ export const ALL_SPECS: BlockSpec[] = [
   agendaSpec,
 ];
 
-export const AI_SPECS = ALL_SPECS.filter((spec) => spec.aiDraftable);
+const AI_SPECS = ALL_SPECS.filter((spec) => spec.aiDraftable);
 export const SPEC_BY_TYPE = new Map(ALL_SPECS.map((spec) => [spec.blockType, spec]));
 export const AI_SPEC_BY_TYPE = new Map(AI_SPECS.map((spec) => [spec.blockType, spec]));
 export const AI_SLIDE_SCHEMA = z.union(AI_SPECS.map(aiSchemaOf));
 export const AI_SLIDES_SCHEMA = emitSlidesArraySchema(ALL_SPECS);
 export const OUTLINE_SCHEMA = emitOutlineSchema(ALL_SPECS);
 export const RENDER_SLIDE_SCHEMA = z.union(ALL_SPECS.map(renderSchemaOf));
-export const RENDER_SLIDES_SCHEMA = z.array(RENDER_SLIDE_SCHEMA);
 export const WRITABLE_SLIDE_SCHEMA = z.union(
   ALL_SPECS.map((spec) => (spec.aiDraftable ? aiSchemaOf(spec) : renderSchemaOf(spec))),
 );
 
 export function parseAiSlide(value: unknown) {
   return AI_SLIDE_SCHEMA.parse(value);
-}
-
-export function parseAiSlides(value: unknown) {
-  return z.array(AI_SLIDE_SCHEMA).parse(value);
-}
-
-export function parseRenderSlide(value: unknown) {
-  return RENDER_SLIDE_SCHEMA.parse(value);
-}
-
-export function parseRenderSlides(value: unknown) {
-  return RENDER_SLIDES_SCHEMA.parse(value);
 }

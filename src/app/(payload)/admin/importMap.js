@@ -16,7 +16,6 @@ import { ParagraphFeatureClient as ParagraphFeatureClient_e70f5e05f09f93e00b997e
 import { default as default_841f3d8d064dfe798baf7710ad67fba0 } from '../../../components/SlidePreview'
 import { default as default_134c410202d5b098d475cc919d49bc22 } from '../../../components/SlideRowLabel'
 import { default as default_0485d70ecd0925de7ff80d9fd8de19b6 } from '../../../components/TableEditor'
-import { default as default_381bf71fd4b7387066ebf0bc51366b33 } from '../../../components/AgentExternalSourcesField'
 import { default as default_1bea05d269169743e2b5ec20de8cfe7d } from '../../../components/AgentRunControls'
 import { default as default_49d2b627e93b48e36f9059279bd151a7 } from '../../../components/BuildStatusField'
 import { default as default_374fa86aa013d2dd5771ee365c473717 } from '../../../components/ExportMenuItem'
@@ -46,7 +45,6 @@ export const importMap = {
   "/components/SlidePreview#default": default_841f3d8d064dfe798baf7710ad67fba0,
   "/components/SlideRowLabel#default": default_134c410202d5b098d475cc919d49bc22,
   "/components/TableEditor#default": default_0485d70ecd0925de7ff80d9fd8de19b6,
-  "/components/AgentExternalSourcesField#default": default_381bf71fd4b7387066ebf0bc51366b33,
   "/components/AgentRunControls#default": default_1bea05d269169743e2b5ec20de8cfe7d,
   "/components/BuildStatusField#default": default_49d2b627e93b48e36f9059279bd151a7,
   "/components/ExportMenuItem#default": default_374fa86aa013d2dd5771ee365c473717,

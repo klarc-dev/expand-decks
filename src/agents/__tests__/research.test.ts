@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   researchWithSources: vi.fn(),
 }));
 
-vi.mock('../../lib/sources/mcpConnector', () => ({
+vi.mock('../../lib/sources/knowledgeConnector', () => ({
   openSourceToolsets: mocks.openSourceToolsets,
 }));
 vi.mock('../../lib/sources/resolve', () => ({
@@ -81,39 +81,6 @@ describe('researchSources provenance', () => {
         }),
       ],
     });
-  });
-
-  it('fails exclusive best-effort discovery before model invocation with structured failures', async () => {
-    const failure = {
-      sourceId: 'docs',
-      stage: 'discover',
-      code: 'unavailable',
-      message: 'connection refused',
-    };
-    mocks.resolveSourcePolicy.mockResolvedValue({
-      policy: { mode: 'exclusive', sourceIds: ['docs'] },
-      sources: [{ ...source, failureMode: 'best-effort' }],
-    });
-    const disconnect = vi.fn();
-    mocks.openSourceToolsets.mockResolvedValue({
-      toolsets: {},
-      failures: [failure],
-      recorder: { snapshot: () => [] },
-      disconnect,
-    });
-
-    await expect(
-      researchSources(
-        { mode: 'exclusive', sourceIds: ['docs'] },
-        {
-          name: 'research',
-          instructions: 'research',
-          prompt: 'prompt',
-        },
-      ),
-    ).rejects.toMatchObject({ failures: [failure] });
-    expect(mocks.researchWithSources).not.toHaveBeenCalled();
-    expect(disconnect).toHaveBeenCalledOnce();
   });
 
   it('rejects evidence from another source in exclusive mode', async () => {

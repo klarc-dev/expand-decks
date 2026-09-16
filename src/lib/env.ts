@@ -49,11 +49,11 @@ export function assertGoogleFontsKey(): void {
 export function assertAIProviderConfig(): void {
   if (!isProd) return;
 
-  const hasBaseURL = Boolean(process.env.CLIPROXYAPI_BASE_URL || process.env.OPENAI_BASE_URL);
-  const hasAPIKey = Boolean(process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY);
+  const hasBaseURL = Boolean(process.env.CLIPROXYAPI_BASE_URL);
+  const hasAPIKey = Boolean(process.env.CLIPROXYAPI_KEY);
   if (!hasBaseURL || !hasAPIKey) {
     throw new Error(
-      'Missing AI provider configuration. Production requires CLIPROXYAPI_BASE_URL + CLIPROXYAPI_KEY or OPENAI_BASE_URL + OPENAI_API_KEY.',
+      'Missing AI provider configuration. Production requires CLIPROXYAPI_BASE_URL + CLIPROXYAPI_KEY.',
     );
   }
 }

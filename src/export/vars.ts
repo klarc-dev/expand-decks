@@ -4,8 +4,9 @@
  *
  * The populated document IS the variable registry: resolution is a generic
  * deep-path lookup (`{org.name}`, `{title}`, `{organisation.name}`…), and the
- * `@`-menu list is derived by flattening the same document. Adding a field to a
- * collection makes `{thatField}` work with zero code changes here.
+ * `@`-menu list is derived from an explicit public-field allow-list. Variable
+ * resolution remains generic, while new collection fields stay out of the
+ * authoring menu until deliberately exposed here.
  *
  * Build-time only. Mirrors the footnote `_slideDefs` precedent in utils.ts: a
  * module-level context set once per build (setVarDoc), consumed inside the two
@@ -82,38 +83,13 @@ export function resolvedVarsForValidation(value: unknown): unknown {
 }
 
 // ---------------------------------------------------------------------------
-// flattenVars — derive the `@`-menu list from a populated document. Generic
-// walk: a primitive emits one entry; a nested object recurses; arrays and
-// unpopulated relation ids (numbers) are skipped. SKIP prunes known build/internal noise at
-// the top level only (nested org fields are all useful).
+// flattenVars — derive the `@`-menu list from a populated document. The menu is
+// intentionally allow-listed by collection so schema additions never expose
+// infrastructure metadata, secrets, visual settings, or relationship ids.
 // ---------------------------------------------------------------------------
 
-const SKIP = new Set([
-  'id',
-  'slides',
-  'footer',
-  'createdBy',
-  'updatedAt',
-  'createdAt',
-  'status',
-  'lastBuildStatus',
-  'lastBuildError',
-  'lastBuildRequestedAt',
-  'draftStatus',
-  'draftRunId',
-  'draftTraceId',
-  'agentBrief',
-  'agentSlideCountMin',
-  'agentSlideCountMax',
-  'agentKnowledgeBases',
-  'agentExternalSources',
-  'agentMode',
-  'agentModel',
-  'agentVisualCritique',
-  'agentApprovalRequired',
-  'buildStatusLive',
-  'sizes', // media upload variants, if a relation is ever walked
-]);
+const PRESENTATION_VAR_KEYS = ['title', 'language'] as const;
+const ORGANISATION_VAR_KEYS = ['name', 'website', 'bookingUrl'] as const;
 
 export interface VarEntry {
   path: string;
@@ -122,16 +98,14 @@ export interface VarEntry {
 }
 
 export function flattenVars(doc: Record<string, unknown>, base = ''): VarEntry[] {
+  const keys = base === 'org' ? ORGANISATION_VAR_KEYS : PRESENTATION_VAR_KEYS;
   const out: VarEntry[] = [];
-  for (const [key, value] of Object.entries(doc)) {
-    if (!base && SKIP.has(key)) continue; // prune noise at top level only
+  for (const key of keys) {
+    const value = doc[key];
     const path = base ? `${base}.${key}` : key;
     if (isPrimitive(value)) {
       out.push({ path, label: path, sample: String(value).slice(0, 60) });
-    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out.push(...flattenVars(value as Record<string, unknown>, path));
     }
-    // arrays + relation-as-number ids are intentionally skipped
   }
   return out;
 }

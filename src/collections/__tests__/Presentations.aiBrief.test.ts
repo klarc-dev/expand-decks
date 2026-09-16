@@ -71,7 +71,7 @@ describe('Presentations IA tab', () => {
   });
 
   it('locks the run pointers against admin and REST saves', () => {
-    for (const name of ['draftStatus', 'draftRunId', 'draftTraceId']) {
+    for (const name of ['draftStatus', 'draftRunId']) {
       const access = findField(name)?.access as { update: () => boolean } | undefined;
       expect(access?.update(), `${name} must be run-owned`).toBe(false);
     }

@@ -69,7 +69,7 @@ export const sectionSpec = block({
   },
 });
 
-export const sectionRenderSchema = z.object({
+const sectionRenderSchema = z.object({
   blockType: z.literal('section'),
   number,
   title,

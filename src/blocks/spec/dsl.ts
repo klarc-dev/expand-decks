@@ -110,8 +110,7 @@ export const optionalAi = <T extends z.ZodType>(inner: T) => inner.optional();
 // Render Zod for a rich-text (Lexical) field. The type-only import is erased at
 // compile time, so dsl.ts stays client-safe (zod only). The unconstrained form
 // only shapes InferRender; limited fields add visible-text validation.
-export type LexicalRichText = import('@payloadcms/richtext-lexical/lexical').SerializedEditorState;
-export const richTextRender = () => z.custom<LexicalRichText>();
+type LexicalRichText = import('@payloadcms/richtext-lexical/lexical').SerializedEditorState;
 export const optionalRichTextRender = () => z.custom<LexicalRichText>().nullable().optional();
 const footnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });
 const aiFootnote = z.object({ text: limitedString(SLIDE_LIMITS.common.footnotes.text) });

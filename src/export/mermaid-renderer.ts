@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-export -- staged into the Slidev build workdir by path
 // Match Slidev's browser entry: the package root imports unoptimized CommonJS
 // dependencies in the native /print server, even though the SPA build works.
 import mermaid from 'mermaid/dist/mermaid.esm.mjs';

@@ -92,18 +92,14 @@ export function slideCountRangeFromFields(
   return { range: parsed.data };
 }
 
-/** Knowledge bases travel as registry ids; externals already are registry ids. */
-export function sourceIdsFromFields(knowledgeBases: unknown, external: unknown): string[] {
-  const bases = (Array.isArray(knowledgeBases) ? knowledgeBases : [])
+/** Knowledge bases travel through the workflow as registry ids. */
+export function sourceIdsFromFields(knowledgeBases: unknown): string[] {
+  return (Array.isArray(knowledgeBases) ? knowledgeBases : [])
     .map((entry) =>
       entry && typeof entry === 'object' ? (entry as { value?: unknown }).value : entry,
     )
     .filter((value) => typeof value === 'string' || typeof value === 'number')
     .map((value) => `knowledge_${value}`);
-  const externals = (Array.isArray(external) ? external : []).filter(
-    (value): value is string => typeof value === 'string' && value.length > 0,
-  );
-  return [...bases, ...externals];
 }
 
 /** Ledger phases with no rail step of their own. */
@@ -149,7 +145,7 @@ function runRequestFromFields(fields: FormFields) {
       valueOf('agentSlideCountMin'),
       valueOf('agentSlideCountMax'),
     ),
-    sourceIds: sourceIdsFromFields(valueOf('agentKnowledgeBases'), valueOf('agentExternalSources')),
+    sourceIds: sourceIdsFromFields(valueOf('agentKnowledgeBases')),
     startMode: slideCount > 0 && mode ? mode : 'replace',
     visual: valueOf('agentVisualCritique') !== false,
   };
@@ -352,7 +348,7 @@ const AgentRunControls: React.FC = () => {
   const blockingError =
     rangeError ??
     (request.sourceIds.length > MAX_SELECTED_SOURCES
-      ? `Sélectionnez au maximum ${MAX_SELECTED_SOURCES} sources, bases et sources externes confondues.`
+      ? `Sélectionnez au maximum ${MAX_SELECTED_SOURCES} bases de connaissances.`
       : undefined);
   const runId = startedRunId || request.draftRunId;
 

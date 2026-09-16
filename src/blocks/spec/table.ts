@@ -169,7 +169,7 @@ export const tableSpec = block({
   },
 });
 
-export const tableRenderSchema = z.object({
+const tableRenderSchema = z.object({
   blockType: z.literal('table'),
   eyebrow,
   title,

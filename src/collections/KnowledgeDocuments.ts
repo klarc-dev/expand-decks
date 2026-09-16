@@ -141,7 +141,7 @@ export const canAccessKnowledgeDocuments: Access = async ({ req }) => {
   return { 'knowledgeBase.organisation': { in: ids } };
 };
 
-export const canMutateKnowledgeDocuments: Access = async ({ req }) => {
+const canMutateKnowledgeDocuments: Access = async ({ req }) => {
   if (!userIsAdminOrAuthor(req.user)) return false;
   return canAccessKnowledgeDocuments({ req } as Parameters<Access>[0]);
 };

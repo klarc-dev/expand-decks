@@ -1,160 +1,70 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { MAX_SELECTED_SOURCES } from '../../draftConfig';
-import { __resetSourceRegistryForTests, SOURCE_REGISTRY_ENV } from '../registry';
 import { normalizeSourceIds, resolveSourcePolicy, resolveSources } from '../resolve';
 import { SourcePolicyError, TooManySourcesError, UnknownSourceError } from '../types';
 
-const previous = process.env[SOURCE_REGISTRY_ENV];
-
-afterEach(() => {
-  if (previous === undefined) delete process.env[SOURCE_REGISTRY_ENV];
-  else process.env[SOURCE_REGISTRY_ENV] = previous;
-  __resetSourceRegistryForTests();
-});
-
-function setRegistry(value: unknown) {
-  process.env[SOURCE_REGISTRY_ENV] = JSON.stringify(value);
-  __resetSourceRegistryForTests();
-}
-
-const twoSources = [
-  {
-    id: 'fiscal-kb',
-    label: 'Fiscal KB',
-    allowedTools: ['search'],
-    transport: 'http',
-    url: 'https://example.com/a',
-  },
-  {
-    id: 'web-docs',
-    label: 'Web Docs',
-    allowedTools: ['search'],
-    transport: 'http',
-    url: 'https://example.com/b',
-  },
-];
+const context = (docs: unknown[]) =>
+  ({
+    user: { id: 7, role: 'author' },
+    payload: { find: async () => ({ docs }) },
+  }) as never;
 
 describe('normalizeSourceIds', () => {
-  it('returns an empty array for empty/undefined input', () => {
+  it('normalizes empty input and deduplicates in order', () => {
     expect(normalizeSourceIds(undefined)).toEqual([]);
-    expect(normalizeSourceIds([])).toEqual([]);
+    expect(normalizeSourceIds(['knowledge_1', 'knowledge_2', 'knowledge_1'])).toEqual([
+      'knowledge_1',
+      'knowledge_2',
+    ]);
   });
 
-  it('deduplicates while preserving order', () => {
-    expect(normalizeSourceIds(['a', 'b', 'a'])).toEqual(['a', 'b']);
-  });
-
-  it('rejects malformed ids', () => {
+  it('rejects malformed or excessive selections', () => {
     expect(() => normalizeSourceIds(['bad id with spaces'])).toThrow(UnknownSourceError);
-  });
-
-  it('rejects more ids than the cap', () => {
-    const tooMany = Array.from({ length: MAX_SELECTED_SOURCES + 1 }, (_, i) => `s${i}`);
+    const tooMany = Array.from({ length: MAX_SELECTED_SOURCES + 1 }, (_, i) => `knowledge_${i}`);
     expect(() => normalizeSourceIds(tooMany)).toThrow(TooManySourcesError);
   });
 });
 
-describe('resolveSourcePolicy', () => {
-  it('normalizes and resolves an exclusive source', async () => {
-    setRegistry(twoSources);
-    await expect(
-      resolveSourcePolicy({ mode: 'exclusive', sourceIds: [' web-docs '] }),
-    ).resolves.toEqual({
-      policy: { mode: 'exclusive', sourceIds: ['web-docs'] },
-      sources: [expect.objectContaining({ id: 'web-docs' })],
-    });
-  });
+describe('knowledge source resolution', () => {
+  const sources = context([
+    { id: 1, name: 'Contrats', readiness: 'ready' },
+    { id: 2, name: 'Procédures', readiness: 'empty' },
+  ]);
 
-  it('rejects empty and broadened exclusive selections', async () => {
-    setRegistry(twoSources);
-    await expect(resolveSourcePolicy({ mode: 'exclusive', sourceIds: [] })).rejects.toThrow(
-      SourcePolicyError,
-    );
-    await expect(
-      resolveSourcePolicy({ mode: 'exclusive', sourceIds: ['fiscal-kb', 'web-docs'] }),
-    ).rejects.toThrow(SourcePolicyError);
-  });
-
-  it('preserves none and multiple behavior', async () => {
-    setRegistry(twoSources);
-    expect((await resolveSourcePolicy({ mode: 'none', sourceIds: [] })).sources).toEqual([]);
-    expect(
-      (
-        await resolveSourcePolicy({
-          mode: 'multiple',
-          sourceIds: ['web-docs', 'fiscal-kb', 'web-docs'],
-        })
-      ).policy.sourceIds,
-    ).toEqual(['web-docs', 'fiscal-kb']);
-  });
-});
-
-describe('resolveSources', () => {
-  it('resolves mixed MCP and accessible knowledge sources', async () => {
-    setRegistry(twoSources);
-    const context = {
-      user: { id: 7, role: 'author' },
-      payload: {
-        find: async () => ({ docs: [{ id: 42, name: 'Contrats' }] }),
-      },
-    } as never;
-
-    const resolved = await resolveSources(['web-docs', 'knowledge_42'], context);
-    expect(resolved.map(({ id, transport }) => ({ id, transport }))).toEqual([
-      { id: 'web-docs', transport: 'http' },
-      { id: 'knowledge_42', transport: 'knowledge' },
+  it('resolves accessible knowledge ids to descriptors', async () => {
+    await expect(resolveSources(['knowledge_1'], sources)).resolves.toEqual([
+      expect.objectContaining({ id: 'knowledge_1', transport: 'knowledge', knowledgeBaseId: 1 }),
     ]);
   });
 
-  it('applies the global cap before resolving a mixed selection', async () => {
-    const mixed = [
-      'knowledge_1',
-      ...Array.from({ length: MAX_SELECTED_SOURCES }, (_, i) => `s${i}`),
-    ];
-    await expect(resolveSources(mixed, {} as never)).rejects.toThrow(TooManySourcesError);
-  });
-
-  it('rejects two knowledge bases in exclusive mode', async () => {
-    await expect(
-      resolveSourcePolicy(
-        { mode: 'exclusive', sourceIds: ['knowledge_1', 'knowledge_2'] },
-        {} as never,
-      ),
-    ).rejects.toThrow(SourcePolicyError);
-  });
-
   it('treats inaccessible knowledge ids as unknown', async () => {
-    setRegistry([]);
-    const context = {
-      user: { id: 7, role: 'author' },
-      payload: { find: async () => ({ docs: [] }) },
-    } as never;
-    await expect(resolveSources(['knowledge_99'], context)).rejects.toMatchObject({
+    await expect(resolveSources(['knowledge_99'], sources)).rejects.toMatchObject({
       unknownIds: ['knowledge_99'],
     });
   });
 
-  it('resolves known ids to descriptors', async () => {
-    setRegistry(twoSources);
-    const resolved = await resolveSources(['web-docs']);
-    expect(resolved).toHaveLength(1);
-    expect(resolved[0]!.id).toBe('web-docs');
+  it('requires exactly one source in exclusive mode', async () => {
+    await expect(
+      resolveSourcePolicy({ mode: 'exclusive', sourceIds: [] }, sources),
+    ).rejects.toThrow(SourcePolicyError);
+    await expect(
+      resolveSourcePolicy(
+        { mode: 'exclusive', sourceIds: ['knowledge_1', 'knowledge_2'] },
+        sources,
+      ),
+    ).rejects.toThrow(SourcePolicyError);
   });
 
-  it('rejects unknown ids with UnknownSourceError listing the unknowns', async () => {
-    setRegistry(twoSources);
-    try {
-      await resolveSources(['fiscal-kb', 'ghost']);
-      throw new Error('expected throw');
-    } catch (error) {
-      expect(error).toBeInstanceOf(UnknownSourceError);
-      expect((error as UnknownSourceError).unknownIds).toEqual(['ghost']);
-    }
-  });
-
-  it('resolves to empty for empty selection', async () => {
-    setRegistry(twoSources);
-    await expect(resolveSources([])).resolves.toEqual([]);
+  it('preserves none and normalized multiple policies', async () => {
+    await expect(resolveSourcePolicy({ mode: 'none', sourceIds: [] }, sources)).resolves.toEqual({
+      policy: { mode: 'none', sourceIds: [] },
+      sources: [],
+    });
+    const resolved = await resolveSourcePolicy(
+      { mode: 'multiple', sourceIds: ['knowledge_2', 'knowledge_1', 'knowledge_2'] },
+      sources,
+    );
+    expect(resolved.policy.sourceIds).toEqual(['knowledge_2', 'knowledge_1']);
   });
 });

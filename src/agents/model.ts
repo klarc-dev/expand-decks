@@ -3,7 +3,7 @@
  *
  * Phase 0 spike (scripts/mastra-spike.mjs) established three facts for
  * `@mastra/core` + an OpenAI-compatible proxy:
- *   1. Feeding the app's `cloudCLIProxy(DRAFT_MODEL)` (which bakes in
+ *   1. Feeding the app's `cloudCLIProxy(modelForTier(...))` (which bakes in
  *      `forceNonStreamFetch`) to a Mastra Agent round-trips NON-STREAMED — no
  *      SSE/parse error. No custom MastraModelGateway class is required.
  *   2. Mastra's `structuredOutput`/`experimental_output` is prompt-coercion the

@@ -21,7 +21,8 @@
       "!**/.agents/skills",
       "!**/.claude",
       "!**/.hermes",
-      "!**/scripts/seed-pi/*-workflow.js"
+      "!src/migrations/20260915_124551.{ts,json}",
+      "!src/migrations/20260915_125015_quote_author_company.{ts,json}"
     ]
   },
   "formatter": {

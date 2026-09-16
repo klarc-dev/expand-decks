@@ -104,7 +104,7 @@ export const timelineSpec = block({
   },
 });
 
-export const timelineRenderSchema = z.object({
+const timelineRenderSchema = z.object({
   blockType: z.literal('timeline'),
   eyebrow,
   title,

@@ -193,7 +193,6 @@ export async function POST(req: NextRequest) {
         agentSlideCountMin: slideCountRange?.min ?? null,
         agentSlideCountMax: slideCountRange?.max ?? null,
         agentKnowledgeBases: knowledgeBaseIds(sourceIds),
-        agentExternalSources: sourceIds.filter((id) => !id.startsWith(KNOWLEDGE_PREFIX)),
         // An empty deck always starts in 'replace'; persisting that coercion would
         // silently turn the author's stored mode destructive for the next run.
         ...(deckHasSlides ? { agentMode: mode } : {}),
@@ -201,7 +200,6 @@ export async function POST(req: NextRequest) {
         agentVisualCritique: visual,
         agentApprovalRequired: approvalRequired,
         draftRunId: runId,
-        draftTraceId: traceId,
         draftStatus: DRAFT_STATUS.gathering,
       },
       overrideAccess: true,

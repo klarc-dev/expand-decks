@@ -5,16 +5,14 @@ import { forceNonStreamFetch, modelForTier } from '../ai';
 describe('model routing', () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it('defaults every phase to the stable `high` alias while retaining explicit overrides', () => {
+  it('routes every phase through the deployment-wide model alias', () => {
     vi.stubEnv('OPENAI_MODEL', '');
     for (const tier of ['research', 'draft', 'judge', 'visual'] as const) {
-      vi.stubEnv(`OPENAI_${tier.toUpperCase()}_MODEL`, '');
       expect(modelForTier(tier)).toBe('high');
     }
     vi.stubEnv('OPENAI_MODEL', 'custom-default');
     expect(modelForTier('research')).toBe('custom-default');
-    vi.stubEnv('OPENAI_DRAFT_MODEL', 'custom-draft');
-    expect(modelForTier('draft')).toBe('custom-draft');
+    expect(modelForTier('draft')).toBe('custom-default');
   });
 });
 
@@ -23,9 +21,6 @@ describe('CloudCLIProxy configuration', () => {
     vi.resetModules();
     vi.stubEnv('CLIPROXYAPI_BASE_URL', 'https://proxy.example/v1');
     vi.stubEnv('CLIPROXYAPI_KEY', 'shared-ckey');
-    vi.stubEnv('OPENAI_BASE_URL', 'https://wrong.example/v1');
-    vi.stubEnv('OPENAI_API_KEY', 'wrong-key');
-
     const { cloudCLIProxy } = await import('../ai');
     const model = cloudCLIProxy('high') as unknown as {
       config: {

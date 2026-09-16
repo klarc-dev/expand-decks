@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { describe, expect, it } from 'vitest';
 import { PILL_VARIANTS, PILL_VARIANT_OPTIONS } from '../../blocks/spec/pillVariants';
 import { coverSpec, coverRenderSchema } from '../../blocks/spec/cover';

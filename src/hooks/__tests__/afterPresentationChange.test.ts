@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { CTX } from '../../lib/context';
 import { BUILD_SLIDES_TASK } from '../../jobs/buildSlides';
 import { BUILD_STATUS } from '../../lib/status';
-import { afterPresentationChange, buildInputsChanged } from '../afterPresentationChange';
+import { buildInputsChanged } from '../../lib/buildFingerprint';
+import { afterPresentationChange } from '../afterPresentationChange';
 
 const base = {
   slides: [{ blockType: 'cover', title: 'A' }],
@@ -39,6 +40,9 @@ describe('afterPresentationChange', () => {
       lastBuildRequestedAt: expect.any(String),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
+      spaUrl: null,
+      pdfFile: null,
+      coverImage: null,
       updatedAt: null,
     });
     expect(Date.parse(updateOne.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();
@@ -86,25 +90,6 @@ describe('afterPresentationChange', () => {
       operation: 'update',
       req: {
         context: { [CTX.skipBuildQueue]: true },
-        payload: { db: { updateOne }, jobs: { queue } },
-      },
-    } as never);
-
-    expect(result).toBe(doc);
-    expect(updateOne).not.toHaveBeenCalled();
-    expect(queue).not.toHaveBeenCalled();
-  });
-
-  it('leaves producer-triggered queueing to the versioned request route', async () => {
-    const updateOne = vi.fn();
-    const queue = vi.fn();
-    const doc = { id: 'presentation-1', status: 'draft', ...base };
-
-    const result = await afterPresentationChange({
-      doc,
-      operation: 'create',
-      req: {
-        context: { [CTX.mediaProducerRequest]: true },
         payload: { db: { updateOne }, jobs: { queue } },
       },
     } as never);

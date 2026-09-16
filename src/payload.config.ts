@@ -17,7 +17,6 @@ import { Accounts } from './collections/Accounts';
 import { AgentRuns } from './collections/AgentRuns';
 import { KnowledgeBases } from './collections/KnowledgeBases';
 import { KnowledgeDocuments } from './collections/KnowledgeDocuments';
-import { MediaProductionRequests } from './collections/MediaProductionRequests';
 import { buildSlidesTask } from './jobs/buildSlides';
 import { agentDraftTask } from './jobs/agentDraft';
 import { agentRetentionTask } from './jobs/agentRetention';
@@ -81,7 +80,6 @@ export default buildConfig({
     AgentRuns,
     KnowledgeBases,
     KnowledgeDocuments,
-    MediaProductionRequests,
   ],
   plugins: [
     withoutPluginAPIKeys(

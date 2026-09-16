@@ -1,12 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const KEY = 'GOOGLE_FONTS_API_KEY';
-const AI_KEYS = [
-  'CLIPROXYAPI_BASE_URL',
-  'CLIPROXYAPI_KEY',
-  'OPENAI_BASE_URL',
-  'OPENAI_API_KEY',
-] as const;
+const AI_KEYS = ['CLIPROXYAPI_BASE_URL', 'CLIPROXYAPI_KEY'] as const;
 const previousKey = process.env[KEY];
 const previousAI = Object.fromEntries(AI_KEYS.map((key) => [key, process.env[key]]));
 
@@ -29,6 +24,8 @@ function restoreEnvironment() {
 async function loadEnv(nodeEnv: string) {
   vi.resetModules();
   vi.stubEnv('NODE_ENV', nodeEnv);
+  vi.stubEnv('DATABASE_URL', 'postgresql://test:test@localhost:5432/test');
+  vi.stubEnv('PAYLOAD_SECRET', 'test-secret');
   return import('../env');
 }
 
@@ -73,15 +70,6 @@ describe('assertAIProviderConfig', () => {
     clearAIProviderConfig();
     process.env.CLIPROXYAPI_BASE_URL = 'https://proxy.example/v1';
     process.env.CLIPROXYAPI_KEY = 'secret';
-    const { assertAIProviderConfig } = await loadEnv('production');
-
-    expect(() => assertAIProviderConfig()).not.toThrow();
-  });
-
-  it('accepts OpenAI-compatible fallback configuration in production', async () => {
-    clearAIProviderConfig();
-    process.env.OPENAI_BASE_URL = 'https://openai-compatible.example/v1';
-    process.env.OPENAI_API_KEY = 'secret';
     const { assertAIProviderConfig } = await loadEnv('production');
 
     expect(() => assertAIProviderConfig()).not.toThrow();

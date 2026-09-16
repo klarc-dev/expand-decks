@@ -3,8 +3,8 @@ import { createHash } from 'node:crypto';
 import type { Payload, PayloadRequest } from 'payload';
 import { z } from 'zod';
 
-export const SOURCE_ID_MAX = 80;
-export const SOURCE_LABEL_MAX = 160;
+const SOURCE_ID_MAX = 80;
+const SOURCE_LABEL_MAX = 160;
 export const DEFAULT_SOURCE_TIMEOUT_MS = 30_000;
 
 export const SourceIdSchema = z
@@ -17,89 +17,40 @@ export const SourceIdSchema = z
     'Source ids may contain letters, numbers, dot, underscore and dash',
   );
 
-export const ToolNameSchema = z
+const ToolNameSchema = z
   .string()
   .trim()
   .min(1)
   .max(128)
   .regex(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/);
-export const SourceFailureModeSchema = z.enum(['strict', 'best-effort']);
 const SourcePolicyModeSchema = z.enum(['none', 'exclusive', 'multiple']);
 export type SourcePolicyMode = z.infer<typeof SourcePolicyModeSchema>;
 export type SourcePolicy = { mode: SourcePolicyMode; sourceIds: string[] };
 
-const baseSource = z.object({
+const KnowledgeSourceDescriptorSchema = z.object({
   id: SourceIdSchema,
   label: z.string().trim().min(1).max(SOURCE_LABEL_MAX),
   timeoutMs: z.number().int().min(1_000).max(300_000).default(DEFAULT_SOURCE_TIMEOUT_MS),
   allowedTools: z.array(ToolNameSchema).min(1).max(64),
-  failureMode: SourceFailureModeSchema.default('strict'),
+  failureMode: z.literal('strict').default('strict'),
   toolCallConcurrency: z.number().int().min(1).max(4).default(2),
   maxResultBytes: z.number().int().min(1_024).max(1_000_000).default(100_000),
-});
-
-export const StdioSourceDescriptorSchema = baseSource.extend({
-  transport: z.literal('stdio'),
-  command: z.string().trim().min(1),
-  args: z.array(z.string()).default([]),
-  env: z.record(z.string(), z.string()).optional(),
-});
-
-export const HttpSourceDescriptorSchema = baseSource.extend({
-  transport: z.literal('http'),
-  url: z
-    .string()
-    .url()
-    .refine(
-      (value) => {
-        try {
-          const parsed = new URL(value);
-          return (
-            ['http:', 'https:'].includes(parsed.protocol) && !parsed.username && !parsed.password
-          );
-        } catch {
-          return false;
-        }
-      },
-      {
-        message: 'HTTP source URLs must use http or https and must not contain credentials',
-      },
-    ),
-});
-
-/** Derived from the base's indexed documents; mirrored on its descriptor. */
-const KnowledgeSourceReadinessSchema = z.enum(['ready', 'empty', 'failed', 'unavailable']);
-
-const KnowledgeSourceDescriptorSchema = baseSource.extend({
   transport: z.literal('knowledge'),
   knowledgeBaseId: z.union([z.string().min(1), z.number().int().positive()]),
   indexName: z.string().regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/),
-  readiness: KnowledgeSourceReadinessSchema.optional(),
+  readiness: z.enum(['ready', 'empty', 'failed', 'unavailable']).optional(),
 });
 
-export const SourceDescriptorSchema = z.discriminatedUnion('transport', [
-  StdioSourceDescriptorSchema,
-  HttpSourceDescriptorSchema,
-  KnowledgeSourceDescriptorSchema,
-]);
-export const SourceRegistrySchema = z.array(
-  z.discriminatedUnion('transport', [StdioSourceDescriptorSchema, HttpSourceDescriptorSchema]),
-);
-
 export type SourceId = z.infer<typeof SourceIdSchema>;
-export type StdioSourceDescriptor = z.infer<typeof StdioSourceDescriptorSchema>;
-export type HttpSourceDescriptor = z.infer<typeof HttpSourceDescriptorSchema>;
 export type KnowledgeSourceDescriptor = z.infer<typeof KnowledgeSourceDescriptorSchema>;
-export type SourceDescriptor = z.infer<typeof SourceDescriptorSchema>;
-export type SourceKind = 'knowledge' | 'external';
-export type KnowledgeSourceReadiness = z.infer<typeof KnowledgeSourceReadinessSchema>;
+export type KnowledgeSourceReadiness = NonNullable<KnowledgeSourceDescriptor['readiness']>;
 export type SourceOption = {
   id: SourceId;
   label: string;
-  kind: SourceKind;
+  kind: 'knowledge';
   readiness?: KnowledgeSourceReadiness;
 };
-export type ResolvedSource = SourceDescriptor;
+export type ResolvedSource = KnowledgeSourceDescriptor;
 export type SourceResolutionContext = {
   payload: Pick<Payload, 'find'>;
   user: PayloadRequest['user'];
@@ -144,13 +95,6 @@ export function evidenceId(input: {
     [input.sourceId, input.toolName, input.toolCallId, input.contentSha256].join('\u0000'),
   );
   return `ev_${digest.slice(0, 24)}`;
-}
-
-export class SourceConfigError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'SourceConfigError';
-  }
 }
 
 export class SourcePolicyError extends Error {

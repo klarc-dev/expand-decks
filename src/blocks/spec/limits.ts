@@ -93,5 +93,3 @@ export const SLIDE_LIMITS = {
   string,
   Record<string, TextLimit | RangeLimit | Record<string, unknown>>
 >;
-
-export type SlideLimits = typeof SLIDE_LIMITS;

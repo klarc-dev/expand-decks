@@ -1,10 +1,10 @@
 /**
  * Source-aware research helper shared by the gather and structure phases.
  * Raw descriptors and tool output remain process-local. Evidence is recorded by
- * the wrapped MCP tool at the exact result boundary before the model sees it.
+ * the wrapped knowledge tool at the exact result boundary before the model sees it.
  */
 import { sourceResolutionContextForUser } from '../../lib/sources/serverContext';
-import { openSourceToolsets } from '../../lib/sources/mcpConnector';
+import { openSourceToolsets } from '../../lib/sources/knowledgeConnector';
 import { resolveSourcePolicy } from '../../lib/sources/resolve';
 import {
   SourceConnectorError,
@@ -22,10 +22,6 @@ export type ResearchResult = {
   evidence: Evidence[];
   failures: SourceFailure[];
 };
-
-export function hasSources(policy: SourcePolicy): boolean {
-  return policy.sourceIds.length > 0;
-}
 
 function researchFailure(
   sourceId: string,

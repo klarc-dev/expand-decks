@@ -27,8 +27,8 @@ COPY . .
 ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 ENV PAYLOAD_SECRET=build-time-secret-not-used-at-runtime
 ENV GOOGLE_FONTS_API_KEY=build-time-key-not-used-at-runtime
-ENV OPENAI_BASE_URL=http://localhost:1/v1
-ENV OPENAI_API_KEY=build-time-key-not-used-at-runtime
+ENV CLIPROXYAPI_BASE_URL=http://localhost:1/v1
+ENV CLIPROXYAPI_KEY=build-time-key-not-used-at-runtime
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm generate:types \
     && test -f src/payload-types.ts \

@@ -1,3 +1,4 @@
+// fallow-ignore-file unused-file -- staged into the Slidev build workdir by path
 /**
  * Slidev Mermaid setup — staged into the build workdir as `setup/mermaid.ts`.
  *

@@ -10,12 +10,7 @@
 // it here via process.env which Next's CLI passes through). Fallback: 4317.
 
 import { execSync, spawn } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 const PORT = process.env.PORT || '4317';
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const undiciCompatRequire = join(__dirname, 'undici-node20-compat.cjs');
 
 function freePort(port) {
   try {
@@ -37,12 +32,7 @@ freePort(PORT);
 
 const child = spawn('next', ['dev', '-p', PORT], {
   stdio: 'inherit',
-  env: {
-    ...process.env,
-    NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${undiciCompatRequire}`]
-      .filter(Boolean)
-      .join(' '),
-  },
+  env: process.env,
 });
 
 child.on('exit', (code) => process.exit(code ?? 0));

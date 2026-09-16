@@ -94,7 +94,7 @@ export const statsSpec = block({
   },
 });
 
-export const statsRenderSchema = z.object({
+const statsRenderSchema = z.object({
   blockType: z.literal('stats'),
   eyebrow,
   title,

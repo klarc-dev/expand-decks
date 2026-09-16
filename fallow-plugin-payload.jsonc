@@ -29,7 +29,6 @@
     // gitignored src/app/(payload)/admin/importMap.js. Each is a single-
     // purpose admin field/button exporting exactly its wired symbol.
     "src/components/AgentRunControls.tsx",
-    "src/components/AgentExternalSourcesField.tsx",
     "src/components/BuildStatusField.tsx",
     "src/components/ColorField.tsx",
     "src/components/GoogleFontField.tsx",

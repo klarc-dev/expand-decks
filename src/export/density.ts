@@ -29,10 +29,6 @@ export function densityClass(density: SlideDensity): string {
   return density === 'comfortable' ? '' : `k-density-${density}`;
 }
 
-export function longestVisibleText(values: Array<string | null | undefined>): number {
-  return Math.max(0, ...values.map((value) => visibleText(value).length));
-}
-
 export function totalVisibleText(values: Array<string | null | undefined>): number {
   return values.reduce((total, value) => total + visibleText(value).length, 0);
 }
@@ -104,7 +100,7 @@ export function heroSurfaceFit(opts: HeroSurfaceFitOptions): SlideDensity {
 
 export type SequenceFrameProfile = 'agenda' | 'timeline';
 
-export type SequenceFrameItem = {
+type SequenceFrameItem = {
   label: string;
   description?: string | null;
 };

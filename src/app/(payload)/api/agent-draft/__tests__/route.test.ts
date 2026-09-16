@@ -23,8 +23,6 @@ vi.mock('@payload-config', () => ({ default: {} }));
 vi.mock('@/jobs/agentDraft', () => ({ AGENT_DRAFT_TASK: 'agentDraft' }));
 
 import { POST } from '../route';
-import { __resetSourceRegistryForTests, SOURCE_REGISTRY_ENV } from '@/lib/sources/registry';
-
 function request(body: unknown) {
   return new Request('http://local/api/agent-draft', {
     method: 'POST',
@@ -47,23 +45,6 @@ beforeEach(() => {
   mocks.find.mockResolvedValue({ docs: [] });
   mocks.create.mockResolvedValue({ id: 7 });
   mocks.queue.mockResolvedValue({ id: 'job-1' });
-  process.env[SOURCE_REGISTRY_ENV] = JSON.stringify([
-    {
-      id: 'docs',
-      label: 'Docs',
-      transport: 'http',
-      url: 'https://example.com/mcp',
-      allowedTools: ['search'],
-    },
-    {
-      id: 'web',
-      label: 'Web',
-      transport: 'http',
-      url: 'https://web.example.com/mcp',
-      allowedTools: ['search'],
-    },
-  ]);
-  __resetSourceRegistryForTests();
 });
 
 describe('agent draft source policy API', () => {
@@ -140,7 +121,7 @@ describe('agent draft source policy API', () => {
 
   it.each([
     [{ mode: 'exclusive', sourceIds: [] }, 'exactly one source'],
-    [{ mode: 'exclusive', sourceIds: ['docs', 'web'] }, 'exactly one source'],
+    [{ mode: 'exclusive', sourceIds: ['knowledge_1', 'knowledge_2'] }, 'exactly one source'],
     [{ mode: 'exclusive', sourceIds: ['unknown'] }, 'Unknown source'],
   ])('rejects invalid exclusive policy %j', async (sourcePolicy, error) => {
     const response = await POST(request({ ...base, sourcePolicy }));
@@ -214,10 +195,14 @@ describe('agent draft source policy API', () => {
   });
 
   it('normalizes and persists a valid exclusive policy', async () => {
+    mocks.find.mockImplementation(async ({ collection }: { collection: string }) => ({
+      docs:
+        collection === 'knowledge-bases' ? [{ id: 42, name: 'Contrats', readiness: 'ready' }] : [],
+    }));
     const response = await POST(
       request({
         ...base,
-        sourcePolicy: { mode: 'exclusive', sourceIds: [' docs '] },
+        sourcePolicy: { mode: 'exclusive', sourceIds: [' knowledge_42 '] },
       }),
     );
     expect(response.status).toBe(202);
@@ -225,7 +210,7 @@ describe('agent draft source policy API', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           sourcePolicy: 'exclusive',
-          sourceIds: ['docs'],
+          sourceIds: ['knowledge_42'],
         }),
       }),
     );
@@ -238,12 +223,24 @@ describe('agent draft source policy API', () => {
         data: expect.objectContaining({ sourcePolicy: 'none', sourceIds: [] }),
       }),
     );
-    expect((await POST(request({ ...base, sourceIds: ['docs', 'web'] }))).status).toBe(202);
+    mocks.find.mockImplementation(async ({ collection }: { collection: string }) => ({
+      docs:
+        collection === 'knowledge-bases'
+          ? [
+              { id: 1, name: 'Contrats', readiness: 'ready' },
+              { id: 2, name: 'Procédures', readiness: 'ready' },
+            ]
+          : [],
+    }));
+    expect(
+      (await POST(request({ ...base, sourceIds: ['knowledge_1', 'knowledge_2', 'knowledge_1'] })))
+        .status,
+    ).toBe(202);
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           sourcePolicy: 'multiple',
-          sourceIds: ['docs', 'web'],
+          sourceIds: ['knowledge_1', 'knowledge_2'],
         }),
       }),
     );

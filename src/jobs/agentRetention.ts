@@ -2,7 +2,7 @@ import type { TaskConfig } from 'payload';
 
 import { agentStorage } from '../agents/mastra';
 
-export const AGENT_RETENTION_TASK = 'agentRetention' as const;
+const AGENT_RETENTION_TASK = 'agentRetention' as const;
 
 export const agentRetentionTask = {
   slug: AGENT_RETENTION_TASK,

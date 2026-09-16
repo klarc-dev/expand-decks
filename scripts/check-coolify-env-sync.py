@@ -2,7 +2,8 @@
 """Guard against Coolify env drift.
 
 Every ``${VAR}`` referenced by docker-compose.yaml must be forwarded in the
-``env:`` block of each workflow step that runs ``scripts/sync-coolify-env.sh``.
+``env:`` block of the reusable workflow that runs ``scripts/sync-coolify-env.sh``.
+Every public caller must delegate to that workflow with ``secrets: inherit``.
 
 The sync script derives its key list from docker-compose.yaml and fails closed
 on any unset variable. Without this guard that failure surfaces only at deploy
@@ -19,11 +20,13 @@ import sys
 from pathlib import Path
 
 COMPOSE_FILE = Path("docker-compose.yaml")
-WORKFLOWS = (
+SYNC_WORKFLOW = Path(".github/workflows/sync-coolify-env.yml")
+CALLER_WORKFLOWS = (
     Path(".github/workflows/ci.yml"),
     Path(".github/workflows/sync-coolify-secrets.yml"),
 )
 SYNC_SCRIPT = "sync-coolify-env.sh"
+SYNC_WORKFLOW_REF = "uses: ./.github/workflows/sync-coolify-env.yml"
 
 VAR_REF = re.compile(r"\$\{([A-Z0-9_]+)(:-)?")
 
@@ -96,21 +99,31 @@ def main() -> int:
         return 1
 
     failures = 0
+    if not SYNC_WORKFLOW.is_file():
+        print(f"::error::{SYNC_WORKFLOW} not found")
+        return 1
+
     checked_steps = 0
+    for job_name, forwarded, run_command in sync_steps(SYNC_WORKFLOW):
+        checked_steps += 1
+        for key in sorted(required - forwarded):
+            print(
+                f"::error file={SYNC_WORKFLOW}::{key} is required by {COMPOSE_FILE} "
+                f"but not forwarded by sync step '{run_command}' in job '{job_name}'"
+            )
+            failures += 1
 
-    for workflow in WORKFLOWS:
-        if not workflow.is_file():
-            print(f"::error::{workflow} not found")
+    for caller in CALLER_WORKFLOWS:
+        if not caller.is_file():
+            print(f"::error::{caller} not found")
             return 1
-
-        for job_name, forwarded, run_command in sync_steps(workflow):
-            checked_steps += 1
-            for key in sorted(required - forwarded):
-                print(
-                    f"::error file={workflow}::{key} is required by {COMPOSE_FILE} "
-                    f"but not forwarded by sync step '{run_command}' in job '{job_name}'"
-                )
-                failures += 1
+        text = caller.read_text(encoding="utf-8")
+        if SYNC_WORKFLOW_REF not in text or "secrets: inherit" not in text:
+            print(
+                f"::error file={caller}::{caller} must call {SYNC_WORKFLOW} "
+                "with secrets: inherit"
+            )
+            failures += 1
 
     if checked_steps == 0:
         print(f"::error::No workflow step runs {SYNC_SCRIPT} — the deploy would not sync env.")
@@ -122,7 +135,7 @@ def main() -> int:
 
     print(
         f"Coolify env forwarding is in sync "
-        f"({len(required)} required variables across {checked_steps} sync steps)."
+        f"({len(required)} required variables in the reusable sync workflow)."
     )
     return 0
 

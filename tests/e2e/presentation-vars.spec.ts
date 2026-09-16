@@ -46,27 +46,21 @@ test.describe('presentation variables endpoint', () => {
       }, data.presentationId);
       expect(response.status).toBe(200);
       const vars = response.body.vars as Array<{ path: string; sample: string }>;
-      expect(vars).toContainEqual(expect.objectContaining({ path: 'title' }));
       expect(vars).toContainEqual({
         path: 'org.name',
         label: 'org.name',
         sample: 'E2E Member Organisation',
       });
+      expect(vars).toContainEqual({ path: 'page', label: 'page', sample: '1' });
       expect(vars).toContainEqual({ path: 'total', label: 'total', sample: '0' });
-      expect(vars).toContainEqual(expect.objectContaining({ path: 'date' }));
-      const paths = vars.map((entry) => entry.path);
-      for (const internal of [
-        'id',
-        'slides',
-        'createdBy',
-        'lastBuildStatus',
-        'lastBuildError',
-        'draftEvents',
-        'spaUrl',
-        'pdfFile',
-      ]) {
-        expect(paths).not.toContain(internal);
-      }
+      expect(vars.map((entry) => entry.path)).toEqual([
+        'title',
+        'language',
+        'org.name',
+        'date',
+        'page',
+        'total',
+      ]);
       await context.close();
     });
   }

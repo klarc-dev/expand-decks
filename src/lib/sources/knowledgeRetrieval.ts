@@ -20,22 +20,22 @@ import type { KnowledgeQueryResult, KnowledgeVectorStore } from './knowledgeVect
 export const KNOWLEDGE_MIN_SCORE = 0.86;
 export const KNOWLEDGE_DEFAULT_TOP_K = 5;
 export const KNOWLEDGE_MAX_TOP_K = 10;
-export const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;
+const KNOWLEDGE_CANDIDATE_MULTIPLIER = 3;
 /**
  * Maximum passages any single document may contribute to the final evidence set.
  *
- * Measured on the retrieval dataset (scripts/evals/retrieval-sweep.mts): a cap of
+ * Measured on the retrieval dataset: a cap of
  * 2 costs recall on multi-passage questions, where three parts of one document
  * are all required. 3 reaches full recall with the best context precision;
  * raising it to 5 changes nothing, so 3 is the smallest value that wins.
  */
-export const KNOWLEDGE_MAX_PER_DOCUMENT = 3;
+const KNOWLEDGE_MAX_PER_DOCUMENT = 3;
 /** Jaccard token overlap above which two passages count as near-duplicates. */
-export const KNOWLEDGE_DUPLICATE_OVERLAP = 0.9;
+const KNOWLEDGE_DUPLICATE_OVERLAP = 0.9;
 /**
  * Ranking weights.
  *
- * Measured across query classes (scripts/evals/retrieval-classes.mts). When the
+ * Measured across retrieval query classes. When the
  * vector signal already separates chunks sharply, lexical weight is neutral or
  * mildly harmful. When it does not — a topic-only embedding, which is the
  * realistic case for rare codes, references and amounts — a lexical weight of
@@ -43,9 +43,9 @@ export const KNOWLEDGE_DUPLICATE_OVERLAP = 0.9;
  * from 0.44 to 0.67, while 0.55 starts to over-weight surface tokens and loses
  * ground again. The position term only breaks ties and stays small.
  */
-export const KNOWLEDGE_SEMANTIC_WEIGHT = 0.6;
-export const KNOWLEDGE_LEXICAL_WEIGHT = 0.35;
-export const KNOWLEDGE_POSITION_WEIGHT = 0.05;
+const KNOWLEDGE_SEMANTIC_WEIGHT = 0.6;
+const KNOWLEDGE_LEXICAL_WEIGHT = 0.35;
+const KNOWLEDGE_POSITION_WEIGHT = 0.05;
 
 /** Tunable ranking configuration, selected by measurement (see retrievalEval). */
 export type KnowledgeRankingConfig = {
@@ -206,7 +206,7 @@ function overlapRatio(left: ReadonlySet<string>, right: ReadonlySet<string>): nu
  * back only by the per-document cap may backfill unused budget; near-duplicates
  * never can, since they add no information.
  */
-export function selectDiverseEvidence(
+function selectDiverseEvidence(
   ranked: readonly KnowledgeEvidenceItem[],
   topK: number,
   maxPerDocument: number = KNOWLEDGE_MAX_PER_DOCUMENT,

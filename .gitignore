@@ -15,6 +15,9 @@ dogfood-output/
 tsconfig.tsbuildinfo
 .omo/
 .fallow/
+.DS_Store
+.hermes/
+.impeccable/critique/
 
 # Playwright MCP browser-automation dumps
 .playwright-mcp/

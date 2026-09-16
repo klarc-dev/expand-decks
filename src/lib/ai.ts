@@ -5,34 +5,22 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
  * model is the proxy's stable `high` alias rather than a concrete model id: a
  * pinned id (previously `gpt-6-astra`) can enter a days-long per-credential
  * cooldown upstream, which surfaces as a 429 naming the failing provider and
- * takes drafting down until someone edits an env var. Deployment-wide and
- * per-phase environment overrides remain available for explicit selection.
+ * takes drafting down until someone edits an env var. A deployment-wide
+ * environment override remains available for explicit selection.
  *
  * Structured-output callers use tool calling instead of `json_schema`, which
  * keeps the contract portable across OpenAI-compatible proxies.
  */
 
-const baseURL =
-  process.env.CLIPROXYAPI_BASE_URL ||
-  process.env.OPENAI_BASE_URL ||
-  'https://klarc.tail769c37.ts.net:8317/v1';
-const apiKey = process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY || '';
+const baseURL = process.env.CLIPROXYAPI_BASE_URL || '';
+const apiKey = process.env.CLIPROXYAPI_KEY || '';
 
 /** CloudCLIProxy model routing. Phase aliases can be evaluated independently. */
 export type AgentModelTier = 'research' | 'draft' | 'judge' | 'visual';
 
-const MODEL_ENV: Record<AgentModelTier, string> = {
-  research: 'OPENAI_RESEARCH_MODEL',
-  draft: 'OPENAI_DRAFT_MODEL',
-  judge: 'OPENAI_JUDGE_MODEL',
-  visual: 'OPENAI_VISUAL_MODEL',
-};
-
-export function modelForTier(tier: AgentModelTier): string {
-  return process.env[MODEL_ENV[tier]] || process.env.OPENAI_MODEL || 'high';
+export function modelForTier(_tier: AgentModelTier): string {
+  return process.env.OPENAI_MODEL || 'high';
 }
-
-export const DRAFT_MODEL = modelForTier('draft');
 
 /**
  * Wrap fetch to normalise requests for the gateway:

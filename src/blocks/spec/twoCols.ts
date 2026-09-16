@@ -120,7 +120,7 @@ export const twoColsSpec = block({
   },
 });
 
-export const twoColsRenderSchema = z.object({
+const twoColsRenderSchema = z.object({
   blockType: z.literal('twoCols'),
   eyebrow,
   title,

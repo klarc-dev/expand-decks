@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { expect, it } from 'vitest';
 import { renderTable } from '../blocks/table';
 import { renderBlockPreview } from '../preview';

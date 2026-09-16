@@ -1,21 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { KnowledgeBases } from '../../../collections/KnowledgeBases';
 import { KnowledgeDocuments } from '../../../collections/KnowledgeDocuments';
 import { resolveSources } from '../resolve';
-import { __resetSourceRegistryForTests, listSourceOptions, SOURCE_REGISTRY_ENV } from '../registry';
+import { listSourceOptions } from '../registry';
 import type { SourceResolutionContext } from '../types';
-
-const previous = process.env[SOURCE_REGISTRY_ENV];
-afterEach(() => {
-  if (previous === undefined) delete process.env[SOURCE_REGISTRY_ENV];
-  else process.env[SOURCE_REGISTRY_ENV] = previous;
-  __resetSourceRegistryForTests();
-});
 
 describe('organisation-scoped knowledge source discovery', () => {
   it('uses collection access for a colleague’s base and rejects a foreign base', async () => {
-    process.env[SOURCE_REGISTRY_ENV] = '[]';
-    __resetSourceRegistryForTests();
     const user = { id: 7, role: 'author', organisations: [11] };
     const find = vi.fn(async (args) => {
       expect(args.overrideAccess).toBe(false);

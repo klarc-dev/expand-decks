@@ -14,7 +14,7 @@ export type FormFields = Record<string, { value?: unknown } | undefined>;
 const BLOCK_TYPE_KEY = /^slides\.(\d+)\.blockType$/;
 
 /** The block being edited, as renderer-ready block data. */
-export function selectBlockData(fields: FormFields, path: string): Record<string, unknown> {
+function selectBlockData(fields: FormFields, path: string): Record<string, unknown> {
   return formStateToBlockData(fields as never, path) as Record<string, unknown>;
 }
 

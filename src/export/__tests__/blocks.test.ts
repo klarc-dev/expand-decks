@@ -933,7 +933,7 @@ describe('renderQuotes()', () => {
   });
 
   it('keeps company footers aligned and contained in light and dark quote cards', async () => {
-    const { chromium } = await import('playwright');
+    const { chromium } = await import('@playwright/test');
     const { readFileSync } = await import('node:fs');
     const browser = await chromium.launch();
     try {

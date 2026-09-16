@@ -11,26 +11,12 @@
  * - concurrently keeps the two streams prefixed and colorized, and kills the
  *   opener when Next exits so nothing lingers.
  *
- * Reuses scripts/dev.mjs's undici compat require so the Node 20/26 fetch
- * behavior stays identical to plain `pnpm dev`.
  */
 import { spawn } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const PORT = process.env.PORT || '4317';
 const URL = `http://localhost:${PORT}/admin`;
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const undiciCompatRequire = join(__dirname, 'undici-node20-compat.cjs');
-
-const env = {
-  ...process.env,
-  NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${undiciCompatRequire}`]
-    .filter(Boolean)
-    .join(' '),
-};
-
-const run = (cmd, args) => spawn(cmd, args, { stdio: 'inherit', env });
+const run = (cmd, args) => spawn(cmd, args, { stdio: 'inherit', env: process.env });
 
 // 1. Clear stale servers on the pinned port and the common fallbacks.
 const kill = run('kill-port', [PORT, '3000', '3001']);

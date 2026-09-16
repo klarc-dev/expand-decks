@@ -85,7 +85,7 @@ export const statementSpec = block({
 });
 
 /** Precise render schema — reuses the SAME render Zod consts, by name. */
-export const statementRenderSchema = z.object({
+const statementRenderSchema = z.object({
   blockType: z.literal('statement'),
   eyebrow,
   title,

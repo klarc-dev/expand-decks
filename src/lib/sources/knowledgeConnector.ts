@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
 import { Tool } from '@mastra/core/tools';
-import { MCPClient, type MastraMCPServerDefinition } from '@mastra/mcp';
 import { z } from 'zod';
 
 import {
@@ -26,12 +25,12 @@ import {
 
 type ToolMap = Record<string, Tool<any, any, any, any>>;
 
-export type EvidenceRecorder = {
+type EvidenceRecorder = {
   record(evidence: Evidence): void;
   snapshot(): Evidence[];
 };
 
-export function createEvidenceRecorder(): EvidenceRecorder {
+function createEvidenceRecorder(): EvidenceRecorder {
   const records = new Map<string, Evidence>();
   return {
     record(evidence) {
@@ -137,32 +136,6 @@ function knowledgeTool(
   });
 }
 
-function serverConfig(
-  source: Exclude<ResolvedSource, { transport: 'knowledge' }>,
-): MastraMCPServerDefinition {
-  const policy = {
-    timeout: source.timeoutMs,
-    forwardInstructions: false,
-    enableServerLogs: false,
-    enableProgressTracking: false,
-    onToolError: 'throw' as const,
-  };
-  if (source.transport === 'stdio') {
-    return {
-      ...policy,
-      command: source.command,
-      args: source.args,
-      env: source.env,
-      stderr: 'pipe',
-    };
-  }
-  return {
-    ...policy,
-    url: new URL(source.url),
-    connectTimeout: Math.min(source.timeoutMs, 10_000),
-  };
-}
-
 function sourceFailure(
   source: ResolvedSource,
   stage: SourceFailure['stage'],
@@ -254,7 +227,6 @@ function wrapTool(
           toolCallId: itemCallId,
           retrievedAt: new Date().toISOString(),
           contentSha256: sanitized.contentSha256,
-          url: source.transport === 'http' ? source.url : undefined,
           ...options.provenance?.(rawItem),
         });
         evidenceIds.push(id);
@@ -282,83 +254,40 @@ async function openOneSource(
   failure?: SourceFailure;
   disconnect: () => Promise<void>;
 }> {
-  if (source.transport === 'knowledge') {
-    const deps: SourceConnectorDependencies = {
-      vectorStore: dependencies.vectorStore ?? knowledgeVectorStore(),
-      embedQuery: dependencies.embedQuery ?? embedKnowledgeQuery,
-    };
-    const tool = knowledgeTool(source, deps);
-    return {
-      tools: {
-        search: wrapTool(source, 'search', tool, recorder, {
-          evidenceItems: (raw) => (Array.isArray(raw) ? raw : []),
-          // The knowledge document is a retrieval container, not an authority.
-          // Keep its identity in server-side evidence, but expose only its text
-          // to the model so slide footnotes can cite references found in-text
-          // without ever citing the uploaded knowledge document itself.
-          exposeSourceIdentity: false,
-          modelData: (_raw, sanitizedData) => {
-            const item = sanitizedData as { text?: unknown };
-            return { text: typeof item.text === 'string' ? item.text : '' };
-          },
-          provenance: (raw) => {
-            const item = raw as {
-              documentId?: unknown;
-              documentTitle?: unknown;
-              chunkIndex?: unknown;
-            };
-            return {
-              documentId: typeof item.documentId === 'string' ? item.documentId : undefined,
-              documentTitle:
-                typeof item.documentTitle === 'string' ? item.documentTitle : undefined,
-              chunkIndex: typeof item.chunkIndex === 'number' ? item.chunkIndex : undefined,
-            };
-          },
-        }),
-      },
-      disconnect: async () => {},
-    };
-  }
-  const client = new MCPClient({
-    id: `agent-source-${source.id}-${randomUUID()}`,
-    servers: { [source.id]: serverConfig(source) },
-  });
-  try {
-    const { toolsets, errors } = await client.listToolsetsWithErrors();
-    if (errors[source.id]) {
-      return {
-        failure: sourceFailure(source, 'discover', errors[source.id], 'unavailable'),
-        disconnect: () => client.disconnect(),
-      };
-    }
-    const advertised = toolsets[source.id] ?? {};
-    const missing = source.allowedTools.filter((name) => !(name in advertised));
-    if (missing.length) {
-      return {
-        failure: sourceFailure(
-          source,
-          'policy',
-          `Source did not advertise allowed tool(s): ${missing.join(', ')}`,
-          'disallowed-tool',
-        ),
-        disconnect: () => client.disconnect(),
-      };
-    }
-    return {
-      tools: Object.fromEntries(
-        source.allowedTools.map((name) => [
-          name,
-          wrapTool(source, name, advertised[name]!, recorder),
-        ]),
-      ),
-      disconnect: () => client.disconnect(),
-    };
-  } catch (error) {
-    return {
-      failure: sourceFailure(source, 'connect', error, 'unavailable'),
-      disconnect: () => client.disconnect(),
-    };
-  }
+  const deps: SourceConnectorDependencies = {
+    vectorStore: dependencies.vectorStore ?? knowledgeVectorStore(),
+    embedQuery: dependencies.embedQuery ?? embedKnowledgeQuery,
+  };
+  const tool = knowledgeTool(source, deps);
+  return {
+    tools: {
+      search: wrapTool(source, 'search', tool, recorder, {
+        evidenceItems: (raw) => (Array.isArray(raw) ? raw : []),
+        // The knowledge document is a retrieval container, not an authority.
+        // Keep its identity in server-side evidence, but expose only its text
+        // to the model so slide footnotes can cite references found in-text
+        // without ever citing the uploaded knowledge document itself.
+        exposeSourceIdentity: false,
+        modelData: (_raw, sanitizedData) => {
+          const item = sanitizedData as { text?: unknown };
+          return { text: typeof item.text === 'string' ? item.text : '' };
+        },
+        provenance: (raw) => {
+          const item = raw as {
+            documentId?: unknown;
+            documentTitle?: unknown;
+            chunkIndex?: unknown;
+          };
+          return {
+            documentId: typeof item.documentId === 'string' ? item.documentId : undefined,
+            documentTitle: typeof item.documentTitle === 'string' ? item.documentTitle : undefined,
+            chunkIndex: typeof item.chunkIndex === 'number' ? item.chunkIndex : undefined,
+          };
+        },
+      }),
+    },
+    disconnect: async () => {},
+  };
 }
 
 export async function openSourceToolsets(

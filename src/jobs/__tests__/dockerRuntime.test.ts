@@ -15,12 +15,7 @@ describe('runtime image', () => {
     const compose = readFileSync('docker-compose.yaml', 'utf8');
     const worker = compose.slice(compose.indexOf('  payload-worker-1: &payload-worker'));
 
-    for (const key of [
-      'CLIPROXYAPI_BASE_URL',
-      'CLIPROXYAPI_KEY',
-      'OPENAI_MODEL',
-      'AGENT_SOURCE_REGISTRY_JSON',
-    ]) {
+    for (const key of ['CLIPROXYAPI_BASE_URL', 'CLIPROXYAPI_KEY', 'OPENAI_MODEL']) {
       expect(worker).toContain(`${key}:`);
     }
   });

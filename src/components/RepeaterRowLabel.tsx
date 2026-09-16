@@ -1,4 +1,5 @@
 'use client';
+// fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
 import React from 'react';
 import { useRowLabel } from '@payloadcms/ui';

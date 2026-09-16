@@ -272,10 +272,9 @@ export const Presentations: CollectionConfig = {
       },
     },
     {
-      // Variable list for the `@`-mention editor menu. Flattens the populated
-      // presentation + its linked organisation into `{path, label, sample}`
-      // entries — generic, so any scalar field on either collection appears
-      // with no code change (SSOT). Read access enforced via findByID + user.
+      // Variable list for the `@`-mention editor menu. Exposes an explicit
+      // public allow-list from the presentation and its linked organisation.
+      // Read access is enforced via findByID + user.
       path: '/:id/vars',
       method: 'get',
       handler: async (req: PayloadRequest) => {
@@ -313,6 +312,7 @@ export const Presentations: CollectionConfig = {
             label: 'date',
             sample: new Date().toLocaleDateString(record.language === 'en' ? 'en-GB' : 'fr-FR'),
           },
+          { path: 'page', label: 'page', sample: '1' },
           { path: 'total', label: 'total', sample: String(slideCount) },
         ];
 
@@ -503,17 +503,6 @@ export const Presentations: CollectionConfig = {
               },
             },
             {
-              name: 'agentExternalSources',
-              type: 'text',
-              hasMany: true,
-              maxRows: MAX_SELECTED_SOURCES,
-              label: 'Sources externes',
-              access: agentOptionAccess,
-              admin: {
-                components: { Field: '/components/AgentExternalSourcesField#default' },
-              },
-            },
-            {
               name: 'agentMode',
               type: 'radio',
               defaultValue: 'revise',
@@ -566,12 +555,6 @@ export const Presentations: CollectionConfig = {
             },
             {
               name: 'draftRunId',
-              type: 'text',
-              access: runPointerAccess,
-              admin: { hidden: true, readOnly: true },
-            },
-            {
-              name: 'draftTraceId',
               type: 'text',
               access: runPointerAccess,
               admin: { hidden: true, readOnly: true },
@@ -712,12 +695,6 @@ export const Presentations: CollectionConfig = {
             {
               name: 'lastBuildToken',
               type: 'text',
-              admin: { readOnly: true, hidden: true },
-            },
-            {
-              name: 'currentMediaProductionRequest',
-              type: 'relationship',
-              relationTo: COLLECTIONS.mediaProductionRequests,
               admin: { readOnly: true, hidden: true },
             },
           ],

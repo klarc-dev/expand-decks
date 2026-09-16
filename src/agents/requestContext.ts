@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import type { DeckLanguage } from './language';
 
-export const DECK_PHASES = ['gather', 'structure', 'draft', 'validate', 'visual', 'fonts'] as const;
+const DECK_PHASES = ['gather', 'structure', 'draft', 'validate', 'visual', 'fonts'] as const;
 
 export const DeckRequestContextSchema = z.object({
   requestId: z.string().min(1).max(128),

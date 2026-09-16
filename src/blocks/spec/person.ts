@@ -8,7 +8,7 @@ import type { RangeLimit } from './limits';
  * block spec that displays person cards (cover, cardGrid), so the render Zod,
  * the Payload field and the renderer contract cannot drift between blocks.
  */
-export const mediaRelationship = z.union([
+const mediaRelationship = z.union([
   z.string(),
   z.number(),
   z
@@ -26,7 +26,7 @@ export const mediaRelationship = z.union([
     .passthrough(),
 ]);
 
-export const userRelationship = z.union([
+const userRelationship = z.union([
   z.string(),
   z.number(),
   z

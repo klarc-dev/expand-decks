@@ -9,7 +9,7 @@ export function buildSlidevEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.Pro
     // undefined, so the client never mounts and Playwright sees a hidden body.
     NODE_ENV: 'development',
     ANTHROPIC_API_KEY: undefined,
-    OPENAI_API_KEY: undefined,
+    CLIPROXYAPI_KEY: undefined,
   };
 }
 

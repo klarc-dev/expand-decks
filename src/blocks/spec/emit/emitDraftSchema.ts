@@ -34,7 +34,7 @@ export function emitDraftSchema(specs: BlockSpec[]): z.ZodType {
 }
 
 /** Ordered blockType slugs of every AI-draftable spec (SSOT for the outline enum). */
-export function draftBlockTypes(specs: BlockSpec[]): [string, ...string[]] {
+function draftBlockTypes(specs: BlockSpec[]): [string, ...string[]] {
   const slugs = specs.filter((s) => s.aiDraftable).map((s) => s.blockType);
   return slugs as [string, ...string[]];
 }
@@ -71,12 +71,6 @@ export function emitOutlineSchema(
  * Pass-2 batch schema: `{ slides: union[] }` with no min/max — the batch size is
  * the contract (the orchestrator asks for exactly the stubs in this batch).
  */
-export function emitBatchSchema(specs: BlockSpec[]): SlidesArraySchema {
-  return z.object({
-    slides: z.array(emitDraftSchema(specs) as z.ZodType<DraftedSlide>),
-  }) as SlidesArraySchema;
-}
-
 /** A drafted slide block — at minimum it carries its layout discriminant. */
 export type DraftedSlide = { blockType: string } & Record<string, unknown>;
 

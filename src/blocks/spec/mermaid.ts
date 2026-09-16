@@ -74,7 +74,7 @@ export const mermaidSpec = block({
   },
 });
 
-export const mermaidRenderSchema = z.object({
+const mermaidRenderSchema = z.object({
   blockType: z.literal('mermaid'),
   eyebrow,
   title,

@@ -4,5 +4,4 @@ export const CTX = {
   skipDocumentVectorPurge: 'skipDocumentVectorPurge',
   trustedKnowledgeLifecycle: 'trustedKnowledgeLifecycle',
   shareToken: 'shareToken',
-  mediaProducerRequest: 'mediaProducerRequest',
 } as const;

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import { expect, it } from 'vitest';
 
 it('keeps cover glyphs on the copy rail and wraps complete notes inside natural-height pills', async () => {

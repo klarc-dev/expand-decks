@@ -49,11 +49,9 @@ type ChatCompletionProbe = {
  */
 export async function verifyAgentModel(modelInput: unknown): Promise<ModelVerification> {
   const model = agentModelSchema.parse(modelInput);
-  const baseURL =
-    process.env.CLIPROXYAPI_BASE_URL ||
-    process.env.OPENAI_BASE_URL ||
-    'https://klarc.tail769c37.ts.net:8317/v1';
-  const apiKey = process.env.CLIPROXYAPI_KEY || process.env.OPENAI_API_KEY || '';
+  const baseURL = process.env.CLIPROXYAPI_BASE_URL;
+  const apiKey = process.env.CLIPROXYAPI_KEY;
+  if (!baseURL) throw new Error('URL CloudCLIProxy absente');
   if (!apiKey) throw new Error('Clé CloudCLIProxy absente');
 
   let response: Response;

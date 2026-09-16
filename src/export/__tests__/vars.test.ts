@@ -66,28 +66,36 @@ describe('flattenVars', () => {
     title: 'Deck',
     slug: 'deck',
     language: 'fr',
+    lastBuildToken: 'internal-token',
+    documentTemplate: 'presentation',
     status: 'draft',
     tags: ['a', 'b'],
     slides: [{ blockType: 'cover' }],
-    organisation: { name: 'Klarc', primary: '#02585C' },
+    pdfFile: 99,
+    organisation: {
+      name: 'Klarc',
+      website: 'https://klarc.example',
+      contactEmail: 'hello@klarc.example',
+      phone: '+33 1 23 45 67 89',
+      bookingUrl: 'https://klarc.example/booking',
+      linkedin: 'https://linkedin.com/company/klarc',
+      primary: '#02585C',
+      headingFont: 'Gilroy',
+      createdAt: '2026-09-16T00:00:00.000Z',
+      createdBy: 42,
+    },
   };
 
-  it('emits scalar top-level paths and prunes noise/internal keys', () => {
-    const paths = flattenVars(doc).map((v) => v.path);
-    expect(paths).toContain('title');
-    expect(paths).toContain('slug');
-    expect(paths).toContain('language');
-    // pruned: id, status, tags(array), slides, organisation(walked separately here)
-    expect(paths).not.toContain('id');
-    expect(paths).not.toContain('status');
-    expect(paths).not.toContain('slides');
-    // arrays never emit indexed paths
-    expect(paths.some((p) => p.startsWith('tags'))).toBe(false);
+  it('exposes only the presentation variables explicitly allowed for authors', () => {
+    expect(flattenVars(doc).map((entry) => entry.path)).toEqual(['title', 'language']);
   });
 
-  it('recurses into a nested object under a base prefix', () => {
-    const paths = flattenVars(doc.organisation, 'org').map((v) => v.path);
-    expect(paths).toEqual(['org.name', 'org.primary']);
+  it('exposes only the public organisation contact variables', () => {
+    expect(flattenVars(doc.organisation, 'org').map((entry) => entry.path)).toEqual([
+      'org.name',
+      'org.website',
+      'org.bookingUrl',
+    ]);
   });
 
   it('carries a truncated sample value', () => {

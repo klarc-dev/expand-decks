@@ -125,13 +125,13 @@ describe('buildSlidevExportArgs', () => {
     expect(
       buildSlidevEnv({
         NODE_ENV: 'production',
-        OPENAI_API_KEY: 'secret',
+        CLIPROXYAPI_KEY: 'secret',
         ANTHROPIC_API_KEY: 'secret',
         PATH: '/usr/bin',
       }),
     ).toEqual({
       NODE_ENV: 'development',
-      OPENAI_API_KEY: undefined,
+      CLIPROXYAPI_KEY: undefined,
       ANTHROPIC_API_KEY: undefined,
       PATH: '/usr/bin',
     });

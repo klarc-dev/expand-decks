@@ -122,7 +122,7 @@ export const cardGridSpec = block({
   },
 });
 
-export const cardGridRenderSchema = z.object({
+const cardGridRenderSchema = z.object({
   blockType: z.literal('cardGrid'),
   eyebrow,
   title,

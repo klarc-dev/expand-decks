@@ -70,17 +70,13 @@ describe('agent run controls', () => {
     }
   });
 
-  it('prefixes knowledge bases and keeps external registry ids as-is', () => {
-    expect(sourceIdsFromFields([7, '9'], ['mcp_docs'])).toEqual([
-      'knowledge_7',
-      'knowledge_9',
-      'mcp_docs',
-    ]);
-    expect(sourceIdsFromFields([{ relationTo: 'knowledge-bases', value: 4 }], undefined)).toEqual([
+  it('prefixes selected knowledge-base ids', () => {
+    expect(sourceIdsFromFields([7, '9'])).toEqual(['knowledge_7', 'knowledge_9']);
+    expect(sourceIdsFromFields([{ relationTo: 'knowledge-bases', value: 4 }])).toEqual([
       'knowledge_4',
     ]);
-    expect(sourceIdsFromFields(null, null)).toEqual([]);
-    expect(sourceIdsFromFields([null, {}], ['', 'ok'])).toEqual(['ok']);
+    expect(sourceIdsFromFields(null)).toEqual([]);
+    expect(sourceIdsFromFields([null, {}])).toEqual([]);
   });
 
   it('only uses the ledger restart command for stale runs', () => {

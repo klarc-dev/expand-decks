@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Repository guidance for Jcode and Codex.
+Repository guidance for coding agents.
 
 ## Agent skills
 
@@ -18,7 +18,7 @@ This is a single-context repository. See `docs/agents/domain.md`.
 
 ## Commands
 
-Package manager is **pnpm** (pinned by `packageManager`; workspace settings live in `pnpm-workspace.yaml`). Node 20.
+Package manager is **pnpm** (pinned by `packageManager`; workspace settings live in `pnpm-workspace.yaml`). Node 22.13.1 or newer.
 
 - `pnpm dev` — Next.js dev server (Payload admin at `/admin`, frontend at `/`).
 - `pnpm build` — Production build. A `prebuild` step copies `@payloadcms/next/dist/prod/styles.css` into `src/app/(payload)/payload-admin.css`; don't edit that file by hand.
@@ -32,15 +32,17 @@ Package manager is **pnpm** (pinned by `packageManager`; workspace settings live
 
 Migrations live in `src/migrations/` with an `index.ts` barrel. After changing schema run `pnpm payload migrate:create` then commit both the `.ts` and `.json` files.
 
+Production deployment and environment synchronization are documented in `docs/deployment/coolify.md`.
+
 ## Architecture
 
 This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors compose deck content as typed blocks, then builds a [Slidev](https://sli.dev) SPA + PDF out-of-process.
 
 ### Content pipeline (the main flow)
 
-1. **Authoring** — `Presentations` collection (`src/collections/Presentations.ts`) uses Payload's `blocks` field. Blocks are **layout primitives, not use-case templates** — purely visual arrangements with no domain semantics. The 13 types in `src/blocks/*Block.ts` are: Cover, Section, Statement, TwoCols, CardGrid, Stats, Quotes, Cta (also serves as the closing/thank-you slide), Table, Timeline, Mermaid, Agenda, Markdown. The form is organized into three admin tabs: **Contenu**, **Métadonnées**, **Sortie** (readonly build artifacts).
+1. **Authoring** — `Presentations` collection (`src/collections/Presentations.ts`) uses Payload's `blocks` field. Blocks are **layout primitives, not use-case templates** — purely visual arrangements with no domain semantics. The 12 types in `src/blocks/*Block.ts` are: Cover, Section, Statement, TwoCols, CardGrid, Stats, Quotes, Cta (also serves as the closing/thank-you slide), Table, Timeline, Mermaid, Agenda. The form is organized into four admin tabs: **Contenu**, **IA**, **Réglages**, **Sortie** (readonly build artifacts).
 
-2. **AI draft** — `POST /api/agent-draft` (`src/app/(payload)/api/agent-draft/route.ts`) takes a presentation/document id plus a brief and optional source ids, then launches the durable Mastra `deckWorkflow` (`src/agents/workflow.ts`). The workflow gathers evidence, structures a template-aware page plan from `src/documents/templates.ts`, drafts and validates pages, assembles them, and patches the presentation with build-queue suppression. The `AgentDraftButton` field triggers this flow in the admin.
+2. **AI draft** — `POST /api/agent-draft` (`src/app/(payload)/api/agent-draft/route.ts`) takes a presentation/document id plus a brief and optional knowledge-base ids, then launches the durable Mastra `deckWorkflow` (`src/agents/workflow.ts`). The workflow gathers evidence, structures a template-aware page plan, drafts and validates pages, assembles them, and patches the presentation with build-queue suppression. The `AgentRunControls` field starts, monitors, resumes, restarts, and cancels durable runs in the admin.
 
 3. **Queue trigger** — `afterPresentationChange` hook (`src/hooks/afterPresentationChange.ts`) stamps a build token/status and queues a `buildSlides` job on every external presentation create/update. Internal patches short-circuit when `req.context.skipBuildQueue === true` — **always set that flag when patching a presentation from inside the build job or an AI route** to avoid requeue loops.
 
@@ -60,7 +62,7 @@ This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors c
    2. add `src/blocks/<Name>Block.ts` = `emitPayloadBlock(<name>Spec)`;
    3. register the emitted block in `src/collections/Presentations.ts` (blocks array) **and** add the spec to `src/blocks/spec/index.ts` `ALL_SPECS`;
    4. add the renderer `src/export/blocks/<name>.ts` importing `<Name>BlockData` from its spec, and wire it into `src/export/renderers.ts` (`RENDERERS` map + `SlideBlock` union — these were consolidated here; `buildSlidesMd.ts` and `/preview` both consume this one registry);
-   5. **nothing to touch in the draft route** — its schema and `SYSTEM_PROMPT` are auto-derived from `ALL_SPECS` (see `src/lib/draftPresentation.ts`), so an `aiDraftable` block with a `promptMeta` is picked up automatically.
+   5. **nothing to touch in the draft route** — draft schemas and prompt catalogues are derived from `ALL_SPECS`, so an `aiDraftable` block with `promptMeta` is picked up automatically.
 
    Keep new blocks **use-case-agnostic** — fields should describe visual structure (title, eyebrow, cards, columns…), never domain concepts (office, testimonial, contact row…).
 
@@ -84,23 +86,34 @@ Smoke commands before changing export plumbing:
 - Focused args tests: `pnpm test src/jobs/__tests__/slidevExportArgs.test.ts`
 - Typecheck: `pnpm typecheck`
 
-### Sharing
-
-`ShareLinks` collection stores only `sha256(token)`; the raw token is generated in `beforeChange`, stashed on `req.context.shareToken`, and exposed once in `afterChange` as `shareUrl`. `/share/[token]/page.tsx` hashes the incoming token, looks up the link, checks `expiresAt`, increments `viewCount`, and iframes `/share/<token>/spa/index.html`.
-
 ### Migrations
 
-`src/migrations/index.ts` exports an empty array — the schema is still in flux on this feature branch. Run `pnpm payload migrate:create` against an empty dev DB to generate a fresh initial migration when you're ready to lock it in. After any change to collections or blocks, regenerate types with `pnpm generate:types` (it reads the config, doesn't need a live DB — just set `DATABASE_URL` to any dummy value).
+`src/migrations/index.ts` is the ordered production migration history. After collection or field changes, run `pnpm payload migrate:create` against a current development database and commit both generated `.ts` and `.json` files plus the barrel update. Regenerate `src/payload-types.ts` with `pnpm generate:types`; do not replace the migration history with a fresh initial migration.
+
+### Collections
+
+- `Users` is the authenticated admin collection. It stores roles, membership status, organisation memberships and the optional default organisation used by authoring flows.
+- `Organisations` owns reusable brand settings: colours, logos, fonts and public contact details. Presentation and knowledge access is scoped through organisation membership.
+- `Accounts` stores OAuth provider links created by `payload-auth-plugin`; it is infrastructure for Google sign-in rather than an author-facing content collection.
+- `Presentations` stores document metadata, typed page blocks, AI run options and readonly build artifacts. Its hooks own build queueing and cleanup of related agent runs.
+- `Media` stores uploads and generated document artifacts. Generated files link back to their presentation so read access follows deck ownership.
+- `AgentRuns` is the durable, immutable execution ledger for Mastra workflows: input fingerprint, source policy, events, evidence, command state and terminal result.
+- `KnowledgeBases` groups organisation-scoped grounding material and exposes readiness derived from its indexed documents.
+- `KnowledgeDocuments` stores uploaded source files and ingestion state; lifecycle hooks enqueue extraction/vector indexing and maintain knowledge-base readiness.
+
+### Document layer
+
+`src/documents/` is the template and artifact contract between authoring, agents and export. `templates.ts` defines canvas/page-count/chrome rules, `payload.ts` projects those rules into Payload fields, `presentationContract.ts` validates documents, `exportPlan.ts` declares native outputs, and `artifacts.ts` maps built files/URLs back onto a presentation.
 
 ### Access control
 
-`src/access/roles.ts` defines `isAdmin`, `isAdminOrAuthor`, `isLoggedIn`, `isAdminOrSelf` (admin OR `createdBy == user.id`). Collections wire these into their `access` blocks. `Presentations.createdBy` is stamped in a `beforeChange` field hook on `create` only.
+`src/access/roles.ts` centralizes role checks, organisation membership filters and user self-access. Collections wire these into their `access` blocks. `Presentations.createdBy` is stamped in a `beforeChange` field hook on create only.
 
 ### Routing layout
 
 Next.js route groups separate concerns:
-- `src/app/(payload)/` — Payload admin (`/admin/[[...segments]]`) and REST/GraphQL (`/api/[...slug]`), plus the custom `draft-presentation` route. The `importMap.js` here is generated.
-- `src/app/(frontend)/` — public portal: `/`, `/preview`, `/share/[token]`.
+- `src/app/(payload)/` — Payload admin (`/admin/[[...segments]]`), REST/GraphQL (`/api/[...slug]`), and custom routes for durable agent runs, Google Fonts, health, slide revision, and slide preview. The `importMap.js` here is generated.
+- `src/app/(frontend)/` — public portal routes `/`, `/membership-pending`, and `/spa/[slug]/[[...path]]` for built SPA assets.
 
 The `@/*` and `@payload-config` path aliases are defined in `tsconfig.json`.
 
@@ -112,27 +125,17 @@ The `@/*` and `@payload-config` path aliases are defined in `tsconfig.json`.
 
 `payload.config.ts` `onInit` upserts an admin user from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` on every boot (creates if missing, otherwise resets password + role). Skips silently if the env vars are absent.
 
-### AI drafting
-
-`@ai-stack/payloadcms` is **not** wired up — it crashed the admin client-side render. AI drafting goes through the custom `draft-presentation` route. The block Zod schema and system prompt are **not** hand-written there: they are derived from the block-spec SSOT (`src/blocks/spec`) by `src/lib/draftPresentation.ts`, which exports `SLIDES_SCHEMA` (`emitSlidesArraySchema(ALL_SPECS)`), `DRAFT_SYSTEM_PROMPT` (`buildSystemPrompt(...)` over each spec's `promptMeta`), and `draftPresentationSlides(brief)`. The route and the `scripts/draft-smoke.mjs` live check both call that one surface. The provider (`src/lib/ai.ts`) targets CloudCLIProxy's OpenAI-compatible endpoint and defaults to its stable `high` alias. It uses **tool calling** rather than `response_format: json_schema` for portable structured output. The prompt is deliberately use-case-agnostic — keep `promptMeta` free of domain vocabulary, company names, or industry terms; the LLM picks up tone from the user's brief.
-
 ### Source-aware agentic builds
 
-There are **two generation paths**. The single-shot `draft-presentation` route above is the quick path. The richer path is the Mastra **`deckWorkflow`** (`src/agents/workflow.ts`), invoked by `POST /api/agent-draft` and surfaced by the `AgentDraftButton` field — it runs gather → structure → draft → validate → assemble with a critique/revise loop.
+The Mastra `deckWorkflow` (`src/agents/workflow.ts`) is invoked by `POST /api/agent-draft` and surfaced by `AgentRunControls`. It runs gather → structure → draft → validate → visual → assemble, with optional plan approval and critique/revise loops.
 
-Authors can attach **external knowledge sources** per draft (the brief is the same; sources just ground it). Sources are **runtime-configured**, not a Payload collection: the `AGENT_SOURCE_REGISTRY_JSON` env var holds a JSON array of source descriptors (`src/lib/sources/types.ts` — discriminated on `transport: 'stdio' | 'http'`, MCP being the first connector family). The registry layer lives in `src/lib/sources/`:
-
-- `registry.ts` — parses/caches the env, exposes `listSourceDescriptors()` (full, server-only) and `listSourceOptions()` (id/label only, safe to send to the browser).
-- `resolve.ts` — `resolveSources(ids)` validates+dedups+caps selection (`MAX_SELECTED_SOURCES = 8`), throwing `UnknownSourceError` (→ HTTP 400) on unknown ids.
-- `mcpConnector.ts` — `openSourceToolsets(sources)` opens a Mastra `MCPClient` and returns `{ toolsets, disconnect }`.
-
-**Only `gather` and `structure` get source tools** (`src/agents/agents/research.ts`); the per-slide writers stay small-context with no tools. To keep secrets (commands, urls, env) out of Mastra's PostgresStore step snapshots, the workflow threads only plain `sourceIds: string[]` — the research helper resolves, opens, and `disconnect()`s the MCP client **locally** in the web process (the route's fire-and-forget `run.stream`, not the worker). Collected evidence is persisted as build metadata only (`draftSources` / `draftEvidence` on the presentation), not as visible slide citations. The admin source picker is fed by `GET /api/agent-sources` (auth-gated; returns options + `maxSelected`).
+Authors can select organisation-scoped `KnowledgeBases` for grounding. The route translates relationships to `knowledge_<id>` source ids, validates readiness and access, and stores the immutable source policy on `AgentRuns`. Only gather and structure receive search tools; per-slide writers stay small-context. `src/lib/sources/knowledgeConnector.ts` exposes bounded vector-search results while recording server-side evidence provenance.
 
 ## Environment
 
-Required: `DATABASE_URL`, `PAYLOAD_SECRET`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_FONTS_API_KEY`, `NEXT_PUBLIC_SERVER_URL`. Optional: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `AGENT_SOURCE_REGISTRY_JSON` (runtime external source registry for agentic drafts; defaults to no sources). See `.env.example`.
+Required in production: `DATABASE_URL`, `PAYLOAD_SECRET`, `CLIPROXYAPI_BASE_URL`, `CLIPROXYAPI_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_FONTS_API_KEY`, `NEXT_PUBLIC_SERVER_URL`. `OPENAI_MODEL` optionally overrides the proxy's stable `high` alias. Optional operational values include `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `MASTRA_DISABLE_INIT`, and `WORKER_REPLICAS`. See `.env.example`.
 
-`GOOGLE_FONTS_API_KEY` is a Google Cloud key with the **Web Fonts Developer API** enabled. It is server-only (`src/lib/googleFonts.ts`; the `/api/google-fonts` route returns family names/categories only). There is **no silent fallback** — a missing key, a non-ok upstream status, a network failure, or an empty catalog all throw `GoogleFontsUnavailableError`, which surfaces as HTTP 503 in the admin font picker and as a failed draft in the AI font-pair path (`src/agents/fonts.ts`). Failures are not cached, so fixing the key takes effect on the next request. `assertGoogleFontsKey()` (`src/lib/env.ts`, called at the top of `payload.config.ts`) refuses to boot in production without it; the value is deliberately not exported from `env.ts` because that module is client-importable. `LOCAL_FONTS` in `googleFonts.ts` lists only families bundled as webfont files (`src/export/style.css` ships Gilroy) — an asset inventory, not a degraded catalog. Like every other secret the key flows: GitHub Actions secret → `sync-coolify-secrets.yml` → Coolify env → `docker-compose.yaml` (`payload` **and** `payload-worker`).
+`GOOGLE_FONTS_API_KEY` is a Google Cloud key with the **Web Fonts Developer API** enabled. It is server-only (`src/lib/googleFonts.ts`; the `/api/google-fonts` route returns family names/categories only). There is **no silent fallback** — a missing key, a non-ok upstream status, a network failure, or an empty catalog all throw `GoogleFontsUnavailableError`, which surfaces as HTTP 503 in the admin font picker and as a failed draft in the AI font-pair path (`src/agents/fonts.ts`). Failures are not cached, so fixing the key takes effect on the next request. `assertGoogleFontsKey()` (`src/lib/env.ts`, called at the top of `payload.config.ts`) refuses to boot in production without it; the value is deliberately not exported from `env.ts` because that module is client-importable. `LOCAL_FONTS` in `googleFonts.ts` lists only families bundled as webfont files (`src/export/style.css` ships Gilroy) — an asset inventory, not a degraded catalog. Like every other secret the key flows through the reusable Coolify environment sync workflow to `docker-compose.yaml` for both web and worker services.
 
 Production runs three services (`docker-compose.yaml`): `postgres`, `payload` (web), `payload-worker` (runs `pnpm jobs:run` in a loop). Media is a shared host volume mounted at `/app/media` on both `payload` and `payload-worker` so the worker can write `spa/<slug>/` where the web process serves it.
 

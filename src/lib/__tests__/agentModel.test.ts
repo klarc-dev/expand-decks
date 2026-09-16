@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
@@ -10,6 +10,13 @@ vi.mock('../ai', () => ({
 const { agentModelSchema, verifyAgentModel, withAgentModel, activeAgentModel } = await import(
   '../agentModel'
 );
+
+beforeEach(() => {
+  vi.stubEnv('CLIPROXYAPI_BASE_URL', 'https://proxy.example/v1');
+  vi.stubEnv('CLIPROXYAPI_KEY', 'test-key');
+});
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe('agent model selection', () => {
   it('accepts proxy aliases and concrete model identifiers', () => {
@@ -51,6 +58,7 @@ describe('agent model selection', () => {
 
     expect(result).toEqual({ model: 'high', resolvedModel: 'claude-opus-5' });
     const [, init] = fetchMock.mock.calls[0]!;
+    expect(fetchMock.mock.calls[0]![0]).toBe('https://proxy.example/v1/chat/completions');
     const body = JSON.parse(String(init.body));
     expect(body.model).toBe('high');
     expect(body.tool_choice).toEqual({ type: 'function', function: { name: 'verify' } });
@@ -62,5 +70,13 @@ describe('agent model selection', () => {
     );
 
     await expect(verifyAgentModel('missing-model')).rejects.toThrow('unknown model');
+  });
+
+  it('requires the canonical CloudCLIProxy environment pair', async () => {
+    vi.stubEnv('CLIPROXYAPI_BASE_URL', '');
+    await expect(verifyAgentModel('high')).rejects.toThrow('URL CloudCLIProxy absente');
+    vi.stubEnv('CLIPROXYAPI_BASE_URL', 'https://proxy.example/v1');
+    vi.stubEnv('CLIPROXYAPI_KEY', '');
+    await expect(verifyAgentModel('high')).rejects.toThrow('Clé CloudCLIProxy absente');
   });
 });

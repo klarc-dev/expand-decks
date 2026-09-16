@@ -43,8 +43,8 @@ jobs:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/slides_ci
       PAYLOAD_SECRET: ci-placeholder-secret
       NEXT_PUBLIC_SERVER_URL: http://localhost:4317
-      OPENAI_BASE_URL: http://localhost:9999/v1
-      OPENAI_API_KEY: ci-placeholder
+      CLIPROXYAPI_BASE_URL: http://localhost:9999/v1
+      CLIPROXYAPI_KEY: ci-placeholder
       GOOGLE_CLIENT_ID: ci-placeholder
       GOOGLE_CLIENT_SECRET: ci-placeholder
       GOOGLE_FONTS_API_KEY: ci-placeholder
@@ -121,7 +121,7 @@ jobs:
         with:
           name: eval-ci-${{ github.sha }}
           path: artifacts/evals/ci.json
-          if-no-files-found: error
+          if-no-files-found: ignore
 
       - name: Build
         env:
@@ -185,30 +185,29 @@ jobs:
         run: pnpm eval:seed
       - name: Run persistent experiment
         run: pnpm eval:experiment
-      - name: Sync environment to Coolify
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
-          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-          COOLIFY_APPLICATION_UUID: ${{ vars.COOLIFY_APPLICATION_UUID }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
-          CLIPROXYAPI_BASE_URL: ${{ secrets.CLIPROXYAPI_BASE_URL }}
-          CLIPROXYAPI_KEY: ${{ secrets.CLIPROXYAPI_KEY }}
-          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
-          AGENT_SOURCE_REGISTRY_JSON: ${{ secrets.AGENT_SOURCE_REGISTRY_JSON }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_FONTS_API_KEY: ${{ secrets.GOOGLE_FONTS_API_KEY }}
-          NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
-          DEPLOY_COMMIT: ${{ github.sha }}
-        run: bash scripts/sync-coolify-env.sh
+      - name: Upload evaluation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-live-${{ github.sha }}
+          path: artifacts/evals/*.json
+          if-no-files-found: ignore
 
-      - name: Deploy verified revision to Coolify
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  sync-coolify-env:
+    name: Sync production environment
+    needs: eval-live
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/sync-coolify-env.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy verified revision to Coolify
+    needs: sync-coolify-env
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy verified revision
         env:
           COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
@@ -262,10 +261,3 @@ jobs:
 
           echo "::error::Coolify deployment $deployment_uuid did not finish within 15 minutes"
           exit 1
-      - name: Upload evaluation results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: eval-live-${{ github.sha }}
-          path: artifacts/evals/*.json
-          if-no-files-found: error

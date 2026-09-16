@@ -19,17 +19,20 @@ middleware labels and the external `coolify` network.
 ## Configuration
 
 The GitHub `production` environment stores every secret referenced by
-`docker-compose.yaml`. `.github/workflows/sync-coolify-secrets.yml` synchronizes
-those values to Coolify when the Compose contract changes or when manually
-dispatched.
+`docker-compose.yaml`. `.github/workflows/sync-coolify-env.yml` is the single
+secret-to-environment mapping. The main CI workflow calls it after the live
+quality gates and before deployment; `.github/workflows/sync-coolify-secrets.yml`
+exposes the same sync as a manual operation. Both callers forward environment
+secrets with `secrets: inherit`.
 
 The synchronized variables are available during both Compose interpolation and
 container runtime. Coolify assigns a fixed container name per Compose service,
 so worker concurrency is represented by two explicit services rather than
 `deploy.replicas`.
 
-Pushing application code to `main` triggers Coolify through its GitHub App and
-the configured watch path. Database migrations run before the web process starts.
+Pushing application code to `main` runs verification and live evaluation, syncs
+the environment, then requests the exact verified revision through Coolify's API.
+Database migrations run before the web process starts.
 
 ## Verification
 
