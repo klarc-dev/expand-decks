@@ -99,10 +99,11 @@ describe('Presentations IA tab', () => {
     expect(findField('agentRun')).toMatchObject({ type: 'ui' });
   });
 
-  it('keeps run state read-only in the sidebar and drops the mirrored ledgers', () => {
+  it('keeps run state read-only in the IA tab and drops the mirrored ledgers', () => {
     expect(findField('draftStatus')).toMatchObject({
-      admin: { readOnly: true, position: 'sidebar' },
+      admin: { readOnly: true },
     });
+    expect(findField('draftStatus')?.admin).not.toMatchObject({ position: 'sidebar' });
     expect(findField('latestAgentRun')).toBeUndefined();
     expect(findField('draftRequestId')).toBeUndefined();
     for (const removed of ['draftEvents', 'draftSources', 'draftEvidence']) {

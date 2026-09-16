@@ -398,27 +398,6 @@ export const Presentations: CollectionConfig = {
     },
     documentTemplateField,
     {
-      name: 'draftStatus',
-      type: 'select',
-      defaultValue: DRAFT_STATUS.idle,
-      label: 'Build IA',
-      access: runPointerAccess,
-      admin: {
-        readOnly: true,
-        position: 'sidebar',
-      },
-      options: [
-        { label: 'En attente', value: DRAFT_STATUS.idle },
-        { label: 'Recherche', value: DRAFT_STATUS.gathering },
-        { label: 'Plan', value: DRAFT_STATUS.structuring },
-        { label: 'Rédaction', value: DRAFT_STATUS.drafting },
-        { label: 'Validation', value: DRAFT_STATUS.validating },
-        { label: 'Build visuel', value: DRAFT_STATUS.building },
-        { label: 'Terminé', value: DRAFT_STATUS.done },
-        { label: 'Échoué', value: DRAFT_STATUS.failed },
-      ],
-    },
-    {
       name: 'buildStatusLive',
       type: 'ui',
       admin: {
@@ -452,6 +431,26 @@ export const Presentations: CollectionConfig = {
         {
           label: 'IA',
           fields: [
+            {
+              name: 'draftStatus',
+              type: 'select',
+              defaultValue: DRAFT_STATUS.idle,
+              label: 'Build IA',
+              access: runPointerAccess,
+              admin: {
+                readOnly: true,
+              },
+              options: [
+                { label: 'En attente', value: DRAFT_STATUS.idle },
+                { label: 'Recherche', value: DRAFT_STATUS.gathering },
+                { label: 'Plan', value: DRAFT_STATUS.structuring },
+                { label: 'Rédaction', value: DRAFT_STATUS.drafting },
+                { label: 'Validation', value: DRAFT_STATUS.validating },
+                { label: 'Build visuel', value: DRAFT_STATUS.building },
+                { label: 'Terminé', value: DRAFT_STATUS.done },
+                { label: 'Échoué', value: DRAFT_STATUS.failed },
+              ],
+            },
             {
               name: 'agentBrief',
               type: 'textarea',

@@ -182,7 +182,7 @@ describe('Presentations document template contract', () => {
     ]);
   });
 
-  it('keeps build feedback visible without a dedicated output tab', () => {
+  it('keeps build feedback visible without a dedicated output tab or sidebar', () => {
     const tabsField = (Presentations.fields as Array<Record<string, unknown>>).find(
       (field) => field.type === 'tabs',
     );
@@ -190,14 +190,25 @@ describe('Presentations document template contract', () => {
       (tabsField?.tabs as Array<{ label?: string }> | undefined)?.map((tab) => tab.label),
     ).toEqual(['Contenu', 'IA', 'Réglages']);
 
-    const buildStatusIndex = (Presentations.fields as Array<Record<string, unknown>>).findIndex(
-      (field) => field.name === 'buildStatusLive',
-    );
-    const tabsIndex = (Presentations.fields as Array<Record<string, unknown>>).findIndex(
-      (field) => field.type === 'tabs',
-    );
+    const fields = Presentations.fields as Array<Record<string, unknown>>;
+    const buildStatusIndex = fields.findIndex((field) => field.name === 'buildStatusLive');
+    const tabsIndex = fields.findIndex((field) => field.type === 'tabs');
     expect(buildStatusIndex).toBeGreaterThanOrEqual(0);
     expect(buildStatusIndex).toBeLessThan(tabsIndex);
+    expect(
+      fields.some(
+        (field) => (field.admin as { position?: string } | undefined)?.position === 'sidebar',
+      ),
+    ).toBe(false);
+
+    const tabs = (tabsField?.tabs ?? []) as Array<Record<string, unknown>>;
+    const aiTab = tabs.find((tab) => tab.label === 'IA');
+    const aiFields = (aiTab?.fields ?? []) as Array<Record<string, unknown>>;
+    const draftStatus = aiFields.find((field) => field.name === 'draftStatus');
+    expect(draftStatus).toMatchObject({
+      type: 'select',
+      admin: { readOnly: true },
+    });
   });
 
   it('declares only canonical ordered build artifacts and keeps them out of authoring UI', () => {
