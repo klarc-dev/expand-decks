@@ -85,4 +85,50 @@ describe('renderAgenda', () => {
     });
     expect(long).not.toContain('k-agenda--roomy');
   });
+
+  it('links an authored row to its slide by block id through the deck fold', () => {
+    const out = renderAgenda(
+      {
+        ...base,
+        items: [{ label: 'Produit', description: null, slideId: 'b2' }],
+      },
+      {
+        slideRefs: [
+          { id: 'b1', blockType: 'cover' },
+          { id: 'b2', blockType: 'twoCols', title: 'Produit' },
+        ],
+      },
+    );
+    expect(out).toContain('<Link :to="2" class="k-ag-link">Produit</Link>');
+  });
+
+  it('links derived section rows to their own section slides', () => {
+    const out = renderAgenda(base, {
+      sections: ['Intro', 'Roadmap'],
+      slideRefs: [
+        { id: 'a', blockType: 'cover' },
+        { id: 'b', blockType: 'section', title: 'Intro' },
+        { id: 'c', blockType: 'statement' },
+        { id: 'd', blockType: 'section', title: 'Roadmap' },
+      ],
+    });
+    expect(out).toContain('<Link :to="2" class="k-ag-link">Intro</Link>');
+    expect(out).toContain('<Link :to="4" class="k-ag-link">Roadmap</Link>');
+  });
+
+  it('renders plain labels when the row has no target or the slide is gone', () => {
+    const out = renderAgenda(
+      {
+        ...base,
+        items: [
+          { label: 'Plain', description: null },
+          { label: 'Orphan', description: null, slideId: 'missing' },
+        ],
+      },
+      { slideRefs: [{ id: 'b1', blockType: 'cover' }] },
+    );
+    expect(out).not.toContain('<Link');
+    expect(out).toContain('>Plain</h3>');
+    expect(out).toContain('>Orphan</h3>');
+  });
 });

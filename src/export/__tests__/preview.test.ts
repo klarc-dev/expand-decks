@@ -24,7 +24,10 @@ describe('renderBlockPreview()', () => {
   });
 
   it('applies the cover gradient on the same root frame used by final Slidev output', () => {
-    const preview = renderBlockPreview({ blockType: 'cover', title: 'Ouverture' } as never);
+    const preview = renderBlockPreview({
+      blockType: 'cover',
+      title: 'Ouverture',
+    } as never);
 
     expect(preview).not.toBeNull();
     expect(preview?.className).toBe('relative k-dark k-gradient');
@@ -105,6 +108,26 @@ describe('renderBlockPreview()', () => {
 
     expect(preview?.html).toContain('Intro');
     expect(preview?.html).toContain('Roadmap');
+  });
+
+  it('turns Slidev links into inert anchors that keep their class', () => {
+    const ctx = buildPreviewRenderContext(
+      ['cover', 'agenda', 'section'],
+      1,
+      ['Plan'],
+      [
+        { id: 'a', blockType: 'cover' },
+        { id: 'b', blockType: 'agenda' },
+        { id: 'c', blockType: 'section', title: 'Plan' },
+      ],
+    );
+    const preview = renderBlockPreview(
+      { blockType: 'agenda', title: 'Plan', items: [] } as never,
+      ctx,
+    );
+
+    expect(preview?.html).toContain('<a href="#" data-slide="3" class="k-ag-link">Plan</a>');
+    expect(preview?.html).not.toContain('<Link');
   });
 
   it('computes page and total with the same context fold used by export', () => {

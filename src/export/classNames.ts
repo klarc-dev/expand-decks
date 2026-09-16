@@ -115,6 +115,8 @@ export const K = {
   agendaNum: 'k-ag-num',
   agendaLabel: 'k-ag-label',
   agendaDesc: 'k-ag-desc',
+  agendaLink: 'k-ag-link',
+  pageAnchor: 'k-page-anchor',
   caption: 'k-caption',
   pill: 'k-pill',
   defItem: 'k-def-item',

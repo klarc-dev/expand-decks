@@ -1,15 +1,27 @@
 import type { SlideBlock } from './renderers';
 import { slideTone } from './slideTone';
-import type { RenderCtx, Surface } from './utils';
+import type { RenderCtx, SlideRef, Surface } from './utils';
 
-type ContextInput = Pick<SlideBlock, 'blockType'> & { title?: unknown };
+type ContextInput = Pick<SlideBlock, 'blockType'> & {
+  id?: unknown;
+  title?: unknown;
+};
 
 export type SlideRenderContext = RenderCtx & {
   surface: Surface;
   sections: string[];
+  slideRefs: SlideRef[];
   page: number;
   total: number;
 };
+
+function collectSlideRefs(slides: readonly ContextInput[]): SlideRef[] {
+  return slides.map((b) => ({
+    id: typeof b.id === 'string' && b.id ? b.id : null,
+    blockType: b.blockType,
+    title: typeof b.title === 'string' ? b.title : null,
+  }));
+}
 
 export function collectSectionTitles(slides: readonly ContextInput[]): string[] {
   return slides
@@ -25,6 +37,7 @@ export function buildDeckRenderContexts(
   let prevTone: Surface | null = null;
   let statementIndex = 0;
   const sections = sectionsOverride ?? collectSectionTitles(slides);
+  const slideRefs = collectSlideRefs(slides);
   const total = slides.length;
 
   return slides.map((block, index) => {
@@ -35,6 +48,7 @@ export function buildDeckRenderContexts(
       surface,
       variantIndex,
       sections,
+      slideRefs,
       page: index + 1,
       total,
     };
@@ -45,9 +59,17 @@ export function buildPreviewRenderContext(
   blockTypes: readonly string[],
   slideIndex: number,
   sections: string[] = [],
+  slideRefs?: readonly SlideRef[],
 ): SlideRenderContext | undefined {
-  return buildDeckRenderContexts(
-    blockTypes.map((blockType) => ({ blockType }) as ContextInput),
-    sections,
-  )[slideIndex];
+  // The admin sends block ids alongside block types so agenda links resolve to
+  // the same pages in the preview as in the export.
+  const inputs = blockTypes.map(
+    (blockType, index) =>
+      ({
+        blockType,
+        id: slideRefs?.[index]?.id ?? undefined,
+        title: slideRefs?.[index]?.title ?? undefined,
+      }) as ContextInput,
+  );
+  return buildDeckRenderContexts(inputs, sections)[slideIndex];
 }

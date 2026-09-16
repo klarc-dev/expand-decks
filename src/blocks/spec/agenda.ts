@@ -23,9 +23,14 @@ const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const title = limitedString(SLIDE_LIMITS.common.title);
 const active = optionalRender(z.number());
 
+// The linked slide is stored by block id, so the link survives reordering.
+// Resolved to a page number at render time from the deck fold (RenderCtx.slideRefs).
+const slideId = optionalRender(z.string());
+
 const item = z.object({
   label: limitedString(SLIDE_LIMITS.agenda.label),
   description: optionalLimitedRender(SLIDE_LIMITS.agenda.description),
+  slideId,
 });
 const items = optionalRender(limitedArray(item, SLIDE_LIMITS.agenda.items));
 
@@ -71,6 +76,13 @@ export const agendaSpec = block({
             description: 'Texte court sous la section (optionnel)',
           }),
         ),
+        rawField('slideId', slideId, false, {
+          type: 'text',
+          label: 'Diapositive liée',
+          description:
+            'Rend la ligne cliquable : le titre renvoie à la diapositive choisie, dans la version web comme dans le PDF. Vide = pas de lien.',
+          adminFieldComponent: '/components/SlideTargetField#default',
+        }),
       ],
     }),
     rawField('active', active, false, {

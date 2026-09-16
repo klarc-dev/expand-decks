@@ -1352,6 +1352,29 @@
   line-height: calc(1.4 * var(--density-leading));
 }
 
+/* Linked chapters: the label is the link, a router link in the SPA and an
+   internal destination in the PDF. No underline at rest, the ledger row is the
+   affordance; hover and focus restore the deck's link mark. */
+.slidev-layout .k-ag-link {
+  color: inherit;
+  text-decoration: none;
+  border: 0;
+}
+.slidev-layout .k-ag-link:hover,
+.slidev-layout .k-ag-link:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-rule);
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.14em;
+}
+
+/* Page anchors: zero-size in-slide targets for internal links (see foldSlides). */
+.k-page-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
 /* Active row: a tinted band drawn behind the row, bleeding past the text axes
    so the copy keeps its alignment. Inset from the hairlines so the ledger's
    rules stay continuous above and below it. */

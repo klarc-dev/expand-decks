@@ -29,6 +29,14 @@ const LOGO_VARIANTS = [
     alt: 'Logo klarc (noir)',
   },
 ] as const;
+// Stable block ids for the four expertise pages: the agenda rows point at them
+// (slideId), and a rerun keeps the same ids so links never go stale.
+const EXPERTISE_SLIDE_IDS = {
+  affaires: 'klarc-expertise-affaires',
+  pi: 'klarc-expertise-pi',
+  fiscal: 'klarc-expertise-fiscal',
+  innovation: 'klarc-expertise-innovation',
+} as const;
 const slides = [
   // Page 1 — cover
   {
@@ -143,29 +151,39 @@ const slides = [
     footer:
       'Les actions et les livrables sont définis selon votre situation et le périmètre de la mission.',
   },
-  // Page 5 — sommaire des quatre expertises, juste avant leur présentation
+  // Page 5 — sommaire des quatre expertises, juste avant leur présentation.
+  // Each row links to its expertise page through the block ids set below, so
+  // the titles are clickable in the web deck and in the PDF.
   {
     blockType: 'agenda',
     eyebrow: 'Nos expertises',
     title: 'Quatre expertises, une seule équipe',
     items: [
-      { label: 'Droit des affaires', description: 'Sécuriser vos contrats et votre société' },
+      {
+        label: 'Droit des affaires',
+        description: 'Sécuriser vos contrats et votre société',
+        slideId: EXPERTISE_SLIDE_IDS.affaires,
+      },
       {
         label: 'Propriété industrielle',
         description: 'Protéger et exploiter vos actifs immatériels',
+        slideId: EXPERTISE_SLIDE_IDS.pi,
       },
       {
         label: 'Droit fiscal',
         description: 'Construire votre stratégie fiscale et vous défendre',
+        slideId: EXPERTISE_SLIDE_IDS.fiscal,
       },
       {
         label: 'Management de l’innovation',
         description: 'Structurer et financer vos projets de R&D',
+        slideId: EXPERTISE_SLIDE_IDS.innovation,
       },
     ],
   },
   // Page 6 — droit des affaires
   {
+    id: EXPERTISE_SLIDE_IDS.affaires,
     blockType: 'twoCols',
     eyebrow: 'Droit des affaires',
     title: 'Sécuriser vos [contrats] et votre société',
@@ -199,6 +217,7 @@ const slides = [
   },
   // Page 7 — propriété industrielle
   {
+    id: EXPERTISE_SLIDE_IDS.pi,
     blockType: 'twoCols',
     eyebrow: 'Propriété industrielle',
     title: 'Protéger et exploiter vos [actifs immatériels]',
@@ -232,6 +251,7 @@ const slides = [
   },
   // Page 8 — droit fiscal, avec une expertise particulière de l'innovation
   {
+    id: EXPERTISE_SLIDE_IDS.fiscal,
     blockType: 'twoCols',
     eyebrow: 'Droit fiscal',
     title: 'Construire votre stratégie [fiscale] et vous défendre',
@@ -265,6 +285,7 @@ const slides = [
   },
   // Page 9 — management de l'innovation
   {
+    id: EXPERTISE_SLIDE_IDS.innovation,
     blockType: 'twoCols',
     eyebrow: 'Management de l’innovation',
     title: 'Structurer et financer vos projets de [R&D]',
