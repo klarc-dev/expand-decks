@@ -19,8 +19,8 @@
 
 import { resolveVarsWith } from './vars';
 
-export const FOOTER_LEFT_TEMPLATE = '{org.name}';
-export const FOOTER_RIGHT_TEMPLATE = '{page} / {total}';
+const FOOTER_LEFT_TEMPLATE = '{org.name}';
+const FOOTER_RIGHT_TEMPLATE = '{page} / {total}';
 
 export interface FooterConfig {
   enabled: boolean;

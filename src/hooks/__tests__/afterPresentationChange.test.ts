@@ -40,9 +40,6 @@ describe('afterPresentationChange', () => {
       lastBuildRequestedAt: expect.any(String),
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
-      spaUrl: null,
-      pdfFile: null,
-      coverImage: null,
       updatedAt: null,
     });
     expect(Date.parse(updateOne.mock.calls[0]?.[0].data.lastBuildRequestedAt)).not.toBeNaN();

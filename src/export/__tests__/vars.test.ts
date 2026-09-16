@@ -71,7 +71,7 @@ describe('flattenVars', () => {
     status: 'draft',
     tags: ['a', 'b'],
     slides: [{ blockType: 'cover' }],
-    pdfFile: 99,
+    artifacts: [{ key: 'pdf', buildId: 'internal-token', file: 99 }],
     organisation: {
       name: 'Klarc',
       website: 'https://klarc.example',

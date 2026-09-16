@@ -9,7 +9,7 @@ import {
 describe('patchPresentationBuildMetadata', () => {
   it('uses the database adapter so operational state does not advance updatedAt', async () => {
     const updateOne = vi.fn().mockResolvedValue({});
-    const data = { lastBuildStatus: 'success', spaUrl: '/spa/deck/index.html' };
+    const data = { lastBuildStatus: 'success', lastBuildError: '' };
 
     await patchPresentationBuildMetadata({ db: { updateOne } } as never, 19, data);
 

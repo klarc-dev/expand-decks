@@ -22,6 +22,7 @@ import sharp from 'sharp';
 import {
   artifactFileIds,
   presentationArtifactPatch,
+  staleArtifactFileIds,
   type ArtifactOutput,
   type ArtifactOutputs,
 } from '../documents/artifacts';
@@ -29,18 +30,17 @@ import { documentExportPlan } from '../documents/exportPlan';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import {
-  applyPageNumberChrome,
   buildFooterHeadmatter,
   buildFooterLayer,
   buildLogoLayer,
   hasAnyLogo,
   resolveLogoUrls,
   resolveOrgUrl,
+  standardFooter,
   type FooterConfig,
 } from '../export/chrome';
 import { buildHeadmatter, buildThemeCss, type OrgBrand } from '../export/theme';
 import { buildMermaidConfigSource } from '../export/mermaidConfig';
-import { resolveVarsWith } from '../export/vars';
 import { COLLECTIONS } from '../lib/collections';
 import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR, spaDir, spaUrl } from '../lib/paths';
 import { SLUG_RE } from '../lib/slug';
@@ -254,7 +254,7 @@ export async function preflightPresentationLayout(
     : null;
   const brand = org as (OrgBrand & Record<string, unknown>) | null;
   const template = resolveDocumentTemplate(candidate.documentTemplate);
-  const footer = template.chrome.footer ? (candidate.footer ?? undefined) : { enabled: false };
+  const footerEnabled = template.chrome.footer && candidate.footer?.enabled !== false;
   const logos = template.chrome.logo ? resolveLogoUrls(brand) : null;
   const language = candidate.language === 'en' ? 'en' : 'fr';
   const vars: Record<string, unknown> = {
@@ -264,16 +264,7 @@ export async function preflightPresentationLayout(
     date: new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR'),
     total: candidate.slides.length,
   };
-  const resolvedFooter = applyPageNumberChrome(
-    footer
-      ? {
-          ...footer,
-          left: resolveVarsWith(footer.left ?? '', vars),
-          right: resolveVarsWith(footer.right ?? '', vars),
-        }
-      : footer,
-    template.chrome.pageNumbers,
-  );
+  const resolvedFooter = standardFooter(footerEnabled, vars, template.chrome.pageNumbers);
   const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
   const themedHeadmatter = buildHeadmatter(baseHeadmatter, brand, language);
   const chromeHeadmatter = buildFooterHeadmatter(resolvedFooter, logos, resolveOrgUrl(brand));
@@ -289,7 +280,7 @@ export async function preflightPresentationLayout(
     slidesMd,
     themeCss: buildThemeCss(brand),
     mermaidConfigSource: buildMermaidConfigSource(brand),
-    footerEnabled: Boolean(footer?.enabled),
+    footerEnabled,
     logoPresent: hasAnyLogo(logos),
     mediaFilenames,
   });
@@ -350,21 +341,12 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       lastBuildStatus: BUILD_STATUS.building,
       lastBuildError: '',
       lastBuildToken: buildId,
-      spaUrl: null,
-      pdfFile: null,
-      coverImage: null,
     });
     const initialFingerprint = buildFingerprint(presentation as unknown as Record<string, unknown>);
-    const presentationArtifacts = presentation as typeof presentation & {
-      artifacts?: unknown;
-      pdfFile?: unknown;
-      coverImage?: unknown;
-    };
-    const previousArtifactFileIds = artifactFileIds([
-      ...((presentationArtifacts.artifacts as unknown[]) ?? []),
-      { file: presentationArtifacts.pdfFile },
-      { file: presentationArtifacts.coverImage },
-    ]);
+    const previousArtifactFileIds = staleArtifactFileIds(
+      (presentation as { artifacts?: unknown }).artifacts,
+      buildId,
+    );
     const slug = presentation.slug as string;
     if (!SLUG_RE.test(slug)) {
       throw new Error(`Invalid slug format: "${slug}"`);
@@ -392,9 +374,9 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       depth: 2,
     });
 
-    const footer = template.chrome.footer
-      ? (presentation as { footer?: Partial<FooterConfig> }).footer
-      : { enabled: false };
+    const footerEnabled =
+      template.chrome.footer &&
+      (presentation as { footer?: Partial<FooterConfig> }).footer?.enabled !== false;
     const logos = template.chrome.logo ? resolveLogoUrls(brand) : null;
 
     // Single resolution context — the SSOT for {path} variables in slide bodies
@@ -412,16 +394,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
 
     // Pre-resolve static tokens in footer templates; {page}/{total} stay live in
     // the Vue layer (they need per-slide nav state).
-    const resolvedFooter = applyPageNumberChrome(
-      footer
-        ? {
-            ...footer,
-            left: resolveVarsWith(footer.left ?? '', vars),
-            right: resolveVarsWith(footer.right ?? '', vars),
-          }
-        : footer,
-      template.chrome.pageNumbers,
-    );
+    const resolvedFooter = standardFooter(footerEnabled, vars, template.chrome.pageNumbers);
 
     const baseHeadmatter = readFileSync(join(EXPORT_DIR, ARTIFACTS.headmatter), 'utf-8').trim();
     const themedHeadmatter = buildHeadmatter(
@@ -446,7 +419,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       slidesMd,
       themeCss,
       mermaidConfigSource,
-      footerEnabled: Boolean(footer?.enabled),
+      footerEnabled,
       logoPresent: hasAnyLogo(logos),
       mediaFilenames,
     });
