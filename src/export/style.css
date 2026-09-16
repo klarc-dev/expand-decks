@@ -492,7 +492,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.k-eyebrow::before {
+.k-eyebrow--icon::before {
   content: "";
   flex: none;
   width: 0.42rem;
@@ -516,9 +516,6 @@
 }
 .k-eyebrow--cover {
   margin-bottom: 1.65rem;
-}
-.k-eyebrow-group.k-eyebrow--cover .k-eyebrow::before {
-  content: none;
 }
 .k-eyebrow--cta {
   margin-bottom: 2.1rem;
@@ -1219,9 +1216,9 @@
   --ag-gap: 1.6rem;
   --ag-row-pad: 1.05rem;
   --ag-band-bleed: 1rem;
-  --ag-num-size: 1.25rem;
+  --ag-num-size: 0.9rem;
   --ag-label-size: var(--t-h3);
-  --ag-desc-size: calc(var(--t-body) * 0.95);
+  --ag-desc-size: var(--t-body);
   --ag-dim: color-mix(in srgb, var(--fg-muted) 78%, var(--bg));
   list-style: none;
   margin: 0;
@@ -1231,13 +1228,20 @@
   border-bottom: 1px solid var(--k-line);
 }
 
-/* Two or three chapters: larger type so a short list still holds the canvas. */
+/* Up to four uncrowded chapters: larger type so a short list still holds the
+   canvas instead of floating in it. */
 .k-agenda--roomy {
   --ag-num-col: 3.6rem;
-  --ag-row-pad: 1.45rem;
-  --ag-num-size: 1.5rem;
+  --ag-row-pad: 1.6rem;
+  --ag-num-size: 1rem;
   --ag-label-size: var(--t-sub);
   --ag-desc-size: calc(var(--t-lead) * 0.9);
+}
+
+/* The active band overshoots the rail on purpose; let it past the content
+   clip so both ends of the band survive. */
+.k-content-main:has(> .k-agenda) {
+  overflow-clip-margin: 1.25rem;
 }
 
 .k-agenda--dense {
@@ -1269,15 +1273,15 @@
   border-top: 1px solid var(--k-line);
 }
 
-/* Numerals sit on the rail axis in the heading face, a small echo of the
-   section divider's large numeral, so the plan and its chapters rhyme. */
+/* Numerals sit on the rail axis in the technical face the eyebrow already
+   speaks: small, tabular, on the baseline. (Newsreader ships oldstyle figures
+   only, which would bounce a numeral column.) */
 .k-ag-num {
-  font-family: var(--k-font-heading);
+  font-family: var(--k-font-technical);
   font-weight: 400;
   font-size: var(--ag-num-size);
-  font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: 0.02em;
-  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
   color: var(--fg-muted);
 }
 
@@ -1332,7 +1336,7 @@
 }
 .k-agenda--fit.k-density-compact .k-ag-desc,
 .k-agenda--fit.k-density-dense .k-ag-desc {
-  font-size: calc(var(--ag-desc-size) * var(--density-scale));
+  font-size: max(calc(var(--ag-desc-size) * var(--density-scale)), var(--t-small));
   line-height: calc(1.4 * var(--density-leading));
 }
 
@@ -1359,11 +1363,9 @@
 .k-ag-item--dim .k-ag-num {
   color: var(--ag-dim);
 }
-.k-ag-item--dim .k-ag-label {
-  color: var(--fg-muted);
-}
+.k-ag-item--dim .k-ag-label,
 .k-ag-item--dim .k-ag-desc {
-  color: var(--ag-dim);
+  color: var(--fg-muted);
 }
 
 .k-dark .k-agenda,
@@ -1387,8 +1389,7 @@
 .k-dark .k-ag-item--dim .k-ag-label {
   color: var(--fg-muted);
 }
-.k-dark .k-ag-item--dim .k-ag-num,
-.k-dark .k-ag-item--dim .k-ag-desc {
+.k-dark .k-ag-item--dim .k-ag-num {
   color: color-mix(in srgb, var(--fg-muted) 70%, var(--bg));
 }
 

@@ -213,13 +213,11 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(underline).toMatch(/height:\s*2px/);
   });
 
-  it('keeps the eyebrow pill dot the same color as its text while cover pills stay text-only', () => {
-    const dot = css.match(/\.k-eyebrow::before\s*\{([^}]*)\}/)?.[1] ?? '';
+  it('renders pill icons only when the primitive opts in', () => {
+    const dot = css.match(/\.k-eyebrow--icon::before\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(dot).toMatch(/background:\s*currentColor/);
-    expect(css).not.toMatch(/\.k-dark \.k-eyebrow::before\s*\{/);
-    const coverDot =
-      css.match(/\.k-eyebrow-group\.k-eyebrow--cover \.k-eyebrow::before\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(coverDot).toMatch(/content:\s*none/);
+    expect(css).not.toMatch(/\.k-eyebrow::before\s*\{/);
+    expect(css).not.toMatch(/\.k-dark \.k-eyebrow--icon::before\s*\{/);
   });
 
   it('uses one density contract for card typography and geometry', () => {

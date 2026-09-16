@@ -24,7 +24,10 @@ export function renderCover(block: CoverBlockData, _ctx?: RenderCtx): string {
     : block.eyebrow
       ? [block.eyebrow]
       : [];
-  const eyebrow = eyebrowGroup(pillTexts, 'k-eyebrow--cover', { variant: block.pillVariant });
+  const eyebrow = eyebrowGroup(pillTexts, 'k-eyebrow--cover', {
+    icon: true,
+    variant: block.pillVariant,
+  });
 
   const subtitleHtml = richTextToHTML(block.subtitle);
   const subtitle = subtitleHtml ? `\n      <div class="${K.heroSub}">${subtitleHtml}</div>` : '';

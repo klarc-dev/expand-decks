@@ -42,7 +42,12 @@ describe('semantic pill variants', () => {
   });
   it('preserves default markup and composes explicit props on both primitives and legacy covers', () => {
     expect(eyebrow('Text')).toBe('\n<div class="k-eyebrow">Text</div>');
+    expect(eyebrow('Text', '', { icon: true })).toBe(
+      '\n<div class="k-eyebrow k-eyebrow--icon">Text</div>',
+    );
     expect(eyebrow('Text', '', { variant: 'default' })).toBe(eyebrow('Text'));
+    expect(slideHeader({ title: 'Title', eyebrow: 'Text' })).not.toContain('k-eyebrow--icon');
+    expect(renderCover(base)).toContain('k-eyebrow k-eyebrow--icon');
     for (const variant of PILL_VARIANTS.filter((v) => v !== 'default')) {
       expect(eyebrow('Text', '', { variant, extraClass: 'k-eyebrow-dark' })).not.toContain(
         'k-eyebrow-dark',

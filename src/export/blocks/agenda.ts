@@ -50,10 +50,10 @@ export function renderAgenda(block: AgendaBlockData, ctx?: RenderCtx): string {
   });
   const fitted = fit.mode === 'fitted';
   // Ledger geometry: rows share one column grid (numeral, label, description).
-  // A short chapter list (centered mode) earns larger type so three rows still
-  // hold the canvas; a list with no descriptions lets labels span the free
-  // column instead of leaving an empty axis on the right.
-  const roomy = !fitted && items.length <= 3;
+  // A short, uncrowded chapter list earns larger type so a few rows still hold
+  // the canvas; a list with no descriptions lets labels span the free column
+  // instead of leaving an empty axis on the right.
+  const roomy = !fit.crowded && items.length <= 4;
   const plain = items.every((item) => !item.description);
   const agendaClass = [
     K.agenda,

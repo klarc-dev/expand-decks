@@ -54,7 +54,15 @@ export function eyebrow(
         .filter((cls) => cls !== K.eyebrowDark)
         .join(' ')
     : opts?.extraClass;
-  const classes = [K.eyebrow, variantClass, extraClass, spacingClass].filter(Boolean).join(' ');
+  const classes = [
+    K.eyebrow,
+    opts?.icon ? 'k-eyebrow--icon' : '',
+    variantClass,
+    extraClass,
+    spacingClass,
+  ]
+    .filter(Boolean)
+    .join(' ');
   const inner = opts?.multiline ? `\n  ${escape(text)}\n` : escape(text);
   return `\n${indent}<div class="${classes}">${inner}</div>`;
 }
@@ -63,7 +71,7 @@ export function eyebrow(
 export function eyebrowGroup(
   texts: readonly string[],
   spacingClass = '',
-  opts?: { variant?: PillVariant | null },
+  opts?: { icon?: boolean; variant?: PillVariant | null },
 ): string {
   const items = texts.map((text) => eyebrow(text, '', opts)).join('');
   if (!items) return '';
