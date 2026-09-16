@@ -187,7 +187,7 @@ describe('style.css shared density system', () => {
   it('gives cover branding more weight and keeps long cover titles to a restrained scale', () => {
     const coverTitle = css.match(/\.slidev-layout \.k-cover \.k-hero-big\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(coverTitle).toContain('font-size: calc(var(--t-display) * 0.778)');
-    expect(coverTitle).toContain('line-height: 1.12');
+    expect(coverTitle).toContain('line-height: 1.18');
 
     const coverLogo =
       css.match(
@@ -243,10 +243,10 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
 
     const underline = css.match(/\.slidev-layout \.k-mark::after\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(underline).toContain('background: var(--mark-rule)');
-    expect(underline).toContain('border-radius: 1px');
+    expect(underline).toContain('border-radius: 2px');
     expect(underline).not.toContain('transform:');
-    expect(underline).toMatch(/bottom:\s*-0\.08em/);
-    expect(underline).toMatch(/height:\s*2px/);
+    expect(underline).toMatch(/bottom:\s*-0\.02em/);
+    expect(underline).toMatch(/height:\s*4px/);
   });
 
   it('renders pill icons only when the primitive opts in', () => {

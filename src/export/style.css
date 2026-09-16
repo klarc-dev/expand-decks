@@ -338,9 +338,9 @@
   z-index: -1;
   left: 0.03em;
   right: -0.02em;
-  bottom: -0.08em;
-  height: 2px;
-  border-radius: 1px;
+  bottom: -0.02em;
+  height: 4px;
+  border-radius: 2px;
   background: var(--mark-rule);
 }
 
@@ -2229,7 +2229,7 @@
    display title one step quieter so descriptive titles can hold two lines. */
 .slidev-layout .k-cover .k-hero-big {
   font-size: calc(var(--t-display) * 0.778);
-  line-height: 1.12;
+  line-height: 1.18;
 }
 
 .k-hero-big em {
