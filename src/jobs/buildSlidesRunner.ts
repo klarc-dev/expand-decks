@@ -29,6 +29,7 @@ import {
 import { documentExportPlan } from '../documents/exportPlan';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { buildSlidesMd } from '../export/buildSlidesMd';
+import { resolveInternalPdfLinks } from '../export/pdfLinks';
 import {
   buildFooterHeadmatter,
   buildFooterLayer,
@@ -446,6 +447,18 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       }),
       workdir,
     );
+    // Per-slide export means no page can define the named destination a
+    // `<Link>` prints; resolve those links to explicit pages after the merge.
+    // An unparseable file is left as is: the artifact measurement below is
+    // the step that fails a broken export, with a clearer message.
+    const pdfPath = join(/* turbopackIgnore: true */ workdir, ARTIFACTS.pdf);
+    try {
+      writeFileSync(pdfPath, await resolveInternalPdfLinks(readFileSync(pdfPath)));
+    } catch (error) {
+      req.payload.logger.warn(
+        `Internal PDF links left unresolved: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
     const needsCoverImage = exportPlan.images.some(
       (artifact) => artifact.repeat !== 'per-page' && (artifact.pageIndex ?? 0) === 0,
     );
