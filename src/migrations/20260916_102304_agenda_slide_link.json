@@ -824,6 +824,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1723,12 +1729,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "left_user_id": {
-          "name": "left_user_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "image_id": {
           "name": "image_id",
           "type": "integer",
@@ -1796,21 +1796,6 @@
           "method": "btree",
           "with": {}
         },
-        "presentations_blocks_two_cols_left_user_idx": {
-          "name": "presentations_blocks_two_cols_left_user_idx",
-          "columns": [
-            {
-              "expression": "left_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "presentations_blocks_two_cols_image_idx": {
           "name": "presentations_blocks_two_cols_image_idx",
           "columns": [
@@ -1828,15 +1813,6 @@
         }
       },
       "foreignKeys": {
-        "presentations_blocks_two_cols_left_user_id_users_id_fk": {
-          "name": "presentations_blocks_two_cols_left_user_id_users_id_fk",
-          "tableFrom": "presentations_blocks_two_cols",
-          "tableTo": "users",
-          "columnsFrom": ["left_user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "presentations_blocks_two_cols_image_id_media_id_fk": {
           "name": "presentations_blocks_two_cols_image_id_media_id_fk",
           "tableFrom": "presentations_blocks_two_cols",
@@ -1979,6 +1955,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2971,18 +2953,6 @@
         },
         "primary_action_url": {
           "name": "primary_action_url",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "secondary_action": {
-          "name": "secondary_action",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "secondary_action_url": {
-          "name": "secondary_action_url",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -4016,6 +3986,12 @@
         },
         "description": {
           "name": "description",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "slide_id": {
+          "name": "slide_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -8152,6 +8128,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "544faf2d-8a74-48fe-a54b-50082f3c4520",
-  "prevId": "b5a52fb8-96d6-4b61-9ca2-30a9f724abed"
+  "id": "ca274150-c406-4928-a231-cde202a4c0bc",
+  "prevId": "00000000-0000-0000-0000-000000000000"
 }

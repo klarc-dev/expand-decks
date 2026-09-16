@@ -57,6 +57,12 @@ describe('style.css fixed-canvas safe frame', () => {
     expect(css).toMatch(/\.k-location-grid\s*\{[^}]*row-gap:\s*1\.5rem/);
   });
 
+  it('keeps closing-slide phone and email links clickable without underlines', () => {
+    expect(css).toMatch(
+      /\.slidev-layout \.k-location-card \.k-location-contact a\s*\{[^}]*text-decoration:\s*none/,
+    );
+  });
+
   it('centers the CTA with symmetric clearance and only the split copy within its body', () => {
     expect(css).toMatch(
       /\.k-cta-frame\s*\{[^}]*padding-block:\s*max\(var\(--header-top\), var\(--content-bottom\)\)/,
@@ -78,6 +84,34 @@ describe('style.css richText normalization (regression: cover footerLeft circle)
 
   it('keeps richText pill/footer labels readable on dark surfaces (no white-on-white)', () => {
     expect(css).toMatch(/\.k-btn\s+p[\s\S]*?\{\s*color:\s*inherit/);
+  });
+});
+
+describe('style.css agenda ledger', () => {
+  it('rules rows with hairlines instead of boxing them', () => {
+    const item = css.match(/\n\.k-ag-item \{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(item).toMatch(/border-top:\s*1px solid var\(--k-line\)/);
+    expect(item).not.toMatch(/border-radius/);
+    expect(item).toMatch(/align-items:\s*center/);
+    expect(css).toMatch(/\.k-ag-desc\s*\{[\s\S]*?grid-column:\s*3/);
+  });
+
+  it('recedes inactive rows by colour, never opacity', () => {
+    const dim = css.match(/\.k-ag-item--dim[^{]*\{[\s\S]*?\}/g)?.join('\n') ?? '';
+    expect(dim).not.toMatch(/opacity/);
+    expect(dim).toMatch(/color:/);
+  });
+
+  it('keeps linked labels unmarked at rest and zero-sizes page anchors', () => {
+    expect(css).toMatch(/\.slidev-layout \.k-ag-link\s*\{[^}]*text-decoration:\s*none/);
+    expect(css).toMatch(
+      /\.k-page-anchor\s*\{[^}]*position:\s*absolute[^}]*width:\s*0[^}]*height:\s*0/,
+    );
+  });
+
+  it('keeps the active band a pseudo-element the content clip lets through', () => {
+    expect(css).toMatch(/\.k-ag-item--active::before\s*\{[\s\S]*?background:\s*var\(--k-teal-50\)/);
+    expect(css).toMatch(/\.k-content-main:has\(> \.k-agenda\)\s*\{[\s\S]*?overflow-clip-margin/);
   });
 });
 
@@ -149,6 +183,19 @@ describe('style.css shared density system', () => {
     expect(css).toMatch(/\.k-hero\.k-density-dense \.k-hero-title/);
     expect(css).toMatch(/\.k-hero--center \.k-hero-body\s*\{[\s\S]*margin-left:\s*auto/);
   });
+
+  it('gives cover branding more weight and keeps long cover titles to a restrained scale', () => {
+    const coverTitle = css.match(/\.slidev-layout \.k-cover \.k-hero-big\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(coverTitle).toContain('font-size: calc(var(--t-display) * 0.778)');
+    expect(coverTitle).toContain('line-height: 1.12');
+
+    const coverLogo =
+      css.match(
+        /\.slidev-page:has\(\.k-cover\)\s*>\s*\.k-slide-logo,[\s\S]*?\.slidev-page:has\(\.k-cover\)\s*>\s*\.k-slide-logo-link\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(coverLogo).toContain('height: 60px');
+    expect(coverLogo).toContain('max-width: 220px');
+  });
 });
 
 describe('style.css card grid composition (regression: floating sidebar note)', () => {
@@ -160,8 +207,16 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(css).toMatch(/\.k-card-stack--grid\s*\{[\s\S]*grid-auto-rows:\s*auto/);
   });
 
+  it('optically centers timeline numerals inside their circular markers', () => {
+    const dot = css.match(/\.k-tl-dot\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(dot).toMatch(/line-height:\s*1/);
+    expect(dot).toMatch(/align-items:\s*center/);
+    expect(dot).toMatch(/justify-content:\s*center/);
+    expect(dot).toMatch(/padding-top:\s*0\.12em/);
+  });
+
   it('uses one fixed heading-description size across content, hero, cover, section, and CTA slides', () => {
-    const token = css.match(/--t-heading-subtext:\s*([^;]+);/)?.[1]?.trim();
+    const token = css.match(/--t-heading-subtext:\s*([^;]+);/)?.[1]?.replace(/\s+/g, '');
     expect(token).toBe('var(--t-lead)');
     expect(css).toMatch(
       /:is\(\.k-header-lead, \.k-hero-body, \.k-hero-sub, \.k-section-sub, \.k-cta-sub\)\s*\{[^}]*font-size:\s*var\(--t-heading-subtext\)/,
@@ -194,10 +249,11 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
     expect(underline).toMatch(/height:\s*2px/);
   });
 
-  it('keeps the eyebrow pill dot the same color as its text in every tone', () => {
-    const dot = css.match(/\.k-eyebrow::before\s*\{([^}]*)\}/)?.[1] ?? '';
+  it('renders pill icons only when the primitive opts in', () => {
+    const dot = css.match(/\.k-eyebrow--icon::before\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(dot).toMatch(/background:\s*currentColor/);
-    expect(css).not.toMatch(/\.k-dark \.k-eyebrow::before\s*\{/);
+    expect(css).not.toMatch(/\.k-eyebrow::before\s*\{/);
+    expect(css).not.toMatch(/\.k-dark \.k-eyebrow--icon::before\s*\{/);
   });
 
   it('uses one density contract for card typography and geometry', () => {
@@ -210,7 +266,7 @@ describe('style.css card grid composition (regression: floating sidebar note)', 
 
   it('uses an explicit numbered role for comfortable two-column cards', () => {
     expect(css).toMatch(
-      /\.k-card-stack--grid\.k-grid-2:not\([^)]*\) \.k-card--numbered p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/,
+      /\.k-card-stack--grid\.k-grid-2:not\([^)]*\)\s+\.k-card--numbered\s+p\s*\{[^}]*font-size:\s*calc\(var\(--t-body\) \* 0\.95\)/,
     );
     expect(css).not.toContain(':has(> .k-num)');
   });
@@ -244,15 +300,18 @@ describe('style.css flat footnotes', () => {
     expect(textBlock).not.toMatch(/overflow:\s*hidden|text-overflow:\s*ellipsis/);
   });
 
-  it('uses pink numerals on white with matching superscript calls in the content', () => {
+  it('uses transparent numerals with matching superscript calls in the content', () => {
     const indexBlock = css.match(/\.k-def-index\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(indexBlock).toMatch(/color:\s*var\(--k-rose\)/);
-    expect(indexBlock).toMatch(/background:\s*#fff/);
+    expect(indexBlock).toMatch(/background:\s*transparent/);
     expect(indexBlock).toMatch(/border-radius:\s*0/);
 
     const refBlock = css.match(/\.k-def-ref\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(refBlock).toMatch(/color:\s*var\(--k-rose\)/);
     expect(refBlock).toMatch(/top:\s*-0\.35em/);
+    expect(refBlock).toMatch(/background:\s*transparent/);
+    const darkIndex = css.match(/\.k-dark \.k-def-index\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(darkIndex).toMatch(/background:\s*transparent/);
   });
 });
 

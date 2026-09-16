@@ -27,7 +27,12 @@ function frontmatterValue(frontmatter: string, key: string): string | null {
 function parsePreviewFrontmatter(markdown: string): PreviewFrontmatter {
   const match = markdown.match(/^---\n([\s\S]*?)\n---\n*/);
   if (!match) {
-    return { body: markdown, className: 'relative', hideChrome: false, layout: 'default' };
+    return {
+      body: markdown,
+      className: 'relative',
+      hideChrome: false,
+      layout: 'default',
+    };
   }
   const frontmatter = match[1] ?? '';
   return {
@@ -52,6 +57,16 @@ function unwrapVueBoundSrc(html: string): string {
     /:src='"([^"]*)"'/g,
     (_m, url: string) => `src="${url.startsWith('./') ? url.slice(1) : url}"`,
   );
+}
+
+/**
+ * The preview DOM has no Vue router: turn Slidev's <Link :to="n"> into a plain
+ * inert anchor that keeps its class, so linked agenda rows style identically.
+ */
+function unwrapSlidevLinks(html: string): string {
+  return html
+    .replace(/<Link :to="(\d+)"([^>]*)>/g, '<a href="#" data-slide="$1"$2>')
+    .replace(/<\/Link>/g, '</a>');
 }
 
 /**
@@ -95,7 +110,7 @@ export function renderBlockPreview(
   const parsed = parsePreviewFrontmatter(md);
   return {
     className: parsed.className,
-    html: unwrapVueBoundSrc(parsed.body),
+    html: unwrapSlidevLinks(unwrapVueBoundSrc(parsed.body)),
     hideChrome: parsed.hideChrome,
     image: parsed.image,
     layout: parsed.layout,

@@ -6,7 +6,7 @@ import { coverSpec, coverRenderSchema } from '../../blocks/spec/cover';
 import { aiSchemaOf, renderSchemaOf } from '../../blocks/spec/dsl';
 import { emitPayloadBlock } from '../../blocks/spec/emit/emitPayloadBlock';
 import { SLIDE_LIMITS } from '../../blocks/spec/limits';
-import { eyebrow, eyebrowGroup } from '../utils';
+import { eyebrow, eyebrowGroup, slideHeader } from '../utils';
 import { renderCover } from '../blocks/cover';
 import { buildThemeCss } from '../theme';
 
@@ -45,6 +45,12 @@ describe('semantic pill variants', () => {
   });
   it('preserves automatic markup and composes explicit cover palette roles', () => {
     expect(eyebrow('Text')).toBe('\n<div class="k-eyebrow">Text</div>');
+    expect(eyebrow('Text', '', { icon: true })).toBe(
+      '\n<div class="k-eyebrow k-eyebrow--icon">Text</div>',
+    );
+    expect(eyebrow('Text', '', { variant: 'default' as never })).toBe(eyebrow('Text'));
+    expect(slideHeader({ title: 'Title', eyebrow: 'Text' })).not.toContain('k-eyebrow--icon');
+    expect(renderCover(base)).toContain('k-eyebrow k-eyebrow--icon');
     for (const variant of PILL_VARIANTS) {
       expect(eyebrow('Text', '', { variant, extraClass: 'k-eyebrow-dark' })).not.toContain(
         'k-eyebrow-dark',

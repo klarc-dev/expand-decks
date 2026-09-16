@@ -696,7 +696,7 @@ describe('renderCardGrid()', () => {
     expect(result.indexOf('k-card-stack')).toBeLessThan(result.indexOf('k-cardgrid-people'));
   });
 
-  it('renders each contact detail of an intervenant as its own clickable link', () => {
+  it('renders each contact detail of an intervenant and links their identity to the public profile', () => {
     const result = renderCardGrid({
       blockType: 'cardGrid',
       title: 'Grid',
@@ -710,13 +710,13 @@ describe('renderCardGrid()', () => {
             email: 'joachim@klarc.com',
             phone: '06 12 34 56 78',
             linkedin: 'https://www.linkedin.com/in/joachim',
+            website: 'https://klarc.com/equipe/joachim-brindeau',
           },
         },
       ],
     });
-    // The name links to the email; the contact line repeats email, phone, LinkedIn.
     expect(result).toContain(
-      '<div class="k-person-name"><a href="mailto:joachim@klarc.com">Joachim Brindeau</a></div>',
+      '<div class="k-person-name"><a href="https://klarc.com/equipe/joachim-brindeau">Joachim Brindeau</a></div>',
     );
     // Assert each link's destination and readable label together, independent
     // of decorative SVG paths or the span used to lay out the label.
@@ -728,6 +728,7 @@ describe('renderCardGrid()', () => {
       { href: 'mailto:joachim@klarc.com', text: 'joachim@klarc.com' },
       { href: 'tel:0612345678', text: '06 12 34 56 78' },
       { href: 'https://www.linkedin.com/in/joachim', text: 'LinkedIn' },
+      { href: 'https://klarc.com/equipe/joachim-brindeau', text: 'Profil Klarc' },
     ]);
   });
 

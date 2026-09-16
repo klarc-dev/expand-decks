@@ -143,20 +143,22 @@ function personContacts(person: PersonCard): string {
 }
 
 export function personCard(person: PersonCard): string {
-  const avatar = person.avatarUrl
+  const profileHref =
+    person.website && /^https?:\/\/\S+$/i.test(person.website) ? safeHref(person.website) : null;
+  const avatarContent = person.avatarUrl
     ? `<img class="${K.personAvatar}" ${vueBoundSrc(person.avatarUrl)} alt="" />`
     : `<span class="${K.personAvatar} ${K.personInitials}" aria-hidden="true">${escape(person.initials)}</span>`;
+  const avatar = profileHref
+    ? `<a href="${escape(profileHref)}" aria-label="Profil public de ${escape(person.name)}">${avatarContent}</a>`
+    : avatarContent;
   const title = person.title
     ? `\n      <div class="${K.personTitle}">${escape(person.title)}</div>`
     : '';
   const description = person.description
     ? `\n      <div class="${K.personDescription}">${escape(person.description)}</div>`
     : '';
-  // The name itself links to the email (the primary way to reach a contact);
-  // the contact line below repeats it as text plus phone and LinkedIn.
-  const mailto = person.email ? safeHref(`mailto:${person.email}`) : null;
-  const name = mailto
-    ? `<a href="${escape(mailto)}">${escape(person.name)}</a>`
+  const name = profileHref
+    ? `<a href="${escape(profileHref)}">${escape(person.name)}</a>`
     : escape(person.name);
   return `<div class="${K.personCard}">
     ${avatar}

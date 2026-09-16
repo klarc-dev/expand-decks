@@ -29,15 +29,23 @@ const LOGO_VARIANTS = [
     alt: 'Logo klarc (noir)',
   },
 ] as const;
+// Stable block ids for the four expertise pages: the agenda rows point at them
+// (slideId), and a rerun keeps the same ids so links never go stale.
+const EXPERTISE_SLIDE_IDS = {
+  affaires: 'klarc-expertise-affaires',
+  pi: 'klarc-expertise-pi',
+  fiscal: 'klarc-expertise-fiscal',
+  innovation: 'klarc-expertise-innovation',
+} as const;
 const slides = [
   // Page 1 — cover
   {
     blockType: 'cover',
     pills: [{ text: 'Toulouse' }, { text: 'Lyon' }],
     pillVariant: 'primary',
-    title: '[Klarc] : Avocats et Conseils en Propriété Industrielle',
+    title: '[Klarc] : Avocats d’affaires et Conseils en Propriété Industrielle',
     subtitle:
-      'Conseil et contentieux pour les entreprises innovantes, à Toulouse, à Lyon et partout en France.',
+      'Conseil et contentieux pour protéger, financer et valoriser l’innovation, à Toulouse, à Lyon et partout en France.',
   },
   // Page 2 — 4 situations client, grille 2x2 numérotée
   {
@@ -84,11 +92,10 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: 'LE CONSTAT',
     title: 'Le problème des expertises dispersées',
-    lead: 'Pourquoi une seule équipe examine l’ensemble de votre dossier.',
+    lead: 'Une stratégie construite ensemble, à partir de votre situation.',
     intro:
-      'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement. Consulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
-    leftFooter:
-      'L’enjeu : examiner ensemble les conséquences juridiques, techniques et financières de vos choix.',
+      'Votre projet engage des décisions juridiques, scientifiques et financières qui dépendent les unes des autres.\n\nDes analyses séparées peuvent se contredire. Vous avez besoin d’une lecture commune pour décider.',
+    leftFooter: 'Notre différence : Quatre expertises réunies pour construire une seule stratégie.',
     rightCards: [
       {
         title: 'Des professions réglementées',
@@ -108,14 +115,14 @@ const slides = [
       {
         title: 'Une cohérence par construction',
         description:
-          'Les dimensions juridiques, techniques et fiscales de votre projet sont examinées au sein d’une même structure, pour construire une stratégie commune.',
+          'Les dimensions juridiques, techniques et fiscales de votre projet sont examinées au sein d’une même structure, pour construire une stratégie adaptée à votre projet.',
       },
     ],
   },
   // Page 4 — 4 temps d'action
   {
     blockType: 'timeline',
-    eyebrow: 'SUR VOTRE DOSSIER',
+    eyebrow: 'NOTRE ACCOMPAGNEMENT',
     title: 'Notre réponse à vos besoins',
     lead: 'Quatre temps, de l’analyse de votre situation à la défense de vos droits.',
     steps: [
@@ -125,9 +132,9 @@ const slides = [
           'Examiner vos pièces, vos objectifs et vos échéances ; identifier les risques, les options et les points à trancher.',
       },
       {
-        label: 'Conseiller une stratégie ou un arbitrage',
+        label: 'Construire votre stratégie',
         description:
-          'Vous recommander une voie et en expliquer les effets juridiques, fiscaux et opérationnels ; arbitrer les choix avec vous.',
+          'Croiser les analyses juridiques, scientifiques et fiscales ; bâtir avec vous une stratégie sur mesure et définir les actions à engager.',
       },
       {
         label: 'Formaliser vos décisions',
@@ -143,15 +150,46 @@ const slides = [
     footer:
       'Les actions et les livrables sont définis selon votre situation et le périmètre de la mission.',
   },
-  // Page 5 — droit des affaires
+  // Page 5 — sommaire des quatre expertises, juste avant leur présentation.
+  // Each row links to its expertise page through the block ids set below, so
+  // the titles are clickable in the web deck and in the PDF.
   {
+    blockType: 'agenda',
+    eyebrow: 'Nos expertises',
+    title: 'Quatre expertises, une seule équipe',
+    items: [
+      {
+        label: 'Droit des affaires',
+        description: 'Sécuriser vos contrats et votre société',
+        slideId: EXPERTISE_SLIDE_IDS.affaires,
+      },
+      {
+        label: 'Propriété industrielle',
+        description: 'Protéger et exploiter vos actifs immatériels',
+        slideId: EXPERTISE_SLIDE_IDS.pi,
+      },
+      {
+        label: 'Fiscalité des entreprises',
+        description: 'Construire votre stratégie fiscale et vous défendre',
+        slideId: EXPERTISE_SLIDE_IDS.fiscal,
+      },
+      {
+        label: 'Financement de l’innovation',
+        description: 'Structurer et financer vos projets de R&D',
+        slideId: EXPERTISE_SLIDE_IDS.innovation,
+      },
+    ],
+  },
+  // Page 6 — droit des affaires
+  {
+    id: EXPERTISE_SLIDE_IDS.affaires,
     blockType: 'twoCols',
     eyebrow: 'Droit des affaires',
     title: 'Sécuriser vos [contrats] et votre société',
-    lead: 'Contrats, gouvernance, opérations et différends : notre accompagnement.',
+    lead: 'Contrats, gouvernance, opérations et différends.',
     intro:
-      'Nos avocats interviennent en conseil et en contentieux, en lien avec les Conseils en Propriété Industrielle pour la propriété des résultats et avec l’avocat fiscaliste pour les effets de vos opérations.',
-    leftFooter: 'En lien avec la propriété industrielle pour vos résultats de R&D.',
+      'Nous organisons la vie de votre société et négocions vos contrats, partenariats et opérations.\n\nNous traduisons vos décisions en actes et défendons vos intérêts, à l’amiable comme en justice.',
+    leftFooter: 'Notre différence : Vos contrats intègrent les analyses des CPI et du fiscaliste.',
     rightCards: [
       {
         title: 'Vos contrats et partenariats',
@@ -161,7 +199,7 @@ const slides = [
       {
         title: 'La vie de votre société',
         description:
-          'Rédiger vos statuts et pactes ; conseiller les associés et dirigeants sur la gouvernance, préparer les décisions sociales et suivre les relations entre associés.',
+          'Rédiger statuts et pactes ; conseiller dirigeants et associés, préparer les décisions sociales et organiser la gouvernance.',
       },
       {
         title: 'Vos opérations',
@@ -171,24 +209,26 @@ const slides = [
       {
         title: 'Vos différends',
         description:
-          'Examiner les voies de résolution, préparer le précontentieux et la médiation ; conduire le contentieux commercial et de la propriété intellectuelle.',
+          'Préparer la négociation et la médiation ; défendre vos intérêts en contentieux commercial et de propriété intellectuelle.',
       },
     ],
   },
-  // Page 6 — propriété industrielle
+  // Page 7 — propriété industrielle
   {
+    id: EXPERTISE_SLIDE_IDS.pi,
     blockType: 'twoCols',
     eyebrow: 'Propriété industrielle',
     title: 'Protéger et exploiter vos [actifs immatériels]',
     lead: 'Brevets, marques, logiciels et savoir-faire, de la stratégie de protection à la défense de vos droits.',
     intro:
-      'Conseils en Propriété Industrielle (CPI) et avocats travaillent sur le même dossier pour articuler protection, contrats et défense de vos actifs.',
-    leftFooter: 'En lien avec le droit des affaires pour vos licences et vos contrats.',
+      'Nous identifions vos droits et définissons les protections adaptées à vos inventions, marques et créations.\n\nNous organisons leur valorisation et leur exploitation, puis défendons vos droits en cas d’atteinte.',
+    leftFooter:
+      'Notre différence : CPI et avocats coordonnent protection, valorisation et défense.',
     rightCards: [
       {
         title: 'Vos brevets et inventions',
         description:
-          'Examiner la brevetabilité, la titularité et la liberté d’exploitation ; rédiger et déposer vos demandes de brevet, suivre les procédures et négocier les accords d’exploitation.',
+          'Examiner brevetabilité, titularité et liberté d’exploitation ; rédiger vos demandes, suivre les procédures et négocier les accords d’exploitation.',
       },
       {
         title: 'Vos marques, dessins et modèles',
@@ -203,19 +243,21 @@ const slides = [
       {
         title: 'Vos savoir-faire',
         description:
-          'Identifier les informations confidentielles, documenter vos savoir-faire et organiser leur protection ; encadrer leur communication et leur exploitation par contrat.',
+          'Documenter et protéger vos savoir-faire ; encadrer par contrat leur communication et leur exploitation.',
       },
     ],
   },
-  // Page 7 — droit fiscal, avec une expertise particulière de l'innovation
+  // Page 8 — fiscalité des entreprises, avec une expertise particulière de l'innovation
   {
+    id: EXPERTISE_SLIDE_IDS.fiscal,
     blockType: 'twoCols',
-    eyebrow: 'Droit fiscal',
-    title: 'Conseiller et défendre votre [fiscalité]',
+    eyebrow: 'Fiscalité des entreprises',
+    title: 'Construire votre stratégie [fiscale] et vous défendre',
     lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
     intro:
-      'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle, en lien avec l’équipe scientifique pour documenter vos travaux de R&D.',
-    leftFooter: 'En lien avec le management de l’innovation pour vos preuves de R&D.',
+      'Nous construisons votre stratégie fiscale en tenant compte de vos opérations et des dispositifs applicables.\n\nNous documentons vos positions, répondons aux rectifications et vous défendons en cas de contentieux.',
+    leftFooter:
+      'Notre différence : Scientifiques et fiscaliste relient vos travaux aux critères fiscaux.',
     rightCards: [
       {
         title: 'Votre fiscalité d’entreprise',
@@ -225,12 +267,12 @@ const slides = [
       {
         title: 'Vos crédits d’impôt recherche et innovation',
         description:
-          'CIR[^1] et CII[^2] : examiner travaux et dépenses, sécuriser la position par rescrit et constituer le dossier justificatif.',
+          'CIR et CII : examiner travaux et dépenses, sécuriser la position par rescrit et constituer le dossier justificatif.',
       },
       {
         title: 'Vos régimes de faveur',
         description:
-          'JEI[^3], IP Box et exonérations : vérifier les conditions, revenus concernés et obligations à respecter.',
+          'JEI, IP Box et exonérations : vérifier les conditions, revenus concernés et obligations à respecter.',
       },
       {
         title: 'Vos contrôles et contentieux fiscaux',
@@ -238,46 +280,42 @@ const slides = [
           'Vous assister au contrôle, répondre aux rectifications et exercer les recours.',
       },
     ],
-    footnotes: [
-      { text: 'CIR : crédit d’impôt recherche.' },
-      { text: 'CII : crédit d’impôt innovation.' },
-      { text: 'JEI : jeune entreprise innovante.' },
-    ],
   },
-  // Page 8 — management de l'innovation
+  // Page 9 — management de l'innovation
   {
+    id: EXPERTISE_SLIDE_IDS.innovation,
     blockType: 'twoCols',
-    eyebrow: 'Management de l’innovation',
+    eyebrow: 'Financement de l’innovation',
     title: 'Structurer et financer vos projets de [R&D]',
-    lead: 'Financements, organisation et preuves de R&D, tenus par une équipe scientifique intégrée au cabinet.',
+    lead: 'Cadrage scientifique, demandes de financement et suivi des projets.',
     intro:
-      'Docteurs et ingénieurs structurent vos projets et leur documentation, en amont des aides et des déclarations fiscales préparées avec l’avocat fiscaliste.',
+      'Nous structurons vos projets de R&D pour présenter aux financeurs des objectifs, un programme de travaux et un budget cohérents.\n\nNous préparons vos demandes, organisons le suivi du projet et documentons les travaux et dépenses au regard des engagements pris.',
     leftFooter:
-      'En lien avec le droit fiscal pour les dispositifs propres à l’innovation et à la R&D.',
+      'Notre différence : Nos scientifiques montent vos dossiers techniques ; nos avocats encadrent vos engagements.',
     rightCards: [
       {
-        title: 'Vos aides et financements',
+        title: 'Votre stratégie de financement',
         description:
-          'Bpifrance, subventions, appels à projets régionaux et européens : examiner les dispositifs adaptés, préparer les demandes et suivre les obligations liées aux financements obtenus.',
+          'Sélectionner les aides et appels à projets adaptés ; vérifier les critères, articuler les dispositifs et préparer les demandes.',
       },
       {
-        title: 'La structuration de vos projets',
+        title: 'Le cadrage de votre projet',
         description:
-          'Définir les projets, leurs jalons, leurs responsables et leur budget ; établir l’état de l’art et les verrous à lever pour cadrer les travaux de R&D.',
+          'Établir l’état de l’art et les verrous scientifiques ; définir travaux, livrables, moyens et budget pour étayer la demande.',
       },
       {
-        title: 'Vos preuves de R&D',
+        title: 'Le pilotage et les justificatifs',
         description:
-          'Documenter les travaux, les essais et les résultats au fil du projet, pour relier les preuves aux dépenses déclarées en cas de contrôle.',
+          'Organiser jalons et responsabilités, suivre travaux et dépenses ; préparer les bilans et justificatifs attendus par les financeurs.',
       },
       {
         title: 'Vos partenariats de recherche',
         description:
-          'Laboratoires, thèses et consortiums : cadrer la collaboration, répartir les contributions et les résultats, en lien avec les contrats rédigés par l’avocat.',
+          'Cadrer les contributions, budgets et droits sur les résultats ; articuler accords de consortium et engagements envers les financeurs.',
       },
     ],
   },
-  // Page 9 — témoignages (extraits fidèles du deck historique livré)
+  // Page 10 — témoignages (extraits fidèles du deck historique livré)
   {
     blockType: 'quotes',
     eyebrow: 'TÉMOIGNAGES',
@@ -300,17 +338,16 @@ const slides = [
       },
       {
         quote:
-          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR[^1] sans problème. Une belle équipe !',
+          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème. Une belle équipe !',
         authorName: 'Kristof Descotes',
         authorRole: 'Directeur R&D',
         authorCompany: 'Althea',
       },
     ],
-    footnotes: [{ text: 'CIR : crédit d’impôt recherche.' }],
     linkLabel: 'Voir d’autres témoignages',
     linkUrl: 'https://klarc.com/identite/temoignages',
   },
-  // Page 10 — vos contacts (shared person-card grid; people wired at seed time)
+  // Page 11 — vos contacts (shared person-card grid; people wired at seed time)
   {
     blockType: 'cardGrid',
     eyebrow: 'POUR DÉMARRER',
@@ -318,13 +355,13 @@ const slides = [
     sidebarText:
       'Choisissez votre point d’entrée selon votre besoin ; il mobilise les compétences utiles à votre dossier.',
   },
-  // Page 11 — cta
+  // Page 12 — cta
   {
     blockType: 'cta',
     eyebrow: 'UN PREMIER ÉCHANGE',
     title: 'Parlons de votre situation',
     subtitle:
-      'Nous vous proposons un premier échange de 30 minutes pour examiner un contrat, un actif, une question fiscale, un projet de R&D ou un différend, et préciser les points à approfondir.',
+      'Nous vous offrons un premier échange de 30 minutes pour faire le point sur votre situation.',
     // Buttons and office details carry their own targets so the exported PDF
     // is clickable: booking page and one tel:/mailto: per office.
     primaryAction: 'Prendre rendez-vous',
@@ -431,7 +468,8 @@ await runPayloadScript(async (payload) => {
     },
     carine: {
       email: 'carine.doyharcabal@klarc.com',
-      description: 'Management de l’innovation : aides, structuration et preuves de R&D.',
+      description:
+        'Financement de l’innovation : cadrage scientifique, aides et pilotage des projets.',
       website: 'https://klarc.com/identite/carine-doyharcabal',
       linkedin: 'https://www.linkedin.com/in/carine-doyhar%C3%A7abal-phd-822baa7a/',
       portrait: 'https://klarc.com/wp-content/uploads/carine-doyharcabal-nose-centered.webp',
@@ -496,9 +534,9 @@ await runPayloadScript(async (payload) => {
       description: people[key].description,
     }));
   };
-  // The four expertise slides carry no person card: the contacts grid (page 10)
+  // The four expertise slides carry no person card: the contacts grid (page 11)
   // is the single place where the referents appear.
-  wire(10, ['joachim', 'lucien', 'benjamin', 'carine']);
+  wire(11, ['joachim', 'lucien', 'benjamin', 'carine']);
   const data = {
     title,
     organisation: org[0].id,
@@ -543,7 +581,7 @@ await runPayloadScript(async (payload) => {
     depth: 0,
     overrideAccess: true,
   });
-  if (verified.slides?.length !== 11) throw new Error('Expected 11 persisted slides');
+  if (verified.slides?.length !== 12) throw new Error('Expected 12 persisted slides');
   console.log(
     JSON.stringify({
       id: verified.id,

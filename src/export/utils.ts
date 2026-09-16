@@ -38,13 +38,17 @@ export function eyebrow(
   opts?: {
     indent?: string;
     extraClass?: string;
+    icon?: boolean;
     multiline?: boolean;
     variant?: PillVariant | null;
   },
 ): string {
   if (!text) return '';
   const indent = opts?.indent ?? '';
-  const variantClass = opts?.variant ? `k-eyebrow--${opts.variant}` : '';
+  // Render schemas still accept the legacy `default` value for stored content;
+  // it means the surface-aware automatic treatment, not an explicit CSS role.
+  const variant = opts?.variant as string | null | undefined;
+  const variantClass = variant && variant !== 'default' ? `k-eyebrow--${variant}` : '';
   // A legacy forced-dark class must not override an explicit palette role.
   const extraClass = variantClass
     ? opts?.extraClass
@@ -52,7 +56,15 @@ export function eyebrow(
         .filter((cls) => cls !== K.eyebrowDark)
         .join(' ')
     : opts?.extraClass;
-  const classes = [K.eyebrow, variantClass, extraClass, spacingClass].filter(Boolean).join(' ');
+  const classes = [
+    K.eyebrow,
+    opts?.icon ? 'k-eyebrow--icon' : '',
+    variantClass,
+    extraClass,
+    spacingClass,
+  ]
+    .filter(Boolean)
+    .join(' ');
   const inner = opts?.multiline ? `\n  ${escape(text)}\n` : escape(text);
   return `\n${indent}<div class="${classes}">${inner}</div>`;
 }
@@ -61,7 +73,7 @@ export function eyebrow(
 export function eyebrowGroup(
   texts: readonly string[],
   spacingClass = '',
-  opts?: { variant?: PillVariant | null },
+  opts?: { icon?: boolean; variant?: PillVariant | null },
 ): string {
   const items = texts.map((text) => eyebrow(text, '', opts)).join('');
   if (!items) return '';
@@ -304,10 +316,19 @@ ${bodyWithFooter}`;
  * `section` titles, which the agenda block falls back to when its own `items`
  * are empty (auto-plan from the deck structure).
  */
+/** One deck slide as the fold sees it: index + 1 is its page number. */
+export type SlideRef = {
+  id?: string | null;
+  blockType: string;
+  title?: string | null;
+};
+
 export type RenderCtx = {
   surface?: Surface | null;
   variantIndex?: number;
   sections?: string[];
+  /** Every slide of the deck in order, so a renderer can turn a block id into a page. */
+  slideRefs?: SlideRef[];
   /** Deck output language; drives the localized labels a renderer emits. */
   language?: DeckLanguage | null;
 };
@@ -387,7 +408,13 @@ export function locationCardsFromNote(html: string, language?: DeckLanguage | nu
     text.replace(
       /&(amp|lt|gt|quot|#39);/g,
       (entity) =>
-        ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" })[entity] ?? entity,
+        ({
+          '&amp;': '&',
+          '&lt;': '<',
+          '&gt;': '>',
+          '&quot;': '"',
+          '&#39;': "'",
+        })[entity] ?? entity,
     );
   const cards: string[] = [];
   for (const paragraph of paragraphs) {
@@ -428,7 +455,13 @@ export function cardStack(
     occupancy?: CardFrameOccupancy;
     dense?: boolean;
   },
-): { html: string; crowded: boolean; cols: number; rows: number; density: SlideDensity } {
+): {
+  html: string;
+  crowded: boolean;
+  cols: number;
+  rows: number;
+  density: SlideDensity;
+} {
   if (opts.itemPressures.length !== cards.length) {
     throw new Error('cardStack itemPressures must match cards');
   }
@@ -618,8 +651,11 @@ export function heroFrame(opts: {
   surface?: Surface | null;
   accentRule?: boolean;
   density?: SlideDensity;
+  pillVariant?: PillVariant;
 }): string {
-  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero');
+  const eb = eyebrow(opts.eyebrow, 'k-eyebrow--hero', {
+    variant: opts.pillVariant,
+  });
   const rule = opts.accentRule ? `\n<hr class="${K.divider}"/>` : '';
   const caption = opts.caption ? heroCaption(opts.caption, opts.captionLabel) : '';
   const sharedDensityClass = densityClass(opts.density ?? 'comfortable');

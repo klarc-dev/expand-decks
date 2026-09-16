@@ -38,10 +38,10 @@ describe('cover pills', () => {
   });
   it('renders multiple, single and absent pills, escaping authored text', () => {
     const html = renderCover({ ...base, pills: [{ text: 'Toulouse' }, { text: '<Lyon & "x">' }] });
-    expect(html.match(/class="k-eyebrow"/g)).toHaveLength(2);
+    expect(html.match(/class="k-eyebrow(?:\s[^"]*)?"/g)).toHaveLength(2);
     expect(html).toContain('&lt;Lyon &amp; &quot;x&quot;&gt;');
     expect(
-      renderCover({ ...base, pills: [{ text: 'One' }] }).match(/class="k-eyebrow"/g),
+      renderCover({ ...base, pills: [{ text: 'One' }] }).match(/class="k-eyebrow(?:\s[^"]*)?"/g),
     ).toHaveLength(1);
     for (const pills of [undefined, null, []])
       expect(renderCover({ ...base, pills })).not.toContain('k-eyebrow');
@@ -50,7 +50,7 @@ describe('cover pills', () => {
     for (const pills of [undefined, null, []]) {
       const html = renderCover({ ...base, eyebrow: 'TOULOUSE · LYON', pills });
       expect(html).toContain('TOULOUSE · LYON');
-      expect(html.match(/class="k-eyebrow"/g)).toHaveLength(1);
+      expect(html.match(/class="k-eyebrow(?:\s[^"]*)?"/g)).toHaveLength(1);
     }
     expect(renderCover({ ...base, eyebrow: 'Legacy', pills: [{ text: 'New' }] })).not.toContain(
       'Legacy',

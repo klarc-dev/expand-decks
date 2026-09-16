@@ -25,6 +25,7 @@ export function renderCover(block: CoverBlockData, ctx?: RenderCtx): string {
       ? [block.eyebrow]
       : [];
   const eyebrow = eyebrowGroup(pillTexts, 'k-eyebrow--cover', {
+    icon: true,
     variant: block.pillVariant === 'default' ? undefined : block.pillVariant,
   });
 

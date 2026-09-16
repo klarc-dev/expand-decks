@@ -15,6 +15,7 @@ import {
 import { buildHeadmatter } from './theme';
 import { buildDeckRenderContexts } from './renderContext';
 import { getRenderer, type SlideBlock } from './renderers';
+import { K } from './classNames';
 import { resetDefs, seedFootnotes, yamlQuoted } from './utils';
 import { resolvedVarsForValidation, setVarDoc } from './vars';
 
@@ -83,7 +84,12 @@ function foldSlides(
   parseDocumentRenderPages(template, resolvedVarsForValidation(slides));
   // One shared deck-context fold drives export and preview parity: tone chain,
   // statement variant rotation, agenda section derivation, and page totals.
-  const contexts = buildDeckRenderContexts(slides);
+  // Render schemas strip the block `id`, so slide refs take it from the raw
+  // document: agenda rows link to a slide by that id.
+  const rawSlides = presentation.slides as ReadonlyArray<{ id?: unknown }>;
+  const contexts = buildDeckRenderContexts(
+    slides.map((block, i) => ({ ...block, id: rawSlides[i]?.id })),
+  );
   const slidesMd = slides.map((block, i) => {
     const renderer = getRenderer(block.blockType);
     if (!renderer) {
@@ -107,9 +113,16 @@ function foldSlides(
   // PDF export to run with `--per-slide` (global currentPage stays stuck at 1 when
   // all slides render at once). With the numbers baked, a single-pass export is
   // correct — see buildSlidesRunner.
+  // Each slide also opens with a zero-size anchor whose id is its page number:
+  // Slidev's <Link> renders `href="#<page>"` in print mode, and Chromium turns a
+  // fragment link whose target exists into an internal PDF link. In the SPA the
+  // router handles the same link and the anchor is inert.
   const total = slides.length;
   const paged = slidesMd.map((slide, i) =>
-    slide.replace(/^---\n/, `---\nkPage: ${i + 1}\nkTotal: ${total}\n`),
+    slide.replace(
+      /^---\n([\s\S]*?\n---\n)/,
+      `---\nkPage: ${i + 1}\nkTotal: ${total}\n$1\n<div id="${i + 1}" class="${K.pageAnchor}"></div>\n`,
+    ),
   );
 
   // Each renderer's output already begins with `---` (its own frontmatter

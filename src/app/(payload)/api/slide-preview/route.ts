@@ -39,6 +39,11 @@ type PreviewRequestBody = {
   sections?: string[];
   slideIndex?: number;
   includeLayoutCandidates?: boolean;
+  slideRefs?: Array<{
+    id?: string | null;
+    blockType: string;
+    title?: string | null;
+  }>;
 };
 
 type AuthedUser = { id: string | number };
@@ -71,7 +76,12 @@ async function hydrateRelationship(args: {
 }) {
   if (!args.id) return null;
   return getOrLoadPreviewHydration(
-    { collection: args.collection, depth: args.depth, id: args.id, userId: args.userId },
+    {
+      collection: args.collection,
+      depth: args.depth,
+      id: args.id,
+      userId: args.userId,
+    },
     () =>
       args.payload
         .findByID({
@@ -210,7 +220,9 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Template de document invalide' },
+      {
+        error: error instanceof Error ? error.message : 'Template de document invalide',
+      },
       { status: 422 },
     );
   }
@@ -234,13 +246,15 @@ export async function POST(req: NextRequest) {
       assertDocumentPages(template, previewPages);
     } catch (error) {
       return noStoreJson(
-        { error: error instanceof Error ? error.message : 'Structure du document invalide' },
+        {
+          error: error instanceof Error ? error.message : 'Structure du document invalide',
+        },
         { status: 422 },
       );
     }
   }
   const renderContext = Array.isArray(body.blockTypes)
-    ? buildPreviewRenderContext(body.blockTypes, slideIndex, body.sections ?? [])
+    ? buildPreviewRenderContext(body.blockTypes, slideIndex, body.sections ?? [], body.slideRefs)
     : undefined;
 
   const cacheKey = buildPreviewResponseCacheKey({
@@ -252,6 +266,7 @@ export async function POST(req: NextRequest) {
     previewFieldPath,
     sections: body.sections,
     slideIndex,
+    slideRefs: body.slideRefs,
     userId: authedUser.id,
   });
   const cached = getPreviewResponse(cacheKey);
