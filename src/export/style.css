@@ -558,9 +558,13 @@
   box-shadow: var(--k-shadow-soft);
 }
 
-/* Stacked cards reserve more space for readable descriptions. */
+/* Stacked cards reserve more space for readable descriptions, and their title
+   grows by the same step as the body so the card keeps its hierarchy. */
 .k-split-cards .k-card {
   padding-block: calc(var(--card-padding-block) * 0.6);
+}
+.k-split-cards .k-card h3 {
+  font-size: calc(var(--t-h3) * 1.15 * var(--card-title-scale));
 }
 
 .k-card:hover {
