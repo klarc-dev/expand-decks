@@ -3,17 +3,17 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres';
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "organisations" DROP CONSTRAINT "organisations_created_by_id_users_id_fk";
-  
+
   ALTER TABLE "presentations" DROP CONSTRAINT "presentations_latest_agent_run_id_agent_runs_id_fk";
-  
+
   ALTER TABLE "presentations" DROP CONSTRAINT "presentations_created_by_id_users_id_fk";
-  
+
   ALTER TABLE "presentations" DROP CONSTRAINT "presentations_pdf_file_id_media_id_fk";
-  
+
   ALTER TABLE "presentations" DROP CONSTRAINT "presentations_cover_image_id_media_id_fk";
-  
+
   ALTER TABLE "knowledge_bases" DROP CONSTRAINT "knowledge_bases_created_by_id_users_id_fk";
-  
+
   ALTER TABLE "users" ALTER COLUMN "role" SET DATA TYPE text;
   UPDATE "users" SET "role" = 'author' WHERE "role" = 'viewer';
   ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'author'::text;
