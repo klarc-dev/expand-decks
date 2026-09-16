@@ -94,7 +94,7 @@ describe('style.css agenda ledger', () => {
     const item = css.match(/\n\.k-ag-item \{([\s\S]*?)\n\}/)?.[1] ?? '';
     expect(item).toMatch(/border-top:\s*1px solid var\(--k-line\)/);
     expect(item).not.toMatch(/border-radius/);
-    expect(item).toMatch(/align-items:\s*baseline/);
+    expect(item).toMatch(/align-items:\s*center/);
     expect(css).toMatch(/\.k-ag-desc\s*\{[\s\S]*?grid-column:\s*3/);
   });
 

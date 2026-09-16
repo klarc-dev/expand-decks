@@ -311,7 +311,7 @@
 .slidev-layout h1 {
   font-size: var(--t-title);
   line-height: 1.04;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .slidev-layout h2 {
@@ -593,6 +593,11 @@
   box-shadow: var(--k-shadow-soft);
 }
 
+/* Stacked cards reserve more space for readable descriptions. */
+.k-split-cards .k-card {
+  padding-block: calc(var(--card-padding-block) * 0.6);
+}
+
 .k-card:hover {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--k-teal) 24%, transparent);
@@ -608,7 +613,7 @@
 
 .k-card p {
   margin: 0;
-  font-size: calc(var(--t-body) * var(--card-body-scale));
+  font-size: calc(var(--t-body) * 1.15 * var(--card-body-scale));
   color: var(--k-ink-soft);
   line-height: var(--card-body-leading);
 }
@@ -1220,11 +1225,11 @@
   --ag-row-pad: 1.05rem;
   --ag-band-bleed: 1rem;
   --ag-label-size: var(--t-h3);
+  --ag-num-size: 1rem;
   --ag-desc-size: var(--t-body);
   --ag-label-track: 11fr;
   --ag-desc-track: 9fr;
   list-style: none;
-  --ag-num-size: var(--ag-label-size);
   margin: 0;
   padding: 0;
   display: flex;
@@ -1239,6 +1244,7 @@
   --ag-label-track: 12fr;
   --ag-desc-track: 8fr;
   --ag-row-pad: 1.6rem;
+  --ag-num-size: 1.1rem;
   --ag-label-size: var(--t-sub);
   --ag-desc-size: calc(var(--t-lead) * 0.9);
 }
@@ -1276,21 +1282,23 @@
       var(--ag-desc-track)
     );
   column-gap: var(--ag-gap);
-  align-items: baseline;
+  /* Cells centre on one horizontal axis: a small numeral, a large label and a
+     wrapped description read as one row instead of hanging off one baseline. */
+  align-items: center;
   padding: var(--ag-row-pad) 0;
   border-top: 1px solid var(--k-line);
 }
 
 /* Numerals sit on the rail axis in the technical face the eyebrow already
-   speaks, tabular and at the label's own size so both share one baseline and
-   one optical height. (Newsreader ships oldstyle figures only, which would
-   bounce a numeral column.) */
+   speaks: small, tabular, centred on the row. (Newsreader ships oldstyle
+   figures only, which would bounce a numeral column.) */
 .k-ag-num {
   font-family: var(--k-font-technical);
   font-weight: 400;
   font-size: var(--ag-num-size);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
+  line-height: 1;
   color: var(--k-rose);
 }
 
@@ -2386,6 +2394,12 @@
 }
 /* Portrait and initials share a quiet keyline; the fallback inherits the
    card's foreground rather than introducing a second colored surface. */
+.k-person-card > a:has(> .k-person-avatar) {
+  display: inline-flex;
+  align-self: start;
+  border-radius: 999px;
+  text-decoration: none;
+}
 .k-person-avatar {
   width: 3rem;
   height: 3rem;
@@ -2925,11 +2939,11 @@
 }
 
 .k-copy-stack--lead {
-  font-size: var(--t-lead);
+  font-size: calc(var(--t-lead) * 1.08);
 }
 .k-content.k-density-compact .k-copy-stack--lead,
 .k-content.k-density-dense .k-copy-stack--lead {
-  font-size: calc(var(--t-lead) * var(--density-scale));
+  font-size: calc(var(--t-lead) * 1.08 * var(--density-scale));
   line-height: calc(1.5 * var(--density-leading));
 }
 

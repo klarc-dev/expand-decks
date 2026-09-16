@@ -76,7 +76,7 @@ describe('shared person cards', () => {
       );
     }
   });
-  it('retains the photo and independently actionable name, email, phone and profile', () => {
+  it('links the name and photo to the authored public profile, never to the email', () => {
     const html = renderPeopleStrip(
       [
         {
@@ -86,15 +86,21 @@ describe('shared person cards', () => {
             email: 'anne@example.com',
             phone: '+33 6 12 34 56 78',
             linkedin: 'https://linkedin.com/in/anne',
+            website: 'https://example.com/equipe/anne',
             avatar: { sizes: { thumbnail: { filename: 'anne.png' } } },
           },
         },
       ],
       'k-cover-people',
     );
-    expect(html).toContain(':src=\'"./media/anne.png"\'');
+    expect(html).toContain(
+      '<a href="https://example.com/equipe/anne" aria-label="Profil public de Anne Martin"><img class="k-person-avatar" :src=\'"./media/anne.png"\' alt="" /></a>',
+    );
+    expect(html).toContain(
+      '<div class="k-person-name"><a href="https://example.com/equipe/anne">Anne Martin</a></div>',
+    );
     expect(html).toContain('alt=""');
-    expect(html.match(/href="mailto:anne@example.com"/g)).toHaveLength(2);
+    expect(html.match(/href="mailto:anne@example.com"/g)).toHaveLength(1);
     expect(html).toContain('href="tel:+33612345678"');
     expect(html).toContain('href="https://linkedin.com/in/anne"');
     expect(html).not.toContain('k-person-initials');
