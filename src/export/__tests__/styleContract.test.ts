@@ -59,6 +59,12 @@ describe('style.css fixed-canvas safe frame', () => {
     expect(css).toMatch(/\.k-location-grid\s*\{[^}]*row-gap:\s*1\.5rem/);
   });
 
+  it('keeps closing-slide phone and email links clickable without underlines', () => {
+    expect(css).toMatch(
+      /\.slidev-layout \.k-location-card \.k-location-contact a\s*\{[^}]*text-decoration:\s*none/,
+    );
+  });
+
   it('centers the CTA with symmetric clearance and only the split copy within its body', () => {
     expect(css).toMatch(
       /\.k-cta-frame\s*\{[^}]*padding-block:\s*max\(var\(--header-top\), var\(--content-bottom\)\)/,
@@ -148,6 +154,18 @@ describe('style.css shared density system', () => {
     expect(denseFrame).not.toMatch(/padding(?:-top)?:/);
     expect(css).toMatch(/\.k-hero\.k-density-dense \.k-hero-title/);
     expect(css).toMatch(/\.k-hero--center \.k-hero-body\s*\{[\s\S]*margin-left:\s*auto/);
+  });
+
+  it('gives cover branding more weight and keeps long cover titles to a restrained scale', () => {
+    const coverTitle = css.match(/\.k-cover \.k-hero-big\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(coverTitle).toContain('font-size: calc(var(--t-display) * 0.87)');
+
+    const coverLogo =
+      css.match(
+        /\.slidev-page:has\(\.k-cover\)\s*>\s*\.k-slide-logo,[\s\S]*?\.slidev-page:has\(\.k-cover\)\s*>\s*\.k-slide-logo-link\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(coverLogo).toContain('height: 60px');
+    expect(coverLogo).toContain('max-width: 220px');
   });
 });
 
@@ -244,15 +262,18 @@ describe('style.css flat footnotes', () => {
     expect(textBlock).not.toMatch(/overflow:\s*hidden|text-overflow:\s*ellipsis/);
   });
 
-  it('uses pink numerals on white with matching superscript calls in the content', () => {
+  it('uses transparent numerals with matching superscript calls in the content', () => {
     const indexBlock = css.match(/\.k-def-index\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(indexBlock).toMatch(/color:\s*var\(--k-rose\)/);
-    expect(indexBlock).toMatch(/background:\s*#fff/);
+    expect(indexBlock).toMatch(/background:\s*transparent/);
     expect(indexBlock).toMatch(/border-radius:\s*0/);
 
     const refBlock = css.match(/\.k-def-ref\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(refBlock).toMatch(/color:\s*var\(--k-rose\)/);
     expect(refBlock).toMatch(/top:\s*-0\.35em/);
+    expect(refBlock).toMatch(/background:\s*transparent/);
+    const darkIndex = css.match(/\.k-dark \.k-def-index\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(darkIndex).toMatch(/background:\s*transparent/);
   });
 });
 
