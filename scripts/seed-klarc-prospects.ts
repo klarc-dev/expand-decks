@@ -35,9 +35,9 @@ const slides = [
     blockType: 'cover',
     pills: [{ text: 'Toulouse' }, { text: 'Lyon' }],
     pillVariant: 'primary',
-    title: '[Klarc] : Avocats et Conseils en Propriété Industrielle',
+    title: '[Klarc] : Avocats d’affaires et Conseils en Propriété Industrielle',
     subtitle:
-      'Conseil et contentieux pour les entreprises innovantes, à Toulouse, à Lyon et partout en France.',
+      'Conseil et contentieux pour protéger, financer et valoriser l’innovation, à Toulouse, à Lyon et partout en France.',
   },
   // Page 2 — 4 situations client, grille 2x2 numérotée
   {
@@ -84,7 +84,7 @@ const slides = [
     blockType: 'twoCols',
     eyebrow: 'LE CONSTAT',
     title: 'Le problème des expertises dispersées',
-    lead: 'Pourquoi une seule équipe examine l’ensemble de votre dossier.',
+    lead: 'Une stratégie construite ensemble, à partir de votre situation.',
     intro:
       'Votre projet innovant touche à la fois au droit, à la science, à la fiscalité et au financement. Consulter séparément multiplie les interlocuteurs, allonge les délais et peut conduire à des analyses incohérentes. Vous devez pourtant décider à partir d’une lecture commune de votre situation.',
     leftFooter:
@@ -115,7 +115,7 @@ const slides = [
   // Page 4 — 4 temps d'action
   {
     blockType: 'timeline',
-    eyebrow: 'SUR VOTRE DOSSIER',
+    eyebrow: 'NOTRE ACCOMPAGNEMENT',
     title: 'Notre réponse à vos besoins',
     lead: 'Quatre temps, de l’analyse de votre situation à la défense de vos droits.',
     steps: [
@@ -125,9 +125,9 @@ const slides = [
           'Examiner vos pièces, vos objectifs et vos échéances ; identifier les risques, les options et les points à trancher.',
       },
       {
-        label: 'Conseiller une stratégie ou un arbitrage',
+        label: 'Construire votre stratégie',
         description:
-          'Vous recommander une voie et en expliquer les effets juridiques, fiscaux et opérationnels ; arbitrer les choix avec vous.',
+          'Croiser les analyses juridiques, scientifiques et fiscales ; construire avec vous les options adaptées à vos objectifs et définir les actions à engager.',
       },
       {
         label: 'Formaliser vos décisions',
@@ -211,10 +211,10 @@ const slides = [
   {
     blockType: 'twoCols',
     eyebrow: 'Droit fiscal',
-    title: 'Conseiller et défendre votre [fiscalité]',
+    title: 'Construire votre stratégie [fiscale] et vous défendre',
     lead: 'Fiscalité de l’entreprise, de ses dirigeants et de l’innovation.',
     intro:
-      'L’avocat fiscaliste conseille vos choix et vous défend en cas de contrôle, en lien avec l’équipe scientifique pour documenter vos travaux de R&D.',
+      'L’avocat fiscaliste construit avec vous une stratégie adaptée à vos opérations et vous défend en cas de contrôle. Avec l’équipe scientifique, il établit la position fiscale à partir de vos travaux de R&D.',
     leftFooter: 'En lien avec le management de l’innovation pour vos preuves de R&D.',
     rightCards: [
       {
@@ -225,12 +225,12 @@ const slides = [
       {
         title: 'Vos crédits d’impôt recherche et innovation',
         description:
-          'CIR[^1] et CII[^2] : examiner travaux et dépenses, sécuriser la position par rescrit et constituer le dossier justificatif.',
+          'CIR et CII : examiner travaux et dépenses, sécuriser la position par rescrit et constituer le dossier justificatif.',
       },
       {
         title: 'Vos régimes de faveur',
         description:
-          'JEI[^3], IP Box et exonérations : vérifier les conditions, revenus concernés et obligations à respecter.',
+          'JEI, IP Box et exonérations : vérifier les conditions, revenus concernés et obligations à respecter.',
       },
       {
         title: 'Vos contrôles et contentieux fiscaux',
@@ -238,20 +238,15 @@ const slides = [
           'Vous assister au contrôle, répondre aux rectifications et exercer les recours.',
       },
     ],
-    footnotes: [
-      { text: 'CIR : crédit d’impôt recherche.' },
-      { text: 'CII : crédit d’impôt innovation.' },
-      { text: 'JEI : jeune entreprise innovante.' },
-    ],
   },
   // Page 8 — management de l'innovation
   {
     blockType: 'twoCols',
     eyebrow: 'Management de l’innovation',
     title: 'Structurer et financer vos projets de [R&D]',
-    lead: 'Financements, organisation et preuves de R&D, tenus par une équipe scientifique intégrée au cabinet.',
+    lead: 'Une équipe scientifique pour structurer vos travaux de R&D et construire vos demandes de financement.',
     intro:
-      'Docteurs et ingénieurs structurent vos projets et leur documentation, en amont des aides et des déclarations fiscales préparées avec l’avocat fiscaliste.',
+      'Docteurs et ingénieurs construisent avec vous le cadre scientifique et financier de vos projets, documentent vos travaux et préparent les dossiers en lien avec l’avocat fiscaliste.',
     leftFooter:
       'En lien avec le droit fiscal pour les dispositifs propres à l’innovation et à la R&D.',
     rightCards: [
@@ -300,13 +295,12 @@ const slides = [
       },
       {
         quote:
-          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR[^1] sans problème. Une belle équipe !',
+          'Benjamin, Carine et leurs équipes m’ont accompagné lorsque j’étais à la tête d’une équipe de R&D. Leur accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème. Une belle équipe !',
         authorName: 'Kristof Descotes',
         authorRole: 'Directeur R&D',
         authorCompany: 'Althea',
       },
     ],
-    footnotes: [{ text: 'CIR : crédit d’impôt recherche.' }],
     linkLabel: 'Voir d’autres témoignages',
     linkUrl: 'https://klarc.com/identite/temoignages',
   },
