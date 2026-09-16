@@ -1224,7 +1224,7 @@
   --ag-label-track: 11fr;
   --ag-desc-track: 9fr;
   list-style: none;
-  --ag-num-size: var(--ag-label-size);
+  --ag-num-size: 1rem;
   margin: 0;
   padding: 0;
   display: flex;
@@ -1244,6 +1244,7 @@
 }
 
 /* The active band overshoots the rail on purpose; let it past the content
+  --ag-num-size: 1.1rem;
    clip so both ends of the band survive. */
 .k-content-main:has(> .k-agenda) {
   overflow-clip-margin: 1.25rem;
@@ -1276,15 +1277,16 @@
       var(--ag-desc-track)
     );
   column-gap: var(--ag-gap);
-  align-items: baseline;
+  /* Cells centre on one horizontal axis: a small numeral, a large label and a
+     wrapped description read as one row instead of hanging off one baseline. */
+  align-items: center;
   padding: var(--ag-row-pad) 0;
   border-top: 1px solid var(--k-line);
 }
 
 /* Numerals sit on the rail axis in the technical face the eyebrow already
-   speaks, tabular and at the label's own size so both share one baseline and
-   one optical height. (Newsreader ships oldstyle figures only, which would
-   bounce a numeral column.) */
+   speaks: small, tabular, centred on the row. (Newsreader ships oldstyle
+   figures only, which would bounce a numeral column.) */
 .k-ag-num {
   font-family: var(--k-font-technical);
   font-weight: 400;
