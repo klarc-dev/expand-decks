@@ -1848,7 +1848,11 @@
 }
 .k-cardgrid-people--grid .k-person-avatar {
   width: 5.5rem;
-  height: 6.25rem;
+  height: 100%;
+  min-height: 6.25rem;
+  align-self: stretch;
+  contain: size;
+  outline-offset: -1px;
   margin-top: 0;
   border-radius: var(--k-radius-card);
   object-position: center 14%;
@@ -2526,6 +2530,20 @@
   position: static;
   display: block;
   height: 100%;
+}
+/* The cover is the brand entrance: give the organisation mark enough optical
+   weight to register before the title, without changing the quiet chrome used
+   throughout the rest of the deck. */
+.slidev-page:has(.k-cover) > .k-slide-logo,
+.slidev-page:has(.k-cover) > .k-slide-logo-link {
+  top: 1.4rem;
+  left: calc(var(--content-inset) - 0.2rem);
+  height: 60px;
+  max-width: 220px;
+  opacity: 1;
+}
+.slidev-page:has(.k-cover) > .k-slide-logo-link .k-slide-logo {
+  max-width: 100%;
 }
 .k-slide-footer a {
   color: inherit;
