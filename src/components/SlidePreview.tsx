@@ -1,19 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Modal,
-  TextareaInput,
-  toast,
-  useDocumentInfo,
-  useForm,
-  useFormFields,
-  useModal,
-} from '@payloadcms/ui';
+import { Button, Modal, useDocumentInfo, useFormFields, useModal } from '@payloadcms/ui';
 
 import type { SlideLayoutCompatibility } from '@/blocks/spec/slideLayoutCompatibility';
-import { AdminNotice, AdminPanel } from '@/components/adminUi/AdminSurface';
+import { AdminNotice } from '@/components/adminUi/AdminSurface';
 import { SLIDE_CANVAS_HEIGHT, SLIDE_CANVAS_WIDTH } from '@/export/canvas';
 import {
   previewRequestKey,
@@ -21,7 +12,6 @@ import {
   type PreviewRequest,
 } from '@/components/slidePreviewState';
 import { SlideFrame, type SlideChrome } from '@/components/SlideFrame';
-import { adminPost } from '@/lib/adminFetch';
 
 import '@/export/style.css';
 import './SlidePreview.scss';
@@ -119,51 +109,6 @@ type PreviewResult = {
   };
 };
 
-type SlideRevisionControlsProps = {
-  panelId: string;
-  path: string;
-  instruction: string;
-  revising: boolean;
-  setInstruction: (value: string) => void;
-  submit: () => void;
-};
-
-function SlideRevisionControls({
-  panelId,
-  path,
-  instruction,
-  revising,
-  setInstruction,
-  submit,
-}: SlideRevisionControlsProps) {
-  return (
-    <AdminPanel className="slide-preview__ai-panel" density="compact" id={panelId}>
-      <TextareaInput
-        className="slide-preview__revision-field"
-        label="Consigne de modification de la diapositive"
-        path={`${path}.revisionInstruction`}
-        value={instruction}
-        onChange={(event) => setInstruction(event.target.value)}
-        placeholder="Ex. : raccourcis le tableau, clarifie le message et conserve les chiffres."
-        rows={3}
-        readOnly={revising}
-      />
-      <Button
-        buttonStyle="primary"
-        className="slide-preview__ai-submit"
-        disabled={revising || !instruction.trim()}
-        margin={false}
-        onClick={submit}
-        size="small"
-        type="button"
-      >
-        {revising ? 'Révision en cours…' : 'Appliquer à cette diapositive'}
-      </Button>
-    </AdminPanel>
-  );
-}
-
-// fallow-ignore-next-line complexity — preview fetching and form revision share one field lifecycle
 const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const { id } = useDocumentInfo();
   // Subscribe to form state so the preview re-renders while the author types.
@@ -180,53 +125,8 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
   const [result, setResult] = useState<PreviewResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showAi, setShowAi] = useState(false);
-  const [instruction, setInstruction] = useState('');
-  const [revising, setRevising] = useState(false);
-  const { reset, submit } = useForm();
   const { openModal } = useModal();
   const modalSlug = `slide-layout-compatibility-${path.replace(/[^a-zA-Z0-9]/g, '-')}`;
-  const aiPanelId = `${path.replace(/[^a-zA-Z0-9_-]/g, '-')}-revision-panel`;
-
-  async function reviseCurrentSlide() {
-    if (!request.presentationId || !instruction.trim()) return;
-    setRevising(true);
-    setError('');
-    try {
-      // Save the current form first so resetting after the server-side revision
-      // cannot discard unrelated unsaved edits elsewhere in the presentation.
-      const saveResult = await submit({ disableSuccessStatus: true });
-      if (!saveResult?.res.ok) {
-        throw new Error('Enregistrez les champs invalides avant de réviser cette diapositive.');
-      }
-      const response = await adminPost('/api/revise-slide', {
-        presentationId: request.presentationId,
-        slideIndex: request.slideIndex,
-        instruction,
-      });
-      if (!response.ok) {
-        setError(response.data.error || `Révision impossible (HTTP ${response.status}).`);
-        return;
-      }
-      const docResponse = await fetch(`/api/presentations/${request.presentationId}?depth=0`, {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (!docResponse.ok) {
-        throw new Error(
-          'La diapositive a été modifiée, mais le formulaire n’a pas pu être actualisé.',
-        );
-      }
-      await reset(await docResponse.json());
-      setInstruction('');
-      setShowAi(false);
-      toast.success(`Diapositive ${request.slideIndex + 1} révisée par l’IA.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Révision impossible.');
-    } finally {
-      setRevising(false);
-    }
-  }
 
   useEffect(() => {
     if (!(request.block as { blockType?: string })?.blockType) {
@@ -312,33 +212,8 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
           >
             Changer la mise en page
           </Button>
-          <Button
-            aria-label={showAi ? 'Masquer la modification par IA' : 'Modifier avec l’IA'}
-            buttonStyle="pill"
-            className="slide-preview__magic-button"
-            extraButtonProps={{
-              'aria-controls': aiPanelId,
-              'aria-expanded': showAi,
-            }}
-            margin={false}
-            onClick={() => setShowAi((value) => !value)}
-            size="small"
-            type="button"
-          >
-            ✨ Modifier avec l’IA
-          </Button>
         </div>
       </div>
-      {showAi ? (
-        <SlideRevisionControls
-          panelId={aiPanelId}
-          path={path}
-          instruction={instruction}
-          revising={revising}
-          setInstruction={setInstruction}
-          submit={() => void reviseCurrentSlide()}
-        />
-      ) : null}
       {error ? (
         <AdminNotice className="slide-preview__error" density="compact" variant="error">
           {error}

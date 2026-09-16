@@ -92,7 +92,10 @@ describe('Presentations IA tab', () => {
       type: 'relationship',
       hasMany: true,
     });
-    expect(hasFieldOfType('collapsible', 'Options avancées')).toBe(true);
+    expect(hasFieldOfType('collapsible', 'Options avancées')).toBe(false);
+    expect(findField('agentModel')).toMatchObject({ type: 'text', admin: { hidden: true } });
+    expect(findField('agentVisualCritique')).toMatchObject({ type: 'checkbox' });
+    expect(findField('agentApprovalRequired')).toMatchObject({ type: 'checkbox' });
     expect(findField('agentRun')).toMatchObject({ type: 'ui' });
   });
 

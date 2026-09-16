@@ -423,7 +423,6 @@ export const Presentations: CollectionConfig = {
       tabs: [
         {
           label: 'Contenu',
-          description: 'Rédigez le contenu de la présentation.',
           fields: [
             {
               name: 'slides',
@@ -533,41 +532,30 @@ export const Presentations: CollectionConfig = {
               },
             },
             {
-              type: 'collapsible',
-              label: 'Options avancées',
-              admin: { initCollapsed: true },
-              fields: [
-                {
-                  name: 'agentModel',
-                  type: 'text',
-                  defaultValue: DEFAULT_AGENT_MODEL,
-                  maxLength: 128,
-                  label: 'Modèle CloudCLIProxy',
-                  access: agentOptionAccess,
-                  validate: (value: unknown) => {
-                    const parsed = agentModelSchema.safeParse(value);
-                    return parsed.success || (parsed.error.issues[0]?.message ?? 'Modèle invalide');
-                  },
-                  admin: {
-                    description:
-                      'Alias ou identifiant exposé par la gateway ; vérifié au lancement de la génération.',
-                  },
-                },
-                {
-                  name: 'agentVisualCritique',
-                  type: 'checkbox',
-                  defaultValue: true,
-                  label: 'Critique visuelle IA (plus lent, meilleur rendu)',
-                  access: agentOptionAccess,
-                },
-                {
-                  name: 'agentApprovalRequired',
-                  type: 'checkbox',
-                  defaultValue: false,
-                  label: 'Valider le plan avant rédaction',
-                  access: agentOptionAccess,
-                },
-              ],
+              name: 'agentModel',
+              type: 'text',
+              defaultValue: DEFAULT_AGENT_MODEL,
+              maxLength: 128,
+              access: agentOptionAccess,
+              validate: (value: unknown) => {
+                const parsed = agentModelSchema.safeParse(value);
+                return parsed.success || (parsed.error.issues[0]?.message ?? 'Modèle invalide');
+              },
+              admin: { hidden: true },
+            },
+            {
+              name: 'agentVisualCritique',
+              type: 'checkbox',
+              defaultValue: true,
+              label: 'Critique visuelle IA (plus lent, meilleur rendu)',
+              access: agentOptionAccess,
+            },
+            {
+              name: 'agentApprovalRequired',
+              type: 'checkbox',
+              defaultValue: false,
+              label: 'Valider le plan avant rédaction',
+              access: agentOptionAccess,
             },
             {
               name: 'agentRun',
@@ -592,7 +580,6 @@ export const Presentations: CollectionConfig = {
         },
         {
           label: 'Réglages',
-          description: 'Réglages de classement et de publication.',
           fields: [
             {
               name: 'status',
@@ -691,18 +678,8 @@ export const Presentations: CollectionConfig = {
               name: 'lastBuildStatus',
               type: 'select',
               defaultValue: BUILD_STATUS.idle,
-              label: 'Statut du dernier build',
-              admin: {
-                description: 'État du dernier processus de génération',
-                readOnly: true,
-                hidden: true,
-              },
-              options: [
-                { label: 'En attente', value: BUILD_STATUS.idle },
-                { label: 'En cours', value: BUILD_STATUS.building },
-                { label: 'Réussi', value: BUILD_STATUS.success },
-                { label: 'Échoué', value: BUILD_STATUS.failed },
-              ],
+              options: Object.values(BUILD_STATUS),
+              admin: { readOnly: true, hidden: true },
             },
             {
               name: 'artifacts',
@@ -725,23 +702,12 @@ export const Presentations: CollectionConfig = {
             {
               name: 'lastBuildError',
               type: 'textarea',
-              label: 'Erreur du dernier build',
-              admin: {
-                description: "Détails de l'erreur en cas d'échec du build",
-                readOnly: true,
-                hidden: true,
-              },
+              admin: { readOnly: true, hidden: true },
             },
             {
               name: 'lastBuildRequestedAt',
               type: 'date',
-              label: 'Dernière demande de build',
-              admin: {
-                description:
-                  'Horodatage de la dernière demande de build à la volée (throttle anti-spam).',
-                readOnly: true,
-                hidden: true,
-              },
+              admin: { readOnly: true, hidden: true },
             },
             {
               name: 'lastBuildToken',

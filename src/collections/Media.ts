@@ -36,10 +36,6 @@ export const Media: CollectionConfig = {
   upload: {
     staticDir: 'media',
     mimeTypes: ['image/*', 'application/pdf'],
-    imageSizes: [
-      { name: 'thumbnail', width: 400, height: 300, position: 'centre' },
-      { name: 'card', width: 768, height: 576, position: 'centre' },
-    ],
   },
   fields: [
     {

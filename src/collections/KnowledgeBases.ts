@@ -52,6 +52,7 @@ export const KnowledgeBases: CollectionConfig = {
   slug: COLLECTIONS.knowledgeBases,
   labels: { singular: 'Base de connaissances', plural: 'Bases de connaissances' },
   admin: {
+    group: 'Connaissances',
     useAsTitle: 'name',
     defaultColumns: ['name', 'organisation', 'updatedAt'],
     description: 'Créez une base, puis ajoutez les fichiers que l’agent doit utiliser.',

@@ -136,29 +136,6 @@
     text-align: right;
   }
 
-  &__magic-button {
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  &__ai-panel {
-    display: grid;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  &__revision-field {
-    margin: 0;
-
-    textarea {
-      resize: vertical;
-    }
-  }
-
-  &__ai-submit {
-    justify-self: start;
-  }
-
   &__error {
     margin: 0 0 8px;
   }

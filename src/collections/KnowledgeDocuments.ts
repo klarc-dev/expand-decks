@@ -186,6 +186,7 @@ export const KnowledgeDocuments: CollectionConfig = {
   slug: COLLECTIONS.knowledgeDocuments,
   labels: { singular: 'Document de connaissance', plural: 'Documents de connaissance' },
   admin: {
+    group: 'Connaissances',
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'knowledgeBase', 'indexingStatus', 'updatedAt'],
     description: 'Ajoutez un fichier : il sera indexé automatiquement.',

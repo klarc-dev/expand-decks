@@ -164,21 +164,17 @@ function terminalToast(status: string, error?: string): { error?: true; text: st
   return null;
 }
 
-/** The plan awaiting approval; older runs store a shape we cannot read back. */
+/** The plan awaiting approval. */
 function ApprovalBanner({ outline }: { outline: PlanItem[] }) {
   return (
     <Banner type="info">
-      {outline.length > 0 ? (
-        <ol className="agent-run__outline">
-          {outline.map((item, index) => (
-            <li key={`${index}:${item.title}`}>
-              <strong>{item.title}</strong> — {item.intent}
-            </li>
-          ))}
-        </ol>
-      ) : (
-        'Le plan n’est pas consultable dans ce run : vous pouvez le refuser ou annuler la génération.'
-      )}
+      <ol className="agent-run__outline">
+        {outline.map((item, index) => (
+          <li key={`${index}:${item.title}`}>
+            <strong>{item.title}</strong> — {item.intent}
+          </li>
+        ))}
+      </ol>
     </Banner>
   );
 }
@@ -189,11 +185,11 @@ type RunActionsProps = {
   canApprove: boolean;
   canStart: boolean;
   onCancel: () => void;
-  onRestart: () => void;
+  onRetry: () => void;
   onResume: (approved: boolean) => void;
   onStart: () => void;
   pending: boolean;
-  stale: boolean;
+  retryable: boolean;
   startLabel: string;
 };
 
@@ -203,22 +199,26 @@ function RunActions({
   canApprove,
   canStart,
   onCancel,
-  onRestart,
+  onRetry,
   onResume,
   onStart,
   pending,
-  stale,
+  retryable,
   startLabel,
 }: RunActionsProps) {
   const action = { margin: false as const, type: 'button' as const };
   return (
     <div className="agent-run__actions">
-      {!awaitingApproval && !stale && (
+      {retryable ? (
+        <Button {...action} buttonStyle="primary" disabled={pending} onClick={onRetry}>
+          Réessayer
+        </Button>
+      ) : !awaitingApproval ? (
         <Button {...action} buttonStyle="primary" disabled={!canStart} onClick={onStart}>
           {active || pending ? 'Génération…' : startLabel}
         </Button>
-      )}
-      {awaitingApproval && (
+      ) : null}
+      {awaitingApproval && canApprove && (
         <>
           <Button
             {...action}
@@ -238,12 +238,7 @@ function RunActions({
           </Button>
         </>
       )}
-      {stale && (
-        <Button {...action} buttonStyle="primary" disabled={pending} onClick={onRestart}>
-          Redémarrer le worker
-        </Button>
-      )}
-      {(active || awaitingApproval || stale) && (
+      {(active || awaitingApproval) && (
         <Button
           {...action}
           buttonStyle="secondary"
@@ -284,11 +279,16 @@ type RunView = {
   active: boolean;
   awaitingApproval: boolean;
   events: RunEvent[];
+  failed: boolean;
   outcome: { error?: true; text: string } | null;
   outline: PlanItem[];
   stale: boolean;
   status: string;
 };
+
+export function canRestartRun(status: string): boolean {
+  return status === 'stale';
+}
 
 /** Everything the UI derives from the polled ledger record. */
 function runView(run: DurableRun | null): RunView {
@@ -298,11 +298,17 @@ function runView(run: DurableRun | null): RunView {
     // Only a suspended run accepts a resume; 'waiting' 409s on the command route.
     awaitingApproval: status === 'suspended',
     events: Array.isArray(run?.events) ? run.events : [],
+    failed: status === 'failed',
     // Toasts only fire on a transition; a reload must still show why a run ended.
     outcome:
-      status === 'failed' || status === 'canceled' ? terminalToast(status, run?.error) : null,
+      status === 'failed' || status === 'canceled' || status === 'stale'
+        ? terminalToast(
+            status === 'stale' ? 'failed' : status,
+            run?.error || (status === 'stale' ? 'Le worker a été interrompu.' : undefined),
+          )
+        : null,
     outline: approvalOutline(run?.suspended),
-    stale: status === 'stale',
+    stale: canRestartRun(status),
     status,
   };
 }
@@ -311,13 +317,15 @@ function RunBanners({ error, view }: { error?: string; view: RunView }) {
   return (
     <>
       {error && <Banner type="error">{error}</Banner>}
-      {view.stale && (
-        <Banner type="error">Le worker a été interrompu. Redémarrez la génération.</Banner>
-      )}
       {view.outcome && (
-        <Banner type={view.status === 'failed' ? 'error' : 'info'}>{view.outcome.text}</Banner>
+        <Banner type={view.outcome.error ? 'error' : 'info'}>{view.outcome.text}</Banner>
       )}
-      {view.awaitingApproval && <ApprovalBanner outline={view.outline} />}
+      {view.awaitingApproval && view.outline.length > 0 ? (
+        <ApprovalBanner outline={view.outline} />
+      ) : null}
+      {view.awaitingApproval && view.outline.length === 0 ? (
+        <Banner type="error">Le plan de ce run est indisponible. Annulez la génération.</Banner>
+      ) : null}
     </>
   );
 }
@@ -456,11 +464,11 @@ const AgentRunControls: React.FC = () => {
         canApprove={outline.length > 0}
         canStart={brief.trim().length >= MIN_BRIEF_CHARS && !blockingError && !active && !pending}
         onCancel={() => void command('cancel')}
-        onRestart={() => void command('restart')}
+        onRetry={() => void command('restart')}
         onResume={(approved) => void command('resume', approved)}
         onStart={() => void start()}
         pending={pending}
-        stale={view.stale}
+        retryable={view.stale}
         startLabel={startLabelForMode(startMode)}
       />
 

@@ -282,13 +282,19 @@ describe('canonical custom admin controls', () => {
     );
   });
 
-  it('keeps build artifacts in one semantic external-link list owner', () => {
+  it('keeps build artifacts out of the status field', () => {
     const path = 'src/components/BuildStatusField.tsx';
-    expect(sourceContains(path, 'function BuildArtifactLinks')).toBe(true);
-    expect(sourceContains(path, 'aria-label="Artefacts du build"')).toBe(true);
-    expect(sourceContains(path, '<span aria-hidden="true"> ↗</span>')).toBe(true);
-    expect(sourceContains(path, '(nouvel onglet)')).toBe(true);
-    expect(sourceContains(path, 'className="build-status__link"')).toBe(false);
+    expect(sourceContains(path, 'BuildArtifactLinks')).toBe(false);
+    expect(sourceContains(path, 'availableArtifactLinks')).toBe(false);
+    expect(sourceContains(path, 'Artefacts du build')).toBe(false);
+  });
+
+  it('reads export artifacts from the document data without a second API poll', () => {
+    const path = 'src/components/ExportMenuItem.tsx';
+    expect(sourceContains(path, 'data: documentData')).toBe(true);
+    expect(sourceContains(path, 'availableArtifactLinks(documentData ?? {})')).toBe(true);
+    expect(sourceContains(path, 'usePayloadAPI')).toBe(false);
+    expect(sourceContains(path, 'useAllFormFields')).toBe(false);
   });
 
   it('keeps build metadata in one labeled definition-list owner', () => {
@@ -308,15 +314,13 @@ describe('canonical custom admin controls', () => {
     ).toBe(true);
   });
 
-  it('keeps SlidePreview static geometry in semantic classes', () => {
+  it('keeps SlidePreview static geometry in semantic classes without a per-slide AI panel', () => {
     const path = 'src/components/SlidePreview.tsx';
     expect(sourceContains(path, 'const styles =')).toBe(false);
     expect(sourceContains(path, 'styles.wrapper')).toBe(false);
-    expect(
-      sourceContains(path, '<AdminPanel className="slide-preview__ai-panel" density="compact"'),
-    ).toBe(true);
+    expect(sourceContains(path, 'slide-preview__ai-panel')).toBe(false);
+    expect(sourceContains(path, 'revisionInstruction')).toBe(false);
     expect(sourceContains(path, 'className="slide-preview__frame"')).toBe(true);
-    expect(sourceContains(path, 'className="slide-preview__revision-field"')).toBe(true);
     expect(sourceContains('src/components/SlidePreview.scss', '.field-type')).toBe(false);
     expect(
       sourceContains('src/components/SlidePreview.scss', 'background: var(--theme-elevation-50)'),

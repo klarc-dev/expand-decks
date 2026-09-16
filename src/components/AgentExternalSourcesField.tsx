@@ -4,38 +4,65 @@ import React, { useEffect, useState } from 'react';
 import { SelectInput, useField } from '@payloadcms/ui';
 import type { TextFieldClientComponent } from 'payload';
 
+import { AdminNotice } from '@/components/adminUi/AdminSurface';
 import { adminGet } from '@/lib/adminFetch';
 
 type Option = { label: string; value: string };
 
-/**
- * Picker for `agentExternalSources`. MCP sources are a runtime registry, not a
- * collection, so options come from `GET /api/agent-sources`; with none
- * configured the field renders nothing rather than an empty control.
- */
+type SourceState = {
+  error?: string;
+  loaded: boolean;
+  options: Option[];
+};
+
+/** Runtime MCP-source picker. An empty or invalid registry remains visible. */
 const AgentExternalSourcesField: TextFieldClientComponent = ({ field, path, readOnly }) => {
-  const [options, setOptions] = useState<Option[]>([]);
+  const [state, setState] = useState<SourceState>({ loaded: false, options: [] });
   const { setValue, value } = useField<string[]>({ path });
 
   useEffect(() => {
     let alive = true;
     void adminGet('/api/agent-sources').then(({ ok, data }) => {
-      if (!alive || !ok || !Array.isArray(data.sources)) return;
-      setOptions(
-        data.sources
-          .filter((source: { kind?: string }) => source.kind === 'external')
-          .map((source: { id: string; label: string }) => ({
-            label: source.label,
-            value: source.id,
-          })),
-      );
+      if (!alive) return;
+      if (!ok) {
+        setState({
+          loaded: true,
+          options: [],
+          error: data.error || 'Sources externes indisponibles.',
+        });
+        return;
+      }
+      setState({
+        loaded: true,
+        error: typeof data.error === 'string' ? data.error : undefined,
+        options: Array.isArray(data.sources)
+          ? data.sources.map((source: { id: string; label: string }) => ({
+              label: source.label,
+              value: source.id,
+            }))
+          : [],
+      });
     });
     return () => {
       alive = false;
     };
   }, []);
 
-  if (options.length === 0) return null;
+  if (state.error) {
+    return (
+      <AdminNotice variant="error">
+        Configuration des sources externes invalide : {state.error}
+      </AdminNotice>
+    );
+  }
+
+  if (state.loaded && state.options.length === 0) {
+    return (
+      <AdminNotice density="compact" variant="hint">
+        Aucune source externe configurée.
+      </AdminNotice>
+    );
+  }
 
   return (
     <SelectInput
@@ -49,9 +76,9 @@ const AgentExternalSourcesField: TextFieldClientComponent = ({ field, path, read
           ),
         )
       }
-      options={options}
+      options={state.options}
       path={path}
-      readOnly={readOnly}
+      readOnly={readOnly || !state.loaded}
       value={Array.isArray(value) ? value : []}
     />
   );

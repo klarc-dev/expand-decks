@@ -5,6 +5,7 @@ vi.mock('next/navigation', () => ({ useRouter: vi.fn() }));
 
 import {
   approvalOutline,
+  canRestartRun,
   slideCountRangeFromFields,
   sourceIdsFromFields,
   startLabelForMode,
@@ -80,6 +81,13 @@ describe('agent run controls', () => {
     ]);
     expect(sourceIdsFromFields(null, null)).toEqual([]);
     expect(sourceIdsFromFields([null, {}], ['', 'ok'])).toEqual(['ok']);
+  });
+
+  it('only uses the ledger restart command for stale runs', () => {
+    expect(canRestartRun('stale')).toBe(true);
+    for (const status of ['failed', 'canceled', 'succeeded', 'queued', 'running', 'suspended']) {
+      expect(canRestartRun(status), status).toBe(false);
+    }
   });
 
   it('names the start action after the run mode', () => {

@@ -5,7 +5,6 @@ import { buildConfig, type Plugin } from 'payload';
 import { postgresAdapter } from '@payloadcms/db-postgres';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { fr } from '@payloadcms/translations/languages/fr';
-import { en } from '@payloadcms/translations/languages/en';
 import { authPlugin } from 'payload-auth-plugin';
 import { GoogleAuthProvider } from 'payload-auth-plugin/providers';
 import sharp from 'sharp';
@@ -44,10 +43,10 @@ assertAIProviderConfig();
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
-/** The auth plugin currently adds a non-functional, publicly writable
+/** `payload-auth-plugin@0.2.0` adds a non-functional, publicly writable
  * `apiKeys` collection. Payload's native user API-key strategy below is the
  * actual supported feature, so keep the OAuth plugin but discard that dead
- * generated collection from its returned config. */
+ * generated collection. Re-check this workaround when upgrading the plugin. */
 const withoutPluginAPIKeys =
   (plugin: Plugin): Plugin =>
   async (config) => {
@@ -156,7 +155,7 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   i18n: {
-    supportedLanguages: { fr, en },
+    supportedLanguages: { fr },
     fallbackLanguage: 'fr',
   },
   jobs: {
