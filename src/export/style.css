@@ -2917,6 +2917,25 @@
   min-width: 0;
 }
 
+/* The right column takes the whole content height and, from three cards up,
+   spreads the stack over it: the cards breathe instead of huddling under the
+   header, and the frame bounds the spread. Two cards keep the base gap so they
+   do not drift to opposite ends of the column. */
+.k-content-main--start > .k-split--body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.k-split--body > .k-split-cards {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.k-split-cards > .k-card-stack--column:has(> .k-card:nth-child(3)) {
+  flex: 1 1 auto;
+  justify-content: space-between;
+}
+
 .k-copy-stack {
   font-size: var(--t-body);
   line-height: 1.5;
