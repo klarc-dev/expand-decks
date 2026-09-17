@@ -17,6 +17,10 @@
     display: none;
   }
 
+  .tabs-field__tabs {
+    border-bottom: 0;
+  }
+
   .doc-controls__controls-wrapper {
     width: 100%;
     justify-content: flex-end;
