@@ -79,7 +79,7 @@ describe('unified slide-content adapters', () => {
     }
   });
 
-  it('preserves prose, actions, citations, media, people, identity, and hidden content round trip', () => {
+  it('preserves prose, actions, citations, people, identity, and hidden content round trip', () => {
     const source = {
       id: 'slide-1',
       blockName: 'Stable row',
@@ -87,18 +87,13 @@ describe('unified slide-content adapters', () => {
       pills: [{ id: 'pill-1', text: 'Décision' }],
       title: 'A stable title',
       subtitle: rich('Supporting copy'),
-      image: { id: 42, url: '/media/hero.jpg', alt: 'Informative', focalX: 25, focalY: 60 },
-      imagePosition: 'left',
       intervenants: [{ id: 'speaker-row', user: 7, description: 'Expert' }],
     };
 
     const changed = applyLayoutProjection({ slide: source, targetLayout: 'cta' });
     expect(changed.slide).toMatchObject({ blockType: 'cta', title: 'A stable title' });
     expect(changed.analysis.hidden).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ role: 'media.primary' }),
-        expect.objectContaining({ role: 'people' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ role: 'people' })]),
     );
 
     const restored = applyLayoutProjection({ slide: changed.slide, targetLayout: 'cover' }).slide;
@@ -106,8 +101,6 @@ describe('unified slide-content adapters', () => {
       blockType: 'cover',
       title: source.title,
       subtitle: source.subtitle,
-      image: source.image,
-      imagePosition: 'left',
       intervenants: source.intervenants,
       pills: source.pills,
     });
@@ -247,7 +240,6 @@ describe('unified slide-content adapters', () => {
       blockType: 'cover',
       title: 'Hinted cover',
       pills: [{ id: 'p1', text: 'Decision' }],
-      pillVariant: 'dark',
     };
     const automatic = applyLayoutProjection({ slide: source, targetLayout: 'twoCols' }).slide;
     expect(automatic.collectionSide).toBe('right');

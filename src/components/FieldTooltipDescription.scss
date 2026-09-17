@@ -1,0 +1,46 @@
+@layer payload-default {
+  .field-tooltip-description {
+    position: relative;
+    display: inline-flex;
+    margin-block-start: calc(var(--base) * 0.2);
+  }
+
+  .field-tooltip-description__trigger {
+    display: inline-grid;
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    place-items: center;
+    border: 1px solid var(--theme-elevation-350);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--theme-elevation-600);
+    cursor: help;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .field-tooltip-description__trigger:hover,
+  .field-tooltip-description__trigger:focus-visible {
+    border-color: var(--theme-elevation-600);
+    color: var(--theme-text);
+    outline: 2px solid var(--theme-success-400);
+    outline-offset: 2px;
+  }
+
+  .field-tooltip-description__tooltip {
+    left: 0.575rem;
+    z-index: var(--z-popup);
+    width: min(30rem, calc(100vw - 3rem));
+    padding: calc(var(--base) * 0.35) calc(var(--base) * 0.5);
+    white-space: normal;
+  }
+
+  @media (max-width: 1024px) {
+    .field-tooltip-description__tooltip {
+      display: block;
+    }
+  }
+}

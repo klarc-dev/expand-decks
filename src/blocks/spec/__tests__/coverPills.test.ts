@@ -46,14 +46,4 @@ describe('cover pills', () => {
     for (const pills of [undefined, null, []])
       expect(renderCover({ ...base, pills })).not.toContain('k-eyebrow');
   });
-  it('preserves the complete legacy eyebrow when no new rows exist, without separator splitting', () => {
-    for (const pills of [undefined, null, []]) {
-      const html = renderCover({ ...base, eyebrow: 'TOULOUSE · LYON', pills });
-      expect(html).toContain('TOULOUSE · LYON');
-      expect(html.match(/class="k-eyebrow(?:\s[^"]*)?"/g)).toHaveLength(1);
-    }
-    expect(renderCover({ ...base, eyebrow: 'Legacy', pills: [{ text: 'New' }] })).not.toContain(
-      'Legacy',
-    );
-  });
 });

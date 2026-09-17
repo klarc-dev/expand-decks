@@ -8,15 +8,11 @@ const LAYOUT_CONTRACTS = {
     kind: 'prose',
     fields: {
       pills: 'presentation.hint',
-      pillVariant: 'presentation.hint',
       ...HEADER,
       subtitle: 'prose.support',
       intervenants: 'people',
-      image: 'media.primary',
-      imagePosition: 'media.placement',
     },
     required: ['heading.title'],
-    media: { aspectRatio: '1/1', placements: ['left', 'right'] },
   },
   section: {
     kind: 'prose',

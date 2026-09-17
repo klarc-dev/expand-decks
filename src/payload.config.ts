@@ -32,6 +32,7 @@ import {
   assertAIProviderConfig,
   assertGoogleFontsKey,
 } from './lib/env';
+import { fieldDescriptionTooltips } from './plugins/fieldDescriptionTooltips';
 import { ROLES } from './access/roles';
 
 // Fail fast in production if configuration required by deck jobs is missing:
@@ -82,6 +83,7 @@ export default buildConfig({
     KnowledgeDocuments,
   ],
   plugins: [
+    fieldDescriptionTooltips(),
     withoutPluginAPIKeys(
       authPlugin({
         name: 'auth',

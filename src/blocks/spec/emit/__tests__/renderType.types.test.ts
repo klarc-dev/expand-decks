@@ -94,18 +94,10 @@ const coverIntervenants = optionalRender(
 
 const coverRenderSchema = z.object({
   blockType: z.literal('cover'),
-  eyebrow: optionalRender(z.string()),
   pills: optionalRender(z.array(z.object({ text: z.string() }))),
-  pillVariant: optionalRender(z.enum(['default', 'primary', 'secondary', 'ink', 'paper'])),
   title: z.string(),
   subtitle: optionalRichTextRender(),
   intervenants: coverIntervenants,
-  image: z
-    .object({ url: z.string(), filename: z.string().nullable().optional() })
-    .passthrough()
-    .nullable()
-    .optional(),
-  imagePosition: optionalRender(z.enum(['right', 'left'])),
 });
 
 type DerivedCover = InferRender<typeof coverRenderSchema>;

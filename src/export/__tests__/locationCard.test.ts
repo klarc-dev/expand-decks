@@ -32,7 +32,7 @@ const state = (children: unknown[]) =>
   ({
     root: { type: 'root', direction: 'ltr', format: '', indent: 0, version: 1, children },
   }) as RichText;
-// Actual office facts from scripts/seed-klarc-prospects.ts; no database writes.
+// Representative office contact rows; no database writes.
 const note = state([
   paragraph([
     text('Toulouse', 1),

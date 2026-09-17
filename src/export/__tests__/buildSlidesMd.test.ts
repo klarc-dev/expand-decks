@@ -412,7 +412,7 @@ describe('buildSlidesMd()', () => {
       {
         blockType: 'cover',
         title: 'Cover',
-        eyebrow: 'Tag',
+        pills: [{ text: 'Tag' }],
         subtitle: lexical('Sub'),
       },
       {

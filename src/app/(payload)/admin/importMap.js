@@ -1,3 +1,4 @@
+import { default as default_5dd7fcfd9962e5008a7daba581a51d66 } from '../../../components/FieldTooltipDescription'
 import { default as default_b786b405fcd9412302ce8d29e6c441af } from '../../../components/ColorField'
 import { default as default_760fd892cbf0749249332edaa6bef1b4 } from '../../../components/GoogleFontField'
 import { default as default_31a0a096a421171d00710a61bcbb7872 } from '../../../components/TitleField'
@@ -30,6 +31,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/FieldTooltipDescription#default": default_5dd7fcfd9962e5008a7daba581a51d66,
   "/components/ColorField#default": default_b786b405fcd9412302ce8d29e6c441af,
   "/components/GoogleFontField#default": default_760fd892cbf0749249332edaa6bef1b4,
   "/components/TitleField#default": default_31a0a096a421171d00710a61bcbb7872,

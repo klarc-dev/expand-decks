@@ -83,7 +83,9 @@ describe('canonical slide authoring limits', () => {
   });
 
   it('uses strict image objects and exposes image position in Payload', () => {
-    for (const blockType of ['cover', 'section', 'twoCols']) {
+    expect(field('cover', 'image')).toBeUndefined();
+    expect(field('cover', 'imagePosition')).toBeUndefined();
+    for (const blockType of ['section', 'twoCols']) {
       expect(
         RENDER_SLIDE_SCHEMA.safeParse({ blockType, title: 'Image', image: '/media/x.jpg' }).success,
       ).toBe(false);

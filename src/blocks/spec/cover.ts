@@ -18,13 +18,8 @@ import {
   titleFieldSpec,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
-import { PILL_VARIANTS, PILL_VARIANT_OPTIONS } from './pillVariants';
-
 import { intervenantsFieldSpec, intervenantsRender } from './person';
 
-const pillVariant = optionalRender(z.enum(['default', ...PILL_VARIANTS]));
-
-const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const pillText = nonBlankLimitedString(SLIDE_LIMITS.cover.pills.text);
 const pillRows = limitedArray(z.object({ text: pillText }), SLIDE_LIMITS.cover.pills);
 const pills = optionalRender(pillRows);
@@ -32,10 +27,6 @@ const title = limitedString(SLIDE_LIMITS.common.title);
 // subtitle is rich text (Lexical); its render Zod is the editor state, while
 // its AI Zod stays a markdown string (converted to Lexical on write).
 const subtitle = optionalLimitedRichTextRender(SLIDE_LIMITS.cover.subtitle);
-const image = optionalRender(
-  z.object({ url: z.string(), filename: optionalRender(z.string()) }).passthrough(),
-);
-const imagePosition = optionalRender(z.enum(['right', 'left']));
 const intervenants = intervenantsRender(SLIDE_LIMITS.cover.speakers);
 
 export const coverSpec = block({
@@ -72,20 +63,6 @@ export const coverSpec = block({
         ],
       }),
     ),
-    rawField('pillVariant', pillVariant, optionalAi(z.enum(PILL_VARIANTS)), {
-      type: 'select',
-      label: 'Couleur des pastilles',
-      description: 'Rôle de la palette de l’organisation, commun à toutes les pastilles.',
-      options: PILL_VARIANT_OPTIONS,
-    }),
-    // Keep the saved column and an editable fallback: legacy covers remain intact.
-    rawField('eyebrow', eyebrow, false, {
-      type: 'text',
-      label: 'Ancienne pastille',
-      description:
-        'Affichée uniquement si aucune pastille n’est renseignée. Effacer pour ne rien afficher.',
-      maxLength: SLIDE_LIMITS.common.eyebrow.max,
-    }),
     titleFieldSpec(title, 'Titre principal de la diapositive de couverture'),
     rawField('subtitle', subtitle, optionalLimitedAi(SLIDE_LIMITS.cover.subtitle), {
       type: 'richText',
@@ -97,18 +74,6 @@ export const coverSpec = block({
       SLIDE_LIMITS.cover.speakers,
       'Personnes affichées sur la diapositive de couverture',
     ),
-    factoryField('image', 'image', image, false),
-    rawField('imagePosition', imagePosition, false, {
-      type: 'select',
-      label: 'Position de l’image',
-      defaultValue: 'right',
-      description: 'Côté où l’image s’affiche quand une image est renseignée',
-      adminCondition: true,
-      options: [
-        { label: 'Droite', value: 'right' },
-        { label: 'Gauche', value: 'left' },
-      ],
-    }),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {
@@ -117,7 +82,6 @@ export const coverSpec = block({
     summary: "Diapositive d'ouverture",
     lines: [
       'pills: [{text}] — libellés courts indépendants au-dessus du titre, une entrée par pastille',
-      `pillVariant: ${PILL_VARIANTS.join(' | ')} — rôle de couleur commun aux pastilles`,
       'title: titre principal (obligatoire)',
       'subtitle: paragraphe descriptif',
     ],
@@ -126,14 +90,10 @@ export const coverSpec = block({
 
 export const coverRenderSchema = z.object({
   blockType: z.literal('cover'),
-  eyebrow,
   pills,
-  pillVariant,
   title,
   subtitle,
   intervenants,
-  image,
-  imagePosition,
 });
 
 export type CoverBlockData = InferRender<typeof coverRenderSchema>;

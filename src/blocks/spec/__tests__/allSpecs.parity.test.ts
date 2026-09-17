@@ -110,7 +110,6 @@ Layouts disponibles :
 
 1. **cover** — Diapositive d'ouverture
    - pills: [{text}] — libellés courts indépendants au-dessus du titre, une entrée par pastille
-   - pillVariant: primary | secondary | ink | paper — rôle de couleur commun aux pastilles
    - title: titre principal (obligatoire)
    - subtitle: paragraphe descriptif
 

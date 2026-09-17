@@ -35,7 +35,6 @@ it('wraps title pills on both surfaces with loaded IBM Plex Mono and shared prev
           blockType: 'cover' as const,
           title: 'KLARC : Avocats et Conseils',
           pills: texts.map((text) => ({ text })),
-          pillVariant: 'primary' as const,
         };
         const html = renderCover(block).replace(/^---\n[\s\S]*?\n---\n*/, '');
         expect(renderBlockPreview(block)!.html).toBe(html);

@@ -123,14 +123,14 @@ describe('renderCover()', () => {
     expect(result).toContain('Hello World');
   });
 
-  it('includes eyebrow when provided', () => {
+  it('ignores the removed legacy eyebrow field', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'Title',
       eyebrow: 'Tag Line',
-    });
-    expect(result).toContain('k-eyebrow');
-    expect(result).toContain('Tag Line');
+    } as never);
+    expect(result).not.toContain('k-eyebrow');
+    expect(result).not.toContain('Tag Line');
   });
 
   it('always applies the cover gradient surface', () => {
@@ -174,7 +174,6 @@ describe('renderCover()', () => {
     const result = renderCover({
       blockType: 'cover',
       title: 'Minimal',
-      eyebrow: null,
       subtitle: null,
     });
     expect(result).toContain('Minimal');
@@ -183,54 +182,18 @@ describe('renderCover()', () => {
     expect(result).not.toContain('k-btn');
   });
 
-  it('renders an explicit figure column when image is set (print-safe, not CSS background)', () => {
+  it('keeps the title layout full-bleed and ignores legacy image data', () => {
     const result = renderCover({
       blockType: 'cover',
-      title: 'With photo',
-      image: { url: '/media/photo.jpg' },
-    });
-    expect(result).toContain('layout: cover');
-    expect(result).toContain('k-cover--split');
-    expect(result).toContain('k-cover-figure');
-    expect(result).toContain(`:src='"/media/photo.jpg"'`);
-    // No Slidev image-right layout: its CSS background-image pane renders
-    // blank in the Chromium print/export pass.
-    expect(result).not.toContain('layout: image-right');
-    expect(result).not.toContain('image: /media/photo.jpg');
-    expect(result).not.toContain('k-cover--full-bleed');
-    expect(result).not.toContain('p-14');
-  });
-
-  it('prefers the staged local media path for the cover image', () => {
-    const result = renderCover({
-      blockType: 'cover',
-      title: 'With staged photo',
-      image: {
-        filename: 'photo.jpg',
-        url: 'https://slides.example/api/media/file/photo.jpg',
-      },
-    } as never);
-    expect(result).toContain(`:src='"./media/photo.jpg"'`);
-    expect(result).not.toContain('/api/media/file/photo.jpg');
-  });
-
-  it('flips the figure column left when imagePosition is left', () => {
-    const result = renderCover({
-      blockType: 'cover',
-      title: 'With photo',
-      image: { url: '/media/photo.jpg' },
+      title: 'Title slide',
+      image: { url: '/media/legacy.jpg' },
       imagePosition: 'left',
-    });
-    expect(result).toContain('k-cover--split-left');
-  });
-
-  it('keeps layout: cover with a semantic full-bleed frame when no image', () => {
-    const result = renderCover({
-      blockType: 'cover',
-      title: 'No image',
-    });
+    } as never);
     expect(result).toContain('layout: cover');
     expect(result).toContain('k-cover--full-bleed');
+    expect(result).not.toContain('k-cover--split');
+    expect(result).not.toContain('k-cover-figure');
+    expect(result).not.toContain('legacy.jpg');
     expect(result).not.toContain('image:');
   });
 
@@ -939,17 +902,32 @@ describe('renderQuotes()', () => {
     const browser = await chromium.launch();
     try {
       const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-      const seed = readFileSync('scripts/seed-klarc-prospects.ts', 'utf8');
       const quotes = [
-        ...seed.matchAll(
-          /quote:\s*(['"])(.*?)\1,\s*authorName:\s*(['"])(.*?)\3,\s*(?:authorRole:\s*(['"])(.*?)\5,\s*)?authorCompany:\s*(['"])(.*?)\7/g,
-        ),
-      ].map((m) => ({
-        quote: lexical(m[2]!),
-        authorName: m[4]!,
-        authorRole: m[6],
-        authorCompany: m[8]!,
-      }));
+        {
+          quote: lexical(
+            'EspeRare Foundation a collaboré avec notre équipe sur un projet de licence sur un dispositif médical en développement.',
+          ),
+          authorName: 'Florence Porte-Thome',
+          authorRole: 'Co-fondatrice et Directrice R&D',
+          authorCompany: 'EspeRare Foundation',
+        },
+        {
+          quote: lexical(
+            'Je retiens beaucoup de professionnalisme d’une équipe pluridisciplinaire maîtrisant les enjeux techniques, juridiques, comptables et rédactionnels.',
+          ),
+          authorName: 'Frédéric Burnier',
+          authorRole: 'Directeur général adjoint pôle ingénierie',
+          authorCompany: 'GA Smart Building',
+        },
+        {
+          quote: lexical(
+            'L’accompagnement était à la hauteur des enjeux, éclairé et nous a permis d’obtenir le CIR sans problème.',
+          ),
+          authorName: 'Kristof Descotes',
+          authorRole: 'Directeur R&D',
+          authorCompany: 'Althea',
+        },
+      ];
       expect(quotes).toHaveLength(3);
       const css = readFileSync('src/export/style.css', 'utf8').replace(
         /url\("\/fonts\/([^"/]+)"\)/g,
