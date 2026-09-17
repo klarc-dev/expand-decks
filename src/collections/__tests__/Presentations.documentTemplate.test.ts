@@ -250,9 +250,13 @@ describe('Presentations document template contract', () => {
     expect(fields).toHaveLength(1);
   });
 
-  it('places a PDF download control beside the native document controls', () => {
+  it('places the editable title and PDF download in the native document controls', () => {
     expect(Presentations.admin?.components?.edit).toMatchObject({
-      beforeDocumentControls: ['/components/ExportMenuItem#DownloadPdfButton'],
+      beforeDocumentControls: [
+        '/components/TitleField#PresentationTitleControl',
+        '/components/ExportMenuItem#PresentationActionGroupStart',
+        '/components/ExportMenuItem#DownloadPdfButton',
+      ],
       editMenuItems: ['/components/ExportMenuItem#default'],
     });
   });
