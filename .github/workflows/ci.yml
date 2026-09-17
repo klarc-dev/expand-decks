@@ -236,7 +236,12 @@ jobs:
               jq -r '.status // empty')
             case "$status" in
               finished)
-                for health_attempt in $(seq 1 24); do
+                # Coolify can report the deployment as finished before its
+                # proxy has switched every request to the new containers.
+                # Allow that rollout window while still requiring the exact
+                # source commit from the uncached health endpoint.
+                deployed_commit=""
+                for health_attempt in $(seq 1 60); do
                   health=$(curl --max-time 15 --silent --show-error \
                     "${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health?release=${{ github.sha }}-$attempt-$health_attempt" || true)
                   deployed_commit=$(jq -r '.commit // empty' <<<"$health" 2>/dev/null || true)
@@ -245,7 +250,7 @@ jobs:
                   fi
                   sleep 5
                 done
-                echo "::error::Coolify finished but production did not report the expected commit within 2 minutes"
+                echo "::error::Coolify finished but production did not report the expected commit within 5 minutes (last reported commit: ${deployed_commit:-none})"
                 exit 1
                 ;;
               failed|cancelled)
