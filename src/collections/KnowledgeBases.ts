@@ -11,6 +11,7 @@ import {
 } from '../access/roles';
 import { beforeKnowledgeBaseDelete } from '../hooks/knowledgeLifecycle';
 import { COLLECTIONS } from '../lib/collections';
+import { CTX } from '../lib/context';
 import { trustedLifecycleWrite } from './KnowledgeDocuments';
 
 /**
@@ -80,8 +81,10 @@ export const KnowledgeBases: CollectionConfig = {
       required: true,
       index: true,
       label: 'Organisation',
-      filterOptions: ({ user }) =>
-        userIsAdmin(user) ? true : { id: { in: userOrganisationIds(user) } },
+      filterOptions: ({ req, user }) =>
+        req?.context?.[CTX.trustedKnowledgeLifecycle] === true || userIsAdmin(user)
+          ? true
+          : { id: { in: userOrganisationIds(user) } },
       hooks: {
         beforeValidate: [resolveKnowledgeBaseOrganisation],
       },

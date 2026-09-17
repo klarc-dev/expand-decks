@@ -78,6 +78,12 @@ describe('knowledge base organisation ownership', () => {
     });
     expect(await filter({ user: { ...author, organisations: [] } })).toEqual({ id: { in: [] } });
     expect(await filter({ user: { id: 1, role: 'admin' } })).toBe(true);
+    expect(
+      await filter({
+        user: null,
+        req: { context: { trustedKnowledgeLifecycle: true } },
+      }),
+    ).toBe(true);
   });
 
   it('automatically selects the creator’s sole organisation in the native form', () => {
