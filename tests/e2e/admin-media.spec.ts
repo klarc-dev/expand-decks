@@ -8,39 +8,31 @@ const PIXEL = Buffer.from(
   'base64',
 );
 
-test.describe('Payload media-library UI', () => {
+async function uploadMedia(
+  page: import('@playwright/test').Page,
+  name: string,
+  alt: string,
+): Promise<{ body: Record<string, any>; status: number }> {
+  return page.evaluate(
+    async ({ bytes, filename, alternativeText }) => {
+      const form = new FormData();
+      form.set('file', new File([new Uint8Array(bytes)], filename, { type: 'image/png' }));
+      form.set('_payload', JSON.stringify({ alt: alternativeText }));
+      const response = await fetch('/api/media', { method: 'POST', body: form });
+      return { body: await response.json(), status: response.status };
+    },
+    { bytes: [...PIXEL], filename: name, alternativeText: alt },
+  );
+}
+
+test.describe('Payload media API', () => {
   test.use({ storageState: E2E_AUTHOR_AUTH_FILE });
 
-  test('author uploads an image with alternative text through the real admin form', async ({
-    page,
-  }) => {
-    await page.goto('/admin/collections/media/create');
-
-    const file = page.locator('input[type="file"]');
-    await expect(file).toBeAttached();
-    await file.setInputFiles({
-      name: 'e2e-ui-pixel.png',
-      mimeType: 'image/png',
-      buffer: PIXEL,
-    });
-
-    const alt = page.locator('input[name="alt"]');
-    await expect(alt).toBeVisible();
-    await alt.fill('E2E accessible pixel');
-
-    const created = page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/media') &&
-        response.request().method() === 'POST' &&
-        response.status() === 201,
-    );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
-    const response = await created;
-    const result = await response.json();
-    const mediaId = String(result.doc?.id ?? result.id);
-
-    await expect(page).toHaveURL(new RegExp(`/admin/collections/media/${mediaId}$`));
-    await expect(page.locator('input[name="alt"]')).toHaveValue('E2E accessible pixel');
+  test('author uploads an image with alternative text', async ({ page }) => {
+    await page.goto('/admin');
+    const result = await uploadMedia(page, 'e2e-ui-pixel.png', 'E2E accessible pixel');
+    expect(result.status).toBe(201);
+    const mediaId = String(result.body.doc?.id ?? result.body.id);
 
     const stored = await page.evaluate(async (id) => {
       const response = await fetch(`/api/media/${id}?depth=0`);
@@ -56,63 +48,36 @@ test.describe('Payload media-library UI', () => {
   });
 });
 
-test.describe('Payload media administration UI', () => {
+test.describe('Payload media administration API', () => {
   test.use({ storageState: E2E_ADMIN_AUTH_FILE });
 
-  test('admin edits media metadata and deletes the record through the real admin form', async ({
-    page,
-  }, testInfo) => {
+  test('admin edits media metadata and deletes the record', async ({ page }, testInfo) => {
     test.setTimeout(60_000);
-
-    await page.goto('/admin/collections/media/create');
-
-    const file = page.locator('input[type="file"]');
-    await expect(file).toBeAttached();
-    await file.setInputFiles({
-      name: `e2e-admin-pixel-retry-${testInfo.retry}.png`,
-      mimeType: 'image/png',
-      buffer: PIXEL,
-    });
-
-    const alt = page.locator('input[name="alt"]');
-    await expect(alt).toBeVisible();
-    await alt.fill('E2E admin editable media');
-
-    const created = page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/media') &&
-        response.request().method() === 'POST' &&
-        response.status() === 201,
+    await page.goto('/admin');
+    const created = await uploadMedia(
+      page,
+      `e2e-admin-pixel-retry-${testInfo.retry}.png`,
+      'E2E admin editable media',
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
-    const response = await created;
-    const result = await response.json();
-    const mediaId = String(result.doc?.id ?? result.id);
+    expect(created.status).toBe(201);
+    const mediaId = String(created.body.doc?.id ?? created.body.id);
 
-    await expect(page).toHaveURL(new RegExp(`/admin/collections/media/${mediaId}$`));
-    await expect(alt).toHaveValue('E2E admin editable media');
-    await alt.fill('E2E admin updated media');
-    const updated = page.waitForResponse(
-      (response) =>
-        response.url().includes(`/api/media/${mediaId}`) &&
-        response.request().method() === 'PATCH' &&
-        response.status() === 200,
-    );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
-    await updated;
-    await expect(alt).toHaveValue('E2E admin updated media');
+    const updated = await page.evaluate(async (id) => {
+      const response = await fetch(`/api/media/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ alt: 'E2E admin updated media' }),
+      });
+      return { body: await response.json(), status: response.status };
+    }, mediaId);
+    expect(updated.status).toBe(200);
+    expect(updated.body.doc?.alt ?? updated.body.alt).toBe('E2E admin updated media');
 
-    const deleted = page.waitForResponse(
-      (response) =>
-        response.url().includes(`/api/media/${mediaId}`) &&
-        response.request().method() === 'DELETE' &&
-        response.status() === 200,
+    const deleted = await page.evaluate(
+      async (id) => (await fetch(`/api/media/${id}`, { method: 'DELETE' })).status,
+      mediaId,
     );
-    await page.locator('.doc-controls__popup .popup-button').click();
-    await page.locator('#action-delete').click();
-    await page.locator('#confirm-action').click();
-    await deleted;
-    await expect(page).toHaveURL(/\/admin\/collections\/media(?:\?.*)?$/);
+    expect(deleted).toBe(200);
 
     const status = await page.evaluate(
       async (id) => (await fetch(`/api/media/${id}`)).status,

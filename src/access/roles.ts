@@ -1,6 +1,6 @@
 import type { Access, FieldAccess, PayloadRequest, Where } from 'payload';
 
-export const ROLES = { admin: 'admin', author: 'author' } as const;
+export const ROLES = { admin: 'admin', author: 'author', viewer: 'viewer' } as const;
 
 type RoleUser = Partial<NonNullable<PayloadRequest['user']>> | null | undefined;
 

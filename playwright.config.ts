@@ -25,7 +25,11 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
   expect: { timeout: 10_000 },
-  fullyParallel: true,
+  // The browser suite intentionally shares deterministic Payload fixtures.
+  // Running files concurrently lets destructive and stateful scenarios race
+  // each other (for example build throttling and document edits).
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',

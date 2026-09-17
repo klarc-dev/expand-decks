@@ -50,6 +50,7 @@ import * as migration_20260916_102304_agenda_slide_link from './20260916_102304_
 import * as migration_20260916_104452_two_cols_collection_side_final from './20260916_104452_two_cols_collection_side_final';
 import * as migration_20260916_133537_remove_footer_toggle from './20260916_133537_remove_footer_toggle';
 import * as migration_20260917_073521 from './20260917_073521';
+import * as migration_20260917_104618 from './20260917_104618';
 
 export const migrations = [
   {
@@ -311,5 +312,10 @@ export const migrations = [
     up: migration_20260917_073521.up,
     down: migration_20260917_073521.down,
     name: '20260917_073521',
+  },
+  {
+    up: migration_20260917_104618.up,
+    down: migration_20260917_104618.down,
+    name: '20260917_104618',
   },
 ];

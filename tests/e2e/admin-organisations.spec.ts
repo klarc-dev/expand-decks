@@ -37,7 +37,7 @@ test.describe('Payload organisation authoring UI', () => {
         response.request().method() === 'PATCH' &&
         response.status() >= 400,
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: /^(Save|Sauvegarder)$/ }).click();
     const rejection = await rejected;
     expect(JSON.stringify(await rejection.json())).toMatch(/couleur hexadécimale requise/i);
 
@@ -49,7 +49,7 @@ test.describe('Payload organisation authoring UI', () => {
         response.request().method() === 'PATCH' &&
         response.status() === 200,
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: /^(Save|Sauvegarder)$/ }).click();
     await saved;
 
     await page.reload({ waitUntil: 'domcontentloaded' });

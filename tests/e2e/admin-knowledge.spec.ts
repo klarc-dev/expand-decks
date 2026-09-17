@@ -23,11 +23,11 @@ test.describe('Payload knowledge-base authoring UI', () => {
     await expect(name).toBeVisible();
     await expect(page.getByText('E2E Member Organisation', { exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: /^(Save|Sauvegarder)$/ }).click();
     await expect(page.getByText(/required|obligatoire|champ/i).first()).toBeVisible();
 
     await name.fill('E2E UI Knowledge Base');
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: /^(Save|Sauvegarder)$/ }).click();
     await expect(page.getByText(/successfully|succès|créé/i).first()).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/collections\/knowledge-bases\/[^/]+$/);
 
@@ -41,7 +41,7 @@ test.describe('Payload knowledge-base authoring UI', () => {
         response.request().method() === 'PATCH' &&
         response.status() === 200,
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: /^(Save|Sauvegarder)$/ }).click();
     await updated;
 
     await page.reload();
@@ -82,7 +82,7 @@ test.describe('Payload knowledge-base authoring UI', () => {
         response.request().method() === 'POST' &&
         response.status() === 201,
     );
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('button', { name: /^(Save|Sauvegarder)$/ }).click();
     const response = await created;
     const result = await response.json();
     const documentId = String(result.doc?.id ?? result.id);

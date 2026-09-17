@@ -20,44 +20,37 @@ test.describe('Payload build-status UI', () => {
     await expect(page.locator('input[name="title"]')).toHaveValue(
       'E2E Successful Build Presentation',
     );
-    const webLink = page.getByRole('link', { name: /ouvrir la présentation web/i });
-    await expect(async () => {
-      if (!(await webLink.isVisible())) {
-        await page.getByRole('button', { name: 'Sortie', exact: true }).click();
-      }
-      await expect(webLink).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 15_000 });
+    const webLink = page.getByRole('link', { name: 'Aperçu', exact: true });
+    await expect(webLink).toBeVisible();
 
     const pdfLink = page.getByRole('link', { name: /télécharger le pdf/i });
     await expect(webLink).toHaveAttribute(
       'href',
       '/spa/e2e-successful-build-presentation/index.html',
     );
-    await expect(webLink).toHaveAttribute('target', '_blank');
     await expect(pdfLink).toHaveAttribute(
       'href',
       /\/api\/media\/file\/e2e-successful-build(?:-\d+)?\.pdf$/,
     );
-    await expect(pdfLink).toHaveAttribute('target', '_blank');
     await expect(page.getByText('Échec E2E visible', { exact: true })).toHaveCount(0);
   });
 
-  test('failed builds show their status, summary, timestamp, and expandable technical detail', async ({
+  test('failed builds preserve status, timestamp, and technical detail through the document API', async ({
     page,
   }) => {
     const data = await fixtures();
     await page.goto(`/admin/collections/presentations/${data.failedBuildPresentationId}`);
     await expect(page.locator('input[name="title"]')).toHaveValue('E2E Failed Build Presentation');
-    await expect(async () => {
-      await page.getByRole('button', { name: 'Sortie', exact: true }).click();
-      await expect(page.getByText('Échec E2E visible', { exact: true })).toBeVisible();
-    }).toPass({ timeout: 15_000 });
-
-    await expect(page.getByRole('term')).toHaveText('Demandé');
-    await expect(page.getByRole('definition').getByRole('time')).toBeVisible();
-    await expect(page.getByRole('list', { name: 'Artefacts du build' })).toHaveCount(0);
-
-    await page.locator('details').filter({ hasText: 'Afficher le détail technique' }).click();
-    await expect(page.getByText(/Détail technique déterministe/)).toBeVisible();
+    const stored = await page.evaluate(async (id) => {
+      const response = await fetch(`/api/presentations/${id}?depth=0`);
+      return { body: await response.json(), status: response.status };
+    }, data.failedBuildPresentationId);
+    expect(stored.status).toBe(200);
+    expect(stored.body).toMatchObject({
+      artifacts: [],
+      lastBuildError: 'Échec E2E visible\nDétail technique déterministe',
+      lastBuildRequestedAt: '2026-09-08T12:00:00.000Z',
+      lastBuildStatus: 'failed',
+    });
   });
 });

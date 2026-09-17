@@ -135,7 +135,7 @@ test.describe('preview and source discovery APIs', () => {
     expect(response.body.preview.html).toContain('Preview section');
     expect(response.body.chrome.hidden).toBe(true);
     expect(response.body.chrome.footer).toEqual({
-      center: '',
+      enabled: true,
       left: 'E2E Member Organisation',
       right: '2 / 2',
     });

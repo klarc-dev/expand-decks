@@ -48,7 +48,7 @@ const credentials = {
   viewer: {
     email: 'e2e-viewer@expand.local',
     password: 'E2e-viewer-password-4317',
-    role: ROLES.author,
+    role: ROLES.viewer,
   },
 } as const;
 
