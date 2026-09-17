@@ -85,6 +85,10 @@
     border-radius: var(--style-radius-s) 0 0 var(--style-radius-s);
   }
 
+  .doc-controls__controls > .presentation-title-control + .preview-btn {
+    margin-left: auto;
+  }
+
   .doc-controls__controls > .preview-btn + .preview-btn,
   .doc-controls__controls > .preview-btn + .form-submit .btn {
     border-left: 0;
