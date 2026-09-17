@@ -127,8 +127,14 @@ describe('canonical custom admin controls', () => {
     // Same element and class as Payload's native preview control beside it.
     expect(sourceContains(path, 'className="preview-btn"')).toBe(true);
     expect(sourceContains(path, 'title="Télécharger le PDF"')).toBe(true);
-    expect(sourceContains(path, "import { Download } from 'lucide-react';")).toBe(true);
+    expect(sourceContains(path, 'Download, EllipsisVertical, ExternalLink, Save')).toBe(true);
+    expect(sourceContains(path, 'const PresentationActionIcon')).toBe(true);
+    expect(sourceContains(path, 'mountIconOnce(previewButton, ExternalLink)')).toBe(true);
+    expect(sourceContains(path, 'mountIconOnce(saveButton, Save)')).toBe(true);
+    expect(sourceContains(path, 'mountIconOnce(menuButton, EllipsisVertical)')).toBe(true);
+    expect(sourceContains(path, 'new MutationObserver(syncActions)')).toBe(true);
     expect(sourceContains(path, '<svg')).toBe(false);
+    expect(sourceContains('src/app/(payload)/admin-overrides.scss', 'mask: url(')).toBe(false);
     expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
     expect(sourceContains(path, 'presentation-build-requested')).toBe(true);
     expect(sourceContains(path, 'document?.lastBuildStatus === BUILD_STATUS.success')).toBe(true);

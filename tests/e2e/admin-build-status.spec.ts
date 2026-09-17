@@ -32,6 +32,24 @@ test.describe('Payload build-status UI', () => {
       'href',
       /\/api\/media\/file\/e2e-successful-build(?:-\d+)?\.pdf$/,
     );
+    const actions = page.getByRole('group', { name: 'Actions de la présentation' });
+    await expect(actions).toBeVisible();
+    await expect(pdfLink.locator('.lucide-download.presentation-action-icon')).toBeVisible();
+    await expect(webLink.locator('.lucide-external-link.presentation-action-icon')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sauvegarder' })).toHaveAttribute(
+      'title',
+      'Sauvegarder',
+    );
+    await expect(
+      page
+        .getByRole('button', { name: 'Sauvegarder' })
+        .locator('.lucide-save.presentation-action-icon'),
+    ).toBeVisible();
+    const overflow = page.getByRole('button', { name: "Plus d'actions" });
+    await expect(overflow).toHaveAttribute('title', "Plus d'actions");
+    await expect(
+      overflow.locator('.lucide-ellipsis-vertical.presentation-action-icon'),
+    ).toBeVisible();
     await expect(page.getByText('Échec E2E visible', { exact: true })).toHaveCount(0);
   });
 

@@ -2,7 +2,8 @@
 // fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
+import { createRoot, type Root } from 'react-dom/client';
+import { Download, EllipsisVertical, ExternalLink, Save, type LucideIcon } from 'lucide-react';
 import { PopupList, toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
 import { artifactLinkKey, availableArtifactLinks } from '@/documents/artifacts';
@@ -10,12 +11,47 @@ import { adminPost } from '@/lib/adminFetch';
 import { BUILD_STATUS } from '@/lib/status';
 
 const DOWNLOAD_REFRESH_MS = 2000;
+const ACTION_ICON_SIZE = 20;
+const ACTION_ICON_STROKE = 1.75;
 
 type DownloadDocument = {
   artifacts?: unknown;
   lastBuildStatus?: string | null;
   lastBuildToken?: unknown;
 };
+
+type PresentationActionIconProps = {
+  icon: LucideIcon;
+};
+
+const PresentationActionIcon: React.FC<PresentationActionIconProps> = ({ icon: Icon }) => (
+  <Icon
+    aria-hidden="true"
+    className="presentation-action-icon"
+    size={ACTION_ICON_SIZE}
+    strokeWidth={ACTION_ICON_STROKE}
+  />
+);
+
+function mountPresentationActionIcon(
+  target: HTMLElement | null | undefined,
+  icon: LucideIcon,
+): () => void {
+  if (!target) return () => undefined;
+
+  const host = document.createElement('span');
+  host.className = 'presentation-action-icon-host';
+  host.setAttribute('aria-hidden', 'true');
+  target.append(host);
+
+  const root: Root = createRoot(host);
+  root.render(<PresentationActionIcon icon={icon} />);
+
+  return () => {
+    root.unmount();
+    host.remove();
+  };
+}
 
 export const DownloadPdfButton: React.FC = () => {
   const { id } = useDocumentInfo();
@@ -55,7 +91,7 @@ export const DownloadPdfButton: React.FC = () => {
       href={pdf.href}
       title="Télécharger le PDF"
     >
-      <Download aria-hidden className="icon" size={20} strokeWidth={1.5} />
+      <PresentationActionIcon icon={Download} />
     </a>
   );
 };
@@ -77,32 +113,60 @@ export const PresentationActionGroupStart: React.FC = () => {
     controls.setAttribute('role', 'group');
     controls.setAttribute('aria-label', 'Actions de la présentation');
 
-    const saveButton = controls.querySelector<HTMLElement>('#action-save');
-    const menuButton = controls.parentElement?.querySelector<HTMLElement>(
-      '.doc-controls__popup .popup-button',
-    );
-    const previousSaveTitle = saveButton?.getAttribute('title') ?? null;
-    const previousMenuLabel = menuButton?.getAttribute('aria-label') ?? null;
-    const previousMenuTitle = menuButton?.getAttribute('title') ?? null;
-    saveButton?.setAttribute('title', 'Sauvegarder');
-    menuButton?.setAttribute('aria-label', "Plus d'actions");
-    menuButton?.setAttribute('title', "Plus d'actions");
+    const iconCleanups = new Map<HTMLElement, () => void>();
+    const attributeCleanups = new Map<HTMLElement, Map<string, () => void>>();
+
+    const setTemporaryAttribute = (
+      element: HTMLElement | null | undefined,
+      name: string,
+      value: string,
+    ) => {
+      if (!element) return;
+      const elementCleanups = attributeCleanups.get(element) ?? new Map<string, () => void>();
+      if (elementCleanups.has(name)) return;
+      const previousValue = element.getAttribute(name);
+      element.setAttribute(name, value);
+      elementCleanups.set(name, () => {
+        if (previousValue === null) element.removeAttribute(name);
+        else element.setAttribute(name, previousValue);
+      });
+      attributeCleanups.set(element, elementCleanups);
+    };
+
+    const mountIconOnce = (element: HTMLElement | null | undefined, icon: LucideIcon) => {
+      if (!element || iconCleanups.has(element)) return;
+      iconCleanups.set(element, mountPresentationActionIcon(element, icon));
+    };
+
+    const syncActions = () => {
+      const saveButton = controls.querySelector<HTMLElement>('#action-save');
+      const previewButton = controls.querySelector<HTMLElement>('.preview-btn:not([download])');
+      const menuButton = controls.parentElement?.querySelector<HTMLElement>(
+        '.doc-controls__popup .popup-button',
+      );
+
+      setTemporaryAttribute(saveButton, 'title', 'Sauvegarder');
+      setTemporaryAttribute(menuButton, 'aria-label', "Plus d'actions");
+      setTemporaryAttribute(menuButton, 'title', "Plus d'actions");
+      mountIconOnce(previewButton, ExternalLink);
+      mountIconOnce(saveButton, Save);
+      mountIconOnce(menuButton, EllipsisVertical);
+    };
+
+    syncActions();
+    const observer = new MutationObserver(syncActions);
+    observer.observe(controls.parentElement ?? controls, { childList: true, subtree: true });
 
     return () => {
+      observer.disconnect();
+      for (const unmountIcon of iconCleanups.values()) unmountIcon();
+      for (const elementCleanups of attributeCleanups.values()) {
+        for (const restoreAttribute of elementCleanups.values()) restoreAttribute();
+      }
       if (previousRole === null) controls.removeAttribute('role');
       else controls.setAttribute('role', previousRole);
       if (previousLabel === null) controls.removeAttribute('aria-label');
       else controls.setAttribute('aria-label', previousLabel);
-      if (saveButton) {
-        if (previousSaveTitle === null) saveButton.removeAttribute('title');
-        else saveButton.setAttribute('title', previousSaveTitle);
-      }
-      if (menuButton) {
-        if (previousMenuLabel === null) menuButton.removeAttribute('aria-label');
-        else menuButton.setAttribute('aria-label', previousMenuLabel);
-        if (previousMenuTitle === null) menuButton.removeAttribute('title');
-        else menuButton.setAttribute('title', previousMenuTitle);
-      }
     };
   }, []);
 
