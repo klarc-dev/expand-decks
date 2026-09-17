@@ -1,7 +1,7 @@
 'use client';
 // fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useField } from '@payloadcms/ui';
 import type { TextFieldClientComponent } from 'payload';
 
@@ -13,7 +13,23 @@ import { AdminTextField } from '@/components/adminUi/AdminTextField';
  * Keeping the actual field here avoids duplicating form state in a separate
  * header component.
  */
-const TitleField: TextFieldClientComponent = () => null;
+const TitleField: TextFieldClientComponent = () => {
+  useEffect(() => {
+    // Payload renders the document header as a sibling before the collection
+    // edit view, so it cannot be presentation-scoped with a descendant CSS
+    // selector. Hide that author-irrelevant Edit/API navigation while this
+    // presentation field is mounted, then restore it on navigation.
+    const documentHeader = document.querySelector<HTMLElement>('.doc-header');
+    if (!documentHeader) return;
+    const previousDisplay = documentHeader.style.display;
+    documentHeader.style.display = 'none';
+    return () => {
+      documentHeader.style.display = previousDisplay;
+    };
+  }, []);
+
+  return null;
+};
 
 export const PresentationTitleControl: React.FC = () => {
   const { errorMessage, setValue, showError, value } = useField<string>({ path: 'title' });

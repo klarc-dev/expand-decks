@@ -254,9 +254,10 @@ describe('canonical custom admin controls', () => {
     expect(
       sourceContains(
         'src/app/(payload)/admin-overrides.scss',
-        '.collection-edit--presentations {\n  .doc-header,\n  .doc-tabs,\n  .doc-controls__meta',
+        '.collection-edit--presentations {\n  .doc-controls__meta',
       ),
     ).toBe(true);
+    expect(sourceContains('src/components/TitleField.tsx', "'.doc-header'")).toBe(true);
     expect(sourceContains('src/components/adminUi/AdminSurface.scss', 'margin-top: 12px')).toBe(
       false,
     );

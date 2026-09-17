@@ -1,6 +1,4 @@
 .collection-edit--presentations {
-  .doc-header,
-  .doc-tabs,
   .doc-controls__meta {
     display: none;
   }
@@ -22,6 +20,7 @@
   .doc-controls__controls-wrapper {
     width: 100%;
     justify-content: flex-end;
+    gap: 0;
   }
 
   .doc-controls__controls {
