@@ -60,6 +60,55 @@ export const DownloadPdfButton: React.FC = () => {
   );
 };
 
+/**
+ * Structural marker for the controls row. Payload renders before-document
+ * controls inside `.doc-controls__controls`; this lets scoped CSS give the
+ * row an accessible group label without replacing Payload's native controls.
+ */
+export const PresentationActionGroupStart: React.FC = () => {
+  useEffect(() => {
+    const controls = document.querySelector<HTMLElement>(
+      '.collection-edit--presentations .doc-controls__controls',
+    );
+    if (!controls) return;
+
+    const previousRole = controls.getAttribute('role');
+    const previousLabel = controls.getAttribute('aria-label');
+    controls.setAttribute('role', 'group');
+    controls.setAttribute('aria-label', 'Actions de la présentation');
+
+    const saveButton = controls.querySelector<HTMLElement>('#action-save');
+    const menuButton = controls.parentElement?.querySelector<HTMLElement>(
+      '.doc-controls__popup .popup-button',
+    );
+    const previousSaveTitle = saveButton?.getAttribute('title') ?? null;
+    const previousMenuLabel = menuButton?.getAttribute('aria-label') ?? null;
+    const previousMenuTitle = menuButton?.getAttribute('title') ?? null;
+    saveButton?.setAttribute('title', 'Sauvegarder');
+    menuButton?.setAttribute('aria-label', "Plus d'actions");
+    menuButton?.setAttribute('title', "Plus d'actions");
+
+    return () => {
+      if (previousRole === null) controls.removeAttribute('role');
+      else controls.setAttribute('role', previousRole);
+      if (previousLabel === null) controls.removeAttribute('aria-label');
+      else controls.setAttribute('aria-label', previousLabel);
+      if (saveButton) {
+        if (previousSaveTitle === null) saveButton.removeAttribute('title');
+        else saveButton.setAttribute('title', previousSaveTitle);
+      }
+      if (menuButton) {
+        if (previousMenuLabel === null) menuButton.removeAttribute('aria-label');
+        else menuButton.setAttribute('aria-label', previousMenuLabel);
+        if (previousMenuTitle === null) menuButton.removeAttribute('title');
+        else menuButton.setAttribute('title', previousMenuTitle);
+      }
+    };
+  }, []);
+
+  return null;
+};
+
 /** Native Payload menu for available template artifacts and rebuild requests. */
 const ExportMenuItem: React.FC = () => {
   const { data: documentData, id } = useDocumentInfo();

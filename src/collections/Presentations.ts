@@ -147,7 +147,11 @@ export const Presentations: CollectionConfig = {
     },
     components: {
       edit: {
-        beforeDocumentControls: ['/components/ExportMenuItem#DownloadPdfButton'],
+        beforeDocumentControls: [
+          '/components/TitleField#PresentationTitleControl',
+          '/components/ExportMenuItem#PresentationActionGroupStart',
+          '/components/ExportMenuItem#DownloadPdfButton',
+        ],
         editMenuItems: ['/components/ExportMenuItem#default'],
       },
     },
