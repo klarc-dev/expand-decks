@@ -148,6 +148,14 @@
       align-items: center;
     }
 
+    .doc-controls__controls {
+      justify-content: flex-end;
+    }
+
+    .doc-controls__controls::after {
+      display: none;
+    }
+
     .presentation-title-control {
       margin-right: 12px;
     }
