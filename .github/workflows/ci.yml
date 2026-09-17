@@ -73,6 +73,7 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm --dir slidev-workspace install --frozen-lockfile --ignore-workspace
           pnpm --dir slidev-workspace exec playwright install chromium
+          pnpm exec playwright install --with-deps chromium
           mkdir -p media
 
       - name: Generate Payload artifacts
