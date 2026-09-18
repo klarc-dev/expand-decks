@@ -84,7 +84,7 @@ test.describe('manual presentation build requests', () => {
       return { body: await response.json(), status: response.status };
     }, data.buildPresentationId);
     expect(retry.status).toBe(429);
-    expect(retry.body.error).toContain('déjà été demandé récemment');
+    expect(retry.body.error).toContain('déjà en cours de préparation');
     await context.close();
   });
 });
