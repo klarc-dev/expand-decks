@@ -19,7 +19,7 @@ const DRAFT_EVENT_PHASE_LABEL: Record<string, string> = {
   'validate:revise': 'Correction des diapositives signalées…',
   'validate:pass': 'Contenu validé.',
   approval: 'Validation du plan requise.',
-  build: 'Build Slidev (rendu réel)…',
+  build: 'Création du rendu final…',
   visual: 'Critique visuelle des diapositives rendues…',
   'visual:revise': 'Correction des problèmes visuels…',
   done: 'Terminé.',

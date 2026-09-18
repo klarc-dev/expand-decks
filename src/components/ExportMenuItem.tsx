@@ -173,22 +173,34 @@ export const PresentationActionGroupStart: React.FC = () => {
   return null;
 };
 
-/** Native Payload menu for available template artifacts and rebuild requests. */
+function downloadFile(href: string) {
+  const link = document.createElement('a');
+  link.download = '';
+  link.href = href;
+  link.rel = 'noopener noreferrer';
+  document.body.append(link);
+  link.click();
+  link.remove();
+}
+
+/** Native Payload menu for the two author-facing presentation outputs. */
 const ExportMenuItem: React.FC = () => {
   const { data: documentData, id } = useDocumentInfo();
   const [loading, setLoading] = useState(false);
   const artifacts = availableArtifactLinks(documentData ?? {});
+  const pdf = artifacts.find((artifact) => artifact.key === 'pdf');
+  const preview = artifacts.find((artifact) => artifact.key === 'spa');
 
-  const handleExport = useCallback(async () => {
+  const handleRefreshOutputs = useCallback(async () => {
     if (!id || loading) return;
     setLoading(true);
     try {
       const { ok, status, data } = await adminPost(`/api/presentations/${id}/build`);
       if (!ok) {
-        toast.error(data?.error || `Échec du démarrage (HTTP ${status})`);
+        toast.error(data?.error || `Impossible de préparer l’aperçu et le PDF (HTTP ${status})`);
         return;
       }
-      toast.success('Export lancé. Le statut est visible au-dessus du contenu.');
+      toast.success('Préparation de l’aperçu et du PDF lancée.');
       window.dispatchEvent(new CustomEvent('presentation-build-requested'));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erreur réseau');
@@ -201,16 +213,21 @@ const ExportMenuItem: React.FC = () => {
 
   return (
     <PopupList.ButtonGroup>
-      {artifacts.map((artifact) => (
+      {preview ? (
         <PopupList.Button
-          key={artifactLinkKey(artifact)}
-          onClick={() => window.open(artifact.href, '_blank', 'noopener,noreferrer')}
+          key={artifactLinkKey(preview)}
+          onClick={() => window.open(preview.href, '_blank', 'noopener,noreferrer')}
         >
-          {artifact.label}
+          Ouvrir l’aperçu
         </PopupList.Button>
-      ))}
-      <PopupList.Button onClick={handleExport} disabled={loading}>
-        {loading ? 'Export en cours…' : 'Exporter'}
+      ) : null}
+      {pdf ? (
+        <PopupList.Button key={artifactLinkKey(pdf)} onClick={() => downloadFile(pdf.href)}>
+          Télécharger le PDF
+        </PopupList.Button>
+      ) : null}
+      <PopupList.Button onClick={handleRefreshOutputs} disabled={loading}>
+        {loading ? 'Préparation en cours…' : 'Mettre à jour l’aperçu et le PDF'}
       </PopupList.Button>
     </PopupList.ButtonGroup>
   );

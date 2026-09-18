@@ -120,7 +120,7 @@ describe('canonical custom admin controls', () => {
     expect(rawTextControls()).toEqual(['src/components/adminUi/AdminTextField.tsx:75:<input>']);
   });
 
-  it('keeps export actions in Payload controls with an accessible PDF download', () => {
+  it('keeps task-oriented preview and PDF actions in Payload controls', () => {
     const path = 'src/components/ExportMenuItem.tsx';
     expect(rawButtonsIn(path)).toEqual([]);
     expect(sourceContains(path, 'aria-label="Télécharger le PDF"')).toBe(true);
@@ -139,6 +139,13 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'presentation-build-requested')).toBe(true);
     expect(sourceContains(path, 'document?.lastBuildStatus === BUILD_STATUS.success')).toBe(true);
     expect(sourceContains(path, "artifact.key === 'pdf'")).toBe(true);
+    expect(sourceContains(path, "artifact.key === 'spa'")).toBe(true);
+    expect(sourceContains(path, 'Ouvrir l’aperçu')).toBe(true);
+    expect(sourceContains(path, '>Télécharger le PDF<')).toBe(false);
+    expect(sourceContains(path, 'Télécharger le PDF')).toBe(true);
+    expect(sourceContains(path, 'Mettre à jour l’aperçu et le PDF')).toBe(true);
+    expect(sourceContains(path, '>Exporter<')).toBe(false);
+    expect(sourceContains(path, 'Export en cours')).toBe(false);
   });
 
   it('keeps TableEditor compact action semantics in the Payload Button owner', () => {
@@ -287,7 +294,7 @@ describe('canonical custom admin controls', () => {
     );
   });
 
-  it('keeps build status presentation in the Payload Pill owner', () => {
+  it('describes preview and PDF availability in the Payload Pill owner', () => {
     expect(sourceContains('src/components/BuildStatusField.tsx', '<Pill')).toBe(true);
     expect(sourceContains('src/components/BuildStatusField.tsx', "borderRadius: '999px'")).toBe(
       false,
@@ -302,9 +309,12 @@ describe('canonical custom admin controls', () => {
     expect(
       sourceContains(
         'src/components/BuildStatusField.tsx',
-        '<span className="sr-only">Statut du build : </span>',
+        '<span className="sr-only">Disponibilité de l’aperçu et du PDF : </span>',
       ),
     ).toBe(true);
+    expect(sourceContains('src/components/BuildStatusField.tsx', '>Build<')).toBe(false);
+    expect(sourceContains('src/components/BuildStatusField.tsx', 'Aperçu et PDF')).toBe(true);
+    expect(sourceContains('src/components/BuildStatusField.tsx', 'Disponibles')).toBe(true);
     expect(sourceContains('src/components/BuildStatusField.tsx', '<AdminPanel aria-live=')).toBe(
       false,
     );
@@ -352,6 +362,18 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'Demandé')).toBe(false);
     expect(sourceContains(path, 'toLocaleString')).toBe(false);
     expect(sourceContains('src/components/BuildStatusField.scss', '__metadata')).toBe(false);
+  });
+
+  it('keeps technical build and export jargon out of author-facing presentation copy', () => {
+    const presentationPath = 'src/collections/Presentations.ts';
+    expect(sourceContains(presentationPath, "label: 'Build IA'")).toBe(false);
+    expect(sourceContains(presentationPath, "label: 'Build visuel'")).toBe(false);
+    expect(sourceContains(presentationPath, "Impossible de lancer l'export")).toBe(false);
+    expect(sourceContains(presentationPath, "label: 'Génération IA'")).toBe(true);
+    expect(sourceContains(presentationPath, "label: 'Mise en page'")).toBe(true);
+    expect(sourceContains('src/components/agentDraftJournal.ts', 'Création du rendu final…')).toBe(
+      true,
+    );
   });
 
   it('keeps SlidePreview errors in the canonical alert notice', () => {

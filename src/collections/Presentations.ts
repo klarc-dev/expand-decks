@@ -212,7 +212,8 @@ export const Presentations: CollectionConfig = {
         if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
           return Response.json(
             {
-              error: 'Un build a déjà été demandé récemment. Réessayez dans un instant.',
+              error:
+                'L’aperçu et le PDF sont déjà en cours de préparation. Réessayez dans un instant.',
             },
             { status: 429 },
           );
@@ -251,7 +252,7 @@ export const Presentations: CollectionConfig = {
             msg: `Failed to queue presentation ${id} export`,
           });
 
-          const message = "Impossible de lancer l'export. Réessayez dans un instant.";
+          const message = 'Impossible de préparer l’aperçu et le PDF. Réessayez dans un instant.';
           // Never leave the document stuck on "building" when no job exists, and
           // clear the cooldown timestamp so the author can retry immediately.
           await patchPresentationBuildMetadata(
@@ -393,7 +394,7 @@ export const Presentations: CollectionConfig = {
               name: 'draftStatus',
               type: 'select',
               defaultValue: DRAFT_STATUS.idle,
-              label: 'Build IA',
+              label: 'Génération IA',
               access: runPointerAccess,
               admin: {
                 readOnly: true,
@@ -404,7 +405,7 @@ export const Presentations: CollectionConfig = {
                 { label: 'Plan', value: DRAFT_STATUS.structuring },
                 { label: 'Rédaction', value: DRAFT_STATUS.drafting },
                 { label: 'Validation', value: DRAFT_STATUS.validating },
-                { label: 'Build visuel', value: DRAFT_STATUS.building },
+                { label: 'Mise en page', value: DRAFT_STATUS.building },
                 { label: 'Terminé', value: DRAFT_STATUS.done },
                 { label: 'Échoué', value: DRAFT_STATUS.failed },
               ],

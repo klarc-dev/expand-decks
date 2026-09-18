@@ -19,10 +19,10 @@ type BuildInfo = {
 type BuildStatusPillStyle = 'error' | 'light-gray' | 'success' | 'warning';
 
 const STATUS_LABELS: Record<string, { label: string; pillStyle: BuildStatusPillStyle }> = {
-  [BUILD_STATUS.idle]: { label: 'En attente', pillStyle: 'light-gray' },
-  [BUILD_STATUS.building]: { label: 'En cours…', pillStyle: 'warning' },
-  [BUILD_STATUS.success]: { label: 'Réussi', pillStyle: 'success' },
-  [BUILD_STATUS.failed]: { label: 'Échoué', pillStyle: 'error' },
+  [BUILD_STATUS.idle]: { label: 'Non disponibles', pillStyle: 'light-gray' },
+  [BUILD_STATUS.building]: { label: 'Préparation…', pillStyle: 'warning' },
+  [BUILD_STATUS.success]: { label: 'Disponibles', pillStyle: 'success' },
+  [BUILD_STATUS.failed]: { label: 'À relancer', pillStyle: 'error' },
 };
 
 const BUILDING_POLL_MS = 2000;
@@ -85,9 +85,9 @@ const BuildStatusField: React.FC = () => {
   return (
     <div className="build-status">
       <span className="build-status__item">
-        <span className="build-status__label">Build</span>
+        <span className="build-status__label">Aperçu et PDF</span>
         <span aria-atomic="true" aria-live="polite" role="status">
-          <span className="sr-only">Statut du build : </span>
+          <span className="sr-only">Disponibilité de l’aperçu et du PDF : </span>
           <Pill pillStyle={meta.pillStyle} rounded size="small">
             {meta.label}
           </Pill>
