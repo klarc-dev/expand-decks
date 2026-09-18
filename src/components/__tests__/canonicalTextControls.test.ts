@@ -133,12 +133,9 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'const PresentationActionIcon')).toBe(true);
     expect(sourceContains(path, 'mountIconOnce(previewButton, ExternalLink)')).toBe(true);
     expect(sourceContains(path, 'mountIconOnce(saveButton, Save)')).toBe(true);
-    expect(
-      sourceContains(path, "moveMenuActionToControls(duplicateButton, 'Dupliquer', Copy)"),
-    ).toBe(true);
-    expect(
-      sourceContains(path, "moveMenuActionToControls(deleteButton, 'Supprimer', Trash2)"),
-    ).toBe(true);
+    expect(sourceContains(path, "addDirectAction(duplicateButton, 'Dupliquer', Copy)")).toBe(true);
+    expect(sourceContains(path, "addDirectAction(deleteButton, 'Supprimer', Trash2)")).toBe(true);
+    expect(sourceContains(path, 'const invokeNativeAction = () => element.click()')).toBe(true);
     expect(sourceContains(path, "setTemporaryAttribute(menu, 'hidden', '')")).toBe(true);
     expect(
       sourceContains(path, "createPresentationLink?.closest<HTMLElement>('.popup-button-list')"),

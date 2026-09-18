@@ -115,7 +115,7 @@ export const PresentationActionGroupStart: React.FC = () => {
 
     const iconCleanups = new Map<HTMLElement, () => void>();
     const attributeCleanups = new Map<HTMLElement, Map<string, () => void>>();
-    const actionMoveCleanups = new Map<HTMLElement, () => void>();
+    const directActionCleanups = new Map<HTMLElement, () => void>();
 
     const setTemporaryAttribute = (
       element: HTMLElement | null | undefined,
@@ -141,30 +141,27 @@ export const PresentationActionGroupStart: React.FC = () => {
       iconCleanups.set(element, mountPresentationActionIcon(element, icon));
     };
 
-    const moveMenuActionToControls = (
+    const addDirectAction = (
       element: HTMLElement | null | undefined,
       label: string,
       icon: LucideIcon,
     ) => {
-      if (!element || actionMoveCleanups.has(element)) return;
+      if (!element || directActionCleanups.has(element)) return;
 
-      const originalParent = element.parentNode;
-      const originalNextSibling = element.nextSibling;
-      if (!originalParent) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'presentation-direct-action';
+      button.setAttribute('aria-label', label);
+      button.setAttribute('title', label);
+      const unmountIcon = mountPresentationActionIcon(button, icon);
+      const invokeNativeAction = () => element.click();
+      button.addEventListener('click', invokeNativeAction);
+      controls.append(button);
 
-      element.classList.add('presentation-direct-action');
-      setTemporaryAttribute(element, 'aria-label', label);
-      setTemporaryAttribute(element, 'title', label);
-      mountIconOnce(element, icon);
-      controls.append(element);
-
-      actionMoveCleanups.set(element, () => {
-        element.classList.remove('presentation-direct-action');
-        if (originalNextSibling?.parentNode === originalParent) {
-          originalParent.insertBefore(element, originalNextSibling);
-        } else if (originalParent.isConnected) {
-          originalParent.appendChild(element);
-        }
+      directActionCleanups.set(element, () => {
+        button.removeEventListener('click', invokeNativeAction);
+        unmountIcon();
+        button.remove();
       });
     };
 
@@ -187,8 +184,8 @@ export const PresentationActionGroupStart: React.FC = () => {
       setTemporaryAttribute(createPresentationLink, 'hidden', '');
       mountIconOnce(previewButton, ExternalLink);
       mountIconOnce(saveButton, Save);
-      moveMenuActionToControls(duplicateButton, 'Dupliquer', Copy);
-      moveMenuActionToControls(deleteButton, 'Supprimer', Trash2);
+      addDirectAction(duplicateButton, 'Dupliquer', Copy);
+      addDirectAction(deleteButton, 'Supprimer', Trash2);
 
       const documentActionList = createPresentationLink?.closest<HTMLElement>('.popup-button-list');
       const menuActions =
@@ -216,7 +213,7 @@ export const PresentationActionGroupStart: React.FC = () => {
 
     return () => {
       observer.disconnect();
-      for (const restoreAction of actionMoveCleanups.values()) restoreAction();
+      for (const removeDirectAction of directActionCleanups.values()) removeDirectAction();
       for (const unmountIcon of iconCleanups.values()) unmountIcon();
       for (const elementCleanups of attributeCleanups.values()) {
         for (const restoreAttribute of elementCleanups.values()) restoreAttribute();
