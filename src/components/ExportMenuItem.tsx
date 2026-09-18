@@ -1,13 +1,12 @@
 'use client';
 // fallow-ignore-file unused-file -- referenced by Payload's generated admin import map
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Download, EllipsisVertical, ExternalLink, Save, type LucideIcon } from 'lucide-react';
-import { PopupList, toast, useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
+import { useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
-import { artifactLinkKey, availableArtifactLinks } from '@/documents/artifacts';
-import { adminPost } from '@/lib/adminFetch';
+import { availableArtifactLinks } from '@/documents/artifacts';
 import { BUILD_STATUS } from '@/lib/status';
 
 const DOWNLOAD_REFRESH_MS = 2000;
@@ -70,13 +69,6 @@ export const DownloadPdfButton: React.FC = () => {
     if (!id) return;
     const timer = setInterval(() => setParams({ depth: 1, t: Date.now() }), DOWNLOAD_REFRESH_MS);
     return () => clearInterval(timer);
-  }, [id, setParams]);
-
-  useEffect(() => {
-    if (!id) return;
-    const refresh = () => setParams({ depth: 1, t: Date.now() });
-    window.addEventListener('presentation-build-requested', refresh);
-    return () => window.removeEventListener('presentation-build-requested', refresh);
   }, [id, setParams]);
 
   if (!id || !pdf) return null;
@@ -172,65 +164,3 @@ export const PresentationActionGroupStart: React.FC = () => {
 
   return null;
 };
-
-function downloadFile(href: string) {
-  const link = document.createElement('a');
-  link.download = '';
-  link.href = href;
-  link.rel = 'noopener noreferrer';
-  document.body.append(link);
-  link.click();
-  link.remove();
-}
-
-/** Native Payload menu for the two author-facing presentation outputs. */
-const ExportMenuItem: React.FC = () => {
-  const { data: documentData, id } = useDocumentInfo();
-  const [loading, setLoading] = useState(false);
-  const artifacts = availableArtifactLinks(documentData ?? {});
-  const pdf = artifacts.find((artifact) => artifact.key === 'pdf');
-  const preview = artifacts.find((artifact) => artifact.key === 'spa');
-
-  const handleRefreshOutputs = useCallback(async () => {
-    if (!id || loading) return;
-    setLoading(true);
-    try {
-      const { ok, status, data } = await adminPost(`/api/presentations/${id}/build`);
-      if (!ok) {
-        toast.error(data?.error || `Impossible de préparer l’aperçu et le PDF (HTTP ${status})`);
-        return;
-      }
-      toast.success('Préparation de l’aperçu et du PDF lancée.');
-      window.dispatchEvent(new CustomEvent('presentation-build-requested'));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur réseau');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, loading]);
-
-  if (!id) return null;
-
-  return (
-    <PopupList.ButtonGroup>
-      {preview ? (
-        <PopupList.Button
-          key={artifactLinkKey(preview)}
-          onClick={() => window.open(preview.href, '_blank', 'noopener,noreferrer')}
-        >
-          Ouvrir l’aperçu
-        </PopupList.Button>
-      ) : null}
-      {pdf ? (
-        <PopupList.Button key={artifactLinkKey(pdf)} onClick={() => downloadFile(pdf.href)}>
-          Télécharger le PDF
-        </PopupList.Button>
-      ) : null}
-      <PopupList.Button onClick={handleRefreshOutputs} disabled={loading}>
-        {loading ? 'Préparation en cours…' : 'Mettre à jour l’aperçu et le PDF'}
-      </PopupList.Button>
-    </PopupList.ButtonGroup>
-  );
-};
-
-export default ExportMenuItem;

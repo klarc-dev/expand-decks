@@ -152,7 +152,6 @@ export const Presentations: CollectionConfig = {
           '/components/ExportMenuItem#PresentationActionGroupStart',
           '/components/ExportMenuItem#DownloadPdfButton',
         ],
-        editMenuItems: ['/components/ExportMenuItem#default'],
       },
     },
   },

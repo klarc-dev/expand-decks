@@ -24,7 +24,6 @@ import { default as default_49d2b627e93b48e36f9059279bd151a7 } from '../../../co
 import { PresentationTitleControl as PresentationTitleControl_31a0a096a421171d00710a61bcbb7872 } from '../../../components/TitleField'
 import { PresentationActionGroupStart as PresentationActionGroupStart_374fa86aa013d2dd5771ee365c473717 } from '../../../components/ExportMenuItem'
 import { DownloadPdfButton as DownloadPdfButton_374fa86aa013d2dd5771ee365c473717 } from '../../../components/ExportMenuItem'
-import { default as default_374fa86aa013d2dd5771ee365c473717 } from '../../../components/ExportMenuItem'
 import { default as default_e7730d3df9cf19d0cf35158220fe0b1e } from '../../../components/KnowledgeRetryButton'
 import { KlarcIcon as KlarcIcon_6eb899d2932d091174768945cdd618ab } from '../../../components/KlarcIcon'
 import { KlarcLogo as KlarcLogo_ffb51a65f3659371a879539c40a377fe } from '../../../components/KlarcLogo'
@@ -59,7 +58,6 @@ export const importMap = {
   "/components/TitleField#PresentationTitleControl": PresentationTitleControl_31a0a096a421171d00710a61bcbb7872,
   "/components/ExportMenuItem#PresentationActionGroupStart": PresentationActionGroupStart_374fa86aa013d2dd5771ee365c473717,
   "/components/ExportMenuItem#DownloadPdfButton": DownloadPdfButton_374fa86aa013d2dd5771ee365c473717,
-  "/components/ExportMenuItem#default": default_374fa86aa013d2dd5771ee365c473717,
   "/components/KnowledgeRetryButton#default": default_e7730d3df9cf19d0cf35158220fe0b1e,
   "/components/KlarcIcon#KlarcIcon": KlarcIcon_6eb899d2932d091174768945cdd618ab,
   "/components/KlarcLogo#KlarcLogo": KlarcLogo_ffb51a65f3659371a879539c40a377fe,

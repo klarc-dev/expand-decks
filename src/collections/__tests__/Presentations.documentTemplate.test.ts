@@ -257,8 +257,8 @@ describe('Presentations document template contract', () => {
         '/components/ExportMenuItem#PresentationActionGroupStart',
         '/components/ExportMenuItem#DownloadPdfButton',
       ],
-      editMenuItems: ['/components/ExportMenuItem#default'],
     });
+    expect(Presentations.admin?.components?.edit).not.toHaveProperty('editMenuItems');
   });
 
   it('resolves admin preview from the template primary artifact and rejects stale artifacts', () => {

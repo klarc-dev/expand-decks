@@ -136,14 +136,14 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, '<svg')).toBe(false);
     expect(sourceContains('src/app/(payload)/admin-overrides.scss', 'mask: url(')).toBe(false);
     expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
-    expect(sourceContains(path, 'presentation-build-requested')).toBe(true);
+    expect(sourceContains(path, 'presentation-build-requested')).toBe(false);
     expect(sourceContains(path, 'document?.lastBuildStatus === BUILD_STATUS.success')).toBe(true);
     expect(sourceContains(path, "artifact.key === 'pdf'")).toBe(true);
-    expect(sourceContains(path, "artifact.key === 'spa'")).toBe(true);
-    expect(sourceContains(path, 'Ouvrir l’aperçu')).toBe(true);
-    expect(sourceContains(path, '>Télécharger le PDF<')).toBe(false);
     expect(sourceContains(path, 'Télécharger le PDF')).toBe(true);
-    expect(sourceContains(path, 'Mettre à jour l’aperçu et le PDF')).toBe(true);
+    expect(sourceContains(path, 'Mettre à jour l’aperçu et le PDF')).toBe(false);
+    expect(sourceContains(path, 'Préparation en cours…')).toBe(false);
+    expect(sourceContains(path, '/api/presentations/${id}/build')).toBe(false);
+    expect(sourceContains(path, 'PopupList')).toBe(false);
     expect(sourceContains(path, '>Exporter<')).toBe(false);
     expect(sourceContains(path, 'Export en cours')).toBe(false);
   });
@@ -349,8 +349,8 @@ describe('canonical custom admin controls', () => {
 
   it('refreshes the native PDF action from current server artifacts', () => {
     const path = 'src/components/ExportMenuItem.tsx';
-    expect(sourceContains(path, 'data: documentData')).toBe(true);
-    expect(sourceContains(path, 'availableArtifactLinks(documentData ?? {})')).toBe(true);
+    expect(sourceContains(path, 'const [{ data }, { setParams }]')).toBe(true);
+    expect(sourceContains(path, 'availableArtifactLinks(document)')).toBe(true);
     expect(sourceContains(path, 'usePayloadAPI')).toBe(true);
     expect(sourceContains(path, 'DOWNLOAD_REFRESH_MS')).toBe(true);
     expect(sourceContains(path, 'useAllFormFields')).toBe(false);
