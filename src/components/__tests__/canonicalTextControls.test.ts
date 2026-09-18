@@ -263,6 +263,24 @@ describe('canonical custom admin controls', () => {
         '.collection-edit--presentations {\n  .doc-controls__meta',
       ),
     ).toBe(true);
+    expect(
+      sourceContains(
+        'src/app/(payload)/admin-overrides.scss',
+        '.doc-controls__divider {\n    display: none;',
+      ),
+    ).toBe(true);
+    expect(
+      sourceContains(
+        'src/app/(payload)/admin-overrides.scss',
+        '.doc-controls__controls-wrapper {\n    border-top: 0;',
+      ),
+    ).toBe(true);
+    expect(
+      sourceContains(
+        'src/app/(payload)/admin-overrides.scss',
+        '.tabs-field__tabs {\n    border-bottom: 0;',
+      ),
+    ).toBe(true);
     expect(sourceContains('src/components/TitleField.tsx', "'.doc-header'")).toBe(true);
     expect(sourceContains('src/components/adminUi/AdminSurface.scss', 'margin-top: 12px')).toBe(
       false,
