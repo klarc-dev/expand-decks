@@ -3,7 +3,15 @@
 
 import React, { useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Download, EllipsisVertical, ExternalLink, Save, type LucideIcon } from 'lucide-react';
+import {
+  Copy,
+  Download,
+  EllipsisVertical,
+  ExternalLink,
+  Save,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react';
 import { useDocumentInfo, usePayloadAPI } from '@payloadcms/ui';
 
 import { availableArtifactLinks } from '@/documents/artifacts';
@@ -107,27 +115,57 @@ export const PresentationActionGroupStart: React.FC = () => {
 
     const iconCleanups = new Map<HTMLElement, () => void>();
     const attributeCleanups = new Map<HTMLElement, Map<string, () => void>>();
+    const actionMoveCleanups = new Map<HTMLElement, () => void>();
 
     const setTemporaryAttribute = (
       element: HTMLElement | null | undefined,
       name: string,
-      value: string,
+      value: string | null,
     ) => {
       if (!element) return;
       const elementCleanups = attributeCleanups.get(element) ?? new Map<string, () => void>();
-      if (elementCleanups.has(name)) return;
-      const previousValue = element.getAttribute(name);
-      element.setAttribute(name, value);
-      elementCleanups.set(name, () => {
-        if (previousValue === null) element.removeAttribute(name);
-        else element.setAttribute(name, previousValue);
-      });
-      attributeCleanups.set(element, elementCleanups);
+      if (!elementCleanups.has(name)) {
+        const previousValue = element.getAttribute(name);
+        elementCleanups.set(name, () => {
+          if (previousValue === null) element.removeAttribute(name);
+          else element.setAttribute(name, previousValue);
+        });
+        attributeCleanups.set(element, elementCleanups);
+      }
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
     };
 
     const mountIconOnce = (element: HTMLElement | null | undefined, icon: LucideIcon) => {
       if (!element || iconCleanups.has(element)) return;
       iconCleanups.set(element, mountPresentationActionIcon(element, icon));
+    };
+
+    const moveMenuActionToControls = (
+      element: HTMLElement | null | undefined,
+      label: string,
+      icon: LucideIcon,
+    ) => {
+      if (!element || actionMoveCleanups.has(element)) return;
+
+      const originalParent = element.parentNode;
+      const originalNextSibling = element.nextSibling;
+      if (!originalParent) return;
+
+      element.classList.add('presentation-direct-action');
+      setTemporaryAttribute(element, 'aria-label', label);
+      setTemporaryAttribute(element, 'title', label);
+      mountIconOnce(element, icon);
+      controls.append(element);
+
+      actionMoveCleanups.set(element, () => {
+        element.classList.remove('presentation-direct-action');
+        if (originalNextSibling?.parentNode === originalParent) {
+          originalParent.insertBefore(element, originalNextSibling);
+        } else if (originalParent.isConnected) {
+          originalParent.appendChild(element);
+        }
+      });
     };
 
     const syncActions = () => {
@@ -136,6 +174,9 @@ export const PresentationActionGroupStart: React.FC = () => {
       const menuButton = controls.parentElement?.querySelector<HTMLElement>(
         '.doc-controls__popup .popup-button',
       );
+      const menu = menuButton?.closest<HTMLElement>('.doc-controls__popup');
+      const duplicateButton = document.querySelector<HTMLElement>('#action-duplicate');
+      const deleteButton = document.querySelector<HTMLElement>('#action-delete');
       const createPresentationLink = document.querySelector<HTMLElement>(
         'a[href="/admin/collections/presentations/create"]',
       );
@@ -146,7 +187,26 @@ export const PresentationActionGroupStart: React.FC = () => {
       setTemporaryAttribute(createPresentationLink, 'hidden', '');
       mountIconOnce(previewButton, ExternalLink);
       mountIconOnce(saveButton, Save);
-      mountIconOnce(menuButton, EllipsisVertical);
+      moveMenuActionToControls(duplicateButton, 'Dupliquer', Copy);
+      moveMenuActionToControls(deleteButton, 'Supprimer', Trash2);
+
+      const menuActions = document.querySelectorAll<HTMLElement>(
+        '.popup-button-list [role="menuitem"], .popup-button-list button, .popup-button-list a[href]',
+      );
+      const hasRemainingMenuActions = Array.from(menuActions).some(
+        (action) =>
+          !['action-create', 'action-duplicate', 'action-delete'].includes(action.id) &&
+          !action.hidden,
+      );
+
+      if (hasRemainingMenuActions) {
+        setTemporaryAttribute(menu, 'hidden', null);
+        setTemporaryAttribute(menuButton, 'aria-label', "Plus d'actions");
+        setTemporaryAttribute(menuButton, 'title', "Plus d'actions");
+        mountIconOnce(menuButton, EllipsisVertical);
+      } else {
+        setTemporaryAttribute(menu, 'hidden', '');
+      }
     };
 
     syncActions();
@@ -155,6 +215,7 @@ export const PresentationActionGroupStart: React.FC = () => {
 
     return () => {
       observer.disconnect();
+      for (const restoreAction of actionMoveCleanups.values()) restoreAction();
       for (const unmountIcon of iconCleanups.values()) unmountIcon();
       for (const elementCleanups of attributeCleanups.values()) {
         for (const restoreAttribute of elementCleanups.values()) restoreAttribute();

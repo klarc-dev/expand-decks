@@ -53,6 +53,7 @@
   }
 
   .doc-controls__controls > .preview-btn,
+  .doc-controls__controls > .presentation-direct-action,
   .doc-controls__controls > .form-submit .btn {
     display: inline-flex;
     width: 40px;
@@ -84,6 +85,7 @@
   }
 
   .doc-controls__controls > .preview-btn:not([download]) > :not(.presentation-action-icon-host),
+  .doc-controls__controls > .presentation-direct-action > :not(.presentation-action-icon-host),
   .doc-controls__controls > .form-submit .btn__label,
   .doc-controls__popup .popup-button > :not(.presentation-action-icon-host) {
     display: none;
@@ -98,11 +100,19 @@
   }
 
   .doc-controls__controls > .preview-btn + .preview-btn,
+  .doc-controls__controls > .preview-btn + .presentation-direct-action,
+  .doc-controls__controls > .form-submit + .presentation-direct-action,
+  .doc-controls__controls > .presentation-direct-action + .presentation-direct-action,
   .doc-controls__controls > .preview-btn + .form-submit .btn {
     border-left: 0;
   }
 
   .doc-controls__controls > .form-submit .btn {
+    border-radius: 0;
+  }
+
+  .doc-controls__controls > .presentation-direct-action:last-child,
+  .doc-controls__controls > .form-submit:last-child .btn {
     border-radius: 0 var(--style-radius-s) var(--style-radius-s) 0;
   }
 
@@ -112,6 +122,8 @@
 
   .doc-controls__controls > .preview-btn:hover,
   .doc-controls__controls > .preview-btn:focus-visible,
+  .doc-controls__controls > .presentation-direct-action:hover,
+  .doc-controls__controls > .presentation-direct-action:focus-visible,
   .doc-controls__controls > .form-submit .btn:hover,
   .doc-controls__controls > .form-submit .btn:focus-visible {
     background: var(--theme-elevation-100);

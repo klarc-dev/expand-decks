@@ -127,11 +127,19 @@ describe('canonical custom admin controls', () => {
     // Same element and class as Payload's native preview control beside it.
     expect(sourceContains(path, 'className="preview-btn"')).toBe(true);
     expect(sourceContains(path, 'title="Télécharger le PDF"')).toBe(true);
-    expect(sourceContains(path, 'Download, EllipsisVertical, ExternalLink, Save')).toBe(true);
+    for (const icon of ['Copy', 'Download', 'EllipsisVertical', 'ExternalLink', 'Save', 'Trash2']) {
+      expect(sourceContains(path, icon)).toBe(true);
+    }
     expect(sourceContains(path, 'const PresentationActionIcon')).toBe(true);
     expect(sourceContains(path, 'mountIconOnce(previewButton, ExternalLink)')).toBe(true);
     expect(sourceContains(path, 'mountIconOnce(saveButton, Save)')).toBe(true);
-    expect(sourceContains(path, 'mountIconOnce(menuButton, EllipsisVertical)')).toBe(true);
+    expect(
+      sourceContains(path, "moveMenuActionToControls(duplicateButton, 'Dupliquer', Copy)"),
+    ).toBe(true);
+    expect(
+      sourceContains(path, "moveMenuActionToControls(deleteButton, 'Supprimer', Trash2)"),
+    ).toBe(true);
+    expect(sourceContains(path, "setTemporaryAttribute(menu, 'hidden', '')")).toBe(true);
     expect(sourceContains(path, `'a[href="/admin/collections/presentations/create"]'`)).toBe(true);
     expect(
       sourceContains(path, "setTemporaryAttribute(createPresentationLink, 'hidden', '')"),
