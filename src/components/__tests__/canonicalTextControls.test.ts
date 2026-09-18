@@ -132,6 +132,11 @@ describe('canonical custom admin controls', () => {
     expect(sourceContains(path, 'mountIconOnce(previewButton, ExternalLink)')).toBe(true);
     expect(sourceContains(path, 'mountIconOnce(saveButton, Save)')).toBe(true);
     expect(sourceContains(path, 'mountIconOnce(menuButton, EllipsisVertical)')).toBe(true);
+    expect(sourceContains(path, `'a[href="/admin/collections/presentations/create"]'`)).toBe(true);
+    expect(
+      sourceContains(path, "setTemporaryAttribute(createPresentationLink, 'hidden', '')"),
+    ).toBe(true);
+    expect(sourceContains(path, 'observer.observe(document.body')).toBe(true);
     expect(sourceContains(path, 'new MutationObserver(syncActions)')).toBe(true);
     expect(sourceContains(path, '<svg')).toBe(false);
     expect(sourceContains('src/app/(payload)/admin-overrides.scss', 'mask: url(')).toBe(false);

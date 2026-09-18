@@ -136,10 +136,14 @@ export const PresentationActionGroupStart: React.FC = () => {
       const menuButton = controls.parentElement?.querySelector<HTMLElement>(
         '.doc-controls__popup .popup-button',
       );
+      const createPresentationLink = document.querySelector<HTMLElement>(
+        'a[href="/admin/collections/presentations/create"]',
+      );
 
       setTemporaryAttribute(saveButton, 'title', 'Sauvegarder');
       setTemporaryAttribute(menuButton, 'aria-label', "Plus d'actions");
       setTemporaryAttribute(menuButton, 'title', "Plus d'actions");
+      setTemporaryAttribute(createPresentationLink, 'hidden', '');
       mountIconOnce(previewButton, ExternalLink);
       mountIconOnce(saveButton, Save);
       mountIconOnce(menuButton, EllipsisVertical);
@@ -147,7 +151,7 @@ export const PresentationActionGroupStart: React.FC = () => {
 
     syncActions();
     const observer = new MutationObserver(syncActions);
-    observer.observe(controls.parentElement ?? controls, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       observer.disconnect();
