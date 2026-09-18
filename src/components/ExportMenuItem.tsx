@@ -190,9 +190,10 @@ export const PresentationActionGroupStart: React.FC = () => {
       moveMenuActionToControls(duplicateButton, 'Dupliquer', Copy);
       moveMenuActionToControls(deleteButton, 'Supprimer', Trash2);
 
-      const menuActions = document.querySelectorAll<HTMLElement>(
-        '.popup-button-list [role="menuitem"], .popup-button-list button, .popup-button-list a[href]',
-      );
+      const documentActionList = createPresentationLink?.closest<HTMLElement>('.popup-button-list');
+      const menuActions =
+        documentActionList?.querySelectorAll<HTMLElement>('[role="menuitem"], button, a[href]') ??
+        [];
       const hasRemainingMenuActions = Array.from(menuActions).some(
         (action) =>
           !['action-create', 'action-duplicate', 'action-delete'].includes(action.id) &&

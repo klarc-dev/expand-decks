@@ -140,6 +140,9 @@ describe('canonical custom admin controls', () => {
       sourceContains(path, "moveMenuActionToControls(deleteButton, 'Supprimer', Trash2)"),
     ).toBe(true);
     expect(sourceContains(path, "setTemporaryAttribute(menu, 'hidden', '')")).toBe(true);
+    expect(
+      sourceContains(path, "createPresentationLink?.closest<HTMLElement>('.popup-button-list')"),
+    ).toBe(true);
     expect(sourceContains(path, `'a[href="/admin/collections/presentations/create"]'`)).toBe(true);
     expect(
       sourceContains(path, "setTemporaryAttribute(createPresentationLink, 'hidden', '')"),
