@@ -24,12 +24,7 @@ import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMe
 import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
-import {
-  ACTIVE_DRAFT_STATUSES,
-  BUILD_STATUS,
-  DRAFT_STATUS,
-  PRESENTATION_STATUS,
-} from '../lib/status';
+import { ACTIVE_DRAFT_STATUSES, BUILD_STATUS, DRAFT_STATUS } from '../lib/status';
 import {
   documentTemplateField,
   payloadBlocksForTemplate,
@@ -562,18 +557,6 @@ export const Presentations: CollectionConfig = {
               },
             },
             documentTemplateField,
-            {
-              name: 'status',
-              type: 'select',
-              required: true,
-              defaultValue: PRESENTATION_STATUS.draft,
-              label: 'Statut',
-              admin: {},
-              options: [
-                { label: 'Brouillon', value: PRESENTATION_STATUS.draft },
-                { label: 'Publiée', value: PRESENTATION_STATUS.published },
-              ],
-            },
             {
               name: 'slug',
               type: 'text',

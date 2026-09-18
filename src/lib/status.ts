@@ -4,10 +4,6 @@ export const BUILD_STATUS = {
   success: 'success',
   failed: 'failed',
 } as const;
-export const PRESENTATION_STATUS = {
-  draft: 'draft',
-  published: 'published',
-} as const;
 export type BuildStatus = (typeof BUILD_STATUS)[keyof typeof BUILD_STATUS];
 
 /** Agentic builder run state, surfaced in the admin sidebar. */

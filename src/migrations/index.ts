@@ -51,6 +51,7 @@ import * as migration_20260916_104452_two_cols_collection_side_final from './202
 import * as migration_20260916_133537_remove_footer_toggle from './20260916_133537_remove_footer_toggle';
 import * as migration_20260917_073521 from './20260917_073521';
 import * as migration_20260917_104618 from './20260917_104618';
+import * as migration_20260918_134044 from './20260918_134044';
 
 export const migrations = [
   {
@@ -317,5 +318,10 @@ export const migrations = [
     up: migration_20260917_104618.up,
     down: migration_20260917_104618.down,
     name: '20260917_104618',
+  },
+  {
+    up: migration_20260918_134044.up,
+    down: migration_20260918_134044.down,
+    name: '20260918_134044',
   },
 ];

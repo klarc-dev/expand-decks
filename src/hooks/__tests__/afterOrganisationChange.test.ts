@@ -11,7 +11,10 @@ function makeReq(docs: { id: number }[]) {
   const updateOne = vi.fn().mockResolvedValue({});
   const queue = vi.fn().mockResolvedValue({});
   return {
-    req: { context: {}, payload: { find, update, db: { updateOne }, jobs: { queue } } },
+    req: {
+      context: {},
+      payload: { find, update, db: { updateOne }, jobs: { queue } },
+    },
     find,
     update,
     updateOne,
@@ -20,13 +23,20 @@ function makeReq(docs: { id: number }[]) {
 }
 
 describe('afterOrganisationChange', () => {
-  it('stamps a build token on every published deck without re-validating its content', async () => {
+  it('stamps a build token on every deck without re-validating its content', async () => {
     const { req, update, updateOne, queue } = makeReq([{ id: 8 }, { id: 15 }]);
     const doc = { id: 1, name: 'Klarc' };
 
-    const result = await afterOrganisationChange({ doc, operation: 'update', req } as never);
+    const result = await afterOrganisationChange({
+      doc,
+      operation: 'update',
+      req,
+    } as never);
 
     expect(result).toBe(doc);
+    expect(req.payload.find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { organisation: { equals: 1 } } }),
+    );
     // The collection `update` operation would run full validation of the
     // deck's slides; a single stale deck over a limit must not fail the org save.
     expect(update).not.toHaveBeenCalled();
@@ -45,7 +55,10 @@ describe('afterOrganisationChange', () => {
     expect(queue).toHaveBeenCalledTimes(2);
     expect(queue.mock.calls[1]?.[0]).toMatchObject({
       task: BUILD_SLIDES_TASK,
-      input: { presentationId: '15', buildToken: updateOne.mock.calls[1]?.[0].data.lastBuildToken },
+      input: {
+        presentationId: '15',
+        buildToken: updateOne.mock.calls[1]?.[0].data.lastBuildToken,
+      },
     });
   });
 
