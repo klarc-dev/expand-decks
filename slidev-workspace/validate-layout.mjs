@@ -73,7 +73,11 @@ function inspectTextClipping({ print = false, slideIndex } = {}) {
     const box = slide.getBoundingClientRect();
     if (box.width < 1 || box.height < 1) continue;
     const scale = box.width / slide.offsetWidth;
-    const tolerance = Math.max(0.5, scale * 0.5);
+    // Range boxes can extend about one device pixel past a card's client box
+    // because Chromium rounds line boxes and glyph bounds independently. That
+    // is not visible clipping. Keep a small 1.5px floor while still rejecting
+    // text that loses a meaningful part of a line.
+    const tolerance = Math.max(1.5, scale * 1.5);
     const seen = new Set();
     const walker = document.createTreeWalker(slide, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {

@@ -59,6 +59,35 @@ it('rejects internal hidden text in SPA and native print but permits cropped dec
   }
 }, 240_000);
 
+it('permits a card line box that exceeds its client height by one rounded pixel', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'slidev-text-rounding-'));
+  const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: 'development' };
+  const run = (command: string, args: string[]) =>
+    execFile(command, args, {
+      cwd: dir,
+      env,
+      timeout: 120_000,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+  try {
+    await symlink(join(workspace, 'node_modules'), join(dir, 'node_modules'), 'dir');
+    await writeFile(
+      join(dir, 'slides.md'),
+      `---\ntheme: default\nrouterMode: hash\nfonts:\n  local: sans-serif\n  sans: sans-serif\n---\n<div class="k-card"><p>Rounded line box</p></div>\n`,
+    );
+    await writeFile(
+      join(dir, 'style.css'),
+      '.k-card{height:21px;overflow:visible}.k-card p{font-size:16px;line-height:22px;margin:0}',
+    );
+    await run(join(workspace, 'node_modules/.bin/slidev'), ['build', '--base', './']);
+    await expect(
+      run(process.execPath, [join(workspace, 'validate-layout.mjs'), join(dir, 'dist'), '1']),
+    ).resolves.toMatchObject({ stdout: expect.stringContaining('"valid":true') });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}, 240_000);
+
 it('fails closed for within-limit card copy that cannot fit legibly', async () => {
   const description = {
     root: {
