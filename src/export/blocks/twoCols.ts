@@ -18,10 +18,18 @@ import {
 
 export type { TwoColsBlockData };
 
+function illustration(block: TwoColsBlockData): (SlideImage & { html: string }) | null {
+  if (!block.image?.url) return null;
+  const url = block.image.filename ? `./media/${block.image.filename}` : block.image.url;
+  return {
+    url,
+    position: block.imagePosition ?? 'right',
+    html: `<figure class="k-image-figure"><img ${vueBoundSrc(url)} alt="${escape(block.image.alt ?? '')}" /></figure>`,
+  };
+}
+
 export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string {
-  const image: SlideImage | null = block.image?.url
-    ? { url: block.image.url, position: block.imagePosition ?? 'right' }
-    : null;
+  const image = illustration(block);
 
   // <div> not <p>: richTextToHTML emits its own block-level <p>.
   const leadHtml = richTextToHTML(block.lead);
@@ -76,16 +84,14 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
   // previews must include the same image pixels, not a sibling background.
   if (image) {
     const body = [leftBody, stack.html].filter(Boolean).join('\n\n');
-    const url = block.image?.filename ? `./media/${block.image.filename}` : image.url;
     const copy = contentFrame(body, {
       header,
       crowded: stack.crowded,
       density: stack.density,
     });
-    const figure = `<figure class="k-image-figure"><img ${vueBoundSrc(url)} alt="${escape(block.image?.alt ?? '')}" /></figure>`;
     return wrapSlide({
       surface: ctx?.surface,
-      body: `<div class="k-image-split k-image-split--${image.position}">${copy}${figure}</div>`,
+      body: `<div class="k-image-split k-image-split--${image.position}">${copy}${image.html}</div>`,
     });
   }
 
