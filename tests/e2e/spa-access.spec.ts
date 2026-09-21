@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { resolve } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
 
 const E2E_AUTHOR_AUTH_FILE = resolve('test-results/.auth/author.json');
 const E2E_VIEWER_AUTH_FILE = resolve('test-results/.auth/viewer.json');
@@ -8,6 +9,20 @@ const deckURL = '/spa/e2e-spa-presentation/index.html';
 const assetURL = '/spa/e2e-spa-presentation/assets/app.js';
 
 test.describe('built SPA access and file serving', () => {
+  test.beforeAll(async () => {
+    // Earlier organisation-edit specs legitimately rebuild its presentations.
+    // Restore this suite's file-serving fixture at its own boundary, rather
+    // than assuming the global setup's synthetic HTML survived those builds.
+    await mkdir(resolve('media/spa/e2e-spa-presentation/assets'), { recursive: true });
+    await writeFile(
+      resolve('media/spa/e2e-spa-presentation/index.html'),
+      '<!doctype html><html><body><h1>E2E built deck</h1><script src="/spa/e2e-spa-presentation/assets/app.js"></script></body></html>',
+    );
+    await writeFile(
+      resolve('media/spa/e2e-spa-presentation/assets/app.js'),
+      'window.__E2E_DECK_LOADED__ = true;',
+    );
+  });
   test('anonymous visitors cannot read a deck or its assets', async ({ request }) => {
     const html = await request.get(deckURL);
     expect(html.status()).toBe(403);

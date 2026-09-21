@@ -45,11 +45,10 @@ test.describe('Payload build-status UI', () => {
         .getByRole('button', { name: 'Sauvegarder' })
         .locator('.lucide-save.presentation-action-icon'),
     ).toBeVisible();
-    const overflow = page.getByRole('button', { name: "Plus d'actions" });
-    await expect(overflow).toHaveAttribute('title', "Plus d'actions");
-    await expect(
-      overflow.locator('.lucide-ellipsis-vertical.presentation-action-icon'),
-    ).toBeVisible();
+    // The native menu is empty after its actions move to direct controls.
+    await expect(page.getByRole('button', { name: 'Dupliquer', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Supprimer', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: "Plus d'actions" })).toHaveCount(0);
     await expect(page.getByText('Échec E2E visible', { exact: true })).toHaveCount(0);
   });
 
