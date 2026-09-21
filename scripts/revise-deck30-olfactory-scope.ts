@@ -32,6 +32,7 @@ await runPayloadScript(async (payload) => {
     ![
       'CPI, art. L. 713-2, L. 513-4, L. 122-4 et L. 613-3 ; C. com., art. L. 151-3 à L. 151-5.',
       'CPI, art. L. 713-2, L. 513-4 et L. 122-4.',
+      'CPI, art. L. 613-3, L. 713-2, L. 513-4 et L. 122-4.',
     ].includes(s22.footnotes?.[0]?.text)
   )
     throw new Error('Unexpected slide 22 footnote; refusing non-minimal patch');
