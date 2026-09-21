@@ -47,7 +47,8 @@ test.describe('Payload build-status UI', () => {
     ).toBeVisible();
     // The native menu is empty after its actions move to direct controls.
     await expect(page.getByRole('button', { name: 'Dupliquer', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Supprimer', exact: true })).toBeVisible();
+    // Presentations.delete is admin-only; this fixture authenticates an author.
+    await expect(page.getByRole('button', { name: 'Supprimer', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: "Plus d'actions" })).toHaveCount(0);
     await expect(page.getByText('Échec E2E visible', { exact: true })).toHaveCount(0);
   });
