@@ -44,6 +44,50 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+const setOptionalRichText = (slide: AnyRecord, fieldName: string, value: string) => {
+  if (!slide[fieldName]) {
+    slide[fieldName] = {
+      root: {
+        type: 'root',
+        format: '',
+        indent: 0,
+        version: 1,
+        direction: null,
+        children: [
+          {
+            type: 'paragraph',
+            format: '',
+            indent: 0,
+            version: 1,
+            children: [],
+            direction: null,
+            textStyle: '',
+            textFormat: 0,
+          },
+        ],
+      },
+    };
+  }
+  setRichText(slide[fieldName], value);
+};
+
+const assertCardGridLimits = (slide: AnyRecord, label: string) => {
+  assert(slide.blockType === 'cardGrid', `${label} is not a card grid`);
+  assert((slide.cards ?? []).length <= 3, `${label} has more than three cards`);
+  assert(slide.columns == null || slide.columns === '2', `${label} must use compact columns`);
+  assert(text(slide.sidebarText).length <= 320, `${label} sidebar exceeds 320 characters`);
+  for (const [index, card] of (slide.cards ?? []).entries()) {
+    assert(
+      String(card.title ?? '').length <= 120,
+      `${label} card ${index + 1} title exceeds 120 characters`,
+    );
+    assert(
+      text(card.description).length <= 260,
+      `${label} card ${index + 1} description exceeds 260 characters`,
+    );
+  }
+};
+
 const setFootnotes = (slide: AnyRecord, sources: string[]) => {
   slide.footnotes = sources.map((text) => ({ text }));
 };
@@ -64,6 +108,34 @@ await runPayloadScript(async (payload) => {
     assert(matches.length === 1, `Expected one slide titled ${wanted}, got ${matches.length}`);
     return matches[0];
   };
+  // Resolve by exact current title. Do not use positional fallbacks: production
+  // editorial order is mutable and title identity is the durable contract.
+  const ownership = byTitle('Titularité et preuve');
+  const names = byTitle('Création, usage, enregistrement : quand le droit naît-il ?');
+  const nice = byTitle(
+    'La Classification de Nice : classer pour décrire, pas pour créer un monopole',
+  );
+  const anteriority = byTitle('Une antériorité ne se lit pas seulement dans un registre');
+  const risk = byTitle('NERIVA pour des cosmétiques : obstacle certain ou risque à qualifier ?');
+  const tolerance = byTitle('Forclusion par tolérance');
+  const domain = byTitle('Le domaine réservé ne remplit pas les trois fonctions attendues');
+  const vote = byTitle('NERIVO peut-il autoriser la campagne allemande ?');
+  const use = byTitle('Déchéance pour défaut d’exploitation : l’usage doit être réel');
+  const launch = byTitle(
+    'Le nom est réservé. Le logo est payé. Le produit est-il libre de sortir ?',
+  );
+  const assets = byTitle('Commencer par les actifs, pas par les guichets de dépôt');
+  assert(domain && anteriority && vote, 'Stable slide identity missing');
+
+  // Keep the narrative chronological: identify the online asset before
+  // widening the analysis to third-party anteriorities.
+  const domainIndex = slides.indexOf(domain);
+  const anteriorityIndex = slides.indexOf(anteriority);
+  if (domainIndex > anteriorityIndex) {
+    slides.splice(domainIndex, 1);
+    slides.splice(anteriorityIndex, 0, domain);
+  }
+  assert(slides.indexOf(domain) < slides.indexOf(anteriority), 'Domain must precede anteriority');
 
   const cover = slides.find((slide) => slide.blockType === 'cover');
   assert(cover, 'Cover slide missing');
@@ -71,7 +143,6 @@ await runPayloadScript(async (payload) => {
     (pill: AnyRecord) => pill.text !== 'Cas fictif · Parfum',
   );
 
-  const ownership = slides.find((slide) => slide.title === 'Titularité et preuve') ?? slides[3];
   assert(ownership?.blockType === 'cardGrid', 'Ownership slide is not a card grid');
   ownership.title = 'Titularité et preuve';
   ownership.cards[0].number = '01';
@@ -79,20 +150,29 @@ await runPayloadScript(async (payload) => {
   ownership.cards[2].number = '03';
   ownership.cards[2].title = 'Titularité et preuve';
 
-  const names =
-    slides.find(
-      (slide) => slide.title === 'Création, usage, enregistrement : quand le droit naît-il?',
-    ) ?? slides[5];
   assert(names?.blockType === 'twoCols', 'Names slide is not a two-column block');
   names.title = 'Quatre noms, quatre fonctions et des preuves différentes';
   names.leftFooter = null;
 
+  assert(launch?.blockType === 'statement', 'Launch slide is not a statement');
+  launch.title = 'Réservation, dépôt et liberté d’exploitation';
+  setRichText(
+    launch.body,
+    'Réserver un nom de domaine ne crée pas un droit sur le signe. Déposer une marque demande encore un examen de validité et ne donne pas, à lui seul, la liberté d’exploiter le produit. La liberté d’exploitation suppose de vérifier les droits antérieurs opposables et les autorisations nécessaires.[^1]',
+  );
+  setRichText(
+    launch.footer,
+    'Domaine réservé : adresse internet. Marque déposée : titre soumis à examen. Liberté d’exploitation : conclusion après recherche des antériorités, comparaison des usages et vérification de la chaîne de droits.[^2]',
+  );
+  setFootnotes(launch, [
+    'Réserver un nom de domaine est une opération d’enregistrement technique ; elle ne confère pas un monopole général sur le signe.',
+    'La liberté d’exploitation est une analyse de risques et de droits opposables, distincte de la réservation du domaine et du dépôt de marque.',
+  ]);
+
   const topicTitles: Record<string, string> = {
     'Un parfum, cinq actifs à distinguer': 'Actifs et régimes de protection',
-    'Le nom est réservé. Le logo est payé. Le produit est-il libre de sortir ?':
-      'Liberté d’exploitation avant lancement',
     'Commencer par les actifs, pas par les guichets de dépôt': 'Actifs, protections et limites',
-    'Création, usage, enregistrement : quand le droit naît-il?':
+    'Création, usage, enregistrement : quand le droit naît-il ?':
       'Fonctions des noms et naissance des droits',
     'Trois noms possibles, trois difficultés différentes': 'Choix du signe et distinctivité',
     'Que protège chaque représentation ?': 'Types de représentation et portée du dépôt',
@@ -121,30 +201,29 @@ await runPayloadScript(async (payload) => {
       'Dossier de preuve d’usage',
     'Même copie apparente, fondements et preuves différents': 'Qualification des atteintes',
     'Un horodatage prouve une date, pas un monopole': 'Chronologie et force probatoire',
-    'NERIVO peut-il autoriser la campagne allemande ?': 'Vote final : campagne allemande',
     'Non en l’état : l’accord sur le nom ne règle pas les droits sur le logo.':
       'Décision finale et conditions d’autorisation',
   };
   for (const slide of slides)
     if (slide.title && topicTitles[slide.title]) slide.title = topicTitles[slide.title];
 
-  const nice = slides.find((slide) => slide.title === 'Classification de Nice et HDB') ?? slides[7];
   assert(nice?.blockType === 'twoCols', 'Nice/HDB slide is not two-column');
   setRichText(
     nice.intro,
     'La Classification de Nice organise les produits et services en classes. La base de données harmonisée des produits et services (HDB) propose des termes acceptés : ils facilitent le dépôt, la traduction, la recherche et le traitement procédural, sans remplacer le choix du périmètre utile.[^1]',
   );
-  setRichText(
-    nice.leftFooter,
-    'Pour NERIVO, partir des termes HDB pertinents, puis vérifier que le libellé décrit exactement l’exploitation visée. Une classe ou un terme voisin ne crée pas une protection automatique.[^2]',
+  setOptionalRichText(
+    nice,
+    'leftFooter',
+    'Partir des termes HDB pertinents, puis vérifier que le libellé décrit l’exploitation visée. Une classe ne crée pas une protection automatique.[^2]',
   );
   assert((nice.rightCards ?? []).length >= 3, 'Nice/HDB cards missing');
-  nice.rightCards[0].title = 'Périmètre exploité à court terme';
+  nice.rightCards[0].title = 'Horizon court : périmètre exploité';
   setRichText(
     nice.rightCards[0].description,
     'Décrire les produits et services que NERIVO met réellement sur le marché au lancement : c’est le périmètre immédiatement défendable.',
   );
-  nice.rightCards[1].title = 'Périmètre envisagé à long terme';
+  nice.rightCards[1].title = 'Horizon long : extension crédible';
   setRichText(
     nice.rightCards[1].description,
     'Réserver une extension cohérente avec la stratégie future, sans gonfler artificiellement le libellé : l’intention doit rester crédible et utile.',
@@ -155,14 +234,15 @@ await runPayloadScript(async (payload) => {
     'Un libellé trop étroit peut laisser un espace à une reprise opportuniste sur des produits ou services voisins ; comparer les usages projetés et les circuits de commercialisation.[^3]',
   );
   setFootnotes(nice, [
-    'Arrangement de Nice, HDB de l’EUIPO et règlement (UE) 2017/1001, art. 33 : les termes et la rédaction du libellé structurent le dépôt et l’appréciation du périmètre.',
+    'Arrangement de Nice : la classification organise les classes de produits et services.',
+    'HDB de l’EUIPO : les termes acceptés facilitent le dépôt, la traduction et la recherche.',
+    'Règlement (UE) 2017/1001, art. 33 : le libellé délimite les produits et services revendiqués.',
   ]);
 
-  const use =
-    slides.find((slide) => slide.title === 'Exploitation réelle et déchéance') ?? slides[18];
-  assert(use?.blockType === 'twoCols', 'Use/dechéance slide is not two-column');
-  setRichText(
-    use.leftFooter,
+  assert(use?.blockType === 'twoCols', 'Use/decheance slide is not two-column');
+  setOptionalRichText(
+    use,
+    'leftFooter',
     'Après cinq ans, l’absence d’usage sérieux peut conduire à la déchéance, totale ou partielle, pour les produits et services concernés. Le renouvellement ne remplace pas l’exploitation.[^1]',
   );
   setRichText(
@@ -173,11 +253,6 @@ await runPayloadScript(async (payload) => {
     'CPI, art. L. 714-5 ; règlement (UE) 2017/1001, art. 18 et 58 : déchéance après cinq ans de non-usage sérieux, selon le périmètre concerné.',
   ]);
 
-  const risk =
-    slides.find(
-      (slide) =>
-        slide.title === 'NERIVA pour des cosmétiques : obstacle certain ou risque à qualifier?',
-    ) ?? slides[10];
   assert(risk?.blockType === 'twoCols', 'Risk slide is not a two-column block');
   setRichText(
     risk.intro,
@@ -199,8 +274,9 @@ await runPayloadScript(async (payload) => {
         'Comparer les lettres, la structure et l’apparence ; une différence de couleur ne tranche pas seule.',
     },
   ];
-  setRichText(
-    risk.leftFooter,
+  setOptionalRichText(
+    risk,
+    'leftFooter',
     'Comparer les signes sur trois plans : phonétique (sonorités et rythme), sémantique (sens et évocation) et orthographique/visuel (lettres, structure et apparence). Aucun critère ne décide seul : l’analyse est globale, rapportée aux produits ou services et au public concernés.[^1]',
   );
   risk.footnotes = [
@@ -209,41 +285,49 @@ await runPayloadScript(async (payload) => {
     },
   ];
 
-  const tolerance =
-    slides.find((slide) => slide.title === 'Forclusion par tolérance') ?? slides[11];
   assert(tolerance?.blockType === 'cardGrid', 'Tolerance slide is not a card grid');
   tolerance.eyebrow = 'NERIVO · Un concurrent est désormais sur le marché';
-  tolerance.title = 'Laisser durer un conflit peut fermer certains recours';
-  setRichText(
-    tolerance.sidebarText,
-    'Hypothèse distincte de l’accord NERIVA : NERIVO connaît l’usage d’une nouvelle marque concurrente enregistrée et le laisse se poursuivre.[^1]',
+  tolerance.title = 'Forclusion par tolérance';
+  setOptionalRichText(
+    tolerance,
+    'sidebarText',
+    'Forclusion possible si la marque postérieure est enregistrée, connue et tolérée pendant cinq ans.[^1]',
   );
   tolerance.cards = [
     {
       number: '1',
-      title: 'Une marque postérieure enregistrée',
+      title: 'Marque postérieure enregistrée',
       description:
-        'Il faut une marque postérieure enregistrée et des produits ou services concernés.',
+        'La forclusion vise une marque postérieure enregistrée, pour les produits ou services concernés.',
     },
     {
       number: '2',
-      title: 'Cinq années en connaissance de cause',
+      title: 'Connaissance et cinq ans',
       description:
-        'Le titulaire antérieur doit avoir connu et toléré l’usage pendant cinq années consécutives.',
+        'Cinq années en connaissance de cause et de tolérance ; le silence seul ne suffit pas.[^2]',
     },
     {
       number: '3',
-      title: 'Un effet limité',
+      title: 'Effet limité',
       description:
-        'Effet limité au périmètre concerné ; la mauvaise foi du déposant fait exception.',
+        'Recours irrecevable sur ce périmètre ; exception si le dépôt est de mauvaise foi.[^3]',
     },
   ];
-  tolerance.footnotes = [{ text: 'CPI, art. L. 716-2-8 et L. 716-4-5.' }];
+  tolerance.columns = null;
+  tolerance.footnotes = [
+    {
+      text: 'CPI, art. L. 716-2-8 et L. 716-4-5 : la forclusion concerne une marque postérieure enregistrée.',
+    },
+    {
+      text: 'La connaissance de l’usage et la tolérance pendant cinq ans doivent être caractérisées ; le silence seul ne suffit pas.',
+    },
+    {
+      text: 'La forclusion est limitée aux produits ou services concernés ; la mauvaise foi fait obstacle à son bénéfice.',
+    },
+  ];
+  assertCardGridLimits(tolerance, 'Slide 12');
+  assert(slides.indexOf(domain) < slides.indexOf(anteriority), 'Domain must precede anteriority');
 
-  const vote =
-    slides.find((slide) => slide.title === 'Vote final : campagne allemande') ??
-    slides.find((slide) => slide.title === 'NERIVO peut-il autoriser la campagne allemande ?') ??
-    slides.find((slide) => text(slide.title).includes('campagne allemande'));
   assert(vote, 'Final vote slide missing');
   if (!text(vote.lead).includes('Hypothèse finale')) {
     setRichText(
@@ -295,18 +379,24 @@ await runPayloadScript(async (payload) => {
     'Cover pill remained',
   );
   assert(
-    saved.slides.some(
-      (slide: AnyRecord) => slide.title === 'Laisser durer un conflit peut fermer certains recours',
-    ),
+    saved.slides.some((slide: AnyRecord) => slide.title === 'Forclusion par tolérance'),
     'Tolerance slide missing',
   );
   assert(
-    JSON.stringify(saved.slides).includes('Cinq années en connaissance de cause'),
+    JSON.stringify(saved.slides).includes('Connaissance et cinq ans'),
     'Tolerance content missing',
   );
   assert(
     JSON.stringify(saved.slides).includes('Nomenclature'),
     'Expected existing Nice-classification content missing',
+  );
+  assert(JSON.stringify(saved.slides).includes('HDB'), 'HDB horizon content missing');
+  assert(JSON.stringify(saved.slides).includes('libellé'), 'Libellé horizon content missing');
+  assert(
+    saved.slides.some(
+      (slide: AnyRecord) => slide.title === 'NERIVO peut-il autoriser la campagne allemande ?',
+    ),
+    'Final vote title changed',
   );
 
   let buildSuccess = false;
