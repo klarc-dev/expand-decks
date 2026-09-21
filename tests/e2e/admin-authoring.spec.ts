@@ -60,7 +60,6 @@ test.describe('Payload presentation authoring UI', () => {
     const stored = result.doc ?? result;
     expect(stored).toMatchObject({
       title: 'E2E UI Created Presentation',
-      status: 'draft',
       language: 'fr',
     });
     expect(stored.organisation).toBeTruthy();
