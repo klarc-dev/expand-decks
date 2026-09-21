@@ -59,7 +59,7 @@ services:
       # hostname is not routable from the Docker network — use the host bridge).
       CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL}
       CLIPROXYAPI_KEY: ${CLIPROXYAPI_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-high}
+      OPENAI_MODEL: ${OPENAI_MODEL:-ultra}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_FONTS_API_KEY: ${GOOGLE_FONTS_API_KEY}
@@ -117,7 +117,7 @@ services:
       # provider configuration identical on every queue consumer.
       CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL}
       CLIPROXYAPI_KEY: ${CLIPROXYAPI_KEY}
-      OPENAI_MODEL: ${OPENAI_MODEL:-high}
+      OPENAI_MODEL: ${OPENAI_MODEL:-ultra}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_FONTS_API_KEY: ${GOOGLE_FONTS_API_KEY}

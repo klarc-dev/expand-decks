@@ -2,7 +2,7 @@ import type { Payload, TaskConfig, TaskHandlerArgs } from 'payload';
 
 import { runAgentCommand } from './agentRunCommands';
 import { COLLECTIONS } from '@/lib/collections';
-import { withAgentModel } from '@/lib/agentModel';
+import { DEFAULT_AGENT_MODEL, withAgentModel } from '@/lib/agentModel';
 
 export const AGENT_DRAFT_TASK = 'agentDraft' as const;
 
@@ -22,7 +22,7 @@ export async function runAgentDraftTask({
     overrideAccess: true,
   });
   return {
-    output: await withAgentModel(ledger.model || 'high', () =>
+    output: await withAgentModel(ledger.model || DEFAULT_AGENT_MODEL, () =>
       runAgentCommand(payload, agentRunId),
     ),
   };

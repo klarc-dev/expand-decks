@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_AGENT_MODEL } from '../../lib/agentModel';
 import { MIN_BRIEF_CHARS } from '../../lib/draftConfig';
 import { Presentations } from '../Presentations';
 
@@ -93,7 +94,11 @@ describe('Presentations IA tab', () => {
       hasMany: true,
     });
     expect(hasFieldOfType('collapsible', 'Options avancées')).toBe(false);
-    expect(findField('agentModel')).toMatchObject({ type: 'text', admin: { hidden: true } });
+    expect(findField('agentModel')).toMatchObject({
+      type: 'text',
+      defaultValue: DEFAULT_AGENT_MODEL,
+      admin: { hidden: true },
+    });
     expect(findField('agentVisualCritique')).toMatchObject({ type: 'checkbox' });
     expect(findField('agentApprovalRequired')).toMatchObject({ type: 'checkbox' });
     expect(findField('agentRun')).toMatchObject({ type: 'ui' });

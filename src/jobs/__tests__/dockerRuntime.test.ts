@@ -11,6 +11,14 @@ describe('runtime image', () => {
     );
   });
 
+  it('uses ultra as the Compose fallback for every agent job consumer', () => {
+    const compose = readFileSync('docker-compose.yaml', 'utf8');
+    const worker = compose.slice(compose.indexOf('  payload-worker-1: &payload-worker'));
+
+    expect(compose).toContain(`OPENAI_MODEL: \${OPENAI_MODEL:-ultra}`);
+    expect(worker).toContain(`OPENAI_MODEL: \${OPENAI_MODEL:-ultra}`);
+  });
+
   it('gives every agent job consumer the same provider configuration', () => {
     const compose = readFileSync('docker-compose.yaml', 'utf8');
     const worker = compose.slice(compose.indexOf('  payload-worker-1: &payload-worker'));

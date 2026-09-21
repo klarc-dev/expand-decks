@@ -19,6 +19,16 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('agent model selection', () => {
+  it('uses OPENAI_MODEL as the authoring default and high when unset', async () => {
+    vi.stubEnv('OPENAI_MODEL', 'ultra');
+    vi.resetModules();
+    expect((await import('../agentModel')).DEFAULT_AGENT_MODEL).toBe('ultra');
+
+    vi.stubEnv('OPENAI_MODEL', '');
+    vi.resetModules();
+    expect((await import('../agentModel')).DEFAULT_AGENT_MODEL).toBe('high');
+  });
+
   it('accepts proxy aliases and concrete model identifiers', () => {
     expect(agentModelSchema.parse(' high ')).toBe('high');
     expect(agentModelSchema.parse('anthropic/claude-opus-5')).toBe('anthropic/claude-opus-5');

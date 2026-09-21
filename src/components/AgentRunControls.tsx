@@ -140,7 +140,7 @@ function runRequestFromFields(fields: FormFields) {
     approvalRequired: valueOf('agentApprovalRequired') === true,
     brief: text('agentBrief'),
     draftRunId: text('draftRunId'),
-    model: text('agentModel') || 'high',
+    model: text('agentModel'),
     slideCount: slideCountRangeFromFields(
       valueOf('agentSlideCountMin'),
       valueOf('agentSlideCountMax'),
@@ -397,7 +397,7 @@ const AgentRunControls: React.FC = () => {
         presentationId: String(id),
         brief,
         mode: startMode,
-        model: request.model,
+        model: request.model || undefined,
         visual: request.visual,
         approvalRequired: request.approvalRequired,
         ...(range ? { slideCountRange: range } : {}),

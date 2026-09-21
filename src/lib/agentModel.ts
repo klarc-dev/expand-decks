@@ -10,7 +10,7 @@ export const agentModelSchema = z
   .max(128, 'Le nom du modèle est trop long')
   .regex(/^[A-Za-z0-9._:/-]+$/, 'Le nom du modèle contient des caractères invalides');
 
-export const DEFAULT_AGENT_MODEL = 'high';
+export const DEFAULT_AGENT_MODEL = process.env.OPENAI_MODEL || 'high';
 
 /** Deadline for the gateway capability probe. */
 const MODEL_PROBE_TIMEOUT_MS = 15_000;

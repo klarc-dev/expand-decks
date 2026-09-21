@@ -10,6 +10,7 @@ import { COLLECTIONS } from '../lib/collections';
 import { CTX } from '../lib/context';
 import { slideCountRangeSchema } from '../lib/draftConfig';
 import { resolveDocumentTemplate } from '../documents/templates';
+import { DEFAULT_AGENT_MODEL } from '../lib/agentModel';
 import { DRAFT_STATUS, type DraftStatus } from '../lib/status';
 import { createDeckRequestContext } from '../agents/requestContext';
 import { configureSourceResolutionPayload } from '../lib/sources/serverContext';
@@ -103,7 +104,7 @@ async function finalizeSuccess(
   const organisationId = idOf(run.organisation);
   if (organisationId) {
     try {
-      const fontPair = await chooseFontPairForBrief(run.brief, run.model || 'high');
+      const fontPair = await chooseFontPairForBrief(run.brief, run.model || DEFAULT_AGENT_MODEL);
       await payload.update({
         collection: COLLECTIONS.organisations,
         id: organisationId,
@@ -208,7 +209,7 @@ async function executeWorkflow(
     tags: [
       'deck-build',
       ledger.mode,
-      `model:${ledger.model || 'high'}`,
+      `model:${ledger.model || DEFAULT_AGENT_MODEL}`,
       ledger.visual === false ? 'no-visual' : 'visual',
     ],
   };
@@ -218,7 +219,7 @@ async function executeWorkflow(
     runId: ledger.mastraRunId,
     userId: String(idOf(ledger.createdBy) ?? ''),
     organizationId: idOf(ledger.organisation)?.toString(),
-    model: ledger.model || 'high',
+    model: ledger.model || DEFAULT_AGENT_MODEL,
     language: ledger.language,
     phase: 'gather',
   }) as never;

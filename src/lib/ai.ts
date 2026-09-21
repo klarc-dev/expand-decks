@@ -2,11 +2,11 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 /**
  * AI provider wired to CloudCLIProxy's OpenAI-compatible endpoint. The default
- * model is the proxy's stable `high` alias rather than a concrete model id: a
- * pinned id (previously `gpt-6-astra`) can enter a days-long per-credential
- * cooldown upstream, which surfaces as a 429 naming the failing provider and
- * takes drafting down until someone edits an env var. A deployment-wide
- * environment override remains available for explicit selection.
+ * model is the proxy's stable deployment alias (configured through
+ * `OPENAI_MODEL`, with `high` as the application fallback) rather than a
+ * concrete model id. A pinned id can enter a days-long per-credential cooldown
+ * upstream, which surfaces as a 429 naming the failing provider and takes
+ * drafting down until someone edits an env var.
  *
  * Structured-output callers use tool calling instead of `json_schema`, which
  * keeps the contract portable across OpenAI-compatible proxies.
