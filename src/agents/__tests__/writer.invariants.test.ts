@@ -225,6 +225,38 @@ describe('writeSlide invariants', () => {
     expect(mocked).not.toHaveBeenCalled();
   });
 
+  it('forces a preserved revision slide through the model when layout repair requires changes', async () => {
+    const existing = {
+      blockType: 'statement',
+      title: stub.title,
+      eyebrow: 'Existing eyebrow',
+      body: 'Existing body that is too dense',
+      footer: 'Existing footer',
+      variant: 'big-statement',
+    };
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+      body: 'Shortened body',
+    } as never);
+
+    const out = await writeSlide(
+      { ...stub, intent: 'Préserve intégralement cette diapositive existante' },
+      dossier,
+      [],
+      JSON.stringify([existing]),
+      undefined,
+      undefined,
+      undefined,
+      { forceRewrite: true, currentSlide: existing },
+    );
+
+    expect(out).toMatchObject({ body: 'Shortened body' });
+    expect(mocked).toHaveBeenCalledOnce();
+    expect(mocked.mock.calls[0]![0].prompt).toContain('CONTENU ACTUEL À COMPACTER');
+    expect(mocked.mock.calls[0]![0].prompt).toContain('Existing body that is too dense');
+  });
+
   it('returns the exact embedded slide when preserved slides share a title and layout', async () => {
     const first = {
       blockType: 'statement',

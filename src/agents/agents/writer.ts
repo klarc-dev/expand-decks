@@ -111,6 +111,11 @@ function existingSlideForStub(
   }
 }
 
+type WriteSlideOptions = {
+  forceRewrite?: boolean;
+  currentSlide?: Record<string, unknown>;
+};
+
 /**
  * Draft one slide. `otherTitles` is every OTHER stub's title (small-context:
  * titles only, never bodies). Returns the block with blockType/title force-locked
@@ -124,8 +129,11 @@ export async function writeSlide(
   abortSignal?: AbortSignal,
   template: DocumentTemplateDefinition = PRESENTATION_DOCUMENT_TEMPLATE,
   requestContext?: RequestContext<any>,
+  options: WriteSlideOptions = {},
 ): Promise<Record<string, unknown>> {
-  const existingSlide = existingSlideForStub(revisionContext, stub, template);
+  const existingSlide = options.forceRewrite
+    ? null
+    : existingSlideForStub(revisionContext, stub, template);
   if (existingSlide) return existingSlide;
   const isTargetedRevision = Boolean(revisionContext);
 
@@ -147,6 +155,9 @@ export async function writeSlide(
       : '',
     revisionContext
       ? `\n---\nDEMANDE DE RÉVISION :\n${dossier.rawBrief}\n\nDECK EXISTANT À RÉVISER :\n${revisionContext}\n\nApplique uniquement la demande de révision ci-dessus. Préserve mot pour mot les formulations, faits, exemples et champs non concernés. Si cette diapositive n'est pas concernée, reproduis son contenu existant sans modification.`
+      : '',
+    options.currentSlide
+      ? `\n---\nCONTENU ACTUEL À COMPACTER :\n${JSON.stringify(options.currentSlide)}\n\nRéécris ce contenu existant au lieu de repartir de zéro. Préserve les affirmations factuelles, citations, références, réserves et message essentiel ; réduis seulement la densité demandée par l’intention.`
       : '',
   ]
     .filter(Boolean)

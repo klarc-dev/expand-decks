@@ -35,7 +35,12 @@ import {
   resolveDocumentTemplate,
   type DocumentTemplateId,
 } from '../documents/templates';
-import { REVISE_MAX_ITERATIONS, SCORE_THRESHOLD, WRITER_CONCURRENCY } from '../lib/agentConfig';
+import {
+  LAYOUT_REPAIR_MAX_ITERATIONS,
+  REVISE_MAX_ITERATIONS,
+  SCORE_THRESHOLD,
+  WRITER_CONCURRENCY,
+} from '../lib/agentConfig';
 import { mapWithConcurrency } from '../lib/concurrency';
 import { MAX_SLIDES, slideCountRangeSchema } from '../lib/draftConfig';
 import { buildSlidesMd } from '../export/buildSlidesMd';
@@ -49,6 +54,7 @@ import { scoreVisual } from './scorers/visual';
 import { validateGrounding } from './grounding';
 import { groundDossier } from './dossierGrounding';
 import { prepareSlidesForRender } from './renderSlides';
+import { validateAndRepairLayout } from './layoutRepair';
 import { exportSlidePngs } from './tools/exportSlidePngs';
 import { DeckDossierSchema, type DeckDossier, type DeckEvidence } from './schemas';
 import {
@@ -315,89 +321,126 @@ const visualStep = createStep({
     const init = getInitData() as DeckWorkflowInput;
     const template = resolveDocumentTemplate(init.documentTemplate);
     const title = init.title ?? inputData.dossier.coreIdea;
-    const renderSlides = await prepareSlidesForRender(
-      inputData.slides as Array<Record<string, unknown> & { blockType: string }>,
-    );
-    const md = buildSlidesMd(
-      {
-        title,
-        documentTemplate: init.documentTemplate ?? 'presentation',
-        slides: renderSlides as SlideBlock[],
-      },
-      { language: inputData.dossier.language },
-    );
-    const { pngs, validateLayout, cleanup } = await exportSlidePngs(md, abortSignal);
-    try {
-      await validateLayout();
-      const scored = await mapWithConcurrency(
-        inputData.slides,
-        WRITER_CONCURRENCY,
-        async (slide, i) => {
-          const png = pngs[i];
-          if (!png) return { score: 1, fix: '' };
-          return scoreVisual(
-            slide as Record<string, unknown>,
-            {
-              base64: png.base64,
-              mimeType: 'image/png',
-            },
-            abortSignal,
-          );
-        },
+    const render = async (slides: SlideBlock[]) => {
+      const renderSlides = await prepareSlidesForRender(
+        slides as Array<Record<string, unknown> & { blockType: string }>,
       );
-      const flagged = scored.map((s, i) => ({ ...s, i })).filter((s) => s.score < SCORE_THRESHOLD);
-      if (flagged.length === 0) {
-        return inputData;
-      }
-
-      const next = [...inputData.slides];
-      await writer.write({
-        type: 'deck-event',
-        phase: 'visual:revise',
-        detail: { count: flagged.length },
-      });
-      await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
-        const stub = inputData.stubs[i]!;
-        const revisedStub: OutlineStub = {
-          ...stub,
-          intent: `${stub.intent}\n\nCORRECTION VISUELLE (rendu réel) : ${fix}`,
-        };
-        next[i] = (await writeSlide(
-          revisedStub,
-          inputData.dossier,
-          inputData.titles.filter((_, j) => j !== i),
-          inputData.revisionContext,
-          abortSignal,
-          template,
-          requestContext,
-        )) as SlideBlock;
-      });
-
-      // The visual rewrite changes the final persisted data. Render that exact
-      // revision once more so a correction cannot reintroduce an overflow after
-      // the first PNG pass succeeded.
-      const revisedRenderSlides = await prepareSlidesForRender(
-        next as Array<Record<string, unknown> & { blockType: string }>,
-      );
-      const revisedMd = buildSlidesMd(
+      const md = buildSlidesMd(
         {
           title,
           documentTemplate: init.documentTemplate ?? 'presentation',
-          slides: revisedRenderSlides as SlideBlock[],
+          slides: renderSlides as SlideBlock[],
         },
         { language: inputData.dossier.language },
       );
-      const { validateLayout: validateRevisedLayout, cleanup: cleanupRevisedExport } =
-        await exportSlidePngs(revisedMd, abortSignal);
-      try {
-        await validateRevisedLayout();
-      } finally {
-        cleanupRevisedExport();
-      }
+      return exportSlidePngs(md, abortSignal);
+    };
+    const rewrite = async ({
+      slide,
+      slideIndex,
+      instruction,
+    }: {
+      slide: SlideBlock;
+      slideIndex: number;
+      instruction: string;
+    }) => {
+      const stub = inputData.stubs[slideIndex]!;
+      return (await writeSlide(
+        {
+          ...stub,
+          intent: `${stub.intent}\n\nCORRECTION DE MISE EN PAGE (rendu réel) : ${instruction}`,
+        },
+        inputData.dossier,
+        inputData.titles.filter((_, index) => index !== slideIndex),
+        inputData.revisionContext,
+        abortSignal,
+        template,
+        requestContext,
+        { forceRewrite: true, currentSlide: slide as Record<string, unknown> },
+      )) as SlideBlock;
+    };
+    const onLayoutRepair = async ({ count, iteration }: { count: number; iteration: number }) => {
+      await writer.write({
+        type: 'deck-event',
+        phase: 'visual:revise',
+        detail: { count, iteration, reason: 'layout-overflow' },
+      });
+    };
+    let current = await validateAndRepairLayout({
+      slides: inputData.slides as SlideBlock[],
+      maxRepairs: LAYOUT_REPAIR_MAX_ITERATIONS,
+      concurrency: WRITER_CONCURRENCY,
+      render,
+      rewrite,
+      onRepair: onLayoutRepair,
+    });
+    try {
+      for (let visualIteration = 0; ; visualIteration += 1) {
+        const scored = await mapWithConcurrency(
+          current.slides,
+          WRITER_CONCURRENCY,
+          async (slide, i) => {
+            const png = current.rendered.pngs[i];
+            if (!png) return { score: 1, fix: '' };
+            return scoreVisual(
+              slide as Record<string, unknown>,
+              {
+                base64: png.base64,
+                mimeType: 'image/png',
+              },
+              abortSignal,
+            );
+          },
+        );
+        const flagged = scored
+          .map((score, index) => ({ ...score, i: index }))
+          .filter((score) => score.score < SCORE_THRESHOLD);
+        if (flagged.length === 0 || visualIteration >= LAYOUT_REPAIR_MAX_ITERATIONS) {
+          return { ...inputData, slides: current.slides };
+        }
 
-      return { ...inputData, slides: next };
+        const next = [...current.slides];
+        await writer.write({
+          type: 'deck-event',
+          phase: 'visual:revise',
+          detail: {
+            count: flagged.length,
+            iteration: visualIteration + 1,
+            reason: 'visual-score',
+          },
+        });
+        await mapWithConcurrency(flagged, WRITER_CONCURRENCY, async ({ i, fix }) => {
+          const stub = inputData.stubs[i]!;
+          next[i] = (await writeSlide(
+            {
+              ...stub,
+              intent: `${stub.intent}\n\nCORRECTION VISUELLE (rendu réel) : ${fix}`,
+            },
+            inputData.dossier,
+            inputData.titles.filter((_, index) => index !== i),
+            inputData.revisionContext,
+            abortSignal,
+            template,
+            requestContext,
+            {
+              forceRewrite: true,
+              currentSlide: next[i] as Record<string, unknown>,
+            },
+          )) as SlideBlock;
+        });
+
+        current.rendered.cleanup();
+        current = await validateAndRepairLayout({
+          slides: next,
+          maxRepairs: LAYOUT_REPAIR_MAX_ITERATIONS,
+          concurrency: WRITER_CONCURRENCY,
+          render,
+          rewrite,
+          onRepair: onLayoutRepair,
+        });
+      }
     } finally {
-      cleanup();
+      current.rendered.cleanup();
     }
   },
 });

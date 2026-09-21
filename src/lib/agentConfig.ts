@@ -3,18 +3,38 @@
  * from the legacy two-pass `draftConfig`. One place to tune the agent runtime.
  */
 
-function numberEnv(name: string, fallback: number, min: number, max: number): number {
+function numberEnv(
+  name: string,
+  fallback: number,
+  min: number,
+  max: number,
+  integer = false,
+): number {
   const raw = process.env[name];
   if (raw === undefined || raw.trim() === '') return fallback;
   const value = Number(raw);
-  return Number.isFinite(value) && value >= min && value <= max ? value : fallback;
+  return Number.isFinite(value) &&
+    (!integer || Number.isInteger(value)) &&
+    value >= min &&
+    value <= max
+    ? value
+    : fallback;
 }
 
 /** Parallel writers in the Draft phase (.foreach concurrency). */
-export const WRITER_CONCURRENCY = numberEnv('WRITER_CONCURRENCY', 4, 1, 16);
+export const WRITER_CONCURRENCY = numberEnv('WRITER_CONCURRENCY', 4, 1, 16, true);
 
 /** Max revise iterations in the .dountil critique loop before accepting. */
-export const REVISE_MAX_ITERATIONS = numberEnv('REVISE_MAX_ITERATIONS', 2, 0, 8);
+export const REVISE_MAX_ITERATIONS = numberEnv('REVISE_MAX_ITERATIONS', 2, 0, 8, true);
+
+/** Max real-render overflow repair iterations before failing closed. */
+export const LAYOUT_REPAIR_MAX_ITERATIONS = numberEnv(
+  'LAYOUT_REPAIR_MAX_ITERATIONS',
+  2,
+  0,
+  4,
+  true,
+);
 
 /**
  * Score (0..1) at or above which a slide is accepted by the critique loop.
