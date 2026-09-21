@@ -125,7 +125,14 @@ const twoColsRenderSchema = z.object({
     )
     .nullable()
     .optional(),
-  image: z.object({ url: z.string() }).nullable().optional(),
+  image: z
+    .object({
+      url: z.string(),
+      filename: z.string().optional(),
+      alt: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
   imagePosition: optionalRender(z.enum(['right', 'left'])),
   ...sharedRenderFields(true),
 });

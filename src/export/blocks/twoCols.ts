@@ -1,8 +1,10 @@
 import type { TwoColsBlockData } from '../../blocks/spec/twoCols';
 import { K } from '../classNames';
 import { visibleText } from '../density';
+import { vueBoundSrc } from '../people';
 import { richTextToHTML } from '../richtext';
 import {
+  escape,
   card,
   cardStack,
   contentFrame,
@@ -70,17 +72,20 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
     density: stack.density,
   });
 
-  // Image variant: image takes the right slot via Slidev's image-right layout;
-  // rightCards, when present, stay in the content column instead of being dropped.
+  // Keep the illustration inside the semantic layout: native exports and
+  // previews must include the same image pixels, not a sibling background.
   if (image) {
     const body = [leftBody, stack.html].filter(Boolean).join('\n\n');
+    const url = block.image?.filename ? `./media/${block.image.filename}` : image.url;
+    const copy = contentFrame(body, {
+      header,
+      crowded: stack.crowded,
+      density: stack.density,
+    });
+    const figure = `<figure class="k-image-figure"><img ${vueBoundSrc(url)} alt="${escape(block.image?.alt ?? '')}" /></figure>`;
     return wrapSlide({
-      image,
-      body: contentFrame(body, {
-        header,
-        crowded: stack.crowded,
-        density: stack.density,
-      }),
+      surface: ctx?.surface,
+      body: `<div class="k-image-split k-image-split--${image.position}">${copy}${figure}</div>`,
     });
   }
 

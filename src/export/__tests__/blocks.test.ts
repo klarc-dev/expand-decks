@@ -479,7 +479,7 @@ describe('renderTwoCols()', () => {
     );
   });
 
-  it('emits image-right and keeps rightCards in the content column when image is set', () => {
+  it('embeds the image and keeps rightCards in the content column when image is set', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'TwoCols with photo',
@@ -487,9 +487,9 @@ describe('renderTwoCols()', () => {
       image: { url: '/media/photo.jpg' },
       rightCards: [{ title: 'Should remain', description: lexical('And so should this') }],
     });
-    expect(result).toContain('layout: image-right');
-    expect(result).toContain('image: /media/photo.jpg');
-    expect(result).not.toContain('k-split');
+    expect(result).toContain('layout: default');
+    expect(result).toContain(`:src='"/media/photo.jpg"'`);
+    expect(result).toContain('k-image-split--right');
     expect(result).toContain('Should remain');
     expect(result).toContain('And so should this');
     expect(result).toContain('Some intro');

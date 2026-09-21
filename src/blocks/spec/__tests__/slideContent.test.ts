@@ -422,9 +422,11 @@ describe('unified slide-content adapters', () => {
     const renderer = getRenderer('twoCols')!;
     const native = renderer(candidate as never);
     const preview = renderBlockPreview(candidate as never)!;
-    expect(native).toContain(preview.html.trim());
-    expect(preview.image).toBe('/media/parity.jpg');
-    expect(preview.layout).toBe('image-right');
+    expect(native.replace(`:src='"/media/parity.jpg"'`, 'src="/media/parity.jpg"')).toContain(
+      preview.html.trim(),
+    );
+    expect(preview.html).toContain('src="/media/parity.jpg"');
+    expect(preview.layout).toBe('default');
   });
 
   it('pins every registered source-target classification explicitly', () => {

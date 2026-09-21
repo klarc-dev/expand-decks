@@ -176,6 +176,7 @@ describe('buildFooterLayer / buildLogoLayer', () => {
   it('generates a logo layer that swaps the variant on the slide surface on every slide', () => {
     const layer = buildLogoLayer(true);
     expect(layer).toContain('k-slide-logo');
+    expect(layer).toContain("value?.startsWith('/media/') ? `.${value}` : value");
     // hideChrome only drops the footer: the logo is the header of every slide.
     expect(layer).not.toContain('hideChrome');
     expect(layer).toContain("includes('k-dark')");

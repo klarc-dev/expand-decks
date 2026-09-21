@@ -33,10 +33,16 @@ const rightCards = optionalRender(
       title: limitedString(SLIDE_LIMITS.twoCols.cardTitle),
       description: optionalLimitedRichTextRender(SLIDE_LIMITS.twoCols.cardDescription),
     }),
-    SLIDE_LIMITS.twoCols.cards,
+    { ...SLIDE_LIMITS.twoCols.cards, min: 0 },
   ),
 );
-const image = optionalRender(z.object({ url: z.string() }));
+const image = optionalRender(
+  z.object({
+    url: z.string(),
+    filename: z.string().optional(),
+    alt: z.string().optional(),
+  }),
+);
 const imagePosition = optionalRender(z.enum(['right', 'left']));
 const collectionSide = optionalRender(z.enum(['left', 'right']));
 
@@ -92,21 +98,24 @@ export const twoColsSpec = block({
         }),
         SLIDE_LIMITS.twoCols.cards,
       ),
-      limitedArrayPayload(SLIDE_LIMITS.twoCols.cards, {
-        type: 'array',
-        label: 'Cartes (colonne droite)',
-        description: 'Liste de cartes affichées dans la colonne droite',
-        fields: [
-          factoryField('cardTitleDesc', 'cardTitleDesc', z.unknown(), false, {
-            titleMaxLength: SLIDE_LIMITS.twoCols.cardTitle.max,
-            descriptionMaxLength: SLIDE_LIMITS.twoCols.cardDescription.max,
-          }),
-        ],
-      }),
+      limitedArrayPayload(
+        { ...SLIDE_LIMITS.twoCols.cards, min: 0 },
+        {
+          type: 'array',
+          label: 'Cartes (colonne droite)',
+          description: 'Liste de cartes affichées dans la colonne droite',
+          fields: [
+            factoryField('cardTitleDesc', 'cardTitleDesc', z.unknown(), false, {
+              titleMaxLength: SLIDE_LIMITS.twoCols.cardTitle.max,
+              descriptionMaxLength: SLIDE_LIMITS.twoCols.cardDescription.max,
+            }),
+          ],
+        },
+      ),
     ),
     factoryField('image', 'image', image, false, {
       description:
-        'Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left). Les cartes restent affichées dans la colonne de contenu.',
+        'Image illustrant la diapositive (optionnelle ; affichée en colonne à droite ou à gauche). Les cartes restent affichées dans la colonne de contenu.',
     }),
     rawField('imagePosition', imagePosition, false, {
       type: 'select',

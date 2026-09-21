@@ -86,7 +86,7 @@ describe('canonical slide authoring limits', () => {
     ['timeline', 'steps', SLIDE_LIMITS.timeline.steps],
     ['table', 'columns', SLIDE_LIMITS.table.columns],
     ['table', 'rows', SLIDE_LIMITS.table.rows],
-    ['twoCols', 'rightCards', SLIDE_LIMITS.twoCols.cards],
+    ['twoCols', 'rightCards', { ...SLIDE_LIMITS.twoCols.cards, min: 0 }],
     ['cover', 'intervenants', SLIDE_LIMITS.cover.speakers],
   ] as const)('projects %s.%s native row bounds', (blockType, name, limit) => {
     expect(field(blockType, name)).toMatchObject({

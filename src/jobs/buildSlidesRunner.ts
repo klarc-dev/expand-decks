@@ -28,6 +28,7 @@ import {
 } from '../documents/artifacts';
 import { documentExportPlan } from '../documents/exportPlan';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
+import { assertMediaFilename, referencedMediaFiles } from '../export/mediaFiles';
 import { buildSlidesMd } from '../export/buildSlidesMd';
 import { resolveInternalPdfLinks } from '../export/pdfLinks';
 import {
@@ -201,6 +202,7 @@ export function stageBuildDir({
   }
 
   for (const filename of mediaFilenames) {
+    assertMediaFilename(filename);
     const source = join(MEDIA_DIR, filename);
     if (!existsSync(source)) continue;
     const destination = join(workdir, 'public', 'media', filename);
@@ -271,10 +273,7 @@ export async function preflightPresentationLayout(
     headmatter: `${themedHeadmatter}\n${chromeHeadmatter}`.trimEnd(),
     vars,
   });
-  const mediaFilenames = Array.from(
-    new Set(slidesMd.matchAll(/(?:src=|image:\s*|:src='"?)["']?(?:\.\/|\/)media\/([^"'\s]+)/g)),
-    (match) => match[1],
-  );
+  const mediaFilenames = referencedMediaFiles(slidesMd);
   const workdir = stageBuildDir({
     slidesMd,
     themeCss: buildThemeCss(brand),
@@ -408,10 +407,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
 
     const themeCss = buildThemeCss(brand);
     const mermaidConfigSource = buildMermaidConfigSource(brand);
-    const mediaFilenames = Array.from(
-      new Set(slidesMd.matchAll(/(?:src=|image:\s*|:src='"?)["']?(?:\.\/|\/)media\/([^"'\s]+)/g)),
-      (match) => match[1],
-    );
+    const mediaFilenames = referencedMediaFiles(slidesMd);
     workdir = stageBuildDir({
       slidesMd,
       themeCss,

@@ -20,7 +20,8 @@ export type PersonCard = {
 };
 
 export function vueBoundSrc(url: string): string {
-  return `:src='${JSON.stringify(url)}'`;
+  // Keep the JSON expression inside its single-quoted HTML attribute.
+  return `:src='${JSON.stringify(url).replace(/&/g, '\\u0026').replace(/'/g, '\\u0027').replace(/</g, '\\u003c')}'`;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

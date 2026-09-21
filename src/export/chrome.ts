@@ -204,7 +204,10 @@ const { $slidev, $frontmatter } = useSlideContext()
 const logos = computed(() => $slidev?.configs?.klarcLogo)
 const orgUrl = computed(() => $slidev?.configs?.klarcOrgUrl ?? null)
 const dark = computed(() => String($frontmatter?.class ?? '').split(/\\s+/).includes('k-dark'))
-const url = computed(() => (dark.value ? logos.value?.dark : logos.value?.light) ?? null)
+const url = computed(() => {
+  const value = (dark.value ? logos.value?.dark : logos.value?.light) ?? null
+  return value?.startsWith('/media/') ? \`.\${value}\` : value
+})
 </script>
 
 <template>

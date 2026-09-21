@@ -1,7 +1,7 @@
 import { bareMermaidSource } from './blocks/mermaid';
 import { getRenderer, type SlideBlock } from './renderers';
 import { slideTone } from './slideTone';
-import type { RenderCtx } from './utils';
+import { escape, type RenderCtx } from './utils';
 
 type PreviewFrontmatter = {
   body: string;
@@ -53,10 +53,10 @@ function parsePreviewFrontmatter(markdown: string): PreviewFrontmatter {
  * `/media/...`.
  */
 function unwrapVueBoundSrc(html: string): string {
-  return html.replace(
-    /:src='"([^"]*)"'/g,
-    (_m, url: string) => `src="${url.startsWith('./') ? url.slice(1) : url}"`,
-  );
+  return html.replace(/:src='("(?:[^"\\]|\\.)*")'/g, (_m, expression: string) => {
+    const url = JSON.parse(expression) as string;
+    return `src="${escape(url.startsWith('./') ? url.slice(1) : url)}"`;
+  });
 }
 
 /**
