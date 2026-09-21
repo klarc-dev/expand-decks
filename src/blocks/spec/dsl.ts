@@ -493,7 +493,7 @@ export const leadRender = () => optionalLimitedRichTextRender(SLIDE_LIMITS.commo
  * as one system from slide to slide.
  */
 export function leadFieldSpec(
-  description = 'Phrase d’introduction affichée sous le titre, dans l’en-tête commun',
+  description = `Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ ${SLIDE_LIMITS.common.lead.max} caractères)`,
 ): FieldSpec {
   return rawField('lead', leadRender(), optionalLimitedAi(SLIDE_LIMITS.common.lead), {
     type: 'richText',

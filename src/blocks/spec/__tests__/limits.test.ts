@@ -49,6 +49,36 @@ describe('canonical slide authoring limits', () => {
     });
   });
 
+  it('limits content-header descriptions to an estimated two lines across all projections', () => {
+    const max = SLIDE_LIMITS.common.lead.max;
+    expect(max).toBe(160);
+    expect(
+      parseAiSlide({
+        blockType: 'agenda',
+        title: 'Plan',
+        lead: repeat(max),
+        items: [{ label: 'One' }, { label: 'Two' }],
+      }),
+    ).toBeTruthy();
+    expect(() =>
+      parseAiSlide({
+        blockType: 'agenda',
+        title: 'Plan',
+        lead: repeat(max + 1),
+        items: [{ label: 'One' }, { label: 'Two' }],
+      }),
+    ).toThrow();
+    expect(
+      RENDER_SLIDE_SCHEMA.safeParse({
+        blockType: 'agenda',
+        title: 'Plan',
+        lead: lexical(max + 1),
+        items: [{ label: 'One' }, { label: 'Two' }],
+      }).success,
+    ).toBe(false);
+    expect(field('agenda', 'lead')).toMatchObject({ validate: expect.any(Function) });
+  });
+
   it.each([
     ['cardGrid', 'cards', SLIDE_LIMITS.cardGrid.cards],
     ['stats', 'stats', SLIDE_LIMITS.stats.items],

@@ -18,8 +18,9 @@ export const SLIDE_LIMITS = {
   common: {
     eyebrow: { max: 80 },
     title: { max: 180 },
-    // Unified content header: eyebrow pill + title + optional description.
-    lead: { max: 320 },
+    // At the shared heading width and subtitle type scale, about 80 average
+    // Latin characters fit per line. Keep descriptions to two lines.
+    lead: { max: 160 },
     footnotes: { min: 0, max: 3, text: { max: 220 } },
   },
   cover: {
