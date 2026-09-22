@@ -25,7 +25,7 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: 3rem repeat(var(--table-column-count), minmax(14rem, 1fr));
+    grid-template-columns: 2.5rem repeat(var(--table-column-count), minmax(14rem, 1fr));
     min-width: max-content;
   }
 
@@ -82,19 +82,35 @@
     .table-editor__action-glyph {
       line-height: 1;
     }
+  }
 
-    &[data-orientation='vertical'] {
-      flex-direction: column;
+  &__drag-handle {
+    display: inline-grid;
+    width: 1.65rem;
+    height: 1.65rem;
+    place-items: center;
+    border-radius: var(--style-radius-s);
+    color: var(--theme-elevation-500);
+    cursor: grab;
+    user-select: none;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--theme-elevation-150);
+      color: var(--theme-text);
+      outline: none;
+    }
+
+    &:active {
+      cursor: grabbing;
     }
   }
 
   &__row-actions {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.25rem;
-    padding: 0.3rem;
+    padding: 0.2rem;
     color: var(--theme-elevation-600);
     font-size: 0.75rem;
   }

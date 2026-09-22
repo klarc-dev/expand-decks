@@ -234,7 +234,11 @@ describe('canonical custom admin controls', () => {
     const path = 'src/components/TableEditor.tsx';
     expect(sourceContains(path, 'function TableActionGroup')).toBe(true);
     expect(sourceContains(path, 'function TableAction(')).toBe(true);
-    expect(sourceContains(path, 'orientation="vertical"')).toBe(true);
+    expect(sourceContains(path, 'function TableDragHandle(')).toBe(true);
+    expect(sourceContains(path, 'draggable')).toBe(true);
+    expect(sourceContains(path, '<span>{rowIndex + 1}</span>')).toBe(false);
+    expect(sourceContains(path, 'Monter la ligne')).toBe(false);
+    expect(sourceContains(path, 'Descendre la ligne')).toBe(false);
     expect(
       sourceContains(path, '<span aria-hidden="true" className="table-editor__action-glyph">'),
     ).toBe(true);
@@ -421,8 +425,11 @@ describe('canonical custom admin controls', () => {
     expect(
       sourceContains(path, '<span className="sr-only">Aperçu de la diapositive : </span>'),
     ).toBe(true);
-    expect(sourceContains(path, 'aria-label="Rendu de la diapositive"')).toBe(true);
-    expect(sourceContains(path, 'role="img"')).toBe(true);
+    expect(sourceContains(path, '<iframe')).toBe(true);
+    expect(sourceContains(path, 'src={result.preview.url}')).toBe(true);
+    expect(sourceContains(path, 'title="Rendu de la diapositive"')).toBe(true);
+    expect(sourceContains(path, 'role="img"')).toBe(false);
+    expect(sourceContains(path, '<SlideFrame')).toBe(true);
   });
 
   it('keeps SlideFrame static pane ownership in semantic classes', () => {

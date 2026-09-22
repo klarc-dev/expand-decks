@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { ArrayFieldClientProps, FormState, Validate } from 'payload';
 import {
   Button,
@@ -24,12 +24,11 @@ const { min: MIN_ROWS, max: MAX_ROWS } = SLIDE_LIMITS.table.rows;
 type TableActionGroupProps = {
   children: React.ReactNode;
   label: string;
-  orientation?: 'horizontal' | 'vertical';
 };
 
-function TableActionGroup({ children, label, orientation = 'horizontal' }: TableActionGroupProps) {
+function TableActionGroup({ children, label }: TableActionGroupProps) {
   return (
-    <fieldset aria-label={label} className="table-editor__controls" data-orientation={orientation}>
+    <fieldset aria-label={label} className="table-editor__controls">
       {children}
     </fieldset>
   );
@@ -58,6 +57,57 @@ function TableAction({ children, disabled, label, onClick }: TableActionProps) {
         {children}
       </span>
     </Button>
+  );
+}
+
+type TableDragHandleProps = {
+  axis: 'column' | 'row';
+  index: number;
+  label: string;
+  onDropAt: (index: number) => void;
+  onKeyboardMove: (from: number, to: number) => void;
+  onStart: (axis: 'column' | 'row', index: number) => void;
+  size: number;
+};
+
+function TableDragHandle({
+  axis,
+  index,
+  label,
+  onDropAt,
+  onKeyboardMove,
+  onStart,
+  size,
+}: TableDragHandleProps) {
+  return (
+    <span
+      aria-label={label}
+      className="table-editor__drag-handle"
+      draggable
+      onDragOver={(event) => event.preventDefault()}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = 'move';
+        onStart(axis, index);
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        onDropAt(index);
+      }}
+      onKeyDown={(event) => {
+        const previousKey = axis === 'column' ? 'ArrowLeft' : 'ArrowUp';
+        const nextKey = axis === 'column' ? 'ArrowRight' : 'ArrowDown';
+        const offset = event.key === previousKey ? -1 : event.key === nextKey ? 1 : 0;
+        if (offset === 0) return;
+        event.preventDefault();
+        const target = index + offset;
+        if (target >= 0 && target < size) onKeyboardMove(index, target);
+      }}
+      role="button"
+      tabIndex={0}
+      title={`${label}. Utilisez aussi les touches fléchées.`}
+    >
+      <span aria-hidden="true">⠿</span>
+    </span>
   );
 }
 
@@ -135,6 +185,10 @@ export default function TableEditor(props: ArrayFieldClientProps) {
     validate: props.validate as Validate | undefined,
   });
   const { addFieldRow, moveFieldRow, removeFieldRow } = useForm();
+  const [draggedItem, setDraggedItem] = useState<{
+    axis: 'column' | 'row';
+    index: number;
+  } | null>(null);
 
   const cellsField = field.fields[0];
   const cellFields = cellsField && 'fields' in cellsField ? cellsField.fields : undefined;
@@ -178,6 +232,24 @@ export default function TableEditor(props: ArrayFieldClientProps) {
       });
     },
     [columns.length, columnsPath, moveFieldRow, rows, rowsPath],
+  );
+
+  const moveRow = useCallback(
+    (from: number, to: number) => {
+      if (to < 0 || to >= rows.length) return;
+      moveFieldRow({ moveFromIndex: from, moveToIndex: to, path: rowsPath });
+    },
+    [moveFieldRow, rows.length, rowsPath],
+  );
+
+  const dropItem = useCallback(
+    (axis: 'column' | 'row', targetIndex: number) => {
+      if (!draggedItem || draggedItem.axis !== axis) return;
+      if (axis === 'column') moveColumn(draggedItem.index, targetIndex);
+      else moveRow(draggedItem.index, targetIndex);
+      setDraggedItem(null);
+    },
+    [draggedItem, moveColumn, moveRow],
   );
 
   const addRow = useCallback(() => {
@@ -224,20 +296,15 @@ export default function TableEditor(props: ArrayFieldClientProps) {
               <HeaderInput path={`${columnsPath}.${columnIndex}.header`} readOnly={readOnly} />
               {!readOnly ? (
                 <TableActionGroup label={`Actions colonne ${columnIndex + 1}`}>
-                  <TableAction
-                    disabled={columnIndex === 0}
-                    label={`Déplacer la colonne ${columnIndex + 1} à gauche`}
-                    onClick={() => moveColumn(columnIndex, columnIndex - 1)}
-                  >
-                    ←
-                  </TableAction>
-                  <TableAction
-                    disabled={columnIndex === columns.length - 1}
-                    label={`Déplacer la colonne ${columnIndex + 1} à droite`}
-                    onClick={() => moveColumn(columnIndex, columnIndex + 1)}
-                  >
-                    →
-                  </TableAction>
+                  <TableDragHandle
+                    axis="column"
+                    index={columnIndex}
+                    label={`Réordonner la colonne ${columnIndex + 1}`}
+                    onDropAt={(targetIndex) => dropItem('column', targetIndex)}
+                    onKeyboardMove={moveColumn}
+                    onStart={(axis, index) => setDraggedItem({ axis, index })}
+                    size={columns.length}
+                  />
                   <TableAction
                     disabled={columns.length <= MIN_COLUMNS}
                     label={`Supprimer la colonne ${columnIndex + 1}`}
@@ -253,35 +320,17 @@ export default function TableEditor(props: ArrayFieldClientProps) {
           {rows.map((row, rowIndex) => (
             <React.Fragment key={row.id ?? rowIndex}>
               <div className="table-editor__row-actions">
-                <span>{rowIndex + 1}</span>
                 {!readOnly ? (
-                  <TableActionGroup label={`Actions ligne ${rowIndex + 1}`} orientation="vertical">
-                    <TableAction
-                      disabled={rowIndex === 0}
-                      label={`Monter la ligne ${rowIndex + 1}`}
-                      onClick={() =>
-                        moveFieldRow({
-                          moveFromIndex: rowIndex,
-                          moveToIndex: rowIndex - 1,
-                          path: rowsPath,
-                        })
-                      }
-                    >
-                      ↑
-                    </TableAction>
-                    <TableAction
-                      disabled={rowIndex === rows.length - 1}
-                      label={`Descendre la ligne ${rowIndex + 1}`}
-                      onClick={() =>
-                        moveFieldRow({
-                          moveFromIndex: rowIndex,
-                          moveToIndex: rowIndex + 1,
-                          path: rowsPath,
-                        })
-                      }
-                    >
-                      ↓
-                    </TableAction>
+                  <TableActionGroup label={`Actions ligne ${rowIndex + 1}`}>
+                    <TableDragHandle
+                      axis="row"
+                      index={rowIndex}
+                      label={`Réordonner la ligne ${rowIndex + 1}`}
+                      onDropAt={(targetIndex) => dropItem('row', targetIndex)}
+                      onKeyboardMove={moveRow}
+                      onStart={(axis, index) => setDraggedItem({ axis, index })}
+                      size={rows.length}
+                    />
                     <TableAction
                       disabled={rows.length <= MIN_ROWS}
                       label={`Supprimer la ligne ${rowIndex + 1}`}
