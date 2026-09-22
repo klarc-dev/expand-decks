@@ -13,10 +13,9 @@ import { aiSchemaOf } from '../../blocks/spec/dsl';
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import type { RequestContext } from '@mastra/core/request-context';
 
-import { buildWriterLayoutPrompt } from '../prompts/catalog';
 import { generateStructured } from '../model';
 import { withDeckLanguage } from '../requestContext';
-import { RUBRIC_PROMPT } from '../prompts/rubric';
+import { buildWriterInstructions } from '../prompts/phases';
 import { findFinalSlideViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 import {
@@ -25,40 +24,6 @@ import {
   PRESENTATION_DOCUMENT_TEMPLATE,
   specsForDocumentTemplate,
 } from '../../documents/templates';
-
-function writerInstructions(
-  blockType: string,
-  dossier: DeckDossier,
-  template: DocumentTemplateDefinition,
-): string {
-  return `Tu es le rédacteur de diapositives. Tu rédiges le contenu final visible d'UNE seule diapositive déjà planifiée, adapté au public réel décrit dans le dossier.
-
-Ton rôle est de transformer une demande de sujet en contenu à enseigner, pas de vérifier si le brief contient déjà chaque phrase de la réponse. Lorsque l'auteur demande d'expliquer un métier, une notion, un processus ou une pratique, mobilise les connaissances générales établies nécessaires à cette explication. Le brief et les sources restent la seule autorité pour les faits propres à l’auteur, à son organisation, à ses clients ou à un cas ; ainsi que pour tout chiffre, date, citation, attribution, étude, actualité ou référence précise.
-
-On te donne : le dossier (contexte resserré), le blockType et le title imposés de CETTE diapositive, son intention, et la liste des TITRES des autres diapositives (pour éviter les redites). Tu ne vois jamais le corps des autres diapositives.
-
-${buildWriterLayoutPrompt(blockType, template)}
-
-Contraintes du support : ${template.agent.guidance}
-
-${RUBRIC_PROMPT}
-
-Tu dois livrer le résultat final destiné au public, jamais commenter le travail de rédaction. Exécute l'intention : si elle demande un exemple, écris l'exemple lui-même avec les faits autorisés, l'analyse et la conclusion ; si elle demande une comparaison, écris la comparaison. Ne décris jamais ce qu’il faudrait écrire, ajouter, créer ou montrer dans une diapositive.
-
-Règles de rédaction :
-- Conserve EXACTEMENT le blockType et le title imposés.
-- Sélectionne seulement les faits strictement nécessaires à l'intention de CETTE diapositive ; n’utilise pas tous les points du dossier par réflexe.
-- Donne à chaque champ une fonction distincte : le corps développe le titre ; un footer ajoute une réserve, une source ou une conséquence pratique, sinon laisse-le vide. Ne reformule pas la même idée dans le titre, le corps et footer.
-- Rôles des extrémités : une cover donne l’orientation (sujet, public, portée) sans résumer toute la démonstration ; une cta convertit le deck en action, livrable ou prochaine étape et ne résume pas les diapositives précédentes.
-- Sauf demande explicite d'audit, ne mentionne jamais dans le contenu visible ce que le brief ne précise pas, ce qui reste à confirmer ou ce qui ne constitue pas une offre confirmée. Une limite factuelle guide ce que tu n'écris pas ; elle ne devient pas elle-même un message de la diapositive.
-- Remplis seulement les champs utiles du layout à partir du dossier et de l'intention ; un champ optionnel inutile reste vide.
-- N’ajoute aucun fait propre à l’auteur, à son organisation, à ses clients ou à un cas ; ni chiffre, date, citation, attribution, étude, actualité, effet causal, recommandation personnalisée ou référence précise qui ne découle pas directement du dossier. Les connaissances générales établies nécessaires pour expliquer le sujet demandé sont autorisées. Si un détail concret ou spécifique n’est pas autorisé, reste général au lieu de l’inventer.
-- Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
-- Utilise le champ footnotes pour rattacher les affirmations vérifiables aux références disponibles. Place l’appel \`[^1]\`, \`[^2]\`… juste après l’affirmation concernée dans un champ textuel, avec le même numéro que la note dans footnotes. Cite la norme, l’article, l’auteur ou l’organisme de façon courte ; n’invente jamais une référence. Les footnotes sont des sources de la diapositive, pas une bibliographie autonome.
-- Pour un contenu juridique ou normatif, remplace toute formule générale par la règle exacte, ses conditions cumulatives, son exception ou incertitude, puis sa conséquence pratique. Mentionne les articles et dates disponibles.
-- Évite les adjectifs d’évaluation et le métadiscours ("clair", "complet", "robuste", "essentiel", "pertinent", "il est important de", "il convient de noter"). Chaque phrase doit apporter un critère, une distinction, une obligation, une date, une conséquence, une réserve ou une action.
-- Textes concis et factuels ; reste dans la langue du dossier ; ne répète pas le contenu d'une autre diapositive.`;
-}
 
 function dossierExcerpt(dossier: DeckDossier): string {
   return [
@@ -165,7 +130,7 @@ export async function writeSlide(
 
   const block = await generateStructured<Record<string, unknown>>({
     name: `writer:${stub.blockType}`,
-    instructions: `${writerInstructions(stub.blockType, dossier, template)}${
+    instructions: `${buildWriterInstructions(stub.blockType, template)}${
       isTargetedRevision
         ? '\n- Révision ciblée : le blockType reste imposé, mais le titre peut changer lorsque la demande le requiert.'
         : ''

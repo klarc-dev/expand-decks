@@ -14,7 +14,6 @@
 import type { OutlineStub } from '../../blocks/spec/emit/emitDraftSchema';
 import {
   assertDocumentPages,
-  documentStructuralRulesPrompt,
   type DocumentTemplateDefinition,
   documentTemplateSchemas,
   PRESENTATION_DOCUMENT_TEMPLATE,
@@ -25,8 +24,7 @@ import { withDeckLanguage } from '../requestContext';
 import type { RequestContext } from '@mastra/core/request-context';
 
 import { generateStructured } from '../model';
-import { buildStructureSystemPrompt } from '../prompts/catalog';
-import { RUBRIC_PROMPT } from '../prompts/rubric';
+import { buildStructureInstructions, STRUCTURE_RESEARCH_INSTRUCTIONS } from '../prompts/phases';
 import { findInformationalStyleViolations } from '../prompts/style';
 import type { DeckDossier } from '../schemas';
 import { researchSources } from './research';
@@ -51,51 +49,6 @@ function requestedSlideRange(brief: string): { min: number; max: number } | null
   const max = Number(match[2] ?? match[1]);
   if (!Number.isInteger(min) || !Number.isInteger(max) || min < 3 || max < min) return null;
   return { min, max };
-}
-
-function templateNarrativeArc(template: DocumentTemplateDefinition): string {
-  if (template.id === PRESENTATION_DOCUMENT_TEMPLATE.id) {
-    return `Arc du document :
-- Première page = "cover".
-- Tôt : pose le problème que le public possède (la pertinence / "so what") AVANT toute solution.
-- Cœur : segmente l'idée maîtresse ; alterne les layouts, place un "section" entre deux grands groupes.
-- Dernière page = "cta".`;
-  }
-
-  if (template.pageCount.max === 1) {
-    return `Arc du document :
-- Le document tient sur une page : concentre le message, sa preuve et l'action attendue dans l'un des layouts autorisés.
-- Ne planifie ni couverture séparée, ni intercalaire, ni page finale séparée.`;
-  }
-
-  return `Arc du document :
-- Respecte exactement les règles structurelles et les layouts autorisés du template.
-- Tôt : pose le problème que le public possède (la pertinence / "so what") AVANT toute solution.
-- Cœur : segmente l'idée maîtresse sans ajouter de couverture, d'intercalaire ou de conclusion non autorisés.`;
-}
-
-function structureInstructions(template: DocumentTemplateDefinition): string {
-  return `Tu planifies la structure du document demandé à partir d'un dossier (pas d'un brief brut). Le niveau d'exigence rédactionnelle est élevé, mais la profondeur des notions doit suivre les acquis réels du public décrits dans le dossier.
-
-Tu retournes UNIQUEMENT un plan : la liste ordonnée des diapositives, sans rédiger leur contenu. Tu exécutes la demande de l'auteur dans ce plan : les diapositives planifiées sont le résultat à produire, jamais une explication de la manière de le produire. Chaque entrée a blockType (le layout), title et intent. Pour une diapositive de contenu, title énonce en une ligne la règle, la distinction ou la conséquence à retenir ; une phrase complète est autorisée, sans ponctuation finale. Le titre ne doit jamais reformuler une consigne telle que « ajouter une diapositive », « créer un exemple » ou « expliquer ce qu'il faut montrer ». Couverture, plan et intercalaires peuvent employer un libellé concis. intent décrit la substance finale destinée au public, avec les faits, conditions, réserves, sources ou actions que la diapositive rendra explicites ; jamais la consigne elle-même ni une instruction adressée au futur rédacteur.
-
-${buildStructureSystemPrompt(template)}
-
-${documentStructuralRulesPrompt(template)}
-
-${RUBRIC_PROMPT}
-
-Règles de contenu :
-- Si le dossier découle d'une demande d'explication, le plan doit enseigner le sujet demandé avec les connaissances générales établies contenues dans le dossier. Ne transforme jamais l'absence de détails propres à l'auteur en thème principal, sauf si le brief demande explicitement d'auditer les informations manquantes.
-- Chaque diapositive d'analyse doit avoir une fonction informationnelle précise : énoncer une règle, ordonner des conditions, distinguer deux régimes, exposer une exception ou incertitude, tirer une conséquence, ou prescrire une action.
-- Dans un dossier juridique ou normatif, mets dans title+intent les articles, dates, conditions cumulatives, distinctions de statut et formalités nécessaires. Ils ont priorité sur les résumés généraux.
-- « Approche claire », « dispositif robuste », « enjeu essentiel », « vision globale », « il est important de » et les formules analogues ne couvrent aucun point clé.
-- Les sources ne forment pas une slide autonome, mais l'intention doit indiquer quelle affirmation centrale doit recevoir une footnote.
-
-${templateNarrativeArc(template)}
-
-Couverture (impératif) : CHAQUE point clé du dossier doit être porté par au moins une diapositive.
-Les références/sources ne sont pas du contenu visible : ne planifie jamais une diapositive ou une intention "Sources" / "Références".`;
 }
 
 function dossierPrompt(dossier: DeckDossier): string {
@@ -260,12 +213,6 @@ function blockTypeForExplicitSlide(
 
 // ---------------------------------------------------------------------------
 
-const STRUCTURE_RESEARCH_INSTRUCTIONS = `Tu es le chercheur. Le plan en cours ne couvre pas encore certains points clés du dossier.
-
-Interroge les sources sélectionnées pour trouver des faits, exemples ou angles qui aident à couvrir précisément ces points.
-- N'utilise QUE ce que les sources renvoient ; ne fabrique rien.
-- Reste centré sur les points non couverts ; pas de remplissage hors sujet.`;
-
 export type StructureResult = {
   stubs: OutlineStub[];
   evidence: Evidence[];
@@ -337,7 +284,7 @@ export async function structureWithProvenance(
   for (let attempt = 0; ; attempt++) {
     const generated = await generateStructured({
       name: 'structure',
-      instructions: structureInstructions(template),
+      instructions: buildStructureInstructions(template),
       schema,
       prompt,
       validate: findInformationalStyleViolations,

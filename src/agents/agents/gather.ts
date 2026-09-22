@@ -16,45 +16,12 @@ import type { Evidence, SourcePolicy } from '../../lib/sources/types';
 import { generateStructured } from '../model';
 import { resolveTargetLanguage, type DeckLanguage } from '../language';
 import { withDeckLanguage } from '../requestContext';
-import { findInformationalStyleViolations, INFORMATIONAL_STYLE_PROMPT } from '../prompts/style';
+import { GATHER_INSTRUCTIONS, RESEARCH_INSTRUCTIONS } from '../prompts/phases';
+import { findInformationalStyleViolations } from '../prompts/style';
 import { DeckDossierSchema, type DeckDossier } from '../schemas';
 import { researchSources } from './research';
 
 const LLM_SCHEMA = DeckDossierSchema.omit({ rawBrief: true, language: true });
-
-const GATHER_INSTRUCTIONS = `Tu es le documentaliste éditorial. À partir d'un brief, tu produis le dossier de fond qui permettra à des rédacteurs de créer la présentation demandée.
-
-Tu ne te contentes pas d'extraire les mots du brief : tu explicites le sujet à traiter. Si l'auteur demande d'expliquer, d'enseigner ou de synthétiser un métier, une notion, un processus ou une pratique, mobilise les connaissances générales établies nécessaires pour répondre réellement à cette demande. Le brief et les sources restent la seule autorité pour les faits propres à l’auteur, à son organisation, à ses clients ou à un cas ; ainsi que pour les chiffres, dates, citations, attributions, études, actualités et références précises.
-
-Tu extrais :
-- coreIdea : LA seule idée maîtresse du deck (une phrase complète, pas un thème).
-- audience : à qui s'adresse le deck et ce qu'il sait déjà.
-- soWhat : pourquoi ce public doit s'en soucier — le problème qu'il possède.
-- keyPoints : les points d'appui distincts (chacun une affirmation nette). C'est l'unité de couverture.
-- data : faits, chiffres, exemples concrets qui ancrent les points (peut être vide).
-- sources : identifiants des sources connectées ayant produit des preuves capturées (peut être vide).
-- references : citations lisibles utilisables dans les notes de source des diapositives : article, date, auteur, organisme et URL si disponibles (peut être vide).
-
-Règles du dossier :
-- Préserve le périmètre, la terminologie, le statut épistémique et le point de vue du brief et des sources.
-- Pour une demande d'explication, développe un petit nombre de points clés qui couvrent directement le sujet et le public ; ne transforme pas chaque nuance, précaution ou sous-thème possible en point clé autonome.
-- L'absence d'un détail propre à l'auteur n'est pas un contenu à enseigner. Sauf demande explicite d'audit, n'ajoute ni avertissement, ni réserve répétée, ni point clé sur ce que le brief ne précise pas ; formule simplement les connaissances générales comme telles.
-- Ne transforme pas une explication en plaidoyer, une incertitude en certitude ni une corrélation en causalité.
-- N'invente aucun fait propre à l’auteur, chiffre, exemple présenté comme réel, citation, source, consensus, causalité ou recommandation personnalisée. Les connaissances générales établies nécessaires pour expliquer le sujet demandé sont autorisées.
-- Calibre le dossier sur les acquis du public et privilégie les distinctions, conditions, limites, exceptions, conséquences et arbitrages utiles.
-
-${INFORMATIONAL_STYLE_PROMPT}
-
-Ne rédige pas de diapositives — seulement le dossier.`;
-
-const RESEARCH_INSTRUCTIONS = `Tu es le chercheur. Tu disposes d'outils de recherche connectés à des bases de connaissances sélectionnées.
-
-Interroge ces sources pour rassembler des faits, chiffres, exemples et références utiles au brief.
-- N'utilise QUE ce que les sources renvoient réellement ; ne fabrique pas de citation ni de référence.
-- Si une source ne contient rien de pertinent, ne l'invente pas — laisse le point sans appui sourcé.
-- Reste factuel et concis ; pas de remplissage ni d'élargissement hors du brief.
-
-Rends des notes structurées (faits + référence de source) que le dossier pourra absorber.`;
 
 export type GatherResult = {
   dossier: DeckDossier;

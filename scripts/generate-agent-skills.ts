@@ -10,13 +10,21 @@ import {
   documentStructuralRulesPrompt,
   specsForDocumentTemplate,
 } from '../src/documents/templates';
+import {
+  GATHER_INSTRUCTIONS,
+  RESEARCH_INSTRUCTIONS,
+  STRUCTURE_RESEARCH_INSTRUCTIONS,
+  VISUAL_INSTRUCTIONS,
+  buildStructureInstructions,
+  buildWriterInstructions,
+} from '../src/agents/prompts/phases';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUTPUTS = {
-  authoring: path.join(ROOT, '.agents/skills/deck-authoring/SKILL.md'),
-  review: path.join(ROOT, '.agents/skills/deck-review/SKILL.md'),
-  schema: path.join(ROOT, '.agents/skills/deck-authoring/reference/schema.md'),
-  catalogue: path.join(ROOT, '.agents/skills/deck-authoring/reference/prompt-catalogue.md'),
+  skill: path.join(ROOT, '.agents/skills/slides/SKILL.md'),
+  schema: path.join(ROOT, '.agents/skills/slides/references/schema.md'),
+  catalogue: path.join(ROOT, '.agents/skills/slides/references/layout-prompts.md'),
+  mastra: path.join(ROOT, '.agents/skills/slides/references/mastra-prompts.md'),
 };
 
 function fieldLines(field: FieldSpec, prefix = ''): string[] {
@@ -132,25 +140,80 @@ ${metas.map(emitPromptSection).join('\n\n')}
 `;
 }
 
-function renderAuthoringSkill(): string {
+function renderMastraPrompts(): string {
+  const template = DOCUMENT_TEMPLATES[0];
+  const writerBlocks = ALL_SPECS.filter((spec) => spec.aiDraftable).map((spec) =>
+    [
+      `## Writer: ${spec.blockType}`,
+      '```text',
+      buildWriterInstructions(spec.blockType, template),
+      '```',
+    ].join('\n'),
+  );
+  return `<!-- GENERATED FILE. Run pnpm generate:agent-skills. Do not edit manually. -->
+# Mastra workflow prompts
+
+These are generated from the prompt constants and prompt builders used by the in-app Mastra deck workflow. They are available to manual authoring and review as guidance, but manual authoring does not execute the workflow or gain its grounding, validation, repair, and visual-scoring behavior automatically.
+
+## Workflow phases
+
+### Gather
+\`src/agents/agents/gather.ts\` uses the following instructions:
+\`\`\`text
+${GATHER_INSTRUCTIONS}
+\`\`\`
+
+### Source research
+\`src/agents/agents/gather.ts\` and structure coverage repair use:
+\`\`\`text
+${RESEARCH_INSTRUCTIONS}
+\n+---\n+${STRUCTURE_RESEARCH_INSTRUCTIONS}
+\`\`\`
+
+### Structure
+The structure prompt is template-aware and combines the generated layout catalogue with the document rules:
+\`\`\`text
+${buildStructureInstructions(template)}
+\`\`\`
+
+${writerBlocks.join('\n\n')}
+
+## Visual scoring
+
+\`src/agents/scorers/visual.ts\` uses:
+\`\`\`text
+${VISUAL_INSTRUCTIONS}
+\`\`\`
+`;
+}
+
+function renderSlidesSkill(): string {
   return `---
-name: deck-authoring
-description: Use when authoring slides outside the in-app AI workflow in the Payload + Slidev deck repository. Schema details are generated from the block-spec SSOT.
+name: slides
+description: Use for authoring, reviewing, revising, and building slides in the Payload + Slidev deck repository. Schema and Mastra prompt knowledge are generated from the application SSOT.
 ---
 
-# Deck authoring
+# Slides
 
-Use this skill for manual slide creation, seed scripts, and revisions in the slides repository.
+Use this skill for manual slide creation, review, revision, seed scripts, and build verification.
 
-## SSOT references
+## Mandatory references
 
-Read [the generated schema reference](reference/schema.md) before authoring blocks. Read [the generated prompt catalogue](reference/prompt-catalogue.md) when choosing a layout or shaping content. Regenerate both with \`pnpm generate:agent-skills\` after block-spec or template changes.
+- [Schema and template reference](references/schema.md)
+- [Layout prompt catalogue](references/layout-prompts.md)
+- [Mastra workflow prompts](references/mastra-prompts.md)
 
-## Manual authoring is not the AI workflow
+Regenerate these references with \`pnpm generate:agent-skills\` after block-spec, template, or Mastra prompt changes. Check freshness with \`pnpm generate:agent-skills:check\`.
 
-Manual authoring does not invoke the in-app gather → structure → writer → validate → visual workflow and does not reuse its complete prompts. It does, however, use the same typed block schemas, layout contracts, limits, prompt metadata, renderers, and build pipeline. Treat the generated references as the contract for valid data, not as a claim of output-quality parity.
+## Source-of-truth boundary
 
-## Workflow
+The generated references are projections of the runtime SSOT:
+
+- Block schemas, limits, layout contracts, and layout prose come from \`ALL_SPECS\` and document templates.
+- Gather, research, structure, writer, and visual instructions come from the Mastra prompt module used by runtime agents.
+- Manual authoring still does not invoke the Mastra workflow. It does not automatically perform source gathering, dossier grounding, schema repair, rubric loops, layout repair, or visual scoring.
+
+## Authoring and review workflow
 
 1. Choose a document template and an allowed layout from the generated reference.
 2. Write content as visual structure, not a domain-specific template. Keep each slide self-explanatory and put the decision-maker outcome before the mechanism.
@@ -158,6 +221,7 @@ Manual authoring does not invoke the in-app gather → structure → writer → 
 4. Author or update a generic \`scripts/seed-<name>.ts\` file. Do not create per-case CLI commands or leave \`tmp-*\` scripts behind.
 5. Run \`NODE_ENV=development pnpm deck:seed <name>\`, then \`NODE_ENV=development pnpm deck:build <id>\`.
 6. Inspect the exported PDF, not only the browser preview. Check truncation, overflow, collisions, links, footnotes, diagrams, and footer behavior on every page.
+7. For review or revision, apply the Mastra prompt references as a quality rubric, then inspect the actual rendered PDF.
 
 ## Content rules
 
@@ -170,39 +234,14 @@ Manual authoring does not invoke the in-app gather → structure → writer → 
 ## Verification
 
 Run \`pnpm typecheck\` and \`pnpm exec eslint <touched files>\`. For a built deck, require a successful PDF and SPA build plus visual PDF inspection. Preserve build-queue suppression when a seed or internal patch writes through Payload.
-`;
-}
-
-function renderReviewSkill(): string {
-  return `---
-name: deck-review
-description: Use when reviewing manually authored decks against the generated block schema, template contracts, content rules, and Slidev export behavior.
----
-
-# Deck review
-
-Use the generated [schema reference](../deck-authoring/reference/schema.md) as the review contract. It is derived from the same block specs and document templates used by the application.
-
-## Review gates
-
-- Every block uses an allowed \`blockType\` and only fields documented for that block.
-- Required fields, nested array ranges, visible-text limits, semantic capacities, citations, and non-AI fields are respected.
-- The document obeys its template canvas, page count, allowed layouts, first/last layout rules, and occurrence rules.
-- Content is self-explanatory, outcome-led, factually bounded, and free of invented sources or URLs.
-- Tables align rows to columns. Timelines are ordered. Mermaid edges carry verbs and diagrams remain legible.
-- Native PDF output has no clipping, overflow, overlap, footer collision, missing image, broken link, or font fallback defect.
-
-## Evidence
-
-Use the seed/build commands from \`deck-authoring\`, inspect the rendered PDF page by page, and report the exact slide and field for every defect. If a schema or template changed, run \`pnpm generate:agent-skills --check\` to prove the generated references are current.
-`;
+  `;
 }
 
 export const GENERATED_FILES: Record<string, string> = {
-  [OUTPUTS.authoring]: renderAuthoringSkill(),
-  [OUTPUTS.review]: renderReviewSkill(),
+  [OUTPUTS.skill]: renderSlidesSkill(),
   [OUTPUTS.schema]: renderSchemaReference(),
   [OUTPUTS.catalogue]: renderPromptCatalogue(),
+  [OUTPUTS.mastra]: renderMastraPrompts(),
 };
 
 async function main() {
