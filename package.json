@@ -13,6 +13,8 @@
     "mastra:migrate": "MASTRA_DISABLE_INIT=0 tsx --env-file-if-exists=.env scripts/mastra-migrate.ts",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
+    "generate:agent-skills": "tsx scripts/generate-agent-skills.ts",
+    "generate:agent-skills:check": "tsx scripts/generate-agent-skills.ts --check",
     "jobs:run": "payload jobs:run --queue default",
     "prod": "node scripts/prod.mjs",
     "deck:seed": "tsx --env-file-if-exists=.env scripts/run-seed.ts",
