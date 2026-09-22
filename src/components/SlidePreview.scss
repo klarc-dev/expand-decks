@@ -219,4 +219,11 @@
     transform: scale(var(--slide-scale, 0.375));
     transform-origin: top left;
   }
+
+  &__native {
+    border: 0;
+    display: block;
+    height: var(--slide-preview-height);
+    width: var(--slide-preview-width);
+  }
 }

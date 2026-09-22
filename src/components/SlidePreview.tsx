@@ -239,6 +239,7 @@ type PreviewResult = {
     image?: string;
     layout: string;
     mermaid?: { source: string };
+    url?: string;
   };
 };
 
@@ -381,7 +382,12 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
             setError(body?.error || `Aperçu indisponible (HTTP ${res.status}).`);
             return;
           }
-          setResult((await res.json()) as PreviewResult);
+          const nextResult = (await res.json()) as PreviewResult;
+          if (!nextResult.preview.url) {
+            setError('Le rendu Slidev natif est indisponible.');
+            return;
+          }
+          setResult(nextResult);
           setError('');
         } catch {
           if (!controller.signal.aborted) setError('Impossible de charger l’aperçu.');
@@ -475,19 +481,20 @@ const SlidePreview: React.FC<{ path: string }> = ({ path }) => {
 };
 
 function PreviewFrame({ result }: { result: PreviewResult }) {
-  const { className, html, image, layout, mermaid } = result.preview;
+  if (!result.preview.url) return null;
 
   return (
-    <div aria-label="Rendu de la diapositive" className="slide-preview__frame" role="img">
+    <div className="slide-preview__frame">
       <div className="slide-preview__scaler">
-        <SlideFrame
-          className={className}
-          chrome={result.chrome}
-          html={html}
-          image={image}
-          layout={layout}
-          mermaid={mermaid}
-          style={slideStyle(result.canvas)}
+        <iframe
+          className="slide-preview__native"
+          height={result.canvas.height}
+          loading="eager"
+          referrerPolicy="same-origin"
+          sandbox="allow-same-origin allow-scripts"
+          src={result.preview.url}
+          title="Rendu de la diapositive"
+          width={result.canvas.width}
         />
       </div>
     </div>

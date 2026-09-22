@@ -1,18 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { auth, findByID, getPayload, convertSlidesMarkdownToLexical } = vi.hoisted(() => {
-  const authMock = vi.fn();
-  const findByIDMock = vi.fn();
-  return {
-    auth: authMock,
-    findByID: findByIDMock,
-    getPayload: vi.fn(async () => ({ auth: authMock, findByID: findByIDMock })),
-    convertSlidesMarkdownToLexical: vi.fn(async (slides: unknown[]) => slides),
-  };
-});
+const { auth, findByID, getPayload, convertSlidesMarkdownToLexical, createNativePreview } =
+  vi.hoisted(() => {
+    const authMock = vi.fn();
+    const findByIDMock = vi.fn();
+    return {
+      auth: authMock,
+      findByID: findByIDMock,
+      getPayload: vi.fn(async () => ({ auth: authMock, findByID: findByIDMock })),
+      convertSlidesMarkdownToLexical: vi.fn(async (slides: unknown[]) => slides),
+      createNativePreview: vi.fn(async () => ({
+        token: 'preview-token',
+        expiresAt: '2026-01-01T00:05:00.000Z',
+      })),
+    };
+  });
 
 vi.mock('payload', () => ({ getPayload }));
 vi.mock('@/lib/richTextWrite', () => ({ convertSlidesMarkdownToLexical }));
+vi.mock('../nativePreview', () => ({
+  createNativePreview,
+  nativePreviewUrl: (token: string, slideIndex: number) =>
+    `/api/slide-preview/${token}/#/${slideIndex + 1}`,
+}));
 vi.mock('@payload-config', () => ({ default: {} }));
 
 import { POST } from '../route';
@@ -42,6 +52,7 @@ describe('POST /api/slide-preview hydration + access', () => {
     findByID.mockReset();
     getPayload.mockClear();
     convertSlidesMarkdownToLexical.mockClear();
+    createNativePreview.mockClear();
     __resetPreviewHydrationCacheForTests();
     __resetPreviewResponseCacheForTests();
   });
@@ -130,7 +141,10 @@ describe('POST /api/slide-preview hydration + access', () => {
     );
 
     expect(res.status).toBe(200);
-    expect(findByID.mock.calls.map(([a]) => a.collection)).toEqual(['presentations']);
+    expect(findByID.mock.calls.map(([a]) => a.collection)).toEqual([
+      'presentations',
+      'presentations',
+    ]);
   });
 
   it('returns canonical template canvas geometry with the preview', async () => {
@@ -152,6 +166,27 @@ describe('POST /api/slide-preview hydration + access', () => {
       height: 720,
       aspectRatio: '16/9',
     });
+  });
+
+  it('returns a short-lived authenticated native Slidev URL on the existing preview object', async () => {
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    findByID.mockResolvedValue({ id: 'p1', documentTemplate: 'presentation' });
+
+    const res = await POST(
+      request({
+        presentationId: 'p1',
+        block: { blockType: 'section', title: 'Native' },
+        fields: {},
+        slideIndex: 0,
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).preview).toMatchObject({
+      url: '/api/slide-preview/preview-token/#/1',
+      expiresAt: '2026-01-01T00:05:00.000Z',
+    });
+    expect(createNativePreview).toHaveBeenCalledWith(expect.objectContaining({ userId: 'u1' }));
   });
 
   it('returns layout compatibility limited to the document template', async () => {

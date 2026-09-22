@@ -26,6 +26,7 @@ import {
   setPreviewResponse,
 } from '@/lib/previewResponseCache';
 import { slideLayoutFingerprint } from '@/blocks/spec/slideContent';
+import { createNativePreview, nativePreviewUrl } from './nativePreview';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -403,6 +404,23 @@ export async function POST(req: NextRequest) {
       }
     }),
   );
+  const native = await createNativePreview({
+    userId: authedUser.id,
+    presentation: {
+      ...(await payload.findByID({
+        collection: COLLECTIONS.presentations,
+        id: body.presentationId,
+        depth: 2,
+        overrideAccess: false,
+        user,
+      })),
+      ...hydratedFields,
+    },
+    block: parsedBlock.data as Record<string, unknown>,
+    slideIndex,
+    organisation,
+    template,
+  });
   const response = setPreviewResponse(cacheKey, {
     canvas: template.canvas,
     chrome,
@@ -416,7 +434,11 @@ export async function POST(req: NextRequest) {
           >) ?? previewBlock)
         : previewBlock,
     ),
-    preview,
+    preview: {
+      ...preview,
+      url: nativePreviewUrl(native.token, slideIndex),
+      expiresAt: native.expiresAt,
+    },
   });
 
   return noStoreJson(response);
