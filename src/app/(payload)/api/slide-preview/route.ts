@@ -124,13 +124,35 @@ async function hydrateBlockUsers(
   return { ...block, intervenants: rows };
 }
 
+async function hydrateBlockImage(
+  block: Record<string, unknown>,
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  user: PayloadUser,
+  userId: string | number,
+) {
+  // The admin form posts the raw upload relationship (a media id). The render
+  // schema expects the resolved document, as the build job receives it.
+  const id = relationshipId(block.image);
+  if (id === null) return block;
+  if (block.image && typeof block.image === 'object' && 'url' in block.image) return block;
+  const media = await getOrLoadPreviewHydration(
+    { collection: COLLECTIONS.media, depth: 0, id, userId },
+    () =>
+      payload
+        .findByID({ collection: COLLECTIONS.media, id, depth: 0, overrideAccess: false, user })
+        .catch(() => null),
+  );
+  return media ? { ...block, image: media } : { ...block, image: null };
+}
+
 async function hydratePreviewBlock(
   block: Record<string, unknown>,
   payload: Awaited<ReturnType<typeof getPayload>>,
   user: PayloadUser,
   userId: string | number,
 ) {
-  return hydrateBlockUsers(block, payload, user, userId);
+  const withUsers = await hydrateBlockUsers(block, payload, user, userId);
+  return hydrateBlockImage(withUsers, payload, user, userId);
 }
 
 async function hydrateChromeFields(
