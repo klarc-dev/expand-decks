@@ -22,20 +22,18 @@ const rt = (value: string) => ({
     indent: 0,
     version: 1,
     direction: null,
-    children: value
-      .split('\n\n')
-      .map((text) => ({
-        type: 'paragraph',
-        format: '',
-        indent: 0,
-        version: 1,
-        direction: null,
-        textFormat: 0,
-        textStyle: '',
-        children: [
-          { type: 'text', version: 1, text, format: 0, style: '', mode: 'normal', detail: 0 },
-        ],
-      })),
+    children: value.split('\n\n').map((text) => ({
+      type: 'paragraph',
+      format: '',
+      indent: 0,
+      version: 1,
+      direction: null,
+      textFormat: 0,
+      textStyle: '',
+      children: [
+        { type: 'text', version: 1, text, format: 0, style: '', mode: 'normal', detail: 0 },
+      ],
+    })),
   },
 });
 const grid = (
