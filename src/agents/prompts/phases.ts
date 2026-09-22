@@ -132,3 +132,133 @@ export const VISUAL_INSTRUCTIONS = `Tu es un juge de design. On te montre l'IMAG
 Tu IGNORES la qualité rédactionnelle (jugée ailleurs). Renvoie score 0..1, les défauts visibles, et UNE correction concrète.
 - 1.0 : propre, aéré, lisible, équilibré.
 - < 0.5 : déborde, coupé, ou illisible.`;
+
+export type DeckPhaseContract = {
+  id: 'gather' | 'structure' | 'writer' | 'validate' | 'visual' | 'coverage-recovery';
+  label: string;
+  runtimeOwner: string;
+  promptSources: string[];
+  input: string;
+  output: string;
+  invariants: string[];
+  reviewQuestions: string[];
+};
+
+/** Agent-facing phase semantics, colocated with the runtime prompt sources. */
+export const DECK_PHASE_CONTRACTS: DeckPhaseContract[] = [
+  {
+    id: 'gather',
+    label: 'Gather and ground',
+    runtimeOwner: 'src/agents/agents/gather.ts',
+    promptSources: ['GATHER_INSTRUCTIONS', 'RESEARCH_INSTRUCTIONS'],
+    input: 'Brief, requested language, source policy, and selected knowledge bases.',
+    output:
+      'One DeckDossier containing core idea, audience, so-what, key points, data, references, and captured evidence.',
+    invariants: [
+      "Preserve the brief's scope, terminology, point of view, and epistemic status.",
+      'Use general knowledge only to explain the requested subject.',
+      'Never invent author-specific facts, figures, citations, examples presented as real, causal claims, or recommendations.',
+    ],
+    reviewQuestions: [
+      'Is there one core idea?',
+      'Is the audience and its prior knowledge explicit?',
+      'Does every key point state a distinct claim?',
+      'Are source-backed facts separated from general explanation?',
+    ],
+  },
+  {
+    id: 'structure',
+    label: 'Structure',
+    runtimeOwner: 'src/agents/agents/structure.ts',
+    promptSources: ['buildStructureInstructions(template)'],
+    input: 'Grounded dossier, document template, revision context, and optional slide-count range.',
+    output: 'Ordered stubs containing only blockType, title, and intent.',
+    invariants: [
+      'Plan coverage before prose.',
+      'Give each slide one information function.',
+      'Write message titles, never production instructions.',
+      'Enforce template page, endpoint, and occurrence rules.',
+    ],
+    reviewQuestions: [
+      'Does every dossier key point have a home?',
+      'Is the so-what established before the solution?',
+      'Are layouts chosen for logical relation rather than decorative variety?',
+      'Are sources attached to claims rather than planned as a source slide?',
+    ],
+  },
+  {
+    id: 'writer',
+    label: 'Per-slide writer',
+    runtimeOwner: 'src/agents/agents/writer.ts',
+    promptSources: ['buildWriterInstructions(blockType, template)'],
+    input:
+      'One stub, a small dossier excerpt, and titles of other slides. Bodies of other slides stay hidden.',
+    output: 'Final audience-facing content for exactly one typed block.',
+    invariants: [
+      'Keep the planned layout and title locked except during an explicitly targeted revision.',
+      'Use only facts needed for this slide and give every populated field a distinct function.',
+      'Cite available references in footnotes.',
+      'Never emit instructions about what a slide should contain.',
+    ],
+    reviewQuestions: [
+      'Does the body prove or apply the title?',
+      'Is the slide self-explanatory?',
+      'Are optional fields omitted when they add no function?',
+      'Does the content stay within the generated schema limits?',
+    ],
+  },
+  {
+    id: 'validate',
+    label: 'Rubric validation and repair',
+    runtimeOwner: 'src/agents/workflow.ts',
+    promptSources: ['RUBRIC_PROMPT', 'INFORMATIONAL_STYLE_PROMPT'],
+    input: 'Generated slide or deck.',
+    output: 'Accepted content or a bounded repair request.',
+    invariants: [
+      'Require one pedagogical function per slide and a message title.',
+      'Calibrate depth to the audience and make rules, conditions, limits, exceptions, and consequences explicit.',
+      'Reject slogans, superlatives, invented facts, unsupported causal claims, duplicated content, production instructions, and vague filler.',
+    ],
+    reviewQuestions: [
+      'What should the audience understand, decide, or do?',
+      'Which claim is supported by which evidence?',
+      'What is the applicable exception, uncertainty, or limit?',
+      'Is any sentence merely metadata about the authoring task?',
+    ],
+  },
+  {
+    id: 'visual',
+    label: 'Visual scoring',
+    runtimeOwner: 'src/agents/scorers/visual.ts',
+    promptSources: ['VISUAL_INSTRUCTIONS'],
+    input: 'Rendered slide image.',
+    output: 'Score, visible flags, and one imperative fix.',
+    invariants: [
+      'Inspect only visible layout quality: overflow, clipping, cramped density, contrast, balance, and legibility.',
+      'Do not use visual scoring to rewrite content semantics.',
+    ],
+    reviewQuestions: [
+      'Is any text clipped or outside its container?',
+      'Is one region overloaded or visually empty?',
+      'Is contrast sufficient?',
+      'Is the composition balanced and legible?',
+    ],
+  },
+  {
+    id: 'coverage-recovery',
+    label: 'Coverage recovery',
+    runtimeOwner: 'src/agents/agents/structure.ts',
+    promptSources: ['STRUCTURE_RESEARCH_INSTRUCTIONS'],
+    input: 'Dossier points that the outline coverage gate found missing.',
+    output: 'Bounded source notes used for a structure retry.',
+    invariants: [
+      'Research only uncovered points.',
+      'Use returned evidence only.',
+      'Do not broaden the deck or add unrelated material.',
+    ],
+    reviewQuestions: [
+      'Does each recovery note map to an uncovered point?',
+      'Did the retry avoid unrelated expansion?',
+    ],
+  },
+];

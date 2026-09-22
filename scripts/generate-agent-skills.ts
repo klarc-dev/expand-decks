@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +16,7 @@ import {
   RESEARCH_INSTRUCTIONS,
   STRUCTURE_RESEARCH_INSTRUCTIONS,
   VISUAL_INSTRUCTIONS,
+  DECK_PHASE_CONTRACTS,
   buildStructureInstructions,
   buildWriterInstructions,
 } from '../src/agents/prompts/phases';
@@ -142,48 +144,55 @@ ${metas.map(emitPromptSection).join('\n\n')}
 
 function renderMastraPrompts(): string {
   const template = DOCUMENT_TEMPLATES[0];
-  const writerBlocks = ALL_SPECS.filter((spec) => spec.aiDraftable).map((spec) =>
+  const digest = (prompt: string) => createHash('sha256').update(prompt).digest('hex').slice(0, 12);
+  const writerRows = ALL_SPECS.filter((spec) => spec.aiDraftable)
+    .map(
+      (spec) =>
+        `| \`${spec.blockType}\` | \`writer:${spec.blockType}\` | \`${digest(buildWriterInstructions(spec.blockType, template))}\` |`,
+    )
+    .join('\n');
+  const phaseSections = DECK_PHASE_CONTRACTS.map((phase, index) =>
     [
-      `## Writer: ${spec.blockType}`,
-      '```text',
-      buildWriterInstructions(spec.blockType, template),
-      '```',
+      `### ${index + 1}. ${phase.label}`,
+      `- Runtime owner: \`${phase.runtimeOwner}\``,
+      `- Prompt sources: ${phase.promptSources.map((source) => `\`${source}\``).join(', ')}`,
+      `- Input: ${phase.input}`,
+      `- Output: ${phase.output}`,
+      '- Invariants:',
+      ...phase.invariants.map((item) => `  - ${item}`),
+      '- Review questions:',
+      ...phase.reviewQuestions.map((item) => `  - ${item}`),
     ].join('\n'),
-  );
+  ).join('\n\n');
   return `<!-- GENERATED FILE. Run pnpm generate:agent-skills. Do not edit manually. -->
-# Mastra workflow prompts
+# Mastra workflow contract
 
-These are generated from the prompt constants and prompt builders used by the in-app Mastra deck workflow. They are available to manual authoring and review as guidance, but manual authoring does not execute the workflow or gain its grounding, validation, repair, and visual-scoring behavior automatically.
+This is an actionable reference to the in-app Mastra deck workflow. It intentionally does **not** copy the full prompt text. The runtime prompt source remains authoritative; this file exposes each phase's purpose, contract, review questions, and a short fingerprint so drift is detectable.
 
-## Workflow phases
+Manual slide work can use these contracts as a review checklist, but it does not execute the workflow or gain its grounding, validation, repair, and visual-scoring behavior automatically.
 
-### Gather
-\`src/agents/agents/gather.ts\` uses the following instructions:
-\`\`\`text
-${GATHER_INSTRUCTIONS}
-\`\`\`
+## Workflow route
 
-### Source research
-\`src/agents/agents/gather.ts\` and structure coverage repair use:
-\`\`\`text
-${RESEARCH_INSTRUCTIONS}
-\n+---\n+${STRUCTURE_RESEARCH_INSTRUCTIONS}
-\`\`\`
+\`brief → gather → structure → per-slide writer → rubric validation → optional visual scoring → assemble\`
 
-### Structure
-The structure prompt is template-aware and combines the generated layout catalogue with the document rules:
-\`\`\`text
-${buildStructureInstructions(template)}
-\`\`\`
+## Phase contracts
 
-${writerBlocks.join('\n\n')}
+${phaseSections}
 
-## Visual scoring
+| Layout | Runtime job | Prompt fingerprint |
+| --- | --- | --- |
+${writerRows}
 
-\`src/agents/scorers/visual.ts\` uses:
-\`\`\`text
-${VISUAL_INSTRUCTIONS}
-\`\`\`
+## Prompt drift fingerprints
+
+These fingerprints make changes to the underlying prompts visible without copying large prompt bodies into the skill:
+
+- Gather: \`${digest(GATHER_INSTRUCTIONS)}\`
+- Research: \`${digest(RESEARCH_INSTRUCTIONS)}\`
+- Structure: \`${digest(buildStructureInstructions(template))}\`
+- Visual: \`${digest(VISUAL_INSTRUCTIONS)}\`
+
+Writer fingerprints are listed in the layout table above.
 `;
 }
 
