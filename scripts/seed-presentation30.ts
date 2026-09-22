@@ -64,7 +64,7 @@ const split = (
 ): Page => ({
   blockType: 'twoCols',
   title,
-  lead: rt(lead),
+  lead: lead ? rt(lead) : null,
   intro: rt(intro),
   rightCards: items.map(([title, description]) => ({ title, description: rt(description) })),
   leftFooter: footer ? rt(footer) : null,
@@ -95,7 +95,8 @@ const statement = (title: string, body: string, footer: string, sources: string[
 });
 
 // Stable editorial order. The mark explainer is a dedicated page between
-// sign selection and filing representation; the deck contains 26 pages.
+// sign selection and filing representation; the deck contains 27 pages.
+const PAGE_COUNT = 27;
 export const webinarSlides: Page[] = [
   {
     blockType: 'cover',
@@ -126,38 +127,75 @@ export const webinarSlides: Page[] = [
     },
     imagePosition: 'right',
   },
+  {
+    blockType: 'agenda',
+    title: 'Au programme',
+    lead: rt(
+      'Sept étapes juridiques, dans l’ordre où le dirigeant les rencontre, puis le retour au cas.',
+    ),
+    items: [
+      {
+        label: 'Cartographier les actifs',
+        description: 'Nom, logo, flacon, domaine, formule : un régime par objet.',
+      },
+      {
+        label: 'Choisir le signe',
+        description: 'Distinctivité, représentation déposée, libellé des produits.',
+      },
+      {
+        label: 'Vérifier la disponibilité',
+        description: 'Antériorités, conflit NERIVA, nom de domaine.',
+      },
+      {
+        label: 'Sécuriser la titularité',
+        description: 'Chaîne des droits sur le logo et le flacon, cumul des protections.',
+      },
+      { label: 'Déployer', description: 'Priorité unioniste, France et Allemagne.' },
+      { label: 'Maintenir', description: 'Usage sérieux et dossier de preuves.' },
+      {
+        label: 'Défendre',
+        description: 'Contrefaçon ou concurrence déloyale : qualifier l’atteinte.',
+      },
+      { label: 'Retour au cas', description: 'La campagne allemande et la décision finale.' },
+    ],
+  },
   statement(
     'Nom de domaine, dépôt de marque et exploitation',
     'Le nom de domaine est déposé. La demande de marque est déposée. Le logo est payé.\n\nCes faits ne disent pas encore si NERIVO peut être utilisé : un droit antérieur peut faire obstacle à la marque, même enregistrée.[^1]',
-    'Le dossier doit distinguer contrôle de l’adresse, protection du signe et autorisations sur les créations.',
+    '',
     ['CPI, art. L. 711-3 : droits antérieurs opposables à une marque.'],
   ),
   {
     blockType: 'timeline',
-    title: 'Validité, liberté d’exploitation et titularité',
-    lead: rt('Trois examens successifs avant d’engager les dépenses de lancement.'),
+    title: 'Validité, liberté d’exploitation, titularité et exploitation',
+    lead: rt('Quatre vérifications successives avant d’engager les dépenses de lancement.'),
     steps: [
       {
-        label: 'Validité',
+        label: 'Vérifier la validité',
         description:
           'Le signe est-il distinctif pour les produits visés ? Un titre enregistré peut rester contestable.[^1]',
       },
       {
-        label: 'Liberté d’exploitation',
+        label: 'Vérifier la liberté d’exploitation',
         description:
           'Un droit antérieur peut-il bloquer le nom ou le graphisme malgré notre propre dépôt ?[^2]',
       },
       {
-        label: 'Titularité et preuve',
+        label: 'Assurer la titularité et en garder la preuve',
         description:
-          'Qui détient les droits, pour quels usages et territoires ? Le paiement ne suffit pas à établir leur transfert.[^3]',
+          'Obtenir une cession écrite qui délimite chaque droit, ses supports, sa durée et son territoire ; conserver contrats, fichiers sources et échanges.[^3]',
+      },
+      {
+        label: 'Tracer l’exploitation',
+        description:
+          'Archiver les preuves d’usage sérieux par signe, produit, date et territoire : factures, emballages, campagnes. Elles conditionnent le maintien du titre.',
       },
     ],
-    footer: 'Un examen réussi ne dispense pas du suivant : les trois questions se cumulent.',
+    footer: 'Une étape réussie ne dispense pas de la suivante : les quatre se cumulent.',
     footnotes: notes(
       'CPI, art. L. 711-2 : motifs absolus de refus ou de nullité.',
       'CPI, art. L. 711-3 : droits antérieurs.',
-      'CPI, art. L. 111-1 : création et droits de l’auteur.',
+      'CPI, art. L. 131-3 : mention distincte de chaque droit cédé et de son étendue.',
     ),
   },
   table(
@@ -204,22 +242,18 @@ export const webinarSlides: Page[] = [
       [
         'Dénomination sociale',
         'Identifie la société.',
-        'Immatriculation ; activités effectivement exercées pour apprécier la protection.[^1]',
+        'Immatriculation ; activités effectivement exercées.[^1]',
       ],
       [
         'Nom commercial',
         'Identifie l’activité auprès des clients.',
-        'Premier usage public ; clientèle et portée de l’exploitation.',
+        'Premier usage public ; clientèle et portée.',
       ],
-      [
-        'Enseigne',
-        'Identifie un établissement.',
-        'Usage sur le lieu et rayonnement de l’établissement.',
-      ],
+      ['Enseigne', 'Identifie un établissement.', 'Usage sur le lieu et rayonnement local.'],
       [
         'Nom de domaine',
         'Identifie une adresse en ligne.',
-        'Réservation distincte de l’usage ; exploitation et portée à documenter.',
+        'Réservation distincte de l’usage ; exploitation à documenter.',
       ],
     ],
     ['Cass. com., 10 juillet 2012, n° 08-12.010 : activités effectivement exercées.'],
@@ -381,9 +415,10 @@ export const webinarSlides: Page[] = [
     ],
     'La proximité des signes s’apprécie avec celle des produits ou services et le public pertinent.[^2]',
   ),
-  grid(
-    'Options face à une antériorité',
+  split(
+    'Accord de coexistence : le litige n’est pas la seule issue',
     'Dans le cas, NERIVO doit décider avant de commander ses emballages.',
+    'Contrat par lequel deux titulaires de signes proches délimitent leurs produits, territoires et formes d’usage, et renoncent à agir l’un contre l’autre dans ce cadre.[^1]\n\nNégociable avant le dépôt, pendant une opposition ou après une mise en demeure : le lancement est sécurisé en semaines, à coût connu.\n\nLimite : il ne lie que les signataires et n’écarte pas l’examen du risque de confusion par l’office.[^2]',
     [
       [
         'Changer le signe',
@@ -395,31 +430,37 @@ export const webinarSlides: Page[] = [
       ],
       [
         'Négocier la coexistence',
-        'Hypothèse retenue pour la suite : un accord autorise NERIVO pour les parfums en France et en Allemagne. Il ne lie pas les autres titulaires.',
+        'Hypothèse retenue pour la suite : NERIVO autorisé pour les parfums en France et en Allemagne, avec non-contestation et présentations distinctes.',
       ],
     ],
+    [
+      'C. civ., art. 1103 : force obligatoire du contrat entre les parties.',
+      'CJUE, 19 septembre 2013, C-661/11, Martin y Paz : la coexistence n’emporte pas renonciation définitive au droit exclusif.',
+    ],
+    'Un contrat bien délimité vaut mieux qu’une procédure gagnée tard : le calendrier commercial est l’enjeu réel.',
   ),
-  grid(
-    'Nom de domaine : contrôle, antériorité et recours',
-    'Le domaine de NERIVO est déposé ; son titulaire et son usage doivent être vérifiés.',
+  split(
+    'Nom de domaine : nature juridique, contrôle et recours',
+    'Le domaine de NERIVO est réservé ; ce que cela confère reste à qualifier.',
+    'Le nom de domaine n’est pas un titre de propriété industrielle : c’est une adresse attribuée par contrat avec l’office d’enregistrement, au premier demandeur.[^1]\n\nPour le .fr, l’enregistrement peut être refusé ou supprimé s’il porte atteinte à un droit de propriété intellectuelle, sauf intérêt légitime et bonne foi du réservataire.[^2]\n\nSa valeur opposable naît de l’exploitation, non de la réservation.',
     [
       [
         'Contrôle de l’adresse',
-        'La société doit maîtriser le compte, le renouvellement et les accès, même si une agence gère le site.',
+        'Réservataire, contact administratif et renouvellement doivent rester au nom de la société, même si une agence gère le site.',
       ],
       [
         'Antériorité opposable',
-        'Une réservation inactive ne suffit pas. Pour l’opposer à une marque, vérifier exploitation, portée non locale et confusion.[^1]',
+        'Une réservation inactive n’arrête pas une marque. Il faut une exploitation réelle, une portée non locale et un risque de confusion.[^3]',
       ],
       [
         'Récupération du domaine',
-        'L’UDRP peut conduire au transfert ou à la suppression, sans dommages-intérêts.[^2] Pour un .fr, examiner notamment SYRELI.[^3]',
+        'Voie extrajudiciaire (SYRELI pour le .fr, UDRP pour les génériques) : transfert ou suppression, sans dommages-intérêts ; le juge reste ouvert.',
       ],
     ],
     [
-      'CPI, art. L. 711-3, I, 4°.',
-      'ICANN, UDRP, § 4(i) : remèdes disponibles.',
-      'AFNIC, règlement SYRELI : procédure de résolution des litiges.',
+      'CPCE, art. L. 45-1 : attribution selon la demande, dans l’intérêt général.',
+      'CPCE, art. L. 45-2, 2° : refus ou suppression en cas d’atteinte à un droit de propriété intellectuelle.',
+      'CPI, art. L. 711-3, I, 4° : le nom de domaine comme droit antérieur.',
     ],
   ),
   statement(
@@ -451,20 +492,30 @@ export const webinarSlides: Page[] = [
   ),
   split(
     'Divulgation du flacon avant dépôt',
-    'Le fondateur publie des photos avant de demander la protection du modèle.',
-    'Identifier ce qui a été révélé, à quelle date et à quel public. Une présentation sous confidentialité et une publication accessible au public ne s’analysent pas de la même manière.',
+    '',
+    'Le fondateur a publié des photos avant de demander la protection du modèle. Déposer d’abord quand c’est possible ; sinon, identifier ce qui a été révélé, à quelle date et à quel public : présentation confidentielle et publication ouverte ne s’analysent pas de la même manière.',
     [
       [
         'Nouveauté',
-        'Une divulgation antérieure peut être opposable ; comparer le modèle divulgué à celui déposé.[^1]',
+        'Une divulgation antérieure est opposable ; comparer le modèle divulgué à celui déposé.[^1]',
       ],
       [
         'Délai de grâce',
-        'Certaines divulgations issues du créateur bénéficient de douze mois en France. Ce n’est ni une priorité ni une garantie mondiale.[^2]',
+        'Douze mois pour les divulgations issues du créateur ; ni priorité, ni garantie mondiale.[^2]',
+      ],
+      [
+        'Modèle communautaire non enregistré',
+        'Trois ans contre la copie dès la divulgation dans l’Union, sans dépôt ; preuve à la charge du titulaire.[^2]',
+      ],
+      [
+        'Preuve de la date',
+        'Horodater chaque version avant diffusion (enveloppe Soleau, constat) : sans date certaine, pas de délai de grâce.',
       ],
     ],
-    ['CPI, art. L. 511-3 : nouveauté.', 'CPI, art. L. 511-6 : divulgations et délai de grâce.'],
-    'Décision : déposer avant la publication lorsque c’est possible ; qualifier les faits si elle a déjà eu lieu.',
+    [
+      'CPI, art. L. 511-3 : nouveauté.',
+      'CPI, art. L. 511-6 (délai de grâce) ; règl. (CE) 6/2002, art. 11 et 19, § 2 (modèle non enregistré).',
+    ],
   ),
   table(
     'Protections de l’apparence du flacon',
@@ -652,9 +703,46 @@ export const webinarSlides: Page[] = [
   },
 ];
 
+// Storyline eyebrows, one per page after the cover. Each pair is
+// "<part> · <step>" so the audience always knows where the case stands.
+const EYEBROWS: Array<string | null> = [
+  null, // cover
+  'Le cas NERIVO · Point de départ',
+  'Le cas NERIVO · Plan',
+  'Le cas NERIVO · Ce qui n’est pas encore réglé',
+  'Méthode · Les quatre vérifications',
+  '1 · Cartographier les actifs',
+  '1 · Cartographier les actifs · Les noms',
+  '2 · Choisir le signe · Distinctivité',
+  '2 · Choisir le signe · Ce que confère la marque',
+  '2 · Choisir le signe · Représentation déposée',
+  '2 · Choisir le signe · Libellé des produits et services',
+  '3 · Vérifier la disponibilité · Antériorités',
+  '3 · Vérifier la disponibilité · Le conflit NERIVA',
+  '3 · Vérifier la disponibilité · Accord de coexistence',
+  '3 · Vérifier la disponibilité · Nom de domaine',
+  '4 · Sécuriser la titularité · Le logo de l’agence',
+  '4 · Sécuriser la titularité · Chaîne des droits',
+  '4 · Sécuriser la titularité · Le flacon divulgué',
+  '4 · Sécuriser la titularité · Cumul des protections',
+  '5 · Déployer · Priorité',
+  '5 · Déployer · France et Allemagne',
+  '6 · Maintenir · Exploitation active',
+  '6 · Maintenir · Dossier de preuves',
+  '7 · Défendre · Qualifier l’atteinte',
+  'Retour au cas · La campagne allemande',
+  'Retour au cas · Décision',
+  null, // closing
+];
+if (EYEBROWS.length !== webinarSlides.length)
+  throw new Error(`Eyebrows: ${EYEBROWS.length} entries for ${webinarSlides.length} pages`);
+for (const [index, eyebrow] of EYEBROWS.entries()) {
+  if (eyebrow) webinarSlides[index]!.eyebrow = eyebrow;
+}
+
 function validateSeed(): void {
-  if (webinarSlides.length !== 26)
-    throw new Error(`Expected 26 pages, got ${webinarSlides.length}`);
+  if (webinarSlides.length !== PAGE_COUNT)
+    throw new Error(`Expected ${PAGE_COUNT} pages, got ${webinarSlides.length}`);
   parseDocumentRenderPages(resolveDocumentTemplate('presentation'), webinarSlides);
   for (const [index, slide] of webinarSlides.entries()) {
     const { footnotes, ...content } = slide;
@@ -715,9 +803,9 @@ if (process.argv.includes('--check')) {
   const keepAlive = setInterval(() => {}, 10_000);
   try {
     const { runPayloadScript } = await import('./lib/payloadScript');
-    const { preflightPresentationLayout, runBuildSlidesTask } = await import(
-      '../src/jobs/buildSlidesRunner'
-    );
+    const { BUILD_SLIDES_TASK } = await import('../src/jobs/buildSlides');
+    const { BUILD_STATUS } = await import('../src/lib/status');
+    const { randomUUID } = await import('node:crypto');
     await runPayloadScript(async (payload) => {
       const current = await payload.findByID({
         collection: 'presentations',
@@ -728,7 +816,6 @@ if (process.argv.includes('--check')) {
       if (current.slug !== SLUG || current.title !== TITLE)
         throw new Error('Target identity mismatch');
       const authored = structuredClone(webinarSlides);
-      const hydrated = structuredClone(webinarSlides);
       for (let i = 0; i < authored.length; i++) {
         const image = authored[i]!.image as { filename?: string } | undefined;
         if (!image?.filename) continue;
@@ -741,7 +828,6 @@ if (process.argv.includes('--check')) {
         });
         if (found.docs.length !== 1) throw new Error(`Missing/ambiguous media: ${image.filename}`);
         authored[i]!.image = found.docs[0]!.id;
-        hydrated[i]!.image = found.docs[0]!;
       }
       const fingerprint = createHash('sha256').update(JSON.stringify(authored)).digest('hex');
       if (process.argv.includes('--dry-run')) {
@@ -750,7 +836,6 @@ if (process.argv.includes('--check')) {
         );
         return;
       }
-      await preflightPresentationLayout(payload, { ...current, slides: hydrated } as never);
       const fresh = await payload.findByID({
         collection: 'presentations',
         id: current.id,
@@ -778,10 +863,10 @@ if (process.argv.includes('--check')) {
         depth: 0,
         overrideAccess: true,
       });
-      if (saved.title !== TITLE || saved.slides?.length !== 26)
+      if (saved.title !== TITLE || saved.slides?.length !== PAGE_COUNT)
         throw new Error('Seed identity readback mismatch');
       const savedCover = saved.slides?.[0] as Record<string, unknown> | undefined;
-      const savedFinal = saved.slides?.[25] as Record<string, unknown> | undefined;
+      const savedFinal = saved.slides?.[PAGE_COUNT - 1] as Record<string, unknown> | undefined;
       if (
         JSON.stringify(savedCover?.pills).includes('Parfum') ||
         JSON.stringify(savedFinal?.title) !== JSON.stringify('Merci')
@@ -789,11 +874,42 @@ if (process.argv.includes('--check')) {
         throw new Error('Seed editorial readback mismatch');
       }
       if (process.argv.includes('--build')) {
-        const result = await runBuildSlidesTask({
-          input: { presentationId: current.id },
-          req: { payload },
+        // Layout preflight and export fork Vite/rolldown workers plus Chromium.
+        // They run in the worker containers (their own 4g cgroup) via the job
+        // queue: the web container hosts the admin and OOM-kills next-server
+        // when an export runs there alongside native previews.
+        const buildToken = randomUUID();
+        await payload.update({
+          collection: 'presentations',
+          id: current.id,
+          data: {
+            lastBuildToken: buildToken,
+            lastBuildRequestedAt: new Date().toISOString(),
+            lastBuildStatus: BUILD_STATUS.building,
+            lastBuildError: '',
+          },
+          overrideAccess: true,
+          context: { skipBuildQueue: true },
         });
-        if (!result.output.success) throw new Error('Native export failed');
+        await (payload.jobs.queue as Function)({
+          task: BUILD_SLIDES_TASK,
+          input: { presentationId: current.id, buildToken },
+        });
+        const deadline = Date.now() + 15 * 60_000;
+        for (;;) {
+          await new Promise((resolve) => setTimeout(resolve, 5_000));
+          const state = await payload.findByID({
+            collection: 'presentations',
+            id: current.id,
+            depth: 0,
+            overrideAccess: true,
+          });
+          if (state.lastBuildToken !== buildToken) throw new Error('Build superseded');
+          if (state.lastBuildStatus === BUILD_STATUS.success) break;
+          if (state.lastBuildStatus === BUILD_STATUS.failed)
+            throw new Error(`Native export failed: ${state.lastBuildError ?? ''}`);
+          if (Date.now() > deadline) throw new Error('Native export timed out');
+        }
       }
       const built = await payload.findByID({
         collection: 'presentations',

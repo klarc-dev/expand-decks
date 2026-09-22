@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { execFile as execFileCb } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -39,25 +39,54 @@ const MIME_TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
-type PreviewEntry = { userId: string | number; root: string; expiresAt: number };
+type PreviewEntry = {
+  userId: string | number;
+  root: string;
+  expiresAt: number;
+  contentHash: string;
+};
 const previews = new Map<string, PreviewEntry>();
 let now = () => Date.now();
+
+// A Slidev build forks Vite/rolldown workers plus Chromium; running several at
+// once inside the web container is what OOM-kills next-server. Builds are
+// serialised through this chain and identical content reuses a live workdir.
+let buildChain: Promise<unknown> = Promise.resolve();
+function serialise<T>(job: () => Promise<T>): Promise<T> {
+  const run = buildChain.then(job, job);
+  buildChain = run.catch(() => undefined);
+  return run;
+}
+
+function liveEntryFor(contentHash: string): PreviewEntry | undefined {
+  for (const entry of previews.values()) {
+    if (entry.contentHash === contentHash && entry.expiresAt > now()) return entry;
+  }
+  return undefined;
+}
 
 function cleanupExpired(currentTime = now()): void {
   for (const [token, entry] of previews) {
     if (entry.expiresAt <= currentTime) {
-      rmSync(entry.root, { recursive: true, force: true });
       previews.delete(token);
+      if (![...previews.values()].some((other) => other.root === entry.root))
+        rmSync(entry.root, { recursive: true, force: true });
     }
   }
 }
 
-async function buildNativePreview(
+function stageNativePreview(
   presentation: Record<string, unknown>,
   slides: Record<string, unknown>[],
   organisation: Record<string, unknown> | null,
   template: DocumentTemplateDefinition,
-): Promise<string> {
+): {
+  slidesMd: string;
+  themeCss: string;
+  mermaidConfigSource: string;
+  footerEnabled: boolean;
+  logoPresent: boolean;
+} {
   const language = presentation.language === 'en' ? 'en' : 'fr';
   const vars = {
     ...presentation,
@@ -80,13 +109,19 @@ async function buildNativePreview(
     vars,
     template,
   });
-  const workdir = stageBuildDir({
+  return {
     slidesMd,
     themeCss: buildThemeCss(organisation),
     mermaidConfigSource: buildMermaidConfigSource(organisation),
     footerEnabled: template.chrome.footer,
     logoPresent: hasAnyLogo(logos),
-    mediaFilenames: referencedMediaFiles(slidesMd),
+  };
+}
+
+async function buildNativePreview(staged: ReturnType<typeof stageNativePreview>): Promise<string> {
+  const workdir = stageBuildDir({
+    ...staged,
+    mediaFilenames: referencedMediaFiles(staged.slidesMd),
   });
   try {
     const slidev = join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev');
@@ -115,13 +150,6 @@ export async function createNativePreview(args: {
   template: DocumentTemplateDefinition;
 }): Promise<{ token: string; expiresAt: string }> {
   cleanupExpired();
-  while (previews.size >= MAX_PREVIEWS) {
-    const oldest = previews.keys().next().value;
-    if (!oldest) break;
-    const entry = previews.get(oldest);
-    if (entry) rmSync(entry.root, { recursive: true, force: true });
-    previews.delete(oldest);
-  }
   const persisted = Array.isArray(args.presentation.slides)
     ? (args.presentation.slides as Record<string, unknown>[])
     : [];
@@ -129,15 +157,28 @@ export async function createNativePreview(args: {
     persisted.length > 0
       ? persisted.map((slide, index) => (index === args.slideIndex ? args.block : slide))
       : [args.block];
-  const root = await buildNativePreview(
-    args.presentation,
-    slides,
-    args.organisation,
-    args.template,
-  );
+  const staged = stageNativePreview(args.presentation, slides, args.organisation, args.template);
+  const contentHash = createHash('sha256')
+    .update(staged.slidesMd)
+    .update(staged.themeCss)
+    .update(staged.mermaidConfigSource)
+    .digest('hex');
+  const root = await serialise(async () => {
+    const live = liveEntryFor(contentHash);
+    if (live) return live.root;
+    while (previews.size >= MAX_PREVIEWS) {
+      const oldest = previews.keys().next().value;
+      if (!oldest) break;
+      const entry = previews.get(oldest);
+      previews.delete(oldest);
+      if (entry && ![...previews.values()].some((other) => other.root === entry.root))
+        rmSync(entry.root, { recursive: true, force: true });
+    }
+    return buildNativePreview(staged);
+  });
   const token = randomBytes(24).toString('base64url');
   const expiresAt = now() + TTL_MS;
-  previews.set(token, { userId: args.userId, root, expiresAt });
+  previews.set(token, { userId: args.userId, root, expiresAt, contentHash });
   return { token, expiresAt: new Date(expiresAt).toISOString() };
 }
 
@@ -181,8 +222,11 @@ export function __resetNativePreviewStoreForTests(): void {
   now = () => Date.now();
 }
 
-export function __registerNativePreviewForTests(token: string, entry: PreviewEntry): void {
-  previews.set(token, entry);
+export function __registerNativePreviewForTests(
+  token: string,
+  entry: Omit<PreviewEntry, 'contentHash'> & { contentHash?: string },
+): void {
+  previews.set(token, { contentHash: token, ...entry });
 }
 
 export function __setNativePreviewNowForTests(nextNow: () => number): void {
