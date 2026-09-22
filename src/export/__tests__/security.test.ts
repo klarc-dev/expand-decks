@@ -254,4 +254,32 @@ describe('richTextToHTML() — Lexical anchor policy', () => {
     expect(unknown).toContain('x');
     expect(unknown).not.toContain('<a ');
   });
+
+  it('treats a focused-then-abandoned field (one empty paragraph) as not filled', () => {
+    // Otherwise `<p></p>` is truthy for every renderer and an empty
+    // takeaway cartouche ("À retenir") or copy column appears on the slide.
+    expect(richTextToHTML(doc([]))).toBe('');
+    expect(
+      richTextToHTML(
+        doc([
+          {
+            type: 'text',
+            text: '   ',
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+            version: 1,
+          },
+        ]),
+      ),
+    ).toBe('');
+    expect(
+      richTextToHTML(
+        doc([
+          { type: 'text', text: 'ok', detail: 0, format: 0, mode: 'normal', style: '', version: 1 },
+        ]),
+      ),
+    ).toContain('ok');
+  });
 });

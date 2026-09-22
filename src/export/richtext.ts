@@ -12,7 +12,19 @@ export type RichText = SerializedEditorState | null | undefined;
 // {{def:...}} footnote feature that authors type into rich-text fields.
 export function richTextToHTML(data: RichText): string {
   if (!data) return '';
-  return applyDefs(sanitizeAnchors(convertLexicalToHTML({ data })));
+  const html = applyDefs(sanitizeAnchors(convertLexicalToHTML({ data })));
+  // An editor field that was focused and left blank stores one empty
+  // paragraph; that must read as "not filled" (no takeaway cartouche, no
+  // empty copy column), not as `<p></p>` content.
+  return isBlankHtml(html) ? '' : html;
+}
+
+// Structural tags with no text content. Media or rule embeds (`<img`, `<hr`)
+// keep the field non-blank.
+const BLANK_HTML_RE = /^(?:\s|<\/?(?:p|br|div|span|strong|em|u|b|i)(?:\s[^>]*)?\/?>|&nbsp;)*$/i;
+
+function isBlankHtml(html: string): boolean {
+  return BLANK_HTML_RE.test(html);
 }
 
 // The converter neutralises a `javascript:` URL into `href="#"` but keeps the
