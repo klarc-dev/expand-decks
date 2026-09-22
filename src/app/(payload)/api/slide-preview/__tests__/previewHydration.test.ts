@@ -21,7 +21,7 @@ vi.mock('@/lib/richTextWrite', () => ({ convertSlidesMarkdownToLexical }));
 vi.mock('../nativePreview', () => ({
   createNativePreview,
   nativePreviewUrl: (token: string, slideIndex: number) =>
-    `/api/slide-preview/${token}/#/${slideIndex + 1}`,
+    `/api/slide-preview/${token}/index.html#/${slideIndex + 1}`,
 }));
 vi.mock('@payload-config', () => ({ default: {} }));
 
@@ -183,7 +183,7 @@ describe('POST /api/slide-preview hydration + access', () => {
 
     expect(res.status).toBe(200);
     expect((await res.json()).preview).toMatchObject({
-      url: '/api/slide-preview/preview-token/#/1',
+      url: '/api/slide-preview/preview-token/index.html#/1',
       expiresAt: '2026-01-01T00:05:00.000Z',
     });
     expect(createNativePreview).toHaveBeenCalledWith(expect.objectContaining({ userId: 'u1' }));

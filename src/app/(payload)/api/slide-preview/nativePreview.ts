@@ -183,7 +183,10 @@ export async function createNativePreview(args: {
 }
 
 export function nativePreviewUrl(token: string, slideIndex: number): string {
-  return `/api/slide-preview/${encodeURIComponent(token)}/#/${slideIndex + 1}`;
+  // Slidev is built with `--base ./`; its assets are relative to the document.
+  // Next.js strips a trailing slash from `/<token>/`, which would rebase the
+  // assets to `/api/slide-preview/assets/*`, so point at index.html explicitly.
+  return `/api/slide-preview/${encodeURIComponent(token)}/index.html#/${slideIndex + 1}`;
 }
 
 export async function serveNativePreview(args: {

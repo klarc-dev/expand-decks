@@ -6,6 +6,7 @@ import {
   __registerNativePreviewForTests,
   __resetNativePreviewStoreForTests,
   __setNativePreviewNowForTests,
+  nativePreviewUrl,
   serveNativePreview,
 } from '../nativePreview';
 
@@ -59,5 +60,11 @@ describe('native preview serving', () => {
       (await serveNativePreview({ token: 'safe', userId: 'u1', pathSegments: ['..', 'secret'] }))
         .status,
     ).toBe(403);
+  });
+
+  it('targets index.html so relative Slidev assets resolve under the token', () => {
+    // Next.js drops the trailing slash of `/<token>/`; `./assets/*` would then
+    // resolve to `/api/slide-preview/assets/*` and the deck never mounts.
+    expect(nativePreviewUrl('tok en', 1)).toBe('/api/slide-preview/tok%20en/index.html#/2');
   });
 });
