@@ -20,6 +20,7 @@ import {
   buildStructureInstructions,
   buildWriterInstructions,
 } from '../src/agents/prompts/phases';
+import { SLIDES_OPERATIONS } from './slides-operations.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUTPUTS = {
@@ -27,6 +28,7 @@ const OUTPUTS = {
   schema: path.join(ROOT, '.agents/skills/slides/references/schema.md'),
   catalogue: path.join(ROOT, '.agents/skills/slides/references/layout-prompts.md'),
   mastra: path.join(ROOT, '.agents/skills/slides/references/mastra-prompts.md'),
+  operations: path.join(ROOT, '.agents/skills/slides/references/operations.md'),
 };
 
 function fieldLines(field: FieldSpec, prefix = ''): string[] {
@@ -196,6 +198,51 @@ Writer fingerprints are listed in the layout table above.
 `;
 }
 
+function renderOperationsReference(): string {
+  const operationRows = SLIDES_OPERATIONS.production
+    .map(
+      (operation) => `| \`${operation.usage}\` | ${operation.purpose} | \`${operation.effect}\` |`,
+    )
+    .join('\n');
+  const safeguards = SLIDES_OPERATIONS.production.flatMap((operation) =>
+    (operation.safeguards ?? []).map((safeguard) => `- \`${operation.verb}\`: ${safeguard}`),
+  );
+  const boundaries = SLIDES_OPERATIONS.externalBoundaries
+    .map((boundary) => `- \`${boundary.method} ${boundary.path}\`: ${boundary.purpose}`)
+    .join('\n');
+  return `<!-- GENERATED FILE. Run pnpm generate:agent-skills. Do not edit manually. -->
+# Deck operations reference
+
+This reference is generated from the same operational contract consumed by \`pnpm prod help\`.
+
+## Local authoring and build
+
+${SLIDES_OPERATIONS.local.map((operation) => `- \`${operation.command}\`: ${operation.purpose}`).join('\n')}
+
+## Production CLI
+
+| Command | Purpose | Effect |
+| --- | --- | --- |
+${operationRows}
+
+### Production safeguards
+
+${safeguards.join('\n')}
+
+Production mutations require explicit user authorization. Start with \`pnpm prod status\`; prefer a committed, narrowly scoped inspection script before any mutation.
+
+## Canonical external boundary
+
+${boundaries}
+
+## MCP policy
+
+- Deck MCP available: **${SLIDES_OPERATIONS.mcp.available ? 'yes' : 'no'}**
+- ${SLIDES_OPERATIONS.mcp.policy}
+- Decision record: \`${SLIDES_OPERATIONS.mcp.decisionRecord}\`
+`;
+}
+
 function renderSlidesSkill(): string {
   return `---
 name: slides
@@ -211,6 +258,7 @@ Use this skill for manual slide creation, review, revision, seed scripts, and bu
 - [Schema and template reference](references/schema.md)
 - [Layout prompt catalogue](references/layout-prompts.md)
 - [Mastra workflow prompts](references/mastra-prompts.md)
+- [Local, production, REST, and MCP operations](references/operations.md)
 
 Regenerate these references with \`pnpm generate:agent-skills\` after block-spec, template, or Mastra prompt changes. Check freshness with \`pnpm generate:agent-skills:check\`.
 
@@ -221,6 +269,7 @@ The generated references are projections of the runtime SSOT:
 - Block schemas, limits, layout contracts, and layout prose come from \`ALL_SPECS\` and document templates.
 - Gather, research, structure, writer, and visual instructions come from the Mastra prompt module used by runtime agents.
 - Manual authoring still does not invoke the Mastra workflow. It does not automatically perform source gathering, dossier grounding, schema repair, rubric loops, layout repair, or visual scoring.
+- Local, production, REST, and MCP guidance comes from the shared operations contract consumed by \`pnpm prod help\`.
 
 ## Authoring and review workflow
 
@@ -231,6 +280,15 @@ The generated references are projections of the runtime SSOT:
 5. Run \`NODE_ENV=development pnpm deck:seed <name>\`, then \`NODE_ENV=development pnpm deck:build <id>\`.
 6. Inspect the exported PDF, not only the browser preview. Check truncation, overflow, collisions, links, footnotes, diagrams, and footer behavior on every page.
 7. For review or revision, apply the Mastra prompt references as a quality rubric, then inspect the actual rendered PDF.
+
+## Production workflow
+
+1. Read the generated operations reference before touching production.
+2. Run \`pnpm prod status\` to identify the deployed SHA and queue state.
+3. Use \`pnpm prod pull\` when production data should be inspected or reproduced locally; it never writes to production.
+4. Use \`pnpm prod run\` only for a committed, narrowly scoped top-level script. Read-only inspection is preferred.
+5. Treat \`seed-*\` and \`set-*\` scripts as production mutations. They require explicit user authorization and the CLI's \`--yes\` confirmation.
+6. Do not recreate a deck MCP server. Use the authenticated canonical REST boundary for external layout integrations.
 
 ## Content rules
 
@@ -251,6 +309,7 @@ export const GENERATED_FILES: Record<string, string> = {
   [OUTPUTS.schema]: renderSchemaReference(),
   [OUTPUTS.catalogue]: renderPromptCatalogue(),
   [OUTPUTS.mastra]: renderMastraPrompts(),
+  [OUTPUTS.operations]: renderOperationsReference(),
 };
 
 async function main() {

@@ -28,6 +28,8 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
+import { productionUsage, SLIDES_OPERATIONS } from './slides-operations.mjs';
+
 const SSH_HOST = process.env.PROD_SSH_HOST ?? 'klarc';
 const APP_UUID = process.env.PROD_APP_UUID ?? 'cwarktiocfrejvca0mvdfjar';
 const MEDIA_DIR = process.env.PROD_MEDIA_DIR ?? '/home/joachim/docker/expand-decks/media';
@@ -35,6 +37,7 @@ const LOCAL_PG_URL = process.env.LOCAL_PG_URL ?? 'postgresql://localhost:5432';
 const SSH = ['ssh', '-o', 'ForwardX11=no', '-o', 'ConnectTimeout=25', SSH_HOST];
 const REPO = resolve(new URL('..', import.meta.url).pathname);
 const DUMP_DIR = join(REPO, '.prod-dumps');
+const PRODUCTION_VERBS = new Set(SLIDES_OPERATIONS.production.map(({ verb }) => verb));
 
 const shq = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
 
@@ -242,11 +245,13 @@ function pull(argv) {
 
 const [verb, ...argv] = process.argv.slice(2);
 try {
-  if (verb === 'status') status();
+  if (verb === 'help' || verb === '--help' || verb === '-h') console.log(productionUsage());
+  else if (verb === 'status') status();
   else if (verb === 'run') run(argv);
   else if (verb === 'pull') pull(argv);
   else {
-    console.error('Usage: pnpm prod <status|run|pull> ...  (see header of scripts/prod.mjs)');
+    const verbs = [...PRODUCTION_VERBS].join('|');
+    console.error(`Usage: pnpm prod <${verbs}> ...\n\n${productionUsage()}`);
     process.exit(2);
   }
 } catch (error) {

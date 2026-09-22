@@ -12,6 +12,7 @@ Use this skill for manual slide creation, review, revision, seed scripts, and bu
 - [Schema and template reference](references/schema.md)
 - [Layout prompt catalogue](references/layout-prompts.md)
 - [Mastra workflow prompts](references/mastra-prompts.md)
+- [Local, production, REST, and MCP operations](references/operations.md)
 
 Regenerate these references with `pnpm generate:agent-skills` after block-spec, template, or Mastra prompt changes. Check freshness with `pnpm generate:agent-skills:check`.
 
@@ -22,6 +23,7 @@ The generated references are projections of the runtime SSOT:
 - Block schemas, limits, layout contracts, and layout prose come from `ALL_SPECS` and document templates.
 - Gather, research, structure, writer, and visual instructions come from the Mastra prompt module used by runtime agents.
 - Manual authoring still does not invoke the Mastra workflow. It does not automatically perform source gathering, dossier grounding, schema repair, rubric loops, layout repair, or visual scoring.
+- Local, production, REST, and MCP guidance comes from the shared operations contract consumed by `pnpm prod help`.
 
 ## Authoring and review workflow
 
@@ -32,6 +34,15 @@ The generated references are projections of the runtime SSOT:
 5. Run `NODE_ENV=development pnpm deck:seed <name>`, then `NODE_ENV=development pnpm deck:build <id>`.
 6. Inspect the exported PDF, not only the browser preview. Check truncation, overflow, collisions, links, footnotes, diagrams, and footer behavior on every page.
 7. For review or revision, apply the Mastra prompt references as a quality rubric, then inspect the actual rendered PDF.
+
+## Production workflow
+
+1. Read the generated operations reference before touching production.
+2. Run `pnpm prod status` to identify the deployed SHA and queue state.
+3. Use `pnpm prod pull` when production data should be inspected or reproduced locally; it never writes to production.
+4. Use `pnpm prod run` only for a committed, narrowly scoped top-level script. Read-only inspection is preferred.
+5. Treat `seed-*` and `set-*` scripts as production mutations. They require explicit user authorization and the CLI's `--yes` confirmation.
+6. Do not recreate a deck MCP server. Use the authenticated canonical REST boundary for external layout integrations.
 
 ## Content rules
 
