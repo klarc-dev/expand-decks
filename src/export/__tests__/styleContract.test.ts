@@ -63,13 +63,13 @@ describe('style.css fixed-canvas safe frame', () => {
     );
   });
 
-  it('centers the CTA with symmetric clearance and only the split copy within its body', () => {
+  it('centers the CTA with symmetric clearance and both sides of split bodies', () => {
     expect(css).toMatch(
       /\.k-cta-frame\s*\{[^}]*padding-block:\s*max\(var\(--header-top\), var\(--content-bottom\)\)/,
     );
-    expect(css).toMatch(/\.k-split--body\s*\{[^}]*align-items:\s*start/);
+    expect(css).toMatch(/\.k-split--body\s*\{[^}]*align-items:\s*center/);
     expect(css).toMatch(/\.k-split--body > \.k-copy-column\s*\{[^}]*align-self:\s*center/);
-    expect(css).not.toMatch(/\.k-split--body > \.k-card-stack\s*\{[^}]*align-self:\s*center/);
+    expect(css).toMatch(/\.k-split--body > \.k-split-cards\s*\{[^}]*align-self:\s*center/);
   });
 });
 
@@ -150,6 +150,7 @@ describe('style.css oversized export fitting', () => {
 
   it('gives table stages an explicit measured-row boundary instead of relying on ancestor clipping', () => {
     expect(css).toMatch(/\.k-table-stage\s*\{[\s\S]*max-height:\s*100%/);
+    expect(css).toMatch(/\.k-table-stage\s*\{[\s\S]*align-self:\s*center/);
     expect(css).toMatch(/\.k-table-stage\s*\{[\s\S]*overflow:\s*clip/);
   });
 

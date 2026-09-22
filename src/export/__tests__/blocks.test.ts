@@ -436,7 +436,7 @@ describe('renderStatement() — variant dispatch (U8)', () => {
 });
 
 describe('renderTwoCols()', () => {
-  it('produces layout: default with k-split inside the shared content frame', () => {
+  it('produces layout: default with a vertically centered split body', () => {
     const result = renderTwoCols({
       blockType: 'twoCols',
       title: 'Two Cols',
@@ -444,7 +444,7 @@ describe('renderTwoCols()', () => {
     expect(result).toContain('layout: default');
     expect(result).toContain('k-split');
     expect(result).toContain('k-content-header');
-    expect(result).toContain('k-content-main k-content-main--start');
+    expect(result).toContain('k-content-main k-content-main--center');
   });
 
   it('places the intro separator in the heading-adjacent body row', () => {
@@ -454,10 +454,10 @@ describe('renderTwoCols()', () => {
       intro: lexical('Lead copy'),
       rightCards: [{ title: 'Card 1', description: lexical('Desc 1') }],
     });
-    expect(result).toContain('k-content-main k-content-main--start');
+    expect(result).toContain('k-content-main k-content-main--center');
     // The unified header separates the copy column: no vestigial accent rule.
     expect(result).toMatch(
-      /k-content-header[\s\S]*k-content-main k-content-main--start[\s\S]*k-copy-stack--lead/,
+      /k-content-header[\s\S]*k-content-main k-content-main--center[\s\S]*k-copy-stack--lead/,
     );
     expect(result).not.toContain('k-divider');
   });
@@ -1296,7 +1296,7 @@ describe('renderTable() — fixed-canvas fitting', () => {
 
     expect(result).toContain('k-table--fit');
     expect(result).toContain('k-density-dense');
-    expect(result).toContain('k-content-main--start');
+    expect(result).toContain('k-content-main--center');
     expect(result).toContain('k-table-stage');
     expect(result).toContain('k-table--cols-5');
   });
@@ -1342,7 +1342,7 @@ describe('renderTable() — reference vs matrix variant + StatusPill (U10)', () 
     expect(r).not.toContain('k-pill');
     expect(r).not.toContain('k-table--matrix');
     expect(r).toContain('k-content-header');
-    expect(r).toContain('k-content-main k-content-main--start');
+    expect(r).toContain('k-content-main k-content-main--center');
   });
 
   it('matrix variant maps whole-cell status tokens to the right pill', () => {

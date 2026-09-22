@@ -744,7 +744,7 @@
   max-height: 100%;
   min-width: 0;
   min-height: 0;
-  align-self: flex-start;
+  align-self: center;
   overflow: clip;
 }
 
@@ -2925,11 +2925,12 @@
   align-items: start;
 }
 
-/* Keep the header and card stack anchored; center only the left copy
-   against the height of the two-column body. */
+/* Center the two-column body in the measured row, then center each column
+   against the taller side. Dense content still fits through the shared density
+   ladder rather than reverting to top alignment. */
 .k-split--body {
   width: 100%;
-  align-items: start;
+  align-items: center;
 }
 .k-split--body > .k-copy-column {
   align-self: center;
@@ -2960,16 +2961,14 @@
   min-width: 0;
 }
 
-/* The right column takes the whole content height and, from three cards up,
-   spreads the stack over it: the cards breathe instead of huddling under the
-   header, and the frame bounds the spread. Two cards keep the base gap so they
-   do not drift to opposite ends of the column. */
+/* In legacy start-aligned frames the right column may take the available row
+   height. Current two-column slides use the centered frame above. */
 .k-content-main--start > .k-split--body {
   flex: 1 1 auto;
   min-height: 0;
 }
 .k-split--body > .k-split-cards {
-  align-self: stretch;
+  align-self: center;
   display: flex;
   flex-direction: column;
   min-height: 0;

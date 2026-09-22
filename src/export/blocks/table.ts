@@ -118,7 +118,6 @@ export function renderTable(block: TableBlockData, ctx?: RenderCtx): string {
     wFull: true,
     crowded: fitted,
     density,
-    mainAlign: 'start',
   });
 
   return wrapSlide({ classAttr: surfaceClass(ctx?.surface ?? 'light'), body: bodyHtml });

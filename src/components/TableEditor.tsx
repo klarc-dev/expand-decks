@@ -20,6 +20,9 @@ import './TableEditor.scss';
 
 const { min: MIN_COLUMNS, max: MAX_COLUMNS } = SLIDE_LIMITS.table.columns;
 const { min: MIN_ROWS, max: MAX_ROWS } = SLIDE_LIMITS.table.rows;
+const DraggableButton = Button as React.ComponentType<
+  React.ComponentProps<typeof Button> & React.ButtonHTMLAttributes<HTMLButtonElement>
+>;
 
 type TableActionGroupProps = {
   children: React.ReactNode;
@@ -80,11 +83,13 @@ function TableDragHandle({
   size,
 }: TableDragHandleProps) {
   return (
-    <span
+    <DraggableButton
       aria-label={label}
+      buttonStyle="transparent"
       className="table-editor__drag-handle"
       draggable
-      onDragOver={(event) => event.preventDefault()}
+      margin={false}
+      onDragOver={(event: React.DragEvent<HTMLButtonElement>) => event.preventDefault()}
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = 'move';
         onStart(axis, index);
@@ -93,7 +98,7 @@ function TableDragHandle({
         event.preventDefault();
         onDropAt(index);
       }}
-      onKeyDown={(event) => {
+      onKeyDown={(event: React.KeyboardEvent<HTMLButtonElement>) => {
         const previousKey = axis === 'column' ? 'ArrowLeft' : 'ArrowUp';
         const nextKey = axis === 'column' ? 'ArrowRight' : 'ArrowDown';
         const offset = event.key === previousKey ? -1 : event.key === nextKey ? 1 : 0;
@@ -102,12 +107,12 @@ function TableDragHandle({
         const target = index + offset;
         if (target >= 0 && target < size) onKeyboardMove(index, target);
       }}
-      role="button"
-      tabIndex={0}
+      size="xsmall"
       title={`${label}. Utilisez aussi les touches fléchées.`}
+      type="button"
     >
       <span aria-hidden="true">⠿</span>
-    </span>
+    </DraggableButton>
   );
 }
 

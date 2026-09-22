@@ -103,7 +103,6 @@ export function renderTwoCols(block: TwoColsBlockData, ctx?: RenderCtx): string 
     header,
     crowded: stack.crowded,
     density: stack.density,
-    mainAlign: 'start',
   });
 
   return wrapSlide({ surface: ctx?.surface, body });
