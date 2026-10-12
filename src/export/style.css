@@ -2387,6 +2387,30 @@
   margin-top: 2rem;
   max-width: min(100%, 54rem);
 }
+/* A cover speaker is part of the opening composition, not a compact metadata
+   chip. Give the portrait enough presence, vertically centre the two columns,
+   and keep the icon actions as one tight group beneath the identity. */
+.k-cover-people .k-person-card {
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1.1rem;
+}
+.k-cover-people .k-person-card > a:has(> .k-person-avatar) {
+  align-self: center;
+}
+.k-cover-people .k-person-avatar {
+  width: 4.25rem;
+  height: 4.25rem;
+}
+.k-cover-people .k-person-body {
+  justify-content: center;
+}
+.k-cover-people .k-person-contact {
+  margin-top: 0.7rem;
+  padding-top: 0;
+  gap: 0.2rem;
+  flex-wrap: nowrap;
+}
 .k-cover.k-density-compact .k-cover-people,
 .k-cover.k-density-dense .k-cover-people {
   margin-top: calc(2rem * var(--density-space));

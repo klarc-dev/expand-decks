@@ -31,6 +31,21 @@ describe('shared person cards', () => {
     }
   });
 
+  it('gives cover speakers a larger portrait, centred identity and compact icon group', () => {
+    expect(rule('.k-cover-people .k-person-card')).toContain(
+      'grid-template-columns: 4.25rem minmax(0, 1fr)',
+    );
+    expect(rule('.k-cover-people .k-person-card')).toContain('align-items: center');
+    expect(rule('.k-cover-people .k-person-card > a:has(> .k-person-avatar)')).toContain(
+      'align-self: center',
+    );
+    expect(rule('.k-cover-people .k-person-avatar')).toContain('width: 4.25rem');
+    expect(rule('.k-cover-people .k-person-avatar')).toContain('height: 4.25rem');
+    expect(rule('.k-cover-people .k-person-body')).toContain('justify-content: center');
+    expect(rule('.k-cover-people .k-person-contact')).toContain('gap: 0.2rem');
+    expect(rule('.k-cover-people .k-person-contact')).toContain('flex-wrap: nowrap');
+  });
+
   it('emits one accessible icon-only Tabler link per authored channel', () => {
     const html = personCard({
       initials: 'AM',
