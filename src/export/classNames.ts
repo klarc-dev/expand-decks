@@ -32,8 +32,6 @@ export const K = {
   coverFigure: 'k-cover-figure',
   coverFigureImg: 'k-cover-figure-img',
   coverPeople: 'k-cover-people',
-  cardGridPeople: 'k-cardgrid-people',
-  cardGridPeopleGrid: 'k-cardgrid-people--grid',
   personCard: 'k-person-card',
   personAvatar: 'k-person-avatar',
   personInitials: 'k-person-initials',

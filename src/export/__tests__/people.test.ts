@@ -11,24 +11,16 @@ const rule = (selector: string) => {
 };
 
 describe('shared person cards', () => {
-  it('keeps equal padding on every side in each person-card variant', () => {
-    for (const selector of [
-      '.k-person-card',
-      '.k-cardgrid-people .k-person-card',
-      '.k-cardgrid-people--grid .k-person-card',
-    ]) {
-      expect(rule(selector)).toMatch(/padding: \d*\.?\d+rem;/);
-    }
+  it('keeps equal padding on every side in the cover person card', () => {
+    expect(rule('.k-person-card')).toMatch(/padding: \d*\.?\d+rem;/);
   });
 
   it('stretches the content column and anchors contact icons to its bottom', () => {
     expect(rule('.k-person-body')).toContain('display: flex');
     expect(rule('.k-person-body')).toContain('flex-direction: column');
     expect(rule('.k-person-body')).toContain('align-self: stretch');
-    for (const selector of ['.k-person-contact', '.k-cardgrid-people--grid .k-person-contact']) {
-      expect(rule(selector)).toContain('margin-top: auto');
-      expect(rule(selector)).toMatch(/padding-top: [\d.]+rem/);
-    }
+    expect(rule('.k-person-contact')).toContain('margin-top: auto');
+    expect(rule('.k-person-contact')).toMatch(/padding-top: [\d.]+rem/);
   });
 
   it('gives cover speakers a larger portrait, centred identity and compact icon group', () => {
@@ -122,7 +114,7 @@ describe('shared person cards', () => {
   });
 
   it('keeps optional avatar, title and contact states quiet and meaningful', () => {
-    const html = renderPeopleStrip([{ user: { name: 'Anne Martin' } }], 'k-cardgrid-people');
+    const html = renderPeopleStrip([{ user: { name: 'Anne Martin' } }], 'k-cover-people');
     expect(html).toContain('aria-hidden="true">AM</span>');
     expect(html).not.toContain('k-person-contact');
     expect(html).not.toContain('k-person-title');
@@ -131,7 +123,7 @@ describe('shared person cards', () => {
     expect(userToPerson({ email: 'anne@example.com' })?.name).toBe('anne');
   });
 
-  it('renders an escaped optional description below the job title', () => {
+  it('renders an escaped optional description after the job title', () => {
     const html = renderPeopleStrip(
       [
         {
@@ -139,25 +131,12 @@ describe('shared person cards', () => {
           description: 'Fiscalité des entreprises & fiscalité de l’innovation',
         },
       ],
-      'k-cardgrid-people--grid',
+      'k-cover-people',
     );
 
     expect(html.indexOf('k-person-title')).toBeLessThan(html.indexOf('k-person-description'));
     expect(html).toContain('Fiscalité des entreprises &amp; fiscalité de l’innovation');
     expect(rule('.k-person-description')).toContain('display: none');
-    expect(rule('.k-cardgrid-people--grid .k-person-description')).toContain('text-wrap: pretty');
-    expect(rule('.k-cardgrid-people--grid .k-person-title')).toContain('margin-top: 0.12rem');
-    expect(rule('.k-cardgrid-people--grid')).toContain('grid-auto-rows: minmax(0, 1fr)');
-    expect(rule('.k-cardgrid-people--grid')).toContain('max-height: 100%');
-    expect(rule('.k-cardgrid-people--grid .k-person-card > a:has(> .k-person-avatar)')).toContain(
-      'align-self: stretch',
-    );
-    expect(rule('.k-cardgrid-people--grid .k-person-card > a:has(> .k-person-avatar)')).toContain(
-      'height: 100%',
-    );
-    expect(rule('.k-cardgrid-people--grid .k-person-avatar')).toContain(
-      'object-position: center 14%',
-    );
   });
 
   it('escapes visible content and excludes unsafe contact URLs', () => {
@@ -172,7 +151,7 @@ describe('shared person cards', () => {
           },
         },
       ],
-      'k-cardgrid-people',
+      'k-cover-people',
     );
     expect(html).toContain('&lt;Anne &amp; Martin&gt;');
     expect(html).toContain('&lt;Conseil&gt;');
@@ -191,8 +170,7 @@ describe('shared person cards', () => {
     expect(rule('.k-person-contact')).toContain('display: flex');
     expect(rule('.k-person-link')).toContain('width: 1.9rem');
     expect(rule('.k-person-link')).toContain('border-radius: 999px');
-    expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-wrap: nowrap');
-    expect(rule('.k-cardgrid-people--grid .k-person-contact')).toContain('flex-direction: row');
+    expect(rule('.k-cover-people .k-person-contact')).toContain('flex-wrap: nowrap');
     expect(rule('.slidev-layout .k-person-card a')).toContain(
       'text-decoration-color: currentColor',
     );

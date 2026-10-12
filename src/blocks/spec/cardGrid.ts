@@ -20,16 +20,13 @@ import {
   titleFieldSpec,
 } from './dsl';
 import { SLIDE_LIMITS } from './limits';
-import { intervenantsFieldSpec, intervenantsRender } from './person';
 
 const eyebrow = optionalLimitedRender(SLIDE_LIMITS.common.eyebrow);
 const title = limitedString(SLIDE_LIMITS.common.title);
 const sidebarText = optionalLimitedRichTextRender(SLIDE_LIMITS.cardGrid.sidebar);
 const columns = optionalRender(z.enum(['2', '3', '4']));
-const intervenants = intervenantsRender(SLIDE_LIMITS.cardGrid.intervenants);
-// Payload persists an untouched array field as [] — for rendering that is the
-// same as "no cards" (e.g. a contacts slide that only carries intervenants),
-// so normalize before the min-2 card rule applies to authored grids.
+// Payload persists an untouched array field as [] — normalize it before the
+// min-2 card rule applies to authored grids.
 const cards = z.preprocess(
   (value) => (Array.isArray(value) && value.length === 0 ? null : value),
   optionalRender(
@@ -104,10 +101,6 @@ export const cardGridSpec = block({
         ],
       }),
     ),
-    intervenantsFieldSpec(
-      SLIDE_LIMITS.cardGrid.intervenants,
-      'Personnes affichées en bandeau discret sous la grille',
-    ),
     factoryField('preview', 'preview', z.never(), false),
   ],
   promptMeta: {
@@ -129,7 +122,6 @@ const cardGridRenderSchema = z.object({
   sidebarText,
   columns,
   cards,
-  intervenants,
   ...sharedRenderFields(true),
 });
 

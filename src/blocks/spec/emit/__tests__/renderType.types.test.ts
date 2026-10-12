@@ -161,7 +161,6 @@ const cardGridRenderSchema = z.object({
     )
     .nullable()
     .optional(),
-  intervenants: coverIntervenants,
   ...sharedRenderFields(true),
 });
 

@@ -49,7 +49,6 @@ export const SLIDE_LIMITS = {
     cardNumber: { max: 12 },
     cardTitle: { max: 120 },
     cardDescription: { max: 260 },
-    intervenants: { min: 0, max: 4 },
   },
   stats: {
     items: { min: 2, max: 4 },

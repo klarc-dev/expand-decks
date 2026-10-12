@@ -2,9 +2,8 @@ import { K } from './classNames';
 import { escape, safeHref, telHref } from './utils';
 
 /**
- * Shared person-card rendering — one implementation consumed by every block
- * that displays `intervenants` (cover, cardGrid), so markup and styling stay
- * identical wherever people appear.
+ * Shared person-card rendering for the cover slide's `intervenants` field, so
+ * its avatar, identity, and contact markup stay defined in one place.
  */
 
 export type PersonCard = {

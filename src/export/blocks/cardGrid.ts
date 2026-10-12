@@ -1,7 +1,5 @@
 import type { CardGridBlockData } from '../../blocks/spec/cardGrid';
-import { K } from '../classNames';
 import { visibleText } from '../density';
-import { renderPeopleStrip } from '../people';
 import { richTextToHTML } from '../richtext';
 import { card, cardStack, contentFrame, slideHeader, wrapSlide, type RenderCtx } from '../utils';
 
@@ -18,11 +16,6 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
     };
   });
 
-  const peopleProminent = cardList.length === 0;
-  const people = renderPeopleStrip(
-    block.intervenants,
-    peopleProminent ? `${K.cardGridPeople} ${K.cardGridPeopleGrid}` : K.cardGridPeople,
-  );
   const stack = cardStack(
     renderedCards.map((item) => item.html),
     {
@@ -30,14 +23,11 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
       maxCols: Number(block.columns ?? '4'),
       profile: 'card-grid',
       itemPressures: renderedCards.map((item) => item.pressure),
-      occupancy: { header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}`, people },
+      occupancy: { header: `${block.eyebrow ?? ''} ${block.title} ${leadHtml}` },
     },
   );
 
-  const parts = [stack.html, people].filter(Boolean);
-  const bodyCls =
-    stack.html && people ? 'k-cardgrid-body k-cardgrid-body--with-people' : 'k-cardgrid-body';
-  const main = parts.length ? `<div class="${bodyCls}">\n${parts.join('\n')}\n</div>` : '';
+  const main = stack.html ? `<div class="k-cardgrid-body">\n${stack.html}\n</div>` : '';
   const header = slideHeader({
     eyebrow: block.eyebrow,
     title: block.title,
@@ -48,7 +38,7 @@ export function renderCardGrid(block: CardGridBlockData, ctx?: RenderCtx): strin
     header,
     crowded: stack.crowded,
     density: stack.density,
-    mainAlign: peopleProminent && people ? 'center' : 'stretch',
+    mainAlign: 'stretch',
   });
 
   return wrapSlide({ surface: ctx?.surface, body });

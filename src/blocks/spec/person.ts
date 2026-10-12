@@ -4,9 +4,8 @@ import { type FieldSpec, limitedArray, limitedArrayPayload, optionalRender, rawF
 import type { RangeLimit } from './limits';
 
 /**
- * Shared "intervenants" relationship shape — one definition consumed by every
- * block spec that displays person cards (cover, cardGrid), so the render Zod,
- * the Payload field and the renderer contract cannot drift between blocks.
+ * Cover-slide `intervenants` relationship shape. The title slide owns speaker
+ * identity, avatar, expertise, and contact data; content layouts do not.
  */
 const mediaRelationship = z.union([
   z.string(),

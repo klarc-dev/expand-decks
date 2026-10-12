@@ -57,7 +57,6 @@ const LAYOUT_CONTRACTS = {
       sidebarText: 'prose.support',
       columns: 'presentation.hint',
       cards: 'collection.items',
-      intervenants: 'people',
     },
     capacities: { 'collection.items': 8 },
     required: ['heading.title', 'collection.items'],

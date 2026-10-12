@@ -52,6 +52,7 @@ import * as migration_20260916_133537_remove_footer_toggle from './20260916_1335
 import * as migration_20260917_073521 from './20260917_073521';
 import * as migration_20260917_104618 from './20260917_104618';
 import * as migration_20260918_134044 from './20260918_134044';
+import * as migration_20261012_093908 from './20261012_093908';
 
 export const migrations = [
   {
@@ -323,5 +324,10 @@ export const migrations = [
     up: migration_20260918_134044.up,
     down: migration_20260918_134044.down,
     name: '20260918_134044',
+  },
+  {
+    up: migration_20261012_093908.up,
+    down: migration_20261012_093908.down,
+    name: '20261012_093908',
   },
 ];
