@@ -19,6 +19,7 @@ import { default as default_841f3d8d064dfe798baf7710ad67fba0 } from '../../../co
 import { default as default_134c410202d5b098d475cc919d49bc22 } from '../../../components/SlideRowLabel'
 import { default as default_0485d70ecd0925de7ff80d9fd8de19b6 } from '../../../components/TableEditor'
 import { default as default_aee33db39655958e9252bd7cf7af6a37 } from '../../../components/SlideTargetField'
+import { default as default_aa6ab2da9751832a99e3fd1c542413be } from '../../../components/SlidesField'
 import { default as default_1bea05d269169743e2b5ec20de8cfe7d } from '../../../components/AgentRunControls'
 import { default as default_49d2b627e93b48e36f9059279bd151a7 } from '../../../components/BuildStatusField'
 import { PresentationTitleControl as PresentationTitleControl_31a0a096a421171d00710a61bcbb7872 } from '../../../components/TitleField'
@@ -53,6 +54,7 @@ export const importMap = {
   "/components/SlideRowLabel#default": default_134c410202d5b098d475cc919d49bc22,
   "/components/TableEditor#default": default_0485d70ecd0925de7ff80d9fd8de19b6,
   "/components/SlideTargetField#default": default_aee33db39655958e9252bd7cf7af6a37,
+  "/components/SlidesField#default": default_aa6ab2da9751832a99e3fd1c542413be,
   "/components/AgentRunControls#default": default_1bea05d269169743e2b5ec20de8cfe7d,
   "/components/BuildStatusField#default": default_49d2b627e93b48e36f9059279bd151a7,
   "/components/TitleField#PresentationTitleControl": PresentationTitleControl_31a0a096a421171d00710a61bcbb7872,

@@ -372,6 +372,7 @@ export const Presentations: CollectionConfig = {
                 description:
                   'Une page par bloc. Les layouts proposés dépendent du template de document.',
                 initCollapsed: true,
+                components: { Field: '/components/SlidesField#default' },
               },
               blocks: payloadBlocksForTemplate(),
               filterOptions: ({ data }) =>
