@@ -11,6 +11,14 @@ describe('runtime image', () => {
     );
   });
 
+  it('refuses to create PostgreSQL with missing or empty initialization configuration', () => {
+    const compose = readFileSync('docker-compose.yaml', 'utf8');
+
+    for (const key of ['POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD']) {
+      expect(compose).toContain(`${key}: \${${key}:?${key} must be set and non-empty}`);
+    }
+  });
+
   it('uses ultra as the Compose fallback for every agent job consumer', () => {
     const compose = readFileSync('docker-compose.yaml', 'utf8');
     const worker = compose.slice(compose.indexOf('  payload-worker-1: &payload-worker'));
