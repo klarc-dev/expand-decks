@@ -1,0 +1,911 @@
+/**
+ * Seed du webinaire « Conflits de propriété industrielle » (présentation 33).
+ *
+ *   pnpm deck:seed webinaire-contentieux-pi [--check] [--inspect] [--build]
+ *   pnpm prod run scripts/seed-webinaire-contentieux-pi.ts --yes
+ *
+ * Upsert par (titre, organisation). Les intervenants de la couverture sont
+ * conservés depuis la version en base. Fil rouge : la PME Axéa reçoit une mise
+ * en demeure de son partenaire technique ; chaque partie se termine sur un
+ * fait nouveau qui impose la décision suivante. Toutes les références
+ * ont été relues sur Légifrance le 13 octobre 2026 (CPC dans la numérotation
+ * du décret 2025-660 en vigueur depuis le 1er septembre 2025).
+ */
+import { isDeepStrictEqual, parseArgs } from 'node:util';
+
+import { AI_SLIDE_SCHEMA, SPEC_BY_TYPE } from '../src/blocks/spec';
+import { fieldsOf } from '../src/blocks/spec/dsl';
+import { parseDocumentRenderPages, resolveDocumentTemplate } from '../src/documents/templates';
+import type { Presentation } from '../src/payload-types';
+import { slugFromTitle } from '../src/lib/slug';
+
+const TITLE = 'Conflits de propriété industrielle : de la mise en demeure au règlement du litige';
+const ORGANISATION = 'Klarc';
+const TEMPLATE = resolveDocumentTemplate('presentation');
+
+const LF = 'https://www.legifrance.gouv.fr/codes/article_lc/';
+const ref = (label: string, id: string) => `[${label}](${LF}${id})`;
+const S = {
+  L611_7: ref('CPI, art. L. 611-7 · Inventions de salariés', 'LEGIARTI000039279789'),
+  L611_8: ref('CPI, art. L. 611-8 · Revendication de propriété', 'LEGIARTI000028717115'),
+  L611_11: ref('CPI, art. L. 611-11 · Nouveauté', 'LEGIARTI000019298700'),
+  L611_13: ref('CPI, art. L. 611-13 · Divulgations non opposables', 'LEGIARTI000006279410'),
+  L613_7: ref('CPI, art. L. 613-7 · Possession personnelle antérieure', 'LEGIARTI000006279474'),
+  L613_9: ref('CPI, art. L. 613-9 · Registre national des brevets', 'LEGIARTI000019298708'),
+  L613_29: ref('CPI, art. L. 613-29 · Copropriété', 'LEGIARTI000039279761'),
+  R613_44: ref('CPI, art. R. 613-44 · Opposition, neuf mois', 'LEGIARTI000041703923'),
+  L615_1: ref('CPI, art. L. 615-1 · Contrefaçon et connaissance de cause', 'LEGIARTI000036891091'),
+  L615_2: ref('CPI, art. L. 615-2 · Qualité pour agir', 'LEGIARTI000036891114'),
+  L615_3: ref('CPI, art. L. 615-3 · Mesures provisoires', 'LEGIARTI000028717051'),
+  L615_5: ref('CPI, art. L. 615-5 · Saisie-contrefaçon', 'LEGIARTI000028716713'),
+  L615_5_2: ref('CPI, art. L. 615-5-2 · Droit d’information', 'LEGIARTI000028716685'),
+  L615_7: ref('CPI, art. L. 615-7 · Dommages et intérêts', 'LEGIARTI000028716670'),
+  L615_8: ref('CPI, art. L. 615-8 · Prescription', 'LEGIARTI000038613109'),
+  L615_9: ref(
+    'CPI, art. L. 615-9 · Action en déclaration de non-contrefaçon',
+    'LEGIARTI000006279575',
+  ),
+  R615_3: ref('CPI, art. R. 615-3 · Délai pour agir au fond', 'LEGIARTI000036990081'),
+  L151_1: ref('C. com., art. L. 151-1 · Secret des affaires', 'LEGIARTI000037266553'),
+  C1240: ref('C. civ., art. 1240 · Responsabilité du fait personnel', 'LEGIARTI000032041571'),
+  C1344: ref('C. civ., art. 1344 · Mise en demeure', 'LEGIARTI000032042162'),
+  C2238: ref('C. civ., art. 2238 · Suspension par la médiation', 'LEGIARTI000006447470'),
+  C2240: ref('C. civ., art. 2240 · Interruption par reconnaissance', 'LEGIARTI000019017366'),
+  C2052: ref('C. civ., art. 2052 · Effet de la transaction', 'LEGIARTI000033458761'),
+  CPC145: ref('CPC, art. 145 · Mesure d’instruction avant procès', 'LEGIARTI000006410268'),
+  CPC480: ref('CPC, art. 480 · Autorité de la chose jugée', 'LEGIARTI000039725797'),
+  CPC1528_3: ref('CPC, art. 1528-3 · Confidentialité des modes amiables', 'LEGIARTI000051930598'),
+  CPC1532_1: ref('CPC, art. 1532-1 · Audience de règlement amiable', 'LEGIARTI000051930581'),
+  CPC1537: ref('CPC, art. 1537 · Mesures malgré l’amiable', 'LEGIARTI000051930524'),
+  CPC1546: ref('CPC, art. 1546 · Formule exécutoire', 'LEGIARTI000051930483'),
+  D211_6: ref('COJ, art. D. 211-6 · Tribunal judiciaire de Paris', 'LEGIARTI000039066848'),
+};
+
+type DraftSlide = { blockType: string; title: string; [field: string]: unknown };
+type Card = [title: string, description: string];
+const pages: DraftSlide[] = [];
+
+function add(slide: DraftSlide, sources: string[] = []) {
+  pages.push({
+    ...slide,
+    ...(sources.length ? { footnotes: sources.map((text) => ({ text })) } : {}),
+  });
+}
+
+function grid(eyebrow: string, title: string, cards: Card[], sidebarText?: string): DraftSlide {
+  return {
+    blockType: 'cardGrid',
+    eyebrow,
+    title,
+    columns: cards.length === 3 ? '3' : cards.length === 4 ? '4' : '2',
+    ...(sidebarText ? { sidebarText } : {}),
+    cards: cards.map(([cardTitle, description], i) => ({
+      number: String(i + 1).padStart(2, '0'),
+      title: cardTitle,
+      description,
+    })),
+  };
+}
+
+function split(
+  eyebrow: string,
+  title: string,
+  intro: string,
+  cards: Card[],
+  leftFooter: string,
+): DraftSlide {
+  return {
+    blockType: 'twoCols',
+    eyebrow,
+    title,
+    intro,
+    leftFooter,
+    rightCards: cards.map(([cardTitle, description]) => ({ title: cardTitle, description })),
+  };
+}
+
+function section(number: string, title: string, subtitle: string): DraftSlide {
+  return { blockType: 'section', number, title, subtitle };
+}
+
+/* ───────────────────────── Ouverture ───────────────────────── */
+
+add({
+  blockType: 'cover',
+  pills: [
+    { text: 'Webinaire' },
+    { text: 'Projet innovant' },
+    { text: 'Précontentieux et contentieux' },
+  ],
+  title: 'Conflits de propriété industrielle',
+  subtitle:
+    'De la mise en demeure au règlement du litige : les règles qui décident, les pièges qui coûtent, les réflexes qui protègent le projet.',
+});
+
+add(
+  grid(
+    'Cas fictif · Vous dirigez la PME',
+    'J-15 avant le lancement d’Axéa, votre partenaire vous met en demeure',
+    [
+      [
+        'Le projet',
+        'Axéa a été développé avec un partenaire technique. Les stocks sont fabriqués, les distributeurs attendent, le lancement est dans quinze jours.',
+      ],
+      [
+        'Le désaccord',
+        'Le partenaire vend un produit proche. Il affirme détenir des droits sur les résultats du projet et conteste votre droit de les exploiter sans le rétribuer.',
+      ],
+      [
+        'La lettre',
+        'Son avocat vous met en demeure de suspendre la commercialisation sous huit jours. Aucune pièce jointe, aucun numéro de titre.',
+      ],
+    ],
+    '**Devez-vous suspendre le lancement ?** Gardez votre réponse : nous y reviendrons à la fin, avec les règles en main.',
+  ),
+);
+
+add({
+  blockType: 'agenda',
+  eyebrow: 'Le panorama',
+  title: 'Cinq fonctions, pas cinq étapes',
+  lead: 'Elles se combinent : une saisie-contrefaçon peut précéder le premier courrier, une médiation se tenir pendant le procès.',
+  items: [
+    {
+      label: 'Comprendre le différend',
+      description:
+        'Qui est propriétaire, quelles armes le dépôt du partenaire vous donne, ce qui court déjà.',
+    },
+    {
+      label: 'Écrire et répondre',
+      description:
+        'Ce qu’une lettre vaut, les deux pièges de celui qui écrit, comment reprendre l’initiative.',
+    },
+    {
+      label: 'Chercher un accord avec un tiers',
+      description:
+        'Clause de médiation préalable, confidentialité, protection judiciaire simultanée.',
+    },
+    {
+      label: 'Obtenir une décision',
+      description: 'Contester le titre, référé ou fond, le prix de la vitesse, le chiffrage.',
+    },
+    {
+      label: 'Mettre en œuvre l’issue',
+      description: 'Ce qu’une transaction éteint, les clauses qui mordent, l’exécution.',
+    },
+  ],
+});
+
+/* ───────────────────────── 01 · Comprendre ───────────────────────── */
+
+add(
+  section(
+    '01',
+    'Comprendre le différend',
+    'Avant de répondre, qualifier : qui est propriétaire des résultats, ce que le dépôt du partenaire vous donne, ce qui court déjà. **Pour Axéa** · tout se joue sur le contrat de R&D et sur une date.',
+  ),
+);
+
+add(
+  split(
+    '01 · Comprendre',
+    'Qui est propriétaire des résultats',
+    '**La règle.** L’inventeur est toujours une personne physique ; l’invention faite par un salarié dans sa mission appartient à son employeur[^1]. Deux équipes, deux employeurs : copropriété, et sans règlement écrit, c’est le régime légal supplétif qui s’applique[^2].\n\n**Le piège.** « C’est moi qui ai payé » ne vaut rien sans clause de cession. Le prestataire garde les résultats de ses salariés, sauf stipulation contraire.',
+    [
+      [
+        'Copropriété : exploiter',
+        'Chaque copropriétaire exploite seul, à charge d’indemniser équitablement les autres. Pas de veto.',
+      ],
+      [
+        'Copropriété : agir',
+        'Chacun agit en contrefaçon à son seul profit, en notifiant l’assignation aux autres.',
+      ],
+      [
+        'Copropriété : concéder',
+        'Une licence non exclusive suppose une offre de cession de quote-part ; opposition possible dans les trois mois.',
+      ],
+    ],
+    '**Réflexe Axéa** · dans le contrat de R&D, chercher trois mots : *connaissances antérieures*, *résultats*, *cession*.',
+  ),
+  [S.L611_7, S.L613_29],
+);
+
+add(
+  grid(
+    '01 · Comprendre',
+    'Être titulaire, pouvoir exploiter, pouvoir interdire : trois questions distinctes',
+    [
+      [
+        'Être titulaire',
+        'Détenir le droit, par dépôt ou cession inscrite. Seul le titulaire ou le licencié exclusif agit en contrefaçon, sauf clause contraire[^1].',
+      ],
+      [
+        'Pouvoir exploiter',
+        'Un brevet n’est pas une autorisation d’exploiter. Un titre valable peut dépendre d’un titre antérieur détenu par un tiers.',
+      ],
+      [
+        'Pouvoir interdire',
+        'Territoire, vigueur, annuités payées et surtout portée : lire les revendications, jamais le seul résumé.',
+      ],
+    ],
+    '**Piège Axéa** · le partenaire peut détenir un brevet valable sans qu’Axéa le contrefasse ; et vous pouvez être libre d’exploiter sans rien pouvoir lui interdire. Les deux situations coexistent.',
+  ),
+  [S.L615_2],
+);
+
+add(
+  grid(
+    '01 · Comprendre',
+    'Le partenaire a déposé seul : trois armes pour la PME',
+    [
+      [
+        'Revendiquer la propriété',
+        'Un titre déposé en violation d’une obligation conventionnelle se transfère au vrai titulaire. Cinq ans après publication de la délivrance ; jusqu’à expiration si mauvaise foi[^1].',
+      ],
+      [
+        'Détruire la nouveauté',
+        'Tout ce qui est rendu accessible au public avant le dépôt entre dans l’état de la technique[^2]. Vos propres démonstrations aux clients peuvent annuler *son* brevet, sauf abus évident à votre égard dans les six mois précédant le dépôt[^3].',
+      ],
+      [
+        'Invoquer la possession antérieure',
+        'Qui détenait l’invention de bonne foi avant la date de dépôt peut continuer de l’exploiter malgré le brevet. Droit personnel, transmissible seulement avec l’entreprise.',
+      ],
+    ],
+    '**Réflexe Axéa** · retrouver la date exacte de vos premières démonstrations et de vos fichiers techniques. Sans date certaine, aucune de ces trois armes ne fonctionne.',
+  ),
+  [S.L611_8, S.L611_11, S.L611_13],
+);
+
+add(
+  grid(
+    '01 · Comprendre',
+    'Quatre fondements, quatre régimes de preuve',
+    [
+      [
+        'Contrefaçon',
+        'Un acte reproduit les caractéristiques revendiquées. Le non-fabricant (distributeur, utilisateur) ne répond qu’en connaissance de cause : c’est à cela que sert la mise en demeure[^1].',
+      ],
+      [
+        'Violation du contrat',
+        'Exclusivité, périmètre d’usage, confidentialité : la faute est contractuelle, la preuve est le contrat et son exécution.',
+      ],
+      [
+        'Concurrence déloyale',
+        'Faute, dommage, causalité, sans titre[^2]. Mais la jurisprudence exige des faits distincts de la contrefaçon alléguée : ce n’est pas un plan B automatique.',
+      ],
+      [
+        'Secret des affaires',
+        'Information non connue, à valeur commerciale, protégée par des mesures raisonnables[^3]. Sans NDA ni marquage, le savoir-faire transmis au partenaire n’est pas un secret.',
+      ],
+    ],
+    '**Piège Axéa** · la lettre invoque des « droits sur les résultats » sans choisir. Un produit proche ne prouve ni contrefaçon ni faute : il faut un fondement, et ses preuves.',
+  ),
+  [S.L615_1, S.C1240, S.L151_1],
+);
+
+add(
+  split(
+    '01 · Comprendre',
+    'Ce qui court déjà, indépendamment de la lettre',
+    '**Figer la preuve.** Enveloppe e-Soleau, constat de commissaire de justice, horodatage : un dossier technique non daté ne prouve ni l’antériorité ni la possession personnelle.\n\n**La saisie-contrefaçon** s’obtient sur requête, sans débat[^1], mais oblige à assigner au fond sous vingt jours ouvrables ou trente et un jours civils, sinon nullité et responsabilité du saisissant.',
+    [
+      [
+        'Prescription de la contrefaçon',
+        'Cinq ans depuis le jour où le titulaire a connu ou aurait dû connaître le dernier fait[^2].',
+      ],
+      ['Revendication de propriété', 'Cinq ans depuis la publication de la délivrance du titre.'],
+      [
+        'Ce qui interrompt contre vous',
+        'La reconnaissance du droit de l’autre interrompt la prescription à son profit[^3]. Ne jamais écrire « nous suspendons par courtoisie ».',
+      ],
+    ],
+    '**Réflexe Axéa** · avant toute réponse, fixer une date certaine sur vos développements. C’est gratuit et irremplaçable.',
+  ),
+  [S.L615_5, S.L615_8, S.C2240],
+);
+
+/* ───────────────────────── 02 · Écrire et répondre ───────────────────────── */
+
+add(
+  section(
+    '02',
+    'Écrire et répondre',
+    '**Fait nouveau** · le contrat attribue les résultats « à la partie qui les a développés », sans définir le mot. Une demande de brevet a été déposée au nom du partenaire seul il y a quatorze mois. Vous aviez montré Axéa à trois clients deux mois avant ce dépôt.',
+  ),
+);
+
+add(
+  grid(
+    '02 · Écrire et répondre',
+    'Ce qu’une lettre vaut : nature, auteur, délivrance',
+    [
+      [
+        'La nature',
+        'Une mise en demeure est une interpellation suffisante[^1] : un objet, une mesure, un délai. Le mot ne suffit pas, l’intitulé ne crée rien.',
+      ],
+      [
+        'L’auteur',
+        'La signature d’un avocat ou d’un CPI annonce une position, elle ne la juge pas. Elle engage sa cliente, pas vous.',
+      ],
+      [
+        'La délivrance',
+        'LRAR : preuve de l’envoi et de la date, pas du contenu. Signification par commissaire de justice : acte faisant foi du contenu.',
+      ],
+    ],
+    '**Règle** · ni la signature d’un avocat, ni le recommandé, ni les mots « mise en demeure » ne créent une obligation. Ils fixent une date et une connaissance de cause, rien d’autre.',
+  ),
+  [S.C1344],
+);
+
+add(
+  split(
+    '02 · Cas fictif · Lecture annotée',
+    'La lettre reçue, ligne par ligne',
+    '*Lettre recommandée AR · Objet : mise en demeure*\n\n« Notre cliente détient des droits sur les résultats du projet mené avec votre société, que votre produit **Axéa** reproduit. Nous vous mettons en demeure de **suspendre la commercialisation sous huit jours**. À défaut, nous saisirons le juge aux fins d’interdiction et de réparation. »\n\n*Maître [nom], avocat au barreau de [ville]*',
+    [
+      [
+        'Ce qui est fait correctement',
+        'Un objet, une mesure, un délai : la lettre est une mise en demeure. Elle établit la connaissance de cause à compter de sa réception.',
+      ],
+      [
+        'Ce qui est affirmé sans preuve',
+        '« Détient des droits » : aucun numéro de titre. « Reproduit » : aucune revendication citée. Invérifiable, donc inopposable en l’état.',
+      ],
+      [
+        'Ce qui est inventé',
+        'Le délai de huit jours est choisi par l’expéditeur ; aucun texte ne l’impose. Il ne crée aucune échéance légale.',
+      ],
+    ],
+    '**Réflexe** · la lettre vaut comme date. Elle ne vaut pas comme preuve.',
+  ),
+);
+
+add(
+  grid(
+    '02 · Écrire et répondre',
+    'Les deux pièges de celui qui écrit',
+    [
+      [
+        'Le dénigrement',
+        'Écrire aux clients ou distributeurs de l’adversaire qu’il contrefait, sans jugement, est une concurrence déloyale si l’affirmation manque de base factuelle suffisante ou de mesure. Si le partenaire a écrit à vos distributeurs, c’est lui qui s’expose.',
+      ],
+      [
+        'La menace sans suite',
+        'Annoncer une assignation sous huit jours puis laisser passer trois mois affaiblit toute demande d’urgence ultérieure : le juge apprécie aussi la diligence du demandeur.',
+      ],
+    ],
+    '**Règle** · un courrier engage son auteur autant que son destinataire. Avant d’écrire : à qui, avec quelle base factuelle, et serez-vous capable de tenir ce que vous annoncez ?',
+  ),
+);
+
+add(
+  grid(
+    '02 · Écrire et répondre',
+    'Répondre sans reconnaître, et reprendre l’initiative',
+    [
+      [
+        'Exiger les pièces',
+        'Numéro du titre, revendications, rapport de recherche de l’INPI (public, il contient l’opinion sur la brevetabilité). La base INPI dit en cinq minutes si les annuités sont payées.',
+      ],
+      [
+        'Sommer de prendre parti',
+        'Qui exploite ou prépare sérieusement une exploitation peut inviter le titulaire à dire si son brevet s’y oppose. Silence de trois mois ou réponse contestée : action en déclaration de non-contrefaçon[^1].',
+      ],
+      [
+        'Ne rien reconnaître',
+        'Une phrase de courtoisie qui admet un droit interrompt la prescription à votre détriment. Demander un délai ne suspend rien, contrairement à une médiation engagée[^2].',
+      ],
+      [
+        'Cadrer l’échange',
+        'Interlocuteurs, pouvoir de signature, ce qui pourra être produit en cas d’échec. La procédure participative, un avocat par partie, encadre tout cela.',
+      ],
+    ],
+    '**Réflexe Axéa** · vous n’êtes pas condamné à attendre son assignation. L’article L. 615-9 vous permet de renverser l’initiative : c’est lui qui devra prendre parti.',
+  ),
+  [S.L615_9, S.C2238],
+);
+
+/* ───────────────────────── 03 · Accord avec un tiers ───────────────────────── */
+
+add(
+  section(
+    '03',
+    'Chercher un accord avec un tiers',
+    '**Fait nouveau** · le partenaire joint sa demande de brevet. La revendication 1 est large ; le rapport de recherche cite deux antériorités « X ». Il propose une rencontre.',
+  ),
+);
+
+add(
+  grid(
+    '03 · Accord avec un tiers',
+    'Médiation : ce que le contrat impose, ce que la loi protège',
+    [
+      [
+        'La clause préalable',
+        'Une clause de médiation ou de conciliation préalable dans le contrat de R&D rend irrecevable l’assignation directe : fin de non-recevoir, jurisprudence constante. À vérifier avant d’assigner, dans les deux sens.',
+      ],
+      [
+        'La confidentialité',
+        'Tout ce qui est dit, écrit ou élaboré en médiation est confidentiel[^1]. Mais une pièce antérieure, simplement produite pendant le processus, ne le devient pas.',
+      ],
+      [
+        'Le bon tiers',
+        'Médiateur technique, centre spécialisé en PI (OMPI). Si un inventeur salarié est en cause : commission nationale des inventions de salariés.',
+      ],
+    ],
+    '**Piège Axéa** · accepter la rencontre sans cadre écrit, c’est risquer que vos déclarations ressortent au procès. Signer d’abord un accord de médiation.',
+  ),
+  [S.CPC1528_3],
+);
+
+add(
+  grid(
+    '03 · Accord avec un tiers',
+    'Négocier et se protéger en même temps',
+    [
+      [
+        'La prescription se suspend',
+        'Dès l’accord de médiation ou de conciliation, ou à défaut d’écrit dès la première réunion[^1]. Elle reprend à la fin du processus, pour six mois au moins.',
+      ],
+      [
+        'Le juge reste accessible',
+        'L’amiable n’empêche ni une mesure d’instruction, ni une mesure provisoire ou conservatoire[^2]. Saisie-contrefaçon et médiation peuvent coexister.',
+      ],
+      [
+        'Même après l’assignation',
+        'Le juge peut ordonner une médiation en cours d’instance ; l’audience de règlement amiable confie le dossier à un juge dédié qui ne tranche pas[^3].',
+      ],
+    ],
+    '**Règle** · l’amiable n’est pas une trêve juridique. Ce qui n’est pas expressément suspendu continue de courir, notamment les délais devant les offices.',
+  ),
+  [S.C2238, S.CPC1537, S.CPC1532_1],
+);
+
+/* ───────────────────────── 04 · Obtenir une décision ───────────────────────── */
+
+add(
+  section(
+    '04',
+    'Obtenir une décision',
+    '**Fait nouveau** · la médiation échoue sur le prix. Le partenaire maintient sa revendication 1 et vous laisse dix jours. Il faut choisir l’autorité, la portée et la vitesse.',
+  ),
+);
+
+add(
+  grid(
+    '04 · Obtenir une décision',
+    'Contester le titre du partenaire',
+    [
+      [
+        'L’opposition devant l’INPI',
+        'Neuf mois à compter de la publication de la délivrance au BOPI[^1]. Procédure administrative, pas de dommages-intérêts.',
+      ],
+      [
+        'La nullité devant le juge',
+        'Défaut de nouveauté ou d’activité inventive, insuffisance de description. Souvent soulevée en défense ; la validité se juge sur les revendications.',
+      ],
+      [
+        'La revendication de propriété',
+        'Obtenir le transfert du titre plutôt que son annulation : préférable quand l’invention est bonne et qu’elle est la vôtre.',
+      ],
+      [
+        'Le tribunal compétent',
+        'Tribunal judiciaire de Paris, compétence exclusive en brevets[^2]. Brevet européen à effet unitaire : juridiction unifiée du brevet.',
+      ],
+    ],
+    '**Réflexe Axéa** · le rapport de recherche cite deux antériorités « X ». Avant tout, les lire : elles peuvent valoir une nullité ou une limitation de la revendication 1.',
+  ),
+  [S.R613_44, S.D211_6],
+);
+
+add(
+  {
+    blockType: 'table',
+    eyebrow: '04 · Obtenir une décision',
+    title: 'Référé, fond ou arbitre : trois portées différentes',
+    lead: '**Règle** · le provisoire décrit la portée de la décision, pas son importance : une interdiction en référé peut tuer un lancement.',
+    columns: [
+      { header: 'Trois voies' },
+      { header: 'Référé' },
+      { header: 'Fond' },
+      { header: 'Arbitre' },
+    ],
+    rows: [
+      {
+        cells: [
+          { value: '**Ce qu’on obtient**' },
+          { value: 'Mesure provisoire, provision, interdiction sous garantie[^1].' },
+          { value: 'Validité, propriété, contrefaçon, réparation : la décision qui s’impose[^2].' },
+          { value: 'Une sentence entre les parties, seulement si une clause le prévoit.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Ce qu’il faut montrer**' },
+          { value: 'Une atteinte vraisemblable, ou l’absence de contestation sérieuse.' },
+          { value: 'Les faits et le droit, selon les règles de preuve ordinaires.' },
+          { value: 'Ce que la convention d’arbitrage permet de soumettre.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Ce que ça ne fait pas**' },
+          { value: 'Trancher le principal. Modifiable en cas de circonstances nouvelles.' },
+          { value: 'Aller vite : plusieurs mois, sauf jour fixe ou procédure accélérée.' },
+          { value: 'Annuler un titre à l’égard de tous. La sentence lie les parties.' },
+        ],
+      },
+    ],
+  },
+  [S.L615_3, S.CPC480],
+);
+
+add(
+  grid(
+    '04 · Obtenir une décision',
+    'Les voies rapides et leur contrepartie',
+    [
+      [
+        'Avant tout procès',
+        'Une mesure d’instruction pour un motif légitime[^1], une provision si l’obligation n’est pas sérieusement contestable, le droit d’information sur l’origine et les réseaux de distribution[^2].',
+      ],
+      [
+        'Sans l’adversaire',
+        'La saisie-contrefaçon ou l’interdiction sur requête donnent l’effet de surprise, contre l’obligation d’agir au fond sous vingt jours ouvrables ou trente et un jours civils[^3].',
+      ],
+      [
+        'Le prix de la vitesse',
+        'Le juge peut subordonner l’interdiction à une garantie. Une mesure obtenue à tort engage la responsabilité de celui qui l’a demandée. Aucun calendrier d’audience n’est garanti.',
+      ],
+    ],
+    '**Piège Axéa** · demander une interdiction provisoire contre le produit du partenaire sans avoir lu ses revendications, c’est risquer de payer son préjudice si la mesure est levée.',
+  ),
+  [S.CPC145, S.L615_5_2, S.R615_3],
+);
+
+add(
+  split(
+    '04 · Obtenir une décision',
+    'Ce que vaut une condamnation',
+    '**La règle.** Le juge prend en considération distinctement les conséquences économiques négatives dont le manque à gagner, le préjudice moral, et les bénéfices du contrefacteur y compris ses économies d’investissement[^1]. Alternative sur demande : un forfait supérieur aux redevances qui auraient été dues.\n\n**Le piège.** Sans marges, volumes et prix documentés, le juge évalue défavorablement. Le chiffre d’affaires ne suffit pas.',
+    [
+      [
+        'Ce que ça implique au dossier',
+        'Conserver la comptabilité analytique du produit, les devis perdus, les prix de licence du secteur.',
+      ],
+      [
+        'Ce que ça change dans la négociation',
+        'Une transaction a une valeur propre : les frais réels ne sont que partiellement remboursés, et l’exécution contre un partenaire fragile reste incertaine.',
+      ],
+    ],
+    '**Réflexe Axéa** · chiffrer avant de choisir la voie. Une licence à 6 % peut valoir plus qu’une condamnation mal prouvée.',
+  ),
+  [S.L615_7],
+);
+
+/* ───────────────────────── 05 · Mettre en œuvre ───────────────────────── */
+
+add(
+  section(
+    '05',
+    'Mettre en œuvre l’issue',
+    '**Fait nouveau** · après lecture des antériorités, le partenaire propose une licence à 6 % du chiffre d’affaires, exclusivité France, et l’abandon réciproque de toute action. Qu’est-ce que vous signez vraiment ?',
+  ),
+);
+
+add(
+  grid(
+    '05 · Mettre en œuvre',
+    'Ce qu’une transaction éteint',
+    [
+      [
+        'La règle',
+        'Écrit et concessions réciproques. La transaction fait obstacle à toute action entre les parties ayant le même objet[^1] : ce qui est transigé est perdu.',
+      ],
+      [
+        'Le piège',
+        'Une renonciation « à toute action relative aux résultats du projet » éteint aussi votre revendication de propriété et votre action en nullité, que vous croyiez réservées.',
+      ],
+      [
+        'Les tiers',
+        'L’accord n’engage pas les copropriétaires, licenciés ou distributeurs qui n’y sont pas parties. Une licence non inscrite au registre n’est pas opposable aux tiers[^2].',
+      ],
+      [
+        'La force exécutoire',
+        'Homologation par le juge, ou formule exécutoire apposée par le greffe sur l’acte contresigné par les avocats des deux parties, même hors médiation[^3].',
+      ],
+    ],
+    '**Réflexe Axéa** · délimiter l’objet de la transaction : quels faits, quelle période, quel titre, quelles demandes. Tout ce qui n’est pas nommé est en principe réservé ; tout ce qui est nommé largement est perdu.',
+  ),
+  [S.C2052, S.L613_9, S.CPC1546],
+);
+
+add(
+  grid(
+    '05 · Mettre en œuvre',
+    'Les clauses qui mordent',
+    [
+      [
+        'Périmètre et registre',
+        'Produits, territoires, durée, exclusivité. Inscription de la licence au Registre national des brevets, sinon inopposable aux tiers.',
+      ],
+      [
+        'Redevance et audit',
+        'Assiette définie (chiffre d’affaires net ?), échéancier, droit d’audit comptable, intérêts et résiliation en cas de retard.',
+      ],
+      [
+        'Améliorations',
+        'À qui appartiennent les développements futurs de chaque partie ? Une clause de retour (grant-back) exclusive est à manier avec prudence au regard du droit de la concurrence.',
+      ],
+      [
+        'Validité du titre',
+        'Si le brevet est annulé ensuite, que deviennent les redevances ? Une clause de non-contestation peut être écartée ; prévoir plutôt la fin des redevances.',
+      ],
+    ],
+    '**Règle** · transformer chaque principe en obligation vérifiable, avec un responsable, une échéance et une sanction. Une ambiguïté à la signature est un litige dans deux ans.',
+  ),
+);
+
+/* ───────────────────────── Conclusion ───────────────────────── */
+
+add(
+  grid(
+    'Retour au cas fictif',
+    'Trois issues, trois leviers',
+    [
+      [
+        'Poursuivre sous licence',
+        'Si la revendication 1 résiste aux antériorités et couvre Axéa. Votre monnaie d’échange : la possession personnelle antérieure et la menace de nullité.',
+      ],
+      [
+        'Organiser la séparation',
+        'Si les apports sont dissociables. L’accord répartit droits, usages, stocks et documents ; le règlement de copropriété remplace le régime légal.',
+      ],
+      [
+        'Faire trancher',
+        'Si le désaccord sur la propriété persiste. Revendication de propriété, nullité, ou action en déclaration de non-contrefaçon : vous choisissez le terrain.',
+      ],
+    ],
+    '**Règle** · aucune issue ne se choisit sur la lettre. Elle se choisit sur les pièces, la date de vos développements et l’échéance la plus proche.',
+  ),
+);
+
+add(
+  grid(
+    'Retour à votre première décision',
+    'Suspendre le lancement ? Non, et voici les huit jours',
+    [
+      [
+        'Jour 1',
+        'Fixer une date certaine sur vos développements et vos démonstrations clients. Ne rien effacer, ne rien modifier.',
+      ],
+      [
+        'Jour 2',
+        'Lire la clause de propriété des résultats du contrat de R&D et chercher une clause de médiation préalable.',
+      ],
+      [
+        'Jour 3',
+        'Interroger la base INPI : numéro, revendications, rapport de recherche, annuités. Lire les antériorités citées.',
+      ],
+      [
+        'Jour 8',
+        'Répondre sans reconnaître, exiger les pièces, et sommer le titulaire de prendre parti sur l’opposabilité de son brevet à Axéa.',
+      ],
+    ],
+    '**Ce qui aurait justifié de suspendre** · une revendication lisible qui couvre Axéa, aucune antériorité, aucune preuve de date de votre côté. Rien de cela ne ressort de la lettre.',
+  ),
+);
+
+add({
+  blockType: 'cta',
+  eyebrow: 'Merci',
+  title: 'Merci',
+  subtitle:
+    'Nous vous offrons un premier échange de 30 minutes pour faire le point sur vos besoins.',
+  primaryAction: 'Prendre rendez-vous',
+  primaryActionUrl: '{org.bookingUrl}',
+  footerNote:
+    'Panorama principalement français · Cas fictif · Les situations individuelles appellent une analyse de leur dossier',
+});
+
+/* ───────────────────────── Validation et écriture ───────────────────────── */
+
+function validatedSlides() {
+  const ids = new Set<string>();
+  return pages.map((slide, index) => {
+    const parsed = AI_SLIDE_SCHEMA.safeParse(slide);
+    if (!parsed.success) {
+      throw new Error(
+        `Slide ${index + 1} « ${slide.title} » : ${JSON.stringify(parsed.error.issues)}`,
+      );
+    }
+    const id = `webinaire-pi-${slugFromTitle(slide.title)}`;
+    if (ids.has(id)) throw new Error(`Identifiant de diapositive en doublon : ${id}`);
+    ids.add(id);
+    const spec = SPEC_BY_TYPE.get(slide.blockType)!;
+    const defaults = Object.fromEntries(
+      fieldsOf(spec)
+        .filter((field) => field.factory !== 'preview')
+        .map((field) => [
+          field.name,
+          field.payload?.defaultValue ?? (field.payload?.type === 'array' ? [] : null),
+        ]),
+    );
+    return {
+      ...defaults,
+      ...parsed.data,
+      blockType: slide.blockType,
+      layoutContent: null,
+      id,
+    };
+  });
+}
+
+function comparableContent(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(comparableContent);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key, child]) => key !== 'id' && key !== 'blockName' && child != null)
+        .map(([key, child]) => [key, comparableContent(child)]),
+    );
+  }
+  return value;
+}
+
+const { values } = parseArgs({
+  // run-seed.ts forwards the seed name as a positional argument.
+  allowPositionals: true,
+  options: {
+    check: { type: 'boolean', default: false },
+    inspect: { type: 'boolean', default: false },
+    build: { type: 'boolean', default: false },
+  },
+});
+const authored = validatedSlides();
+if (values.check) {
+  console.log(
+    JSON.stringify(
+      {
+        title: TITLE,
+        slides: authored.length,
+        schema: 'valid',
+        layouts: [...new Set(authored.map((slide) => slide.blockType))],
+      },
+      null,
+      2,
+    ),
+  );
+} else {
+  process.env.PAYLOAD_DB_PUSH = '0';
+  process.env.MASTRA_DISABLE_INIT = '1';
+  const [{ getPayload }, { default: config }, { closeScriptPayload }] = await Promise.all([
+    import('payload'),
+    import('../src/payload.config'),
+    import('./lib/payloadScript'),
+  ]);
+  const payload = await getPayload({ config, disableOnInit: true, cron: false });
+  try {
+    const organisations = await payload.find({
+      collection: 'organisations',
+      where: { name: { equals: ORGANISATION } },
+      limit: 2,
+      depth: 0,
+      overrideAccess: true,
+    });
+    if (organisations.totalDocs !== 1)
+      throw new Error(`Organisation ${ORGANISATION} introuvable ou ambiguë`);
+    const organisation = organisations.docs[0]!;
+    const existing = await payload.find({
+      collection: 'presentations',
+      where: { and: [{ title: { equals: TITLE } }, { organisation: { equals: organisation.id } }] },
+      limit: 2,
+      depth: 0,
+      overrideAccess: true,
+    });
+    if (existing.totalDocs > 1)
+      throw new Error('Plusieurs présentations portent ce titre dans cette organisation');
+    let presentation = existing.docs[0];
+    if (!values.inspect) {
+      // Keep the cover speakers configured in the admin: they are not authored here.
+      const previousCover = presentation?.slides?.find((slide) => slide.blockType === 'cover') as
+        | { intervenants?: unknown }
+        | undefined;
+      const { convertSlidesMarkdownToLexical } = await import('../src/lib/richTextWrite');
+      const richSlides = await convertSlidesMarkdownToLexical(structuredClone(authored), payload);
+      const cover = richSlides.find((slide) => slide.blockType === 'cover') as
+        | { intervenants?: unknown }
+        | undefined;
+      if (cover && previousCover?.intervenants) cover.intervenants = previousCover.intervenants;
+      parseDocumentRenderPages(TEMPLATE, richSlides);
+      const data = {
+        title: TITLE,
+        slug: slugFromTitle(TITLE),
+        organisation: organisation.id,
+        documentTemplate: 'presentation' as const,
+        language: 'fr' as const,
+        agentBrief:
+          'Webinaire panorama en droit français pour dirigeants de projets innovants. Cinq fonctions : comprendre, écrire et répondre, accord avec un tiers, obtenir une décision, mettre en œuvre. Cas fictif PME Axéa et partenaire technique, avec un fait nouveau à chaque section. Chaque slide énonce une règle, un piège et un réflexe. Sources Légifrance vérifiées ; CPC dans la numérotation du décret 2025-660.',
+        slides: richSlides as Presentation['slides'],
+      };
+      presentation = presentation
+        ? await payload.update({
+            collection: 'presentations',
+            id: presentation.id,
+            data,
+            context: { skipBuildQueue: true },
+            overrideAccess: true,
+            depth: 0,
+          })
+        : await payload.create({
+            collection: 'presentations',
+            data,
+            context: { skipBuildQueue: true },
+            overrideAccess: true,
+            depth: 0,
+          });
+      const saved = await payload.findByID({
+        collection: 'presentations',
+        id: presentation.id,
+        depth: 0,
+        overrideAccess: true,
+      });
+      if (
+        saved.organisation !== organisation.id ||
+        saved.slides?.length !== pages.length ||
+        saved.slides.some(
+          (slide, index) => !('title' in slide) || slide.title !== pages[index]?.title,
+        )
+      ) {
+        throw new Error('La relecture Payload ne correspond pas aux diapositives enregistrées');
+      }
+      if (
+        !isDeepStrictEqual(
+          comparableContent(parseDocumentRenderPages(TEMPLATE, saved.slides)),
+          comparableContent(parseDocumentRenderPages(TEMPLATE, richSlides)),
+        )
+      ) {
+        throw new Error('Le contenu relu contient des champs absents ou différents de la source');
+      }
+      console.log(
+        `Présentation enregistrée et relue intégralement : ${presentation.id} (${pages.length} slides)`,
+      );
+      if (values.build) {
+        const { runBuildSlidesTask } = await import('../src/jobs/buildSlidesRunner');
+        const result = await runBuildSlidesTask({
+          input: { presentationId: String(presentation.id) },
+          req: { payload },
+        });
+        if (!result.output.success)
+          throw new Error(`Échec du build : ${JSON.stringify(result.output)}`);
+      }
+    }
+    if (!presentation) throw new Error('La présentation n’existe pas encore');
+    const result = await payload.findByID({
+      collection: 'presentations',
+      id: presentation.id,
+      depth: 1,
+      overrideAccess: true,
+    });
+    console.log(
+      JSON.stringify(
+        {
+          id: result.id,
+          title: result.title,
+          slug: result.slug,
+          slides: result.slides?.length,
+          lastBuildStatus: result.lastBuildStatus,
+          lastBuildError: result.lastBuildError,
+        },
+        null,
+        2,
+      ),
+    );
+  } catch (error) {
+    console.error(error);
+    process.exitCode = 1;
+  } finally {
+    await closeScriptPayload(payload);
+  }
+  process.exit(process.exitCode ?? 0);
+}
