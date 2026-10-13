@@ -445,7 +445,6 @@
 .slidev-layout .k-btn,
 .slidev-layout .k-btn-ghost,
 .slidev-layout .k-person-name a,
-.slidev-layout .k-person-link,
 .slidev-layout .k-slide-footer a,
 .slidev-layout .k-slide-logo-link {
   text-decoration: none;
@@ -2281,14 +2280,16 @@
   max-width: min(100%, 54rem);
 }
 /* A cover speaker is part of the opening composition, not a compact metadata
-   chip. Give the portrait enough presence, vertically centre the two columns,
-   and list the contact channels as readable rows beneath the identity. */
+   chip. One padding on every side, the portrait and the identity block share
+   the same top edge, the icon row sits on the text's left rail, and the card
+   hugs its content instead of stretching to the band width. */
 .k-cover-people .k-person-card {
   grid-template-columns: 4.25rem minmax(0, 1fr);
   align-items: center;
   gap: 1.1rem;
-  padding: 1rem 1.25rem 1rem 1rem;
-  max-width: 30rem;
+  padding: 1.1rem;
+  min-width: 0;
+  max-width: max-content;
 }
 .k-cover-people .k-person-card > a:has(> .k-person-avatar) {
   align-self: center;
@@ -2299,14 +2300,26 @@
 }
 .k-cover-people .k-person-body {
   justify-content: center;
+  padding-right: 0.3rem;
+}
+.k-cover-people .k-person-name,
+.k-cover-people .k-person-title {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.k-cover-people .k-person-name {
+  line-height: 1.1;
+}
+.k-cover-people .k-person-title {
+  margin-top: 0.15rem;
 }
 .k-cover-people .k-person-contact {
-  margin-top: 0.6rem;
-  padding-top: 0;
-  gap: 0.2rem;
+  margin-top: 0;
+  padding-top: 0.6rem;
+  gap: 0.3rem;
   flex-wrap: nowrap;
-  flex-direction: column;
-  align-items: flex-start;
+  margin-left: -0.45rem; /* optical: icon glyphs share the text's left rail */
 }
 .k-cover.k-density-compact .k-cover-people,
 .k-cover.k-density-dense .k-cover-people {
@@ -2332,13 +2345,8 @@
 }
 .k-cover.k-density-dense .k-person-contact {
   flex-wrap: wrap;
-  flex-direction: row;
   column-gap: 0.6rem;
   row-gap: 0.05rem;
-}
-.k-cover.k-density-dense .k-person-link-text,
-.k-cover.k-density-dense .k-person-description {
-  display: none;
 }
 /* Person card: the shared contact unit (cover band, cardGrid strip, contacts
    grid). Corporate decks render flat (the print override below strips every
@@ -2417,18 +2425,10 @@
   text-overflow: ellipsis;
 }
 .k-person-description {
-  margin-top: 0.3rem;
-  font-size: var(--t-small);
-  line-height: 1.3;
-  color: var(--fg-muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: none;
 }
-/* Separate, wrapping contact links retain their PDF annotations. Each link
-   shows its icon and its readable value so the slide carries the contact
-   detail itself rather than relying on hover or the PDF annotation. */
+/* Separate, wrapping contact links retain their PDF annotations. Spacing,
+   not punctuation attached to a link, separates each actionable detail. */
 .k-person-contact {
   margin-top: auto;
   padding-top: 0.42rem;
@@ -2442,26 +2442,20 @@
 .k-person-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
   flex: none;
-  max-width: 100%;
-  min-height: 1.5rem;
-  color: inherit;
+  width: 1.9rem;
+  height: 1.9rem;
+  color: var(--k-teal);
+  border: 1px solid color-mix(in srgb, var(--k-teal) 28%, transparent);
+  border-radius: 999px;
   text-decoration: none;
-  font-size: var(--t-small);
-  line-height: 1.2;
 }
 .k-person-link > svg {
   flex: none;
   width: 1rem;
   height: 1rem;
-  color: var(--k-teal);
-}
-.k-person-link-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: inherit;
 }
 /* Outrank generic slide links: no rose underline or faded name on a card. */
 .slidev-layout .k-person-card a {
@@ -2490,9 +2484,6 @@
 .k-dark .k-person-avatar {
   outline-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.1);
-}
-.k-dark .k-person-link > svg {
-  color: var(--k-rose);
 }
 .k-dark .k-person-initials {
   background: transparent;

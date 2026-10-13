@@ -117,44 +117,27 @@ const contactSvg = {
     '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icons-tabler-outline icon-tabler-world tabler-icon tabler-icon-world" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M3.6 9h16.8"/><path d="M3.6 15h16.8"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>',
 } as const;
 
-/** Visible text for a contact link: an email or phone is shown as-is, a URL as its host and path without scheme or trailing slash. */
-function contactText(kind: keyof typeof contactSvg, value: string): string {
-  if (kind === 'email' || kind === 'phone') return value;
-  return value.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '');
-}
-
-function contactRow(
-  kind: keyof typeof contactSvg,
-  href: string,
-  label: string,
-  text: string,
-): string {
-  return `<a class="${K.personLink} ${K.personLink}--${kind}" href="${escape(href)}" aria-label="${escape(label)}" title="${escape(label)}">${contactSvg[kind]}<span class="${K.personLinkText}">${escape(text)}</span></a>`;
+function contactLink(kind: keyof typeof contactSvg, href: string, label: string): string {
+  return `<a class="${K.personLink}" href="${escape(href)}" aria-label="${escape(label)}" title="${escape(label)}">${contactSvg[kind]}</a>`;
 }
 
 function personContacts(person: PersonCard): string {
   const items: string[] = [];
   const mailto = person.email ? safeHref(`mailto:${person.email}`) : null;
   if (mailto && person.email) {
-    items.push(contactRow('email', mailto, person.email, contactText('email', person.email)));
+    items.push(contactLink('email', mailto, person.email));
   }
   const tel = telHref(person.phone);
   if (tel && person.phone) {
-    items.push(contactRow('phone', tel, person.phone, contactText('phone', person.phone)));
+    items.push(contactLink('phone', tel, person.phone));
   }
   const linkedin = safeHref(person.linkedin);
-  if (linkedin && person.linkedin) {
-    items.push(
-      contactRow('linkedin', linkedin, 'LinkedIn', contactText('linkedin', person.linkedin)),
-    );
+  if (linkedin) {
+    items.push(contactLink('linkedin', linkedin, 'LinkedIn'));
   }
   const website =
     person.website && /^https?:\/\/\S+$/i.test(person.website) ? safeHref(person.website) : null;
-  if (website && person.website) {
-    items.push(
-      contactRow('website', website, 'Profil Klarc', contactText('website', person.website)),
-    );
-  }
+  if (website) items.push(contactLink('website', website, 'Profil Klarc'));
   if (items.length === 0) return '';
   return `\n      <div class="${K.personContact}">${items.join('')}</div>`;
 }
