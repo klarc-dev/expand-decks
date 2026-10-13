@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CTX } from '../../lib/context';
 import { BUILD_SLIDES_TASK } from '../../jobs/buildSlides';
 import { BUILD_STATUS } from '../../lib/status';
 import { buildInputsChanged } from '../../lib/buildFingerprint';
-import { afterPresentationChange } from '../afterPresentationChange';
+import { afterPresentationChange, canRunJobsInProcess } from '../afterPresentationChange';
 
 const base = {
   slides: [{ blockType: 'cover', title: 'A' }],
@@ -14,7 +14,12 @@ const base = {
 };
 
 describe('afterPresentationChange', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('queues a build on every update save, even when the presentation is not published', async () => {
+    vi.stubEnv('PAYLOAD_WORKER', '1');
     const updateOne = vi.fn().mockResolvedValue({});
     const queue = vi.fn().mockResolvedValue({});
     const run = vi.fn().mockResolvedValue({});
@@ -55,6 +60,37 @@ describe('afterPresentationChange', () => {
     // the next autoRun tick. It runs in a void-ed microtask, so flush before asserting.
     await Promise.resolve();
     expect(run).toHaveBeenCalled();
+  });
+
+  it('queues but never runs the job in-process from a short-lived script', async () => {
+    // A seed or `pnpm prod run` script exits right after its save; an in-process
+    // run would claim the job and die mid-build, stranding it at processing=true.
+    vi.stubEnv('PAYLOAD_WORKER', '');
+    vi.stubEnv('PAYLOAD_RUN_JOBS_IN_PROCESS', '');
+    const queue = vi.fn().mockResolvedValue({});
+    const run = vi.fn().mockResolvedValue({});
+
+    await afterPresentationChange({
+      doc: { id: 'presentation-1', status: 'draft', ...base },
+      operation: 'update',
+      req: {
+        context: {},
+        payload: { db: { updateOne: vi.fn().mockResolvedValue({}) }, jobs: { queue, run } },
+      },
+    } as never);
+    await Promise.resolve();
+
+    expect(queue).toHaveBeenCalledTimes(1);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('decides in-process runs from the process lifetime, with an explicit override', () => {
+    vi.stubEnv('PAYLOAD_WORKER', '');
+    expect(canRunJobsInProcess(undefined)).toBe(false);
+    expect(canRunJobsInProcess('1')).toBe(true);
+    vi.stubEnv('PAYLOAD_WORKER', '1');
+    expect(canRunJobsInProcess(undefined)).toBe(true);
+    expect(canRunJobsInProcess('0')).toBe(false);
   });
 
   it('reuses the active request transaction for the create-time status patch', async () => {

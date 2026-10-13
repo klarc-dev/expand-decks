@@ -64,18 +64,22 @@ await runPayloadScript(async (payload) => {
       agentBrief: '',
       slides: fixture.slides as never,
     };
+    // The script builds synchronously below; suppress the hook's queued build
+    // so the worker does not rebuild the same revision a minute later.
     const presentation = previous.docs[0]
       ? await payload.update({
           collection: COLLECTIONS.presentations,
           id: previous.docs[0].id,
           data,
           depth: 0,
+          context: { skipBuildQueue: true },
         })
       : await payload.create({
           collection: COLLECTIONS.presentations,
           data,
           depth: 0,
           draft: false,
+          context: { skipBuildQueue: true },
         });
 
     const result = await runBuildSlidesTask({
