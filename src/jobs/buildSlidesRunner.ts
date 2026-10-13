@@ -30,7 +30,6 @@ import { documentExportPlan } from '../documents/exportPlan';
 import { assertDocumentPages, resolveDocumentTemplate } from '../documents/templates';
 import { assertMediaFilename, referencedMediaFiles } from '../export/mediaFiles';
 import { buildSlidesMd } from '../export/buildSlidesMd';
-import { resolveInternalPdfLinks } from '../export/pdfLinks';
 import {
   buildFooterHeadmatter,
   buildFooterLayer,
@@ -423,34 +422,14 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     const hasImages = hasAnyLogo(logos) || slides.some(slideHasImages);
 
     // Use one staged workdir and run the native commands sequentially for
-    // deterministic output. The export helper retains the fixed 120s CLI timeout,
-    // Mermaid/image settling, and range/per-slide options needed by PNG exports.
+    // deterministic output. Every export is a single-pass print-route capture
+    // (see slidevExportArgs.ts); kPage/kTotal footer data is baked per slide.
     await runSlidev(['build', '--base', './'], workdir);
     await validateSlideLayout(workdir, slides.length);
     await runSlidev(
-      buildSlidevExportArgs({
-        output: ARTIFACTS.pdf,
-        hasMermaid,
-        hasImages,
-        // Verified against pinned Slidev 52.19.1: its default exporter emitted
-        // one PDF page for a two-slide deck. Per-slide mode preserves the
-        // exact 1 block -> 1 page invariant; kPage/kTotal are already baked.
-        perSlide: true,
-      }),
+      buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
       workdir,
     );
-    // Per-slide export means no page can define the named destination a
-    // `<Link>` prints; resolve those links to explicit pages after the merge.
-    // An unparseable file is left as is: the artifact measurement below is
-    // the step that fails a broken export, with a clearer message.
-    const pdfPath = join(/* turbopackIgnore: true */ workdir, ARTIFACTS.pdf);
-    try {
-      writeFileSync(pdfPath, await resolveInternalPdfLinks(readFileSync(pdfPath)));
-    } catch (error) {
-      req.payload.logger.warn(
-        `Internal PDF links left unresolved: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
     const needsCoverImage = exportPlan.images.some(
       (artifact) => artifact.repeat !== 'per-page' && (artifact.pageIndex ?? 0) === 0,
     );
@@ -461,7 +440,6 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           format: 'png',
           hasMermaid: slides[0]?.blockType === 'mermaid',
           hasImages: hasAnyLogo(logos) || slideHasImages(slides[0] ?? {}),
-          perSlide: true,
           range: '1',
         }),
         workdir,
@@ -475,7 +453,6 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
           format: 'png',
           hasMermaid,
           hasImages,
-          perSlide: true,
         }),
         workdir,
       );

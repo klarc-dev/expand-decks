@@ -101,14 +101,12 @@ export async function exportSlidePngs(
       signal,
     });
 
-    // Share the PDF export path's native flag policy (U6): `--wait-until load`
-    // for ordinary decks, Mermaid-aware `networkidle` + settle wait for diagram
-    // decks. `--per-slide` stays PNG-only so global/background layers render.
+    // Share the PDF export path's native flag policy: single-pass print-route
+    // capture with Mermaid-aware settle wait for diagram decks.
     const exportArgs = buildSlidevExportArgs({
       output: outDir,
       format: 'png',
       hasMermaid: deckHasMermaid(slidesMd),
-      perSlide: true,
     });
     await execFile(slidevPath, exportArgs, {
       cwd: workdir,

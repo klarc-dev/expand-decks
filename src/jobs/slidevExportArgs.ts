@@ -13,29 +13,34 @@ export function buildSlidevEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.Pro
   };
 }
 
-type WaitUntil = 'networkidle' | 'load' | 'domcontentloaded' | 'none';
-
 export type SlidevExportArgsOptions = {
   output: string;
   format?: 'pdf' | 'png';
   hasMermaid: boolean;
   hasImages?: boolean;
-  perSlide?: boolean;
   range?: string;
   scale?: number;
 };
 
+/**
+ * Native single-pass Slidev export: one Chromium navigation to the print route
+ * renders every page in a single document, so the settle wait is paid once per
+ * export rather than once per slide. Measured on a 28-slide production deck,
+ * `--per-slide` cost 116s against 6.6s here for pixel-identical pages, and it
+ * also leaked the previous slide's text layer into each page and left `<Link>`
+ * destinations unresolved (no page could define the named anchor).
+ *
+ * The print route must wait for `networkidle`: `load` fires before Slidev has
+ * mounted every page and produced a one-page (or blank) document.
+ */
 export function buildSlidevExportArgs({
   output,
   format = 'pdf',
   hasMermaid,
   hasImages = false,
-  perSlide = false,
   range,
   scale,
 }: SlidevExportArgsOptions): string[] {
-  const hasAsyncVisualAssets = hasMermaid || hasImages;
-  const waitUntil: WaitUntil = hasAsyncVisualAssets ? 'networkidle' : 'load';
   const args = [
     'export',
     '--format',
@@ -45,17 +50,14 @@ export function buildSlidevExportArgs({
     '--timeout',
     String(DEFAULT_TIMEOUT_MS),
     '--wait-until',
-    waitUntil,
+    'networkidle',
   ];
 
-  if (hasAsyncVisualAssets) {
+  if (hasMermaid || hasImages) {
     args.push('--wait', String(VISUAL_ASSET_WAIT_MS));
   }
   if (range) {
     args.push('--range', range);
-  }
-  if (perSlide) {
-    args.push('--per-slide');
   }
   if (format === 'png') {
     args.push('--scale', String(scale ?? 1));

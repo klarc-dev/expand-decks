@@ -4,7 +4,7 @@ import { slideHasImages } from '../buildSlidesRunner';
 import { buildSlidevEnv, buildSlidevExportArgs } from '../slidevExportArgs';
 
 describe('buildSlidevExportArgs', () => {
-  it('uses native single-pass PDF export flags by default', () => {
+  it('uses native single-pass PDF export with networkidle by default', () => {
     expect(buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false })).toEqual([
       'export',
       '--format',
@@ -14,8 +14,18 @@ describe('buildSlidevExportArgs', () => {
       '--timeout',
       '120000',
       '--wait-until',
-      'load',
+      'networkidle',
     ]);
+  });
+
+  it('never emits --per-slide: a single print-route pass is the only export mode', () => {
+    for (const format of ['pdf', 'png'] as const) {
+      for (const hasMermaid of [false, true]) {
+        expect(
+          buildSlidevExportArgs({ output: 'out', format, hasMermaid, range: '1' }),
+        ).not.toContain('--per-slide');
+      }
+    }
   });
 
   it('uses networkidle plus a settle wait for Mermaid decks', () => {
@@ -52,10 +62,8 @@ describe('buildSlidevExportArgs', () => {
     ]);
   });
 
-  it('builds PNG export args with load wait policy for ordinary decks', () => {
-    expect(
-      buildSlidevExportArgs({ output: 'png', format: 'png', hasMermaid: false, perSlide: true }),
-    ).toEqual([
+  it('builds PNG export args with networkidle for ordinary decks', () => {
+    expect(buildSlidevExportArgs({ output: 'png', format: 'png', hasMermaid: false })).toEqual([
       'export',
       '--format',
       'png',
@@ -64,17 +72,14 @@ describe('buildSlidevExportArgs', () => {
       '--timeout',
       '120000',
       '--wait-until',
-      'load',
-      '--per-slide',
+      'networkidle',
       '--scale',
       '1',
     ]);
   });
 
   it('builds PNG export args with Mermaid settle policy for diagram decks', () => {
-    expect(
-      buildSlidevExportArgs({ output: 'png', format: 'png', hasMermaid: true, perSlide: true }),
-    ).toEqual([
+    expect(buildSlidevExportArgs({ output: 'png', format: 'png', hasMermaid: true })).toEqual([
       'export',
       '--format',
       'png',
@@ -86,7 +91,6 @@ describe('buildSlidevExportArgs', () => {
       'networkidle',
       '--wait',
       '4000',
-      '--per-slide',
       '--scale',
       '1',
     ]);
@@ -113,12 +117,6 @@ describe('buildSlidevExportArgs', () => {
     expect(
       buildSlidevExportArgs({ output: 'partial.pdf', hasMermaid: false, range: '2,4-6' }),
     ).toContain('2,4-6');
-  });
-
-  it('keeps per-slide export for cover and agent PNG generation', () => {
-    expect(
-      buildSlidevExportArgs({ output: 'slides.pdf', hasMermaid: false, perSlide: true }),
-    ).toContain('--per-slide');
   });
 
   it('forces Slidev dev mode and strips AI secrets from production subprocesses', () => {

@@ -72,7 +72,7 @@ This is a **Payload CMS 3 + Next.js 16 (App Router)** portal that lets authors c
 
 ### Export smoke verification
 
-Every build produces the canonical PDF, SPA, and first-slide cover through the native Slidev CLI. PDF export is single-pass with baked `kPage` / `kTotal` footer data. Keep the fixed image/Mermaid settling policy in `slidevExportArgs.ts`; do not add operator tuning, partial-output modes, page caches, or PDF assembly without measured production evidence.
+Every build produces the canonical PDF, SPA, and first-slide cover through the native Slidev CLI. **Every export (PDF, cover PNG, per-page PNG) is a single-pass print-route capture** with `--wait-until networkidle` and baked `kPage` / `kTotal` footer data. Never reintroduce `--per-slide`: measured on a 28-slide production deck it took 116s against 6.6s single-pass for pixel-identical pages, leaked the previous slide's text layer into each page (3x larger PDF), and broke `<Link>` destinations (which then needed a pdf-lib rewrite pass). `--wait-until load` is also wrong for the print route: it fires before Slidev mounts every page and yields a one-page document. Keep the fixed image/Mermaid settling policy in `slidevExportArgs.ts`; do not add operator tuning, partial-output modes, page caches, or PDF assembly without measured production evidence.
 
 Worker replicas are constrained by Chromium + Vite memory/CPU. Keep `WORKER_REPLICAS <= host cores - 1` and within container memory (`payload-worker` defaults assume about 2g per replica). Do not increase replicas to mask slow exports before checking timing logs.
 
