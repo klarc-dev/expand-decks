@@ -39,6 +39,7 @@ export const K = {
   personName: 'k-person-name',
   personTitle: 'k-person-title',
   personDescription: 'k-person-description',
+  personLinkText: 'k-person-link-text',
   heroBig: 'k-hero-big',
   heroSub: 'k-hero-sub',
   locationGrid: 'k-location-grid',

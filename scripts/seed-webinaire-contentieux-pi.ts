@@ -119,7 +119,7 @@ add({
   ],
   title: 'Conflits de propriété industrielle',
   subtitle:
-    'De la mise en demeure au règlement du litige : les règles qui décident, les pièges qui coûtent, les réflexes qui protègent le projet.',
+    'De la mise en demeure au règlement du litige : titularité, preuve, délais, mesures provisoires, transaction.',
 });
 
 add(
@@ -140,7 +140,7 @@ add(
         'Son avocat vous met en demeure de suspendre la commercialisation sous huit jours. Aucune pièce jointe, aucun numéro de titre.',
       ],
     ],
-    '**Devez-vous suspendre le lancement ?** Gardez votre réponse : nous y reviendrons à la fin, avec les règles en main.',
+    '**La lettre impose-t-elle de suspendre le lancement ?** La réponse dépend de la titularité des résultats, de la portée du titre invoqué et des preuves de date. Elle est traitée en conclusion.',
   ),
 );
 
@@ -158,7 +158,7 @@ add({
     {
       label: 'Écrire et répondre',
       description:
-        'Ce qu’une lettre vaut, les deux pièges de celui qui écrit, comment reprendre l’initiative.',
+        'Valeur juridique du courrier, risques pour son auteur, sommation de prendre parti.',
     },
     {
       label: 'Chercher un accord avec un tiers',
@@ -171,7 +171,7 @@ add({
     },
     {
       label: 'Mettre en œuvre l’issue',
-      description: 'Ce qu’une transaction éteint, les clauses qui mordent, l’exécution.',
+      description: 'Effet de la transaction, clauses de licence, force exécutoire.',
     },
   ],
 });
@@ -194,7 +194,7 @@ add(
     [
       [
         'Copropriété : exploiter',
-        'Chaque copropriétaire exploite seul, à charge d’indemniser équitablement les autres. Pas de veto.',
+        'Chaque copropriétaire exploite seul, à charge d’indemniser équitablement les autres. L’accord des autres n’est pas requis.',
       ],
       [
         'Copropriété : agir',
@@ -225,10 +225,10 @@ add(
       ],
       [
         'Pouvoir interdire',
-        'Territoire, vigueur, annuités payées et surtout portée : lire les revendications, jamais le seul résumé.',
+        'Territoire, vigueur, annuités payées et portée : la portée se lit dans les revendications, non dans l’abrégé.',
       ],
     ],
-    '**Piège Axéa** · le partenaire peut détenir un brevet valable sans qu’Axéa le contrefasse ; et vous pouvez être libre d’exploiter sans rien pouvoir lui interdire. Les deux situations coexistent.',
+    '**Piège Axéa** · le partenaire peut détenir un brevet valable sans qu’Axéa le contrefasse ; la PME peut être libre d’exploiter sans rien pouvoir lui interdire. Les deux situations sont indépendantes.',
   ),
   [S.L615_2],
 );
@@ -236,7 +236,7 @@ add(
 add(
   grid(
     '01 · Comprendre',
-    'Le partenaire a déposé seul : trois armes pour la PME',
+    'Le partenaire a déposé seul : trois actions ouvertes à la PME',
     [
       [
         'Revendiquer la propriété',
@@ -251,7 +251,7 @@ add(
         'Qui détenait l’invention de bonne foi avant la date de dépôt peut continuer de l’exploiter malgré le brevet. Droit personnel, transmissible seulement avec l’entreprise.',
       ],
     ],
-    '**Réflexe Axéa** · retrouver la date exacte de vos premières démonstrations et de vos fichiers techniques. Sans date certaine, aucune de ces trois armes ne fonctionne.',
+    '**Réflexe Axéa** · établir la date de vos premières démonstrations et de vos fichiers techniques. Les trois actions supposent une date certaine.',
   ),
   [S.L611_8, S.L611_11, S.L611_13],
 );
@@ -271,14 +271,14 @@ add(
       ],
       [
         'Concurrence déloyale',
-        'Faute, dommage, causalité, sans titre[^2]. Mais la jurisprudence exige des faits distincts de la contrefaçon alléguée : ce n’est pas un plan B automatique.',
+        'Faute, dommage, causalité, sans titre[^2]. La jurisprudence exige des faits distincts de ceux invoqués au titre de la contrefaçon.',
       ],
       [
         'Secret des affaires',
         'Information non connue, à valeur commerciale, protégée par des mesures raisonnables[^3]. Sans NDA ni marquage, le savoir-faire transmis au partenaire n’est pas un secret.',
       ],
     ],
-    '**Piège Axéa** · la lettre invoque des « droits sur les résultats » sans choisir. Un produit proche ne prouve ni contrefaçon ni faute : il faut un fondement, et ses preuves.',
+    '**Piège Axéa** · la lettre invoque des « droits sur les résultats » sans qualifier le fondement. La proximité des produits n’établit ni contrefaçon ni faute ; chaque fondement a ses conditions et sa preuve.',
   ),
   [S.L615_1, S.C1240, S.L151_1],
 );
@@ -296,10 +296,10 @@ add(
       ['Revendication de propriété', 'Cinq ans depuis la publication de la délivrance du titre.'],
       [
         'Ce qui interrompt contre vous',
-        'La reconnaissance du droit de l’autre interrompt la prescription à son profit[^3]. Ne jamais écrire « nous suspendons par courtoisie ».',
+        'La reconnaissance du droit de l’autre interrompt la prescription à son profit[^3]. Une suspension « par courtoisie » écrite peut valoir reconnaissance.',
       ],
     ],
-    '**Réflexe Axéa** · avant toute réponse, fixer une date certaine sur vos développements. C’est gratuit et irremplaçable.',
+    '**Réflexe Axéa** · avant toute réponse, donner date certaine aux développements et aux démonstrations clients.',
   ),
   [S.L615_5, S.L615_8, S.C2240],
 );
@@ -332,7 +332,7 @@ add(
         'LRAR : preuve de l’envoi et de la date, pas du contenu. Signification par commissaire de justice : acte faisant foi du contenu.',
       ],
     ],
-    '**Règle** · ni la signature d’un avocat, ni le recommandé, ni les mots « mise en demeure » ne créent une obligation. Ils fixent une date et une connaissance de cause, rien d’autre.',
+    '**Règle** · ni la signature d’un avocat, ni le recommandé, ni l’intitulé « mise en demeure » ne créent une obligation. Ils établissent une date et la connaissance de cause.',
   ),
   [S.C1344],
 );
@@ -363,7 +363,7 @@ add(
 add(
   grid(
     '02 · Écrire et répondre',
-    'Les deux pièges de celui qui écrit',
+    'Les risques pour l’auteur du courrier',
     [
       [
         'Le dénigrement',
@@ -385,7 +385,7 @@ add(
     [
       [
         'Exiger les pièces',
-        'Numéro du titre, revendications, rapport de recherche de l’INPI (public, il contient l’opinion sur la brevetabilité). La base INPI dit en cinq minutes si les annuités sont payées.',
+        'Numéro du titre, revendications, rapport de recherche de l’INPI (public, avec l’opinion sur la brevetabilité). Le registre indique le statut du titre et le paiement des annuités.',
       ],
       [
         'Sommer de prendre parti',
@@ -397,10 +397,10 @@ add(
       ],
       [
         'Cadrer l’échange',
-        'Interlocuteurs, pouvoir de signature, ce qui pourra être produit en cas d’échec. La procédure participative, un avocat par partie, encadre tout cela.',
+        'Interlocuteurs, pouvoir de signature, sort des échanges en cas d’échec. La procédure participative, un avocat par partie, fournit ce cadre.',
       ],
     ],
-    '**Réflexe Axéa** · vous n’êtes pas condamné à attendre son assignation. L’article L. 615-9 vous permet de renverser l’initiative : c’est lui qui devra prendre parti.',
+    '**Réflexe Axéa** · l’article L. 615-9 permet de ne pas attendre l’assignation : c’est au titulaire de prendre parti sur l’opposabilité de son brevet à l’exploitation décrite.',
   ),
   [S.L615_9, S.C2238],
 );
@@ -433,7 +433,7 @@ add(
         'Médiateur technique, centre spécialisé en PI (OMPI). Si un inventeur salarié est en cause : commission nationale des inventions de salariés.',
       ],
     ],
-    '**Piège Axéa** · accepter la rencontre sans cadre écrit, c’est risquer que vos déclarations ressortent au procès. Signer d’abord un accord de médiation.',
+    '**Piège Axéa** · une rencontre sans accord de médiation écrit n’est pas couverte par la confidentialité : les déclarations faites peuvent être produites ensuite.',
   ),
   [S.CPC1528_3],
 );
@@ -467,7 +467,7 @@ add(
   section(
     '04',
     'Obtenir une décision',
-    '**Fait nouveau** · la médiation échoue sur le prix. Le partenaire maintient sa revendication 1 et vous laisse dix jours. Il faut choisir l’autorité, la portée et la vitesse.',
+    '**Fait nouveau** · la médiation échoue sur le prix. Le partenaire maintient sa revendication 1 et annonce une assignation sous dix jours. Trois choix : l’autorité saisie, la portée de la décision, le délai.',
   ),
 );
 
@@ -493,7 +493,7 @@ add(
         'Tribunal judiciaire de Paris, compétence exclusive en brevets[^2]. Brevet européen à effet unitaire : juridiction unifiée du brevet.',
       ],
     ],
-    '**Réflexe Axéa** · le rapport de recherche cite deux antériorités « X ». Avant tout, les lire : elles peuvent valoir une nullité ou une limitation de la revendication 1.',
+    '**Réflexe Axéa** · le rapport de recherche cite deux antériorités « X ». Leur lecture précède tout choix : elles peuvent fonder une nullité ou une limitation de la revendication 1.',
   ),
   [S.R613_44, S.D211_6],
 );
@@ -503,7 +503,7 @@ add(
     blockType: 'table',
     eyebrow: '04 · Obtenir une décision',
     title: 'Référé, fond ou arbitre : trois portées différentes',
-    lead: '**Règle** · le provisoire décrit la portée de la décision, pas son importance : une interdiction en référé peut tuer un lancement.',
+    lead: '**Règle** · le provisoire décrit la portée de la décision, non son effet économique : une interdiction en référé arrête la commercialisation.',
     columns: [
       { header: 'Trois voies' },
       { header: 'Référé' },
@@ -558,7 +558,7 @@ add(
         'Le juge peut subordonner l’interdiction à une garantie. Une mesure obtenue à tort engage la responsabilité de celui qui l’a demandée. Aucun calendrier d’audience n’est garanti.',
       ],
     ],
-    '**Piège Axéa** · demander une interdiction provisoire contre le produit du partenaire sans avoir lu ses revendications, c’est risquer de payer son préjudice si la mesure est levée.',
+    '**Piège Axéa** · une interdiction provisoire demandée sans analyse des revendications expose le demandeur à réparer le préjudice du partenaire si la mesure est ensuite levée.',
   ),
   [S.CPC145, S.L615_5_2, S.R615_3],
 );
@@ -589,7 +589,7 @@ add(
   section(
     '05',
     'Mettre en œuvre l’issue',
-    '**Fait nouveau** · après lecture des antériorités, le partenaire propose une licence à 6 % du chiffre d’affaires, exclusivité France, et l’abandon réciproque de toute action. Qu’est-ce que vous signez vraiment ?',
+    '**Fait nouveau** · après lecture des antériorités, le partenaire propose une licence à 6 % du chiffre d’affaires, exclusivité France, et l’abandon réciproque de toute action. Portée exacte de ce qui serait signé.',
   ),
 );
 
@@ -600,11 +600,11 @@ add(
     [
       [
         'La règle',
-        'Écrit et concessions réciproques. La transaction fait obstacle à toute action entre les parties ayant le même objet[^1] : ce qui est transigé est perdu.',
+        'Écrit et concessions réciproques. La transaction fait obstacle à toute action entre les parties ayant le même objet[^1].',
       ],
       [
         'Le piège',
-        'Une renonciation « à toute action relative aux résultats du projet » éteint aussi votre revendication de propriété et votre action en nullité, que vous croyiez réservées.',
+        'Une renonciation « à toute action relative aux résultats du projet » éteint aussi la revendication de propriété et l’action en nullité de la PME.',
       ],
       [
         'Les tiers',
@@ -615,7 +615,7 @@ add(
         'Homologation par le juge, ou formule exécutoire apposée par le greffe sur l’acte contresigné par les avocats des deux parties, même hors médiation[^3].',
       ],
     ],
-    '**Réflexe Axéa** · délimiter l’objet de la transaction : quels faits, quelle période, quel titre, quelles demandes. Tout ce qui n’est pas nommé est en principe réservé ; tout ce qui est nommé largement est perdu.',
+    '**Réflexe Axéa** · délimiter l’objet de la transaction : faits, période, titre, demandes. Une renonciation rédigée largement couvre aussi ce que l’on croyait réservé.',
   ),
   [S.C2052, S.L613_9, S.CPC1546],
 );
@@ -623,7 +623,7 @@ add(
 add(
   grid(
     '05 · Mettre en œuvre',
-    'Les clauses qui mordent',
+    'Les clauses de la licence',
     [
       [
         'Périmètre et registre',
@@ -642,7 +642,7 @@ add(
         'Si le brevet est annulé ensuite, que deviennent les redevances ? Une clause de non-contestation peut être écartée ; prévoir plutôt la fin des redevances.',
       ],
     ],
-    '**Règle** · transformer chaque principe en obligation vérifiable, avec un responsable, une échéance et une sanction. Une ambiguïté à la signature est un litige dans deux ans.',
+    '**Règle** · chaque principe devient une obligation vérifiable, avec un débiteur, une échéance et une sanction.',
   ),
 );
 
@@ -655,7 +655,7 @@ add(
     [
       [
         'Poursuivre sous licence',
-        'Si la revendication 1 résiste aux antériorités et couvre Axéa. Votre monnaie d’échange : la possession personnelle antérieure et la menace de nullité.',
+        'Si la revendication 1 résiste aux antériorités et couvre Axéa. Éléments de négociation : la possession personnelle antérieure et l’action en nullité.',
       ],
       [
         'Organiser la séparation',
@@ -673,11 +673,11 @@ add(
 add(
   grid(
     'Retour à votre première décision',
-    'Suspendre le lancement ? Non, et voici les huit jours',
+    'Suspendre le lancement ? Non. Les diligences des huit jours',
     [
       [
         'Jour 1',
-        'Fixer une date certaine sur vos développements et vos démonstrations clients. Ne rien effacer, ne rien modifier.',
+        'Donner date certaine aux développements et aux démonstrations clients. Conserver les fichiers en l’état.',
       ],
       [
         'Jour 2',
@@ -692,7 +692,7 @@ add(
         'Répondre sans reconnaître, exiger les pièces, et sommer le titulaire de prendre parti sur l’opposabilité de son brevet à Axéa.',
       ],
     ],
-    '**Ce qui aurait justifié de suspendre** · une revendication lisible qui couvre Axéa, aucune antériorité, aucune preuve de date de votre côté. Rien de cela ne ressort de la lettre.',
+    '**Ce qui aurait justifié de suspendre** · une revendication identifiée qui couvre Axéa, aucune antériorité citée, aucune preuve de date du côté de la PME. La lettre n’établit aucun de ces éléments.',
   ),
 );
 

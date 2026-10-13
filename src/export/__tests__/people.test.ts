@@ -35,10 +35,10 @@ describe('shared person cards', () => {
     expect(rule('.k-cover-people .k-person-avatar')).toContain('height: 4.25rem');
     expect(rule('.k-cover-people .k-person-body')).toContain('justify-content: center');
     expect(rule('.k-cover-people .k-person-contact')).toContain('gap: 0.2rem');
-    expect(rule('.k-cover-people .k-person-contact')).toContain('flex-wrap: nowrap');
+    expect(rule('.k-cover-people .k-person-contact')).toContain('flex-direction: column');
   });
 
-  it('emits one accessible icon-only Tabler link per authored channel', () => {
+  it('emits one accessible Tabler link with a readable value per authored channel', () => {
     const html = personCard({
       initials: 'AM',
       name: 'Anne Martin',
@@ -57,12 +57,16 @@ describe('shared person cards', () => {
     for (const label of ['anne@example.com', '+33 6 12 34 56 78', 'LinkedIn', 'Profil Klarc']) {
       expect(html).toContain(`aria-label="${label}"`);
       expect(html).toContain(`title="${label}"`);
-      expect(html).not.toContain(`<span>${label}</span>`);
     }
+    // The visible value sits next to its icon: no scheme, no trailing slash.
+    expect(html).toContain('<span class="k-person-link-text">anne@example.com</span>');
+    expect(html).toContain('<span class="k-person-link-text">+33 6 12 34 56 78</span>');
+    expect(html).toContain('<span class="k-person-link-text">linkedin.com/in/anne</span>');
+    expect(html).toContain('<span class="k-person-link-text">example.com/about?a=1&amp;b=2</span>');
     expect(html).toContain('href="https://example.com/about?a=1&amp;b=2"');
     expect(html).not.toMatch(/<use|<script|<image/);
     expect(rule('.k-person-link > svg')).toContain('flex: none');
-    expect(rule('.k-person-link > svg')).toContain('color: inherit');
+    expect(rule('.k-person-link-text')).toContain('text-overflow: ellipsis');
   });
 
   it('keeps authored profile links and never infers them from organisation or email', () => {
@@ -75,7 +79,9 @@ describe('shared person cards', () => {
     })!;
     expect(person.website).toBe('https://example.com/equipe/anne');
     expect(personCard(person)).toContain('aria-label="Profil Klarc"');
-    expect(personCard(person)).not.toContain('<span>Profil Klarc</span>');
+    expect(personCard(person)).toContain(
+      '<span class="k-person-link-text">example.com/equipe/anne</span>',
+    );
     expect(userToPerson({ name: 'Anne', email: 'anne@example.com' })?.website).toBeUndefined();
     for (const website of ['', 'javascript:alert(1)', 'mailto:anne@example.com', '//example.com']) {
       expect(personCard({ initials: 'AM', name: 'Anne', website })).not.toContain(
@@ -123,7 +129,7 @@ describe('shared person cards', () => {
     expect(userToPerson({ email: 'anne@example.com' })?.name).toBe('anne');
   });
 
-  it('renders an escaped optional description after the job title', () => {
+  it('renders an escaped optional description after the job title, visible on the cover', () => {
     const html = renderPeopleStrip(
       [
         {
@@ -136,7 +142,12 @@ describe('shared person cards', () => {
 
     expect(html.indexOf('k-person-title')).toBeLessThan(html.indexOf('k-person-description'));
     expect(html).toContain('Fiscalité des entreprises &amp; fiscalité de l’innovation');
-    expect(rule('.k-person-description')).toContain('display: none');
+    expect(rule('.k-person-description')).toContain('-webkit-line-clamp: 2');
+    expect(
+      rule(
+        '.k-cover.k-density-dense .k-person-link-text,\n.k-cover.k-density-dense .k-person-description',
+      ),
+    ).toContain('display: none');
   });
 
   it('escapes visible content and excludes unsafe contact URLs', () => {
@@ -166,11 +177,11 @@ describe('shared person cards', () => {
     }
   });
 
-  it('keeps contact icons visible on one row and makes keyboard focus visible', () => {
+  it('keeps contact rows readable and makes keyboard focus visible', () => {
     expect(rule('.k-person-contact')).toContain('display: flex');
-    expect(rule('.k-person-link')).toContain('width: 1.9rem');
-    expect(rule('.k-person-link')).toContain('border-radius: 999px');
-    expect(rule('.k-cover-people .k-person-contact')).toContain('flex-wrap: nowrap');
+    expect(rule('.k-person-link')).toContain('gap: 0.45rem');
+    expect(rule('.k-person-link')).toContain('text-decoration: none');
+    expect(rule('.k-cover-people .k-person-contact')).toContain('flex-direction: column');
     expect(rule('.slidev-layout .k-person-card a')).toContain(
       'text-decoration-color: currentColor',
     );
