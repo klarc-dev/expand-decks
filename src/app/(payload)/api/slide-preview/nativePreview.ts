@@ -58,6 +58,31 @@ function serialise<T>(job: () => Promise<T>): Promise<T> {
   return run;
 }
 
+// The admin debounces keystrokes to 200ms and aborts the superseded fetch, but
+// the server used to keep building every abandoned revision in order. Each
+// author editing one presentation now owns a single pending build: a newer
+// request cancels the queued one (and its Slidev process if already running).
+const pendingBuilds = new Map<string, AbortController>();
+function supersede(key: string, signal?: AbortSignal): AbortSignal {
+  pendingBuilds.get(key)?.abort();
+  const controller = new AbortController();
+  pendingBuilds.set(key, controller);
+  signal?.addEventListener('abort', () => controller.abort(), { once: true });
+  if (signal?.aborted) controller.abort();
+  return controller.signal;
+}
+function settle(key: string, signal: AbortSignal): void {
+  const current = pendingBuilds.get(key);
+  if (current && current.signal === signal) pendingBuilds.delete(key);
+}
+
+export class PreviewSupersededError extends Error {
+  constructor() {
+    super('Preview superseded by a newer request');
+    this.name = 'PreviewSupersededError';
+  }
+}
+
 function liveEntryFor(contentHash: string): PreviewEntry | undefined {
   for (const entry of previews.values()) {
     if (entry.contentHash === contentHash && entry.expiresAt > now()) return entry;
@@ -118,7 +143,10 @@ function stageNativePreview(
   };
 }
 
-async function buildNativePreview(staged: ReturnType<typeof stageNativePreview>): Promise<string> {
+async function buildNativePreview(
+  staged: ReturnType<typeof stageNativePreview>,
+  signal: AbortSignal,
+): Promise<string> {
   const workdir = stageBuildDir({
     ...staged,
     mediaFilenames: referencedMediaFiles(staged.slidesMd),
@@ -130,6 +158,7 @@ async function buildNativePreview(staged: ReturnType<typeof stageNativePreview>)
       timeout: 120_000,
       maxBuffer: 32 * 1024 * 1024,
       env: buildSlidevEnv(),
+      signal,
     });
     const dist = join(workdir, ARTIFACTS.dist);
     if (!existsSync(join(dist, 'index.html')))
@@ -137,6 +166,7 @@ async function buildNativePreview(staged: ReturnType<typeof stageNativePreview>)
     return workdir;
   } catch (error) {
     rmSync(workdir, { recursive: true, force: true });
+    if (signal.aborted) throw new PreviewSupersededError();
     throw error;
   }
 }
@@ -148,6 +178,7 @@ export async function createNativePreview(args: {
   slideIndex: number;
   organisation: Record<string, unknown> | null;
   template: DocumentTemplateDefinition;
+  signal?: AbortSignal;
 }): Promise<{ token: string; expiresAt: string }> {
   cleanupExpired();
   const persisted = Array.isArray(args.presentation.slides)
@@ -163,19 +194,27 @@ export async function createNativePreview(args: {
     .update(staged.themeCss)
     .update(staged.mermaidConfigSource)
     .digest('hex');
-  const root = await serialise(async () => {
-    const live = liveEntryFor(contentHash);
-    if (live) return live.root;
-    while (previews.size >= MAX_PREVIEWS) {
-      const oldest = previews.keys().next().value;
-      if (!oldest) break;
-      const entry = previews.get(oldest);
-      previews.delete(oldest);
-      if (entry && ![...previews.values()].some((other) => other.root === entry.root))
-        rmSync(entry.root, { recursive: true, force: true });
-    }
-    return buildNativePreview(staged);
-  });
+  const buildKey = `${args.userId}:${String(args.presentation.id ?? '')}`;
+  const signal = supersede(buildKey, args.signal);
+  let root: string;
+  try {
+    root = await serialise(async () => {
+      const live = liveEntryFor(contentHash);
+      if (live) return live.root;
+      if (signal.aborted) throw new PreviewSupersededError();
+      while (previews.size >= MAX_PREVIEWS) {
+        const oldest = previews.keys().next().value;
+        if (!oldest) break;
+        const entry = previews.get(oldest);
+        previews.delete(oldest);
+        if (entry && ![...previews.values()].some((other) => other.root === entry.root))
+          rmSync(entry.root, { recursive: true, force: true });
+      }
+      return buildNativePreview(staged, signal);
+    });
+  } finally {
+    settle(buildKey, signal);
+  }
   const token = randomBytes(24).toString('base64url');
   const expiresAt = now() + TTL_MS;
   previews.set(token, { userId: args.userId, root, expiresAt, contentHash });
@@ -222,6 +261,8 @@ export async function serveNativePreview(args: {
 export function __resetNativePreviewStoreForTests(): void {
   for (const entry of previews.values()) rmSync(entry.root, { recursive: true, force: true });
   previews.clear();
+  for (const controller of pendingBuilds.values()) controller.abort();
+  pendingBuilds.clear();
   now = () => Date.now();
 }
 
