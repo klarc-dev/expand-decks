@@ -23,6 +23,21 @@ export type SlidevExportArgsOptions = {
 };
 
 /**
+ * Fixed settle wait after `networkidle` on the print page, so Mermaid SVGs and
+ * images (logos, avatars, photos) are painted before capture. Shared by the
+ * build job's validator export and the standalone `slidev export` args.
+ */
+export function nativeSettleWaitMs({
+  hasMermaid,
+  hasImages = false,
+}: {
+  hasMermaid: boolean;
+  hasImages?: boolean;
+}): number {
+  return hasMermaid || hasImages ? VISUAL_ASSET_WAIT_MS : 0;
+}
+
+/**
  * Native single-pass Slidev export: one Chromium navigation to the print route
  * renders every page in a single document, so the settle wait is paid once per
  * export rather than once per slide. Measured on a 28-slide production deck,
@@ -53,8 +68,9 @@ export function buildSlidevExportArgs({
     'networkidle',
   ];
 
-  if (hasMermaid || hasImages) {
-    args.push('--wait', String(VISUAL_ASSET_WAIT_MS));
+  const settle = nativeSettleWaitMs({ hasMermaid, hasImages });
+  if (settle > 0) {
+    args.push('--wait', String(settle));
   }
   if (range) {
     args.push('--range', range);

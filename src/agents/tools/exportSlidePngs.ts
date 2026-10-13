@@ -1,38 +1,29 @@
 /**
- * exportBuild tool — render an assembled deck to per-slide PNGs via the REAL
+ * exportBuild tool — render an assembled deck to per-page PNGs via the REAL
  * Slidev pipeline, so the visual scorer judges what the audience actually sees
- * (true overflow, fonts, layout). Reuses the exact staging + binary-resolution
- * pattern from `buildSlidesRunner.ts` (symlinked node_modules, base style.css,
- * headmatter), but exports `--format png --per-slide` instead of a PDF/SPA, and
- * needs no Payload doc — just the deck markdown string.
- *
- * `--per-slide` renders each slide individually so backgrounds/global layers are
- * included. `playwright-chromium` is already installed in slidev-workspace.
+ * (true overflow, fonts, layout, footer). The workdir is staged by the same
+ * `stageBuildDir` as the production build, so the scorer never drifts from the
+ * export: an earlier hand-rolled copy skipped the footer and logo Vue layers
+ * and copied `mermaidConfig.ts` verbatim, whose `./theme` type import has no
+ * file in the staged `setup/` directory. Needs no Payload doc, just the deck
+ * markdown string.
  */
 import { execFile as execFileCb } from 'node:child_process';
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { promisify } from 'node:util';
 
-import { ARTIFACTS, MEDIA_DIR, PUBLIC_FONTS_DIR } from '../../lib/paths';
+import { ARTIFACTS } from '../../lib/paths';
 import { parseLayoutViolations, SlideLayoutValidationError } from '../../lib/slideLayoutValidation';
 import { buildSlidevEnv, buildSlidevExportArgs } from '../../jobs/slidevExportArgs';
+import { stageBuildDir } from '../../jobs/buildSlidesRunner';
+import { buildMermaidConfigSource } from '../../export/mermaidConfig';
+import { referencedMediaFiles } from '../../export/mediaFiles';
+import { buildThemeCss } from '../../export/theme';
 
 const execFile = promisify(execFileCb);
 const PROJECT_ROOT = process.cwd();
 const SLIDEV_WORKSPACE = join(PROJECT_ROOT, 'slidev-workspace');
-const EXPORT_DIR = join(PROJECT_ROOT, 'src', 'export');
 const EXEC_TIMEOUT_MS = 5 * 60 * 1000;
 const LAYOUT_VALIDATOR = join(SLIDEV_WORKSPACE, 'validate-layout.mjs');
 
@@ -43,9 +34,9 @@ export function deckHasMermaid(slidesMd: string): boolean {
 }
 
 /**
- * Stage a minimal Slidev workdir from a deck markdown string and export one PNG
- * per slide. Returns the PNGs in page order (base64 for multimodal scoring).
- * The caller owns cleanup via the returned `cleanup()`.
+ * Stage a Slidev workdir from a deck markdown string and export one PNG per
+ * page. Returns the PNGs in page order (base64 for multimodal scoring). The
+ * caller owns cleanup via the returned `cleanup()`.
  */
 export async function exportSlidePngs(
   slidesMd: string,
@@ -55,7 +46,17 @@ export async function exportSlidePngs(
   validateLayout: () => Promise<void>;
   cleanup: () => void;
 }> {
-  const workdir = mkdtempSync(join(tmpdir(), 'slidev-png-'));
+  // The footer Vue layer only renders when the headmatter carries klarcFooter.
+  const footerEnabled = /^klarcFooter:/m.test(slidesMd);
+  const logoPresent = /^klarcLogo:/m.test(slidesMd);
+  const workdir = stageBuildDir({
+    slidesMd,
+    themeCss: buildThemeCss(null),
+    mermaidConfigSource: buildMermaidConfigSource(null),
+    footerEnabled,
+    logoPresent,
+    mediaFilenames: referencedMediaFiles(slidesMd),
+  });
   const cleanup = () => {
     try {
       rmSync(workdir, { recursive: true, force: true });
@@ -65,56 +66,24 @@ export async function exportSlidePngs(
   };
 
   try {
-    symlinkSync(join(SLIDEV_WORKSPACE, 'node_modules'), join(workdir, 'node_modules'), 'dir');
-    if (existsSync(MEDIA_DIR)) symlinkSync(MEDIA_DIR, join(workdir, 'media'), 'dir');
-
-    writeFileSync(join(workdir, ARTIFACTS.slidesMd), slidesMd, 'utf-8');
-    const baseCss = readFileSync(join(EXPORT_DIR, ARTIFACTS.styleCss), 'utf-8');
-    writeFileSync(join(workdir, ARTIFACTS.styleCss), baseCss, 'utf-8');
-    cpSync(join(EXPORT_DIR, ARTIFACTS.headmatter), join(workdir, ARTIFACTS.headmatter));
-    mkdirSync(join(workdir, ARTIFACTS.setupDir), { recursive: true });
-    cpSync(
-      join(EXPORT_DIR, ARTIFACTS.mermaidSetupSrc),
-      join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidSetupDest),
-    );
-    cpSync(
-      join(EXPORT_DIR, ARTIFACTS.mermaidRendererSrc),
-      join(workdir, ARTIFACTS.setupDir, ARTIFACTS.mermaidRendererDest),
-    );
-    cpSync(
-      join(EXPORT_DIR, 'mermaidConfig.ts'),
-      join(workdir, ARTIFACTS.setupDir, 'mermaidConfig.ts'),
-    );
-    if (existsSync(PUBLIC_FONTS_DIR)) {
-      cpSync(PUBLIC_FONTS_DIR, join(workdir, 'public', ARTIFACTS.fonts), {
-        recursive: true,
-      });
-    }
-
     const outDir = join(workdir, 'png');
     const slidevPath = join(SLIDEV_WORKSPACE, 'node_modules', '.bin', 'slidev');
-    await execFile(slidevPath, ['build', '--base', './'], {
-      cwd: workdir,
-      timeout: EXEC_TIMEOUT_MS,
-      maxBuffer: 32 * 1024 * 1024,
-      env: buildSlidevEnv(),
-      signal,
-    });
-
-    // Share the PDF export path's native flag policy: single-pass print-route
-    // capture with Mermaid-aware settle wait for diagram decks.
-    const exportArgs = buildSlidevExportArgs({
-      output: outDir,
-      format: 'png',
-      hasMermaid: deckHasMermaid(slidesMd),
-    });
-    await execFile(slidevPath, exportArgs, {
-      cwd: workdir,
-      timeout: EXEC_TIMEOUT_MS,
-      maxBuffer: 32 * 1024 * 1024,
-      env: buildSlidevEnv(),
-      signal,
-    });
+    const run = (args: string[]) =>
+      execFile(slidevPath, args, {
+        cwd: workdir,
+        timeout: EXEC_TIMEOUT_MS,
+        maxBuffer: 32 * 1024 * 1024,
+        env: buildSlidevEnv(),
+        signal,
+      });
+    await run(['build', '--base', './']);
+    await run(
+      buildSlidevExportArgs({
+        output: outDir,
+        format: 'png',
+        hasMermaid: deckHasMermaid(slidesMd),
+      }),
+    );
 
     // Slidev writes png/<n>.png (or slides-<n>.png depending on version). Sort numerically.
     const files = readdirSync(outDir)

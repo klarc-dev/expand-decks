@@ -29,29 +29,33 @@ vi.mock('node:child_process', async (importOriginal) => {
         if (args[0] === 'build') {
           mkdirSync(join(cwd, 'dist'), { recursive: true });
           writeFileSync(join(cwd, 'dist', 'index.html'), '<html></html>');
-        } else if (args.includes('export')) {
-          const outputIndex = args.indexOf('--output');
-          const output = args[outputIndex + 1]!;
-          const formatIndex = args.indexOf('--format');
-          const format = formatIndex === -1 ? 'pdf' : args[formatIndex + 1];
-          if (format === 'png') {
+        } else if (args[0]?.endsWith('validate-layout.mjs')) {
+          // The validator captures native artifacts from its print page.
+          const flag = (name: string) => {
+            const index = args.indexOf(name);
+            return index === -1 ? undefined : args[index + 1];
+          };
+          const slidesMd = readFileSync(join(cwd, 'slides.md'), 'utf8');
+          const slideCount = Array.from(slidesMd.matchAll(/^layout:/gm)).length;
+          const canvasWidth = Number(slidesMd.match(/^canvasWidth:\s*(\d+)/m)?.[1] ?? 980);
+          const aspectRatio = slidesMd.match(/^aspectRatio:\s*([^\s]+)/m)?.[1] ?? '16/9';
+          const [ratioWidth, ratioHeight] = aspectRatio.split('/').map(Number);
+          const height = Math.round((canvasWidth * ratioHeight) / ratioWidth);
+          for (const [output, count] of [
+            [flag('--png'), slideCount],
+            [flag('--cover'), 1],
+          ] as const) {
+            if (!output) continue;
             const directory = join(cwd, output);
             mkdirSync(directory, { recursive: true });
-            const slidesMd = readFileSync(join(cwd, 'slides.md'), 'utf8');
-            const slideCount = Array.from(slidesMd.matchAll(/^layout:/gm)).length;
-            const canvasWidth = Number(slidesMd.match(/^canvasWidth:\s*(\d+)/m)?.[1] ?? 980);
-            const aspectRatio = slidesMd.match(/^aspectRatio:\s*([^\s]+)/m)?.[1] ?? '16/9';
-            const [ratioWidth, ratioHeight] = aspectRatio.split('/').map(Number);
-            const height = Math.round((canvasWidth * ratioHeight) / ratioWidth);
-            const count = args.includes('--range') ? 1 : slideCount;
             for (let index = 1; index <= count; index += 1) {
-              const path = join(directory, `slides-${index}.png`);
+              const path = join(directory, `${index}.png`);
               writeFileSync(path, 'png');
               mocks.imageMetadata.set(path, { width: canvasWidth, height });
             }
-          } else if (!mocks.omitPdf) {
-            writeFileSync(join(cwd, output), 'pdf');
           }
+          const pdf = flag('--pdf');
+          if (pdf && !mocks.omitPdf) writeFileSync(join(cwd, pdf), 'pdf');
         }
         callback(null, '', '');
       } catch (error) {

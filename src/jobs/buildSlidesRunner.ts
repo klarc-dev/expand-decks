@@ -51,7 +51,7 @@ import {
   patchPresentationBuildArtifacts,
   patchPresentationBuildMetadata,
 } from './patchPresentationBuildMetadata';
-import { buildSlidevEnv, buildSlidevExportArgs } from './slidevExportArgs';
+import { buildSlidevEnv, buildSlidevExportArgs, nativeSettleWaitMs } from './slidevExportArgs';
 
 const execFile = promisify(execFileCb);
 
@@ -74,18 +74,37 @@ async function runSlidev(args: string[], cwd: string): Promise<{ stdout: string;
   });
 }
 
-async function validateSlideLayout(workdir: string, slideCount: number): Promise<void> {
+/**
+ * Run the DOM layout gate and, in the same Chromium session, capture the
+ * requested native artifacts from the print page it just inspected. One
+ * process replaces the former validator plus up to three `slidev export`
+ * runs, each of which rebooted Vite and Chromium for the same route.
+ */
+export type NativeExportTargets = {
+  pdf?: string;
+  cover?: string;
+  pageImages?: string;
+  settleWaitMs?: number;
+};
+
+async function validateSlideLayout(
+  workdir: string,
+  slideCount: number,
+  targets: NativeExportTargets = {},
+): Promise<void> {
   if (slideCount === 0) return;
+  const args = [LAYOUT_VALIDATOR, join(workdir, ARTIFACTS.dist), String(slideCount)];
+  if (targets.pdf) args.push('--pdf', targets.pdf);
+  if (targets.cover) args.push('--cover', targets.cover);
+  if (targets.pageImages) args.push('--png', targets.pageImages);
+  if (targets.settleWaitMs) args.push('--wait', String(targets.settleWaitMs));
   try {
-    await execFile(
-      process.execPath,
-      [LAYOUT_VALIDATOR, join(workdir, ARTIFACTS.dist), String(slideCount)],
-      {
-        cwd: SLIDEV_WORKSPACE,
-        timeout: EXEC_TIMEOUT_MS,
-        maxBuffer: 32 * 1024 * 1024,
-      },
-    );
+    await execFile(process.execPath, args, {
+      cwd: workdir,
+      timeout: EXEC_TIMEOUT_MS,
+      maxBuffer: 32 * 1024 * 1024,
+      env: buildSlidevEnv(),
+    });
   } catch (error) {
     const violations = parseLayoutViolations(
       typeof error === 'object' && error && 'stderr' in error ? String(error.stderr) : '',
@@ -420,42 +439,27 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       (renderPresentation.slides as ({ blockType?: string } & SlideWithMedia)[] | undefined) ?? [];
     const hasMermaid = slides.some((block) => block?.blockType === 'mermaid');
     const hasImages = hasAnyLogo(logos) || slides.some(slideHasImages);
-
-    // Use one staged workdir and run the native commands sequentially for
-    // deterministic output. Every export is a single-pass print-route capture
-    // (see slidevExportArgs.ts); kPage/kTotal footer data is baked per slide.
-    await runSlidev(['build', '--base', './'], workdir);
-    await validateSlideLayout(workdir, slides.length);
-    await runSlidev(
-      buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid, hasImages }),
-      workdir,
-    );
     const needsCoverImage = exportPlan.images.some(
       (artifact) => artifact.repeat !== 'per-page' && (artifact.pageIndex ?? 0) === 0,
     );
-    if (slides.length > 0 && needsCoverImage) {
-      await runSlidev(
-        buildSlidevExportArgs({
-          output: COVER_DIR,
-          format: 'png',
-          hasMermaid: slides[0]?.blockType === 'mermaid',
-          hasImages: hasAnyLogo(logos) || slideHasImages(slides[0] ?? {}),
-          range: '1',
-        }),
-        workdir,
-      );
-    }
     const needsPageImages = exportPlan.native.pageImages;
+
+    // Build the SPA once, then one Chromium session validates the layout and
+    // captures PDF, cover and page images from the same print page (single
+    // pass; kPage/kTotal footer data is baked per slide). An empty
+    // presentation (allowed by the 16:9 template) has nothing to validate;
+    // its required PDF stays the one-page blank Slidev prints for it.
+    await runSlidev(['build', '--base', './'], workdir);
+    if (slides.length === 0) {
+      await runSlidev(buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid: false }), workdir);
+    }
+    await validateSlideLayout(workdir, slides.length, {
+      pdf: ARTIFACTS.pdf,
+      cover: needsCoverImage ? COVER_DIR : undefined,
+      pageImages: needsPageImages ? PAGE_IMAGES_DIR : undefined,
+      settleWaitMs: nativeSettleWaitMs({ hasMermaid, hasImages }),
+    });
     if (slides.length > 0 && needsPageImages) {
-      await runSlidev(
-        buildSlidevExportArgs({
-          output: PAGE_IMAGES_DIR,
-          format: 'png',
-          hasMermaid,
-          hasImages,
-        }),
-        workdir,
-      );
       await assertPageImages(pngPaths(join(workdir, PAGE_IMAGES_DIR)), {
         count: slides.length,
         width: template.canvas.width,
