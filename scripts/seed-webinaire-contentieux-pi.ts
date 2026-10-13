@@ -7,9 +7,11 @@
  * Upsert par (titre, organisation). Les intervenants de la couverture sont
  * conservés depuis la version en base. Fil rouge : la PME Axéa reçoit une mise
  * en demeure de son partenaire technique ; chaque partie se termine sur un
- * fait nouveau qui impose la décision suivante. Toutes les références
- * ont été relues sur Légifrance le 13 octobre 2026 (CPC dans la numérotation
- * du décret 2025-660 en vigueur depuis le 1er septembre 2025).
+ * fait nouveau qui impose la décision suivante. La section 01 qualifie l'objet
+ * produit (brevet, logiciel, dessin, secret) avant tout raisonnement en droit
+ * des brevets ; le dépôt du partenaire n'est traité qu'une fois révélé (02).
+ * Toutes les références ont été relues sur Légifrance le 13 octobre 2026 (CPC
+ * dans la numérotation du décret 2025-660 en vigueur depuis le 1er septembre 2025).
  */
 import { isDeepStrictEqual, parseArgs } from 'node:util';
 
@@ -26,33 +28,38 @@ const TEMPLATE = resolveDocumentTemplate('presentation');
 const LF = 'https://www.legifrance.gouv.fr/codes/article_lc/';
 const ref = (label: string, id: string) => `[${label}](${LF}${id})`;
 const S = {
+  L113_9: ref('CPI, art. L. 113-9 · Logiciel créé par un salarié', 'LEGIARTI000039279818'),
+  L511_1: ref('CPI, art. L. 511-1 · Dessins et modèles', 'LEGIARTI000006279306'),
   L611_7: ref('CPI, art. L. 611-7 · Inventions de salariés', 'LEGIARTI000039279789'),
+  L611_10: ref('CPI, art. L. 611-10 · Inventions brevetables', 'LEGIARTI000019298703'),
   L611_8: ref('CPI, art. L. 611-8 · Revendication de propriété', 'LEGIARTI000028717115'),
   L611_11: ref('CPI, art. L. 611-11 · Nouveauté', 'LEGIARTI000019298700'),
-  L611_13: ref('CPI, art. L. 611-13 · Divulgations non opposables', 'LEGIARTI000006279410'),
+  L612_13: ref('CPI, art. L. 612-13 · Observations de tiers', 'LEGIARTI000006279443'),
   L613_7: ref('CPI, art. L. 613-7 · Possession personnelle antérieure', 'LEGIARTI000006279474'),
   L613_9: ref('CPI, art. L. 613-9 · Registre national des brevets', 'LEGIARTI000019298708'),
-  L613_29: ref('CPI, art. L. 613-29 · Copropriété', 'LEGIARTI000039279761'),
   R613_44: ref('CPI, art. R. 613-44 · Opposition, neuf mois', 'LEGIARTI000041703923'),
   L615_1: ref('CPI, art. L. 615-1 · Contrefaçon et connaissance de cause', 'LEGIARTI000036891091'),
   L615_2: ref('CPI, art. L. 615-2 · Qualité pour agir', 'LEGIARTI000036891114'),
   L615_3: ref('CPI, art. L. 615-3 · Mesures provisoires', 'LEGIARTI000028717051'),
+  L615_4: ref('CPI, art. L. 615-4 · Action fondée sur une demande', 'LEGIARTI000006279565'),
   L615_5: ref('CPI, art. L. 615-5 · Saisie-contrefaçon', 'LEGIARTI000028716713'),
-  L615_5_2: ref('CPI, art. L. 615-5-2 · Droit d’information', 'LEGIARTI000028716685'),
-  L615_7: ref('CPI, art. L. 615-7 · Dommages et intérêts', 'LEGIARTI000028716670'),
   L615_8: ref('CPI, art. L. 615-8 · Prescription', 'LEGIARTI000038613109'),
   L615_9: ref(
     'CPI, art. L. 615-9 · Action en déclaration de non-contrefaçon',
     'LEGIARTI000006279575',
   ),
-  R615_3: ref('CPI, art. R. 615-3 · Délai pour agir au fond', 'LEGIARTI000036990081'),
   L151_1: ref('C. com., art. L. 151-1 · Secret des affaires', 'LEGIARTI000037266553'),
+  L151_3: ref(
+    'C. com., art. L. 151-3 · Obtention licite, ingénierie inverse',
+    'LEGIARTI000037266559',
+  ),
+  C2224: ref('C. civ., art. 2224 · Prescription de droit commun', 'LEGIARTI000019017112'),
   C1240: ref('C. civ., art. 1240 · Responsabilité du fait personnel', 'LEGIARTI000032041571'),
   C1344: ref('C. civ., art. 1344 · Mise en demeure', 'LEGIARTI000032042162'),
   C2238: ref('C. civ., art. 2238 · Suspension par la médiation', 'LEGIARTI000006447470'),
   C2240: ref('C. civ., art. 2240 · Interruption par reconnaissance', 'LEGIARTI000019017366'),
   C2052: ref('C. civ., art. 2052 · Effet de la transaction', 'LEGIARTI000033458761'),
-  CPC145: ref('CPC, art. 145 · Mesure d’instruction avant procès', 'LEGIARTI000006410268'),
+  CPC750_1: ref('CPC, art. 750-1 · Amiable préalable obligatoire', 'LEGIARTI000047539064'),
   CPC480: ref('CPC, art. 480 · Autorité de la chose jugée', 'LEGIARTI000039725797'),
   CPC1528_3: ref('CPC, art. 1528-3 · Confidentialité des modes amiables', 'LEGIARTI000051930598'),
   CPC1532_1: ref('CPC, art. 1532-1 · Audience de règlement amiable', 'LEGIARTI000051930581'),
@@ -153,12 +160,12 @@ add({
     {
       label: 'Comprendre le différend',
       description:
-        'Qui est propriétaire, quelles armes le dépôt du partenaire vous donne, ce qui court déjà.',
+        'Ce qui a été produit, sous quel régime, à qui cela appartient, ce qui court déjà.',
     },
     {
       label: 'Écrire et répondre',
       description:
-        'Valeur juridique du courrier, risques pour son auteur, sommation de prendre parti.',
+        'Ce que vaut le dépôt du partenaire, ce que vaut sa lettre, répondre sans reconnaître.',
     },
     {
       label: 'Chercher un accord avec un tiers',
@@ -167,7 +174,7 @@ add({
     },
     {
       label: 'Obtenir une décision',
-      description: 'Contester le titre, référé ou fond, le prix de la vitesse, le chiffrage.',
+      description: 'Contester le titre dans l’ordre du temps ; référé, fond ou arbitre.',
     },
     {
       label: 'Mettre en œuvre l’issue',
@@ -182,78 +189,70 @@ add(
   section(
     '01',
     'Comprendre le différend',
-    'Avant de répondre, qualifier : qui est propriétaire des résultats, ce que le dépôt du partenaire vous donne, ce qui court déjà. **Pour Axéa** · tout se joue sur le contrat de R&D et sur une date.',
+    'Avant de répondre, qualifier : ce qui a été produit, sous quel régime, à qui cela appartient, ce qui court déjà. **Pour Axéa** · tout se joue sur la nature des résultats, le contrat de R&D et une date.',
   ),
 );
 
 add(
-  split(
-    '01 · Comprendre',
-    'Qui est propriétaire des résultats',
-    '**La règle.** L’inventeur est toujours une personne physique ; l’invention faite par un salarié dans sa mission appartient à son employeur[^1]. Deux équipes, deux employeurs : copropriété, et sans règlement écrit, c’est le régime légal supplétif qui s’applique[^2].\n\n**Le piège.** « C’est moi qui ai payé » ne vaut rien sans clause de cession. Le prestataire garde les résultats de ses salariés, sauf stipulation contraire.',
-    [
-      [
-        'Copropriété : exploiter',
-        'Chaque copropriétaire exploite seul, à charge d’indemniser équitablement les autres. L’accord des autres n’est pas requis.',
-      ],
-      [
-        'Copropriété : agir',
-        'Chacun agit en contrefaçon à son seul profit, en notifiant l’assignation aux autres.',
-      ],
-      [
-        'Copropriété : concéder',
-        'Une licence non exclusive suppose une offre de cession de quote-part ; opposition possible dans les trois mois.',
-      ],
+  {
+    blockType: 'table',
+    eyebrow: '01 · Comprendre',
+    title: 'Qualifier l’objet avant d’invoquer un droit',
+    lead: '**Règle** · « des résultats » ne désigne aucun droit. Chaque objet produit relève d’un régime, avec sa condition d’existence et sa preuve.',
+    columns: [
+      { header: 'Ce que le projet a produit' },
+      { header: 'Régime possible' },
+      { header: 'Condition d’existence' },
+      { header: 'À défaut' },
     ],
-    '**Réflexe Axéa** · dans le contrat de R&D, chercher trois mots : *connaissances antérieures*, *résultats*, *cession*.',
-  ),
-  [S.L611_7, S.L613_29],
-);
-
-add(
-  grid(
-    '01 · Comprendre',
-    'Être titulaire, pouvoir exploiter, pouvoir interdire : trois questions distinctes',
-    [
-      [
-        'Être titulaire',
-        'Détenir le droit, par dépôt ou cession inscrite. Seul le titulaire ou le licencié exclusif agit en contrefaçon, sauf clause contraire[^1].',
-      ],
-      [
-        'Pouvoir exploiter',
-        'Un brevet n’est pas une autorisation d’exploiter. Un titre valable peut dépendre d’un titre antérieur détenu par un tiers.',
-      ],
-      [
-        'Pouvoir interdire',
-        'Territoire, vigueur, annuités payées et portée : la portée se lit dans les revendications, non dans l’abrégé.',
-      ],
+    rows: [
+      {
+        cells: [
+          { value: '**Procédé ou produit technique**' },
+          { value: 'Brevet, après dépôt et délivrance[^1].' },
+          {
+            value:
+              'Nouveauté, activité inventive, application industrielle. Portée limitée aux revendications.',
+          },
+          { value: 'Secret des affaires s’il a été gardé ; sinon, libre.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Logiciel**' },
+          { value: 'Droit d’auteur, sans dépôt.' },
+          {
+            value:
+              'Originalité du code. Les fonctionnalités et les algorithmes ne sont pas protégés en tant que tels.',
+          },
+          { value: 'Réécriture indépendante licite.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Forme, apparence**' },
+          { value: 'Dessin ou modèle enregistré[^2].' },
+          {
+            value:
+              'Nouveauté et caractère propre. Modèle communautaire non enregistré : trois ans.',
+          },
+          { value: 'Concurrence déloyale seulement.' },
+        ],
+      },
+      {
+        cells: [
+          { value: '**Savoir-faire, données, essais**' },
+          { value: 'Secret des affaires.' },
+          {
+            value:
+              'Non connue, valeur commerciale, mesures de protection raisonnables. Aucun titre, aucune date.',
+          },
+          { value: 'Le produit vendu peut être démonté et étudié[^3].' },
+        ],
+      },
     ],
-    '**Piège Axéa** · le partenaire peut détenir un brevet valable sans qu’Axéa le contrefasse ; la PME peut être libre d’exploiter sans rien pouvoir lui interdire. Les deux situations sont indépendantes.',
-  ),
-  [S.L615_2],
-);
-
-add(
-  grid(
-    '01 · Comprendre',
-    'Le partenaire a déposé seul : trois actions ouvertes à la PME',
-    [
-      [
-        'Revendiquer la propriété',
-        'Un titre déposé en violation d’une obligation conventionnelle se transfère au vrai titulaire. Cinq ans après publication de la délivrance ; jusqu’à expiration si mauvaise foi[^1].',
-      ],
-      [
-        'Détruire la nouveauté',
-        'Tout ce qui est rendu accessible au public avant le dépôt entre dans l’état de la technique[^2]. Vos propres démonstrations aux clients peuvent annuler *son* brevet, sauf abus évident à votre égard dans les six mois précédant le dépôt[^3].',
-      ],
-      [
-        'Invoquer la possession antérieure',
-        'Qui détenait l’invention de bonne foi avant la date de dépôt peut continuer de l’exploiter malgré le brevet. Droit personnel, transmissible seulement avec l’entreprise.',
-      ],
-    ],
-    '**Réflexe Axéa** · établir la date de vos premières démonstrations et de vos fichiers techniques. Les trois actions supposent une date certaine.',
-  ),
-  [S.L611_8, S.L611_11, S.L611_13],
+  },
+  [S.L611_10, S.L511_1, S.L151_3],
 );
 
 add(
@@ -263,7 +262,7 @@ add(
     [
       [
         'Contrefaçon',
-        'Un acte reproduit les caractéristiques revendiquées. Le non-fabricant (distributeur, utilisateur) ne répond qu’en connaissance de cause : c’est à cela que sert la mise en demeure[^1].',
+        'Un acte reproduit les caractéristiques revendiquées d’un titre. Le non-fabricant (distributeur, utilisateur) ne répond qu’en connaissance de cause : c’est à cela que sert la mise en demeure[^1].',
       ],
       [
         'Violation du contrat',
@@ -278,9 +277,56 @@ add(
         'Information non connue, à valeur commerciale, protégée par des mesures raisonnables[^3]. Sans NDA ni marquage, le savoir-faire transmis au partenaire n’est pas un secret.',
       ],
     ],
-    '**Piège Axéa** · la lettre invoque des « droits sur les résultats » sans qualifier le fondement. La proximité des produits n’établit ni contrefaçon ni faute ; chaque fondement a ses conditions et sa preuve.',
+    '**Piège Axéa** · la lettre invoque des « droits sur les résultats » sans dire lesquels ni sur quel fondement. La proximité des produits n’établit ni contrefaçon ni faute ; chaque fondement a ses conditions et sa preuve.',
   ),
   [S.L615_1, S.C1240, S.L151_1],
+);
+
+add(
+  split(
+    '01 · Comprendre',
+    'À qui appartient ce qui a été produit',
+    '**La règle.** Le créateur est une personne physique : l’invention de mission appartient à l’employeur[^1], le logiciel écrit par un salarié dans ses fonctions aussi[^2]. Entre deux entreprises, rien ne se transfère sans écrit : le prestataire garde ce que ses salariés ont produit, sauf cession.\n\n**Le piège.** « C’est moi qui ai payé » ne vaut rien sans clause de cession. Et un savoir-faire transmis sans NDA est détenu par les deux.',
+    [
+      [
+        'Connaissances antérieures',
+        'Ce que chacun apportait avant le projet reste à lui. Sans inventaire annexé, la frontière avec les résultats se plaide.',
+      ],
+      [
+        'Résultats',
+        'La clause doit dire ce que le mot couvre : titres, code, données, documentation, améliorations.',
+      ],
+      [
+        'Cession et licence',
+        'Transfert de propriété ou simple droit d’usage ? Pour quels territoires, quelle durée, quels produits ?',
+      ],
+    ],
+    '**Réflexe Axéa** · si le contrat de R&D ne définit pas « résultats », chaque objet retombe dans son régime légal : celui qui a créé garde.',
+  ),
+  [S.L611_7, S.L113_9],
+);
+
+add(
+  grid(
+    '01 · Comprendre',
+    'Être titulaire, pouvoir exploiter, pouvoir interdire : trois questions distinctes',
+    [
+      [
+        'Être titulaire',
+        'Détenir le droit, par création, dépôt ou cession inscrite. Seul le titulaire ou le licencié exclusif agit en contrefaçon, sauf clause contraire[^1].',
+      ],
+      [
+        'Pouvoir exploiter',
+        'Un titre n’est pas une autorisation d’exploiter. Un brevet valable peut dépendre d’un titre antérieur détenu par un tiers.',
+      ],
+      [
+        'Pouvoir interdire',
+        'Territoire, vigueur, annuités payées et portée : la portée se lit dans les revendications, non dans l’abrégé.',
+      ],
+    ],
+    '**Piège Axéa** · le partenaire peut détenir un titre valable sans qu’Axéa le contrefasse ; la PME peut être libre d’exploiter sans rien pouvoir lui interdire. Les deux situations sont indépendantes.',
+  ),
+  [S.L615_2],
 );
 
 add(
@@ -293,15 +339,18 @@ add(
         'Prescription de la contrefaçon',
         'Cinq ans depuis le jour où le titulaire a connu ou aurait dû connaître le dernier fait[^2].',
       ],
-      ['Revendication de propriété', 'Cinq ans depuis la publication de la délivrance du titre.'],
+      [
+        'Contrat, concurrence déloyale, secret',
+        'Cinq ans de droit commun depuis la connaissance des faits[^3].',
+      ],
       [
         'Ce qui interrompt contre vous',
-        'La reconnaissance du droit de l’autre interrompt la prescription à son profit[^3]. Une suspension « par courtoisie » écrite peut valoir reconnaissance.',
+        'La reconnaissance du droit de l’autre interrompt la prescription à son profit. Une suspension « par courtoisie » écrite peut valoir reconnaissance.',
       ],
     ],
     '**Réflexe Axéa** · avant toute réponse, donner date certaine aux développements et aux démonstrations clients.',
   ),
-  [S.L615_5, S.L615_8, S.C2240],
+  [S.L615_5, S.L615_8, S.C2224],
 );
 
 /* ───────────────────────── 02 · Écrire et répondre ───────────────────────── */
@@ -310,8 +359,31 @@ add(
   section(
     '02',
     'Écrire et répondre',
-    '**Fait nouveau** · le contrat attribue les résultats « à la partie qui les a développés », sans définir le mot. Une demande de brevet a été déposée au nom du partenaire seul il y a quatorze mois. Vous aviez montré Axéa à trois clients deux mois avant ce dépôt.',
+    '**Fait nouveau** · le contrat attribue les résultats « à la partie qui les a développés », sans définir le mot. Une demande de brevet sur le procédé a été déposée au nom du partenaire seul il y a quatorze mois. Vous aviez montré Axéa à trois clients deux mois avant ce dépôt.',
   ),
+);
+
+add(
+  grid(
+    '02 · Écrire et répondre',
+    'Le partenaire a déposé seul, ou s’apprête à le faire : trois leviers',
+    [
+      [
+        'Revendiquer la propriété',
+        'Un titre déposé en violation d’une obligation conventionnelle se transfère au vrai titulaire. Cinq ans après publication de la délivrance ; jusqu’à expiration si mauvaise foi[^1].',
+      ],
+      [
+        'Détruire la brevetabilité',
+        'Tout ce qui est accessible au public avant le dépôt entre dans l’état de la technique[^2] : publication défensive avant son dépôt, démonstrations antérieures, observations de tiers après publication[^3]. Sauf abus évident dans les six mois avant le dépôt.',
+      ],
+      [
+        'Invoquer la possession antérieure',
+        'Qui détenait l’invention de bonne foi avant la date de dépôt peut continuer de l’exploiter malgré le brevet. Droit personnel, transmissible seulement avec l’entreprise.',
+      ],
+    ],
+    '**Réflexe Axéa** · établir la date de vos premières démonstrations et de vos fichiers techniques. Les trois leviers supposent une date certaine ; la publication défensive ne vaut que si elle précède son dépôt.',
+  ),
+  [S.L611_8, S.L611_11, S.L612_13],
 );
 
 add(
@@ -356,8 +428,9 @@ add(
         'Le délai de huit jours est choisi par l’expéditeur ; aucun texte ne l’impose. Il ne crée aucune échéance légale.',
       ],
     ],
-    '**Réflexe** · la lettre vaut comme date. Elle ne vaut pas comme preuve.',
+    '**Préalable** · aucun texte n’impose une mise en demeure ni un amiable avant d’assigner en contrefaçon ; l’amiable obligatoire s’arrête à 5 000 €[^1]. Seule une clause de médiation préalable l’impose.',
   ),
+  [S.CPC750_1],
 );
 
 add(
@@ -433,7 +506,7 @@ add(
         'Médiateur technique, centre spécialisé en PI (OMPI). Si un inventeur salarié est en cause : commission nationale des inventions de salariés.',
       ],
     ],
-    '**Piège Axéa** · une rencontre sans accord de médiation écrit n’est pas couverte par la confidentialité : les déclarations faites peuvent être produites ensuite.',
+    '**Piège Axéa** · une rencontre sans accord de médiation écrit n’est couverte par aucune confidentialité : les déclarations peuvent être produites ensuite, et un savoir-faire montré sans NDA cesse d’être un secret.',
   ),
   [S.CPC1528_3],
 );
@@ -467,35 +540,35 @@ add(
   section(
     '04',
     'Obtenir une décision',
-    '**Fait nouveau** · la médiation échoue sur le prix. Le partenaire maintient sa revendication 1 et annonce une assignation sous dix jours. Trois choix : l’autorité saisie, la portée de la décision, le délai.',
+    '**Fait nouveau** · la médiation échoue sur le prix. Le partenaire maintient sa revendication 1 et annonce une assignation sous dix jours. Deux choix : attaquer le titre, et devant qui.',
   ),
 );
 
 add(
   grid(
     '04 · Obtenir une décision',
-    'Contester le titre du partenaire',
+    'Contester le titre du partenaire, dans l’ordre du temps',
     [
       [
+        'La revendication de propriété',
+        'Dès le dépôt, devant le juge. Obtenir le transfert du titre plutôt que son annulation : préférable quand l’invention est bonne et qu’elle est la vôtre[^1].',
+      ],
+      [
+        'Les observations de tiers',
+        'Après publication de la demande et avant délivrance, devant l’INPI[^2]. Sans frais ni qualité particulière ; l’examinateur en tient compte, sans que vous deveniez partie.',
+      ],
+      [
         'L’opposition devant l’INPI',
-        'Neuf mois à compter de la publication de la délivrance au BOPI[^1]. Procédure administrative, pas de dommages-intérêts.',
+        'Neuf mois à compter de la publication de la délivrance au BOPI[^3]. Procédure administrative contradictoire, pas de dommages-intérêts.',
       ],
       [
         'La nullité devant le juge',
-        'Défaut de nouveauté ou d’activité inventive, insuffisance de description. Souvent soulevée en défense ; la validité se juge sur les revendications.',
-      ],
-      [
-        'La revendication de propriété',
-        'Obtenir le transfert du titre plutôt que son annulation : préférable quand l’invention est bonne et qu’elle est la vôtre.',
-      ],
-      [
-        'Le tribunal compétent',
-        'Tribunal judiciaire de Paris, compétence exclusive en brevets[^2]. Brevet européen à effet unitaire : juridiction unifiée du brevet.',
+        'À tout moment, souvent en défense. Défaut de nouveauté ou d’activité inventive, insuffisance de description ; la validité se juge sur les revendications.',
       ],
     ],
     '**Réflexe Axéa** · le rapport de recherche cite deux antériorités « X ». Leur lecture précède tout choix : elles peuvent fonder une nullité ou une limitation de la revendication 1.',
   ),
-  [S.R613_44, S.D211_6],
+  [S.L611_8, S.L612_13, S.R613_44],
 );
 
 add(
@@ -503,7 +576,7 @@ add(
     blockType: 'table',
     eyebrow: '04 · Obtenir une décision',
     title: 'Référé, fond ou arbitre : trois portées différentes',
-    lead: '**Règle** · le provisoire décrit la portée de la décision, non son effet économique : une interdiction en référé arrête la commercialisation.',
+    lead: '**Règle** · en brevets, référé et fond relèvent du seul tribunal judiciaire de Paris[^3]. Le provisoire limite la portée de la décision, pas son effet.',
     columns: [
       { header: 'Trois voies' },
       { header: 'Référé' },
@@ -530,57 +603,17 @@ add(
       {
         cells: [
           { value: '**Ce que ça ne fait pas**' },
-          { value: 'Trancher le principal. Modifiable en cas de circonstances nouvelles.' },
+          {
+            value:
+              'Trancher le principal. Modifiable si circonstances nouvelles ; une mesure levée ensuite engage celui qui l’a obtenue.',
+          },
           { value: 'Aller vite : plusieurs mois, sauf jour fixe ou procédure accélérée.' },
           { value: 'Annuler un titre à l’égard de tous. La sentence lie les parties.' },
         ],
       },
     ],
   },
-  [S.L615_3, S.CPC480],
-);
-
-add(
-  grid(
-    '04 · Obtenir une décision',
-    'Les voies rapides et leur contrepartie',
-    [
-      [
-        'Avant tout procès',
-        'Une mesure d’instruction pour un motif légitime[^1], une provision si l’obligation n’est pas sérieusement contestable, le droit d’information sur l’origine et les réseaux de distribution[^2].',
-      ],
-      [
-        'Sans l’adversaire',
-        'La saisie-contrefaçon ou l’interdiction sur requête donnent l’effet de surprise, contre l’obligation d’agir au fond sous vingt jours ouvrables ou trente et un jours civils[^3].',
-      ],
-      [
-        'Le prix de la vitesse',
-        'Le juge peut subordonner l’interdiction à une garantie. Une mesure obtenue à tort engage la responsabilité de celui qui l’a demandée. Aucun calendrier d’audience n’est garanti.',
-      ],
-    ],
-    '**Piège Axéa** · une interdiction provisoire demandée sans analyse des revendications expose le demandeur à réparer le préjudice du partenaire si la mesure est ensuite levée.',
-  ),
-  [S.CPC145, S.L615_5_2, S.R615_3],
-);
-
-add(
-  split(
-    '04 · Obtenir une décision',
-    'Ce que vaut une condamnation',
-    '**La règle.** Le juge prend en considération distinctement les conséquences économiques négatives dont le manque à gagner, le préjudice moral, et les bénéfices du contrefacteur y compris ses économies d’investissement[^1]. Alternative sur demande : un forfait supérieur aux redevances qui auraient été dues.\n\n**Le piège.** Sans marges, volumes et prix documentés, le juge évalue défavorablement. Le chiffre d’affaires ne suffit pas.',
-    [
-      [
-        'Ce que ça implique au dossier',
-        'Conserver la comptabilité analytique du produit, les devis perdus, les prix de licence du secteur.',
-      ],
-      [
-        'Ce que ça change dans la négociation',
-        'Une transaction a une valeur propre : les frais réels ne sont que partiellement remboursés, et l’exécution contre un partenaire fragile reste incertaine.',
-      ],
-    ],
-    '**Réflexe Axéa** · chiffrer avant de choisir la voie. Une licence à 6 % peut valoir plus qu’une condamnation mal prouvée.',
-  ),
-  [S.L615_7],
+  [S.L615_3, S.CPC480, S.D211_6],
 );
 
 /* ───────────────────────── 05 · Mettre en œuvre ───────────────────────── */
@@ -608,7 +641,7 @@ add(
       ],
       [
         'Les tiers',
-        'L’accord n’engage pas les copropriétaires, licenciés ou distributeurs qui n’y sont pas parties. Une licence non inscrite au registre n’est pas opposable aux tiers[^2].',
+        'L’accord n’engage pas les licenciés, distributeurs ou sous-traitants qui n’y sont pas parties. Une licence non inscrite au registre n’est pas opposable aux tiers[^2].',
       ],
       [
         'La force exécutoire',
@@ -659,7 +692,7 @@ add(
       ],
       [
         'Organiser la séparation',
-        'Si les apports sont dissociables. L’accord répartit droits, usages, stocks et documents ; le règlement de copropriété remplace le régime légal.',
+        'Si les apports sont dissociables. L’accord répartit titres, code, données, usages, stocks et documents, objet par objet, selon le régime de chacun.',
       ],
       [
         'Faire trancher',
