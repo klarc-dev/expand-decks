@@ -181,24 +181,24 @@ add({
   pills: [{ text: 'Webinaire' }, { text: 'Logiciel et IA' }, { text: 'Dirigeants et fondateurs' }],
   title: 'Propriété intellectuelle appliquée aux logiciels',
   subtitle:
-    'Le périmètre de la protection, la titularité des droits, le code produit avec une IA, les droits du client et les preuves à réunir.',
+    'Périmètre de la protection, titularité des droits, code produit avec une IA, droits du client et preuves à réunir.',
 });
 
 add(
   grid(
     'Cas fictif · Vous dirigez la startup',
-    'La chaîne de droits de Nexa avant une levée de fonds',
+    'Chaîne de droits de Nexa avant une levée de fonds',
     [
       [
-        'Le produit',
+        'Produit',
         'Nexa vend une plateforme SaaS. Le premier prototype a été écrit par un freelance, repris par un cofondateur non salarié, puis industrialisé par deux développeurs salariés.',
       ],
       [
-        'Les dépendances',
+        'Dépendances',
         'Le dépôt contient un composant sous licence GPL. Depuis un an, une part importante du code est produite avec un assistant IA en abonnement grand public.',
       ],
       [
-        'La question',
+        'Question',
         'La data room demande : « Justifier que Nexa est titulaire de l’intégralité des droits sur sa plateforme ». Le cofondateur est parti il y a six mois, sans rien signer.',
       ],
     ],
@@ -208,32 +208,32 @@ add(
 
 add({
   blockType: 'agenda',
-  eyebrow: 'Le panorama',
-  title: 'Les cinq sujets à vérifier avant de signer',
+  eyebrow: 'Panorama',
+  title: 'Cinq sujets à vérifier avant de signer',
   lead: 'Chaque sujet ajoute une pièce à la chaîne de droits et de preuve.',
   items: [
     {
-      label: 'Le périmètre de la protection',
+      label: 'Périmètre de la protection',
       description:
         'Code, documentation, interface : ce que le droit d’auteur couvre et ce qu’il laisse libre.',
     },
     {
-      label: 'La titularité des droits',
+      label: 'Titularité des droits',
       description:
         'Freelance, salarié, associé, stagiaire : à qui appartient chaque ligne de code.',
     },
     {
-      label: 'Le code produit avec une IA',
+      label: 'Code produit avec une IA',
       description:
         'Code généré, fichiers de poids, données : le régime juridique de chaque élément.',
     },
     {
-      label: 'Les droits du client',
+      label: 'Droits du client',
       description:
         'Licence on-premise, accès SaaS, open source : droits concédés et droits conservés.',
     },
     {
-      label: 'Les moyens de preuve',
+      label: 'Moyens de preuve',
       description:
         'Date certaine, chaîne de droits et méthode en dix étapes avant une levée ou une cession.',
     },
@@ -245,7 +245,7 @@ add({
 add(
   section(
     '01',
-    'Les éléments protégés',
+    'Éléments protégés',
     'Le logiciel est protégé par le droit d’auteur dès sa création, sans dépôt. **Pour Nexa** · le droit porte sur le code tel qu’écrit, pas sur l’idée du service ni sur ses fonctionnalités.',
   ),
 );
@@ -253,8 +253,8 @@ add(
 add(
   {
     blockType: 'table',
-    eyebrow: '01 · Les éléments protégés',
-    title: 'Le périmètre de la protection du logiciel',
+    eyebrow: '01 · Éléments protégés',
+    title: 'Périmètre de la protection du logiciel',
     lead: '**Règle** · la protection naît de la création d’une forme originale[^1]. Elle couvre le programme et son matériel de conception préparatoire[^2].',
     columns: [
       { header: 'Élément du logiciel' },
@@ -306,23 +306,23 @@ add(
 
 add(
   grid(
-    '01 · Les éléments protégés',
-    'Les fonctionnalités, l’interface et le code n’ont pas le même régime',
+    '01 · Éléments protégés',
+    'Fonctionnalités, interface et code : régimes distincts',
     [
       [
-        'Les fonctionnalités',
+        'Fonctionnalités',
         'Un concurrent qui observe votre logiciel et réécrit un programme offrant les mêmes fonctions ne contrefait pas votre code[^1]. Le droit d’auteur ne réserve pas le résultat obtenu.',
       ],
       [
-        'L’interface',
+        'Interface',
         'La CJUE juge que l’interface utilisateur graphique n’est pas une forme d’expression du programme[^2]. Elle peut être protégée comme œuvre ordinaire si elle est originale, ou déposée comme dessin ou modèle.',
       ],
       [
-        'Le brevet',
+        'Brevet',
         'Les programmes d’ordinateur « en tant que tels » sont exclus[^3]. Une invention mise en œuvre par logiciel est brevetable si elle apporte une contribution technique : procédé industriel, traitement de signal, pas une méthode d’affaires.',
       ],
       [
-        'Le secret',
+        'Secret',
         'Le code non divulgué, l’architecture et les paramétrages sont des secrets d’affaires si des mesures de protection raisonnables existent. Le SaaS protège le code en ne le livrant jamais.',
       ],
     ],
@@ -333,8 +333,8 @@ add(
 
 add(
   split(
-    '01 · Les éléments protégés',
-    'Les actes autorisés à l’utilisateur légitime',
+    '01 · Éléments protégés',
+    'Actes autorisés à l’utilisateur légitime',
     '**La règle.** La loi réserve à l’utilisateur autorisé des actes que le contrat ne peut pas lui retirer entièrement : corriger les erreurs, faire une copie de sauvegarde, observer et tester le programme, et décompiler pour obtenir l’interopérabilité[^1].\n\n**La limite.** La CJUE admet la décompilation pour corriger une erreur qui affecte le fonctionnement, mais le résultat ne peut servir à d’autres fins[^2].',
     [
       [
@@ -357,27 +357,27 @@ add(
 add(
   section(
     '02',
-    'La titularité des droits',
+    'Titularité des droits',
     '**Fait nouveau** · la data room révèle que le prototype du freelance représente encore 30 % du code en production, et que le cofondateur parti a écrit le moteur de facturation sans être salarié. Aucun des deux n’a signé de cession.',
   ),
 );
 
 add(
   split(
-    '02 · La titularité des droits',
-    'La cession des droits du freelance',
+    '02 · Titularité des droits',
+    'Cession des droits du freelance',
     '**La règle.** L’auteur est titulaire dès la création[^1]. Une société ne peut pas être auteur : elle ne détient des droits que par dévolution légale, cession écrite ou œuvre collective. Payer la facture achète la prestation, pas les droits.\n\n**Le formalisme.** Le contrat de transmission est constaté par écrit (L. 131-2) ; la cession précise les droits cédés, leur étendue, leur destination, le lieu et la durée.',
     [
       [
-        'La cession implicite existe, mais elle est fragile',
+        'Cession implicite : incertitudes',
         'La Cour de cassation a laissé passer en 2026 une cession implicite retenue par les juges du fond, dans une affaire de packaging, par un rejet non spécialement motivé[^2]. Rien ne garantit la même issue pour un logiciel.',
       ],
       [
-        'La preuve par le dépôt Git',
+        'Preuve par le dépôt Git',
         'La CA Colmar a réparti les droits sur un logiciel codéveloppé d’après l’historique GitLab : 76 % des commits pour le prestataire, qui a été jugé titulaire de l’essentiel[^3].',
       ],
       [
-        'Le sous-traitant du prestataire',
+        'Sous-traitant du prestataire',
         'Si l’agence a elle-même fait appel à un indépendant, la chaîne se rompt à ce maillon : exiger la garantie et les cessions amont.',
       ],
     ],
@@ -388,19 +388,19 @@ add(
 
 add(
   grid(
-    '02 · La titularité des droits',
-    'La titularité selon le statut du contributeur',
+    '02 · Titularité des droits',
+    'Titularité selon le statut du contributeur',
     [
       [
-        'Le salarié',
+        'Salarié',
         'Les droits patrimoniaux sur le logiciel créé dans l’exercice des fonctions ou d’après les instructions de l’employeur sont dévolus à l’employeur[^1]. Sans clause, sans prime. Hors fonctions ou hors instructions, le salarié reste titulaire.',
       ],
       [
-        'Le stagiaire',
+        'Stagiaire',
         'Depuis l’ordonnance de 2021, la dévolution s’étend aux personnes accueillies par convention dans une structure de recherche, sous conditions cumulatives[^2]. Hors ce cadre, le stagiaire est un auteur ordinaire : cession écrite nécessaire.',
       ],
       [
-        'L’associé non salarié',
+        'Associé non salarié',
         'Le cofondateur qui code sans contrat de travail est un auteur indépendant. Son départ n’emporte aucun transfert. Solution : cession ou apport en nature dans le pacte, avant la sortie.',
       ],
     ],
@@ -411,23 +411,23 @@ add(
 
 add(
   grid(
-    '02 · La titularité des droits',
-    'Les pièces de la data room sur la titularité',
+    '02 · Titularité des droits',
+    'Pièces de la data room sur la titularité',
     [
       [
-        'La liste des auteurs',
+        'Liste des auteurs',
         'Export des contributeurs de chaque dépôt, avec leur statut : salarié, freelance, associé, stagiaire, agence, sous-traitant.',
       ],
       [
-        'Un titre par contributeur',
+        'Titre par contributeur',
         'Contrat de travail et fiche de poste, cession signée, pacte d’associés, convention de stage, ou acte confirmatif pour les trous.',
       ],
       [
-        'La nomenclature des composants',
+        'Nomenclature des composants',
         'SBOM listant chaque dépendance et sa licence, avec les obligations copyleft identifiées et respectées.',
       ],
       [
-        'La preuve de version et de date',
+        'Preuve de version et de date',
         'Dépôt APP, séquestre, horodatage des versions majeures, et politique d’usage des assistants IA.',
       ],
     ],
@@ -441,15 +441,15 @@ add(
 add(
   section(
     '03',
-    'Le code produit avec une IA',
+    'Code produit avec une IA',
     '**Fait nouveau** · l’audit technique estime que 40 % du code écrit cette année l’a été avec un assistant IA, sur des comptes personnels. Le CTO affirme : « c’est notre modèle, nous l’avons affiné sur nos données ».',
   ),
 );
 
 add(
   split(
-    '03 · Le code produit avec une IA',
-    'La part humaine dans le code produit avec une IA',
+    '03 · Code produit avec une IA',
+    'Part humaine dans le code produit avec une IA',
     '**La règle.** Le droit d’auteur protège une création intellectuelle propre à son auteur, personne physique[^1] ; une société ne peut pas être auteur[^2]. Une sortie entièrement automatique, sans choix créatifs humains, n’est protégée par personne.\n\n**La conséquence.** Un composant généré sans intervention documentée est librement copiable. Le code assisté, relu, restructuré et intégré par un développeur reste protégeable au titre de sa contribution.',
     [
       [
@@ -461,7 +461,7 @@ add(
         'Elles attribuent en général les sorties à l’utilisateur. Un contrat ne crée pas un droit d’auteur que la loi refuse ; il règle seulement les rapports entre les parties.',
       ],
       [
-        'Le risque en sortie',
+        'Risque en sortie',
         'Un assistant peut reproduire du code sous licence copyleft ou propriétaire. Filtres de correspondance, revue de licence et SBOM incluant les extraits générés.',
       ],
     ],
@@ -473,8 +473,8 @@ add(
 add(
   {
     blockType: 'table',
-    eyebrow: '03 · Le code produit avec une IA',
-    title: 'Les droits applicables aux éléments d’un système d’IA',
+    eyebrow: '03 · Code produit avec une IA',
+    title: 'Droits applicables aux éléments d’un système d’IA',
     lead: '**Règle** · quand un dirigeant dit « notre modèle », identifier précisément l’objet concerné.',
     columns: [
       { header: 'Objet' },
@@ -542,19 +542,19 @@ add(
 
 add(
   grid(
-    '03 · Le code produit avec une IA',
-    'Les données, les licences et les obligations du projet IA',
+    '03 · Code produit avec une IA',
+    'Données, licences et obligations du projet IA',
     [
       [
-        'Le risque en entrée',
+        'Risque en entrée',
         'Un code source soumis à un assistant grand public sans garantie contractuelle peut perdre la protection du secret des affaires. Vérifier les clauses d’entraînement, le mode entreprise et l’opt-out.',
       ],
       [
-        'Les obligations du fournisseur de modèle',
+        'Obligations du fournisseur de modèle',
         'Depuis le 2 août 2025, le fournisseur d’un modèle à usage général tient une politique de respect du droit d’auteur, respecte l’opt-out de la fouille de textes et publie un résumé des données d’entraînement[^1]. Exemption partielle pour les modèles libres.',
       ],
       [
-        'Les livrables d’un projet IA',
+        'Livrables d’un projet IA',
         'Écrire ligne par ligne : code applicatif, données du client, données tierces, poids résultants, modèle de base, prompts et jeux de tests, savoir-faire. « Le client est propriétaire du modèle » sans ce détail ne protège personne.',
       ],
     ],
@@ -568,15 +568,15 @@ add(
 add(
   section(
     '04',
-    'Les droits du client',
+    'Droits du client',
     '**Fait nouveau** · un grand compte exige « la propriété du logiciel » dans le contrat SaaS, et l’auditeur open source signale que le composant GPL est modifié et exposé aux utilisateurs via l’API.',
   ),
 );
 
 add({
   blockType: 'table',
-  eyebrow: '04 · Les droits du client',
-  title: 'Les droits du client selon le mode de fourniture',
+  eyebrow: '04 · Droits du client',
+  title: 'Droits du client selon le mode de fourniture',
   lead: '**Règle** · le modèle commercial change la question juridique. L’on-premise concède une copie ; le SaaS concède un accès.',
   columns: [
     { header: 'Modèle' },
@@ -637,8 +637,8 @@ add({
 
 add(
   split(
-    '04 · Les droits du client',
-    'La réversibilité et la cession du code sont deux sujets distincts',
+    '04 · Droits du client',
+    'Réversibilité et cession du code',
     '**La règle.** Depuis le 12 septembre 2025, le fournisseur de services de traitement de données doit permettre le changement : préavis de deux mois au plus, transition de trente jours, prolongeable en cas d’impossibilité technique motivée, et au moins trente jours pour récupérer les données exportables[^1].\n\n**La limite.** Le règlement porte sur les données et les actifs numériques du client. Il ne transforme pas un abonnement en cession du code source.',
     [
       [
@@ -661,8 +661,8 @@ add(
 
 add(
   grid(
-    '04 · Les droits du client',
-    'Les obligations open source selon la licence et la distribution',
+    '04 · Droits du client',
+    'Obligations open source selon la licence et la distribution',
     [
       [
         'Permissive',
@@ -691,15 +691,15 @@ add(
 add(
   section(
     '05',
-    'Les moyens de preuve',
+    'Moyens de preuve',
     '**Fait nouveau** · un ancien prestataire affirme avoir écrit le moteur de recherche de Nexa avant la version déposée par les salariés. Nexa n’a aucune version datée antérieure à son serveur Git, administré par ce même prestataire.',
   ),
 );
 
 add(
   grid(
-    '05 · Les moyens de preuve',
-    'Les preuves de l’auteur, de la version et du contenu',
+    '05 · Moyens de preuve',
+    'Preuves de l’auteur, de la version et du contenu',
     [
       [
         'Dépôt chez un tiers',
@@ -725,8 +725,8 @@ add(
 
 add({
   blockType: 'timeline',
-  eyebrow: '05 · Les moyens de preuve',
-  title: 'Les dix vérifications avant une levée, un audit ou une cession',
+  eyebrow: '05 · Moyens de preuve',
+  title: 'Dix vérifications avant une levée, un audit ou une cession',
   steps: [
     {
       label: '1 · Cartographier',
@@ -760,7 +760,7 @@ add({
 add(
   grid(
     'Cas Nexa · Conclusion',
-    'La garantie de titularité et le plan d’action sur trente jours',
+    'Garantie de titularité et plan d’action sur trente jours',
     [
       [
         'Semaine 1',
