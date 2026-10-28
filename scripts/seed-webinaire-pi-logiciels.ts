@@ -8,8 +8,8 @@
  * conservés depuis la version en base. Fil rouge : la startup Nexa prépare
  * une levée de fonds ; l'investisseur demande la chaîne de droits sur un code
  * écrit par un freelance, un associé parti, deux salariés, avec un package GPL
- * et une part générée par assistant IA. Deux maximes : « payer n'est pas
- * posséder » et « générer n'est pas créer ».
+ * et une part produite avec un assistant IA. Le fil directeur est la chaîne
+ * de titularité, de licence et de preuve.
  *
  * Contenu issu du rapport de recherche du 27 octobre 2026
  * (~/Documents/PI_Logiciels_Webinaire10_Research_20261027). Les décisions
@@ -181,13 +181,13 @@ add({
   pills: [{ text: 'Webinaire' }, { text: 'Logiciel et IA' }, { text: 'Dirigeants et fondateurs' }],
   title: 'Propriété intellectuelle appliquée aux logiciels',
   subtitle:
-    'Qui possède votre code ? Ce qui est protégé, qui est titulaire, ce que change l’IA, ce que le client obtient en SaaS, et comment le prouver.',
+    'Le périmètre de la protection, la titularité des droits, le code produit avec une IA, les droits du client et les preuves à réunir.',
 });
 
 add(
   grid(
     'Cas fictif · Vous dirigez la startup',
-    'J-30 avant la levée de fonds de Nexa, l’investisseur demande la chaîne de droits',
+    'La chaîne de droits de Nexa avant une levée de fonds',
     [
       [
         'Le produit',
@@ -209,31 +209,31 @@ add(
 add({
   blockType: 'agenda',
   eyebrow: 'Le panorama',
-  title: 'Cinq questions, une seule méthode',
-  lead: 'Payer n’est pas posséder, générer n’est pas créer : chaque partie ajoute un maillon à la chaîne de droits.',
+  title: 'Les cinq sujets à vérifier avant de signer',
+  lead: 'Chaque sujet ajoute une pièce à la chaîne de droits et de preuve.',
   items: [
     {
-      label: 'Ce qui est protégé',
+      label: 'Le périmètre de la protection',
       description:
         'Code, documentation, interface : ce que le droit d’auteur couvre et ce qu’il laisse libre.',
     },
     {
-      label: 'Qui est titulaire',
+      label: 'La titularité des droits',
       description:
         'Freelance, salarié, associé, stagiaire : à qui appartient chaque ligne de code.',
     },
     {
-      label: 'Ce que change l’IA',
+      label: 'Le code produit avec une IA',
       description:
-        'Code généré, fichiers de poids, données : une pile d’actifs à régimes distincts.',
+        'Code généré, fichiers de poids, données : le régime juridique de chaque élément.',
     },
     {
-      label: 'Ce que le client obtient',
+      label: 'Les droits du client',
       description:
         'Licence on-premise, accès SaaS, open source : droits concédés et droits conservés.',
     },
     {
-      label: 'Comment le prouver',
+      label: 'Les moyens de preuve',
       description:
         'Date certaine, chaîne de droits et méthode en dix étapes avant une levée ou une cession.',
     },
@@ -245,7 +245,7 @@ add({
 add(
   section(
     '01',
-    'Ce qui est protégé',
+    'Les éléments protégés',
     'Le logiciel est protégé par le droit d’auteur dès sa création, sans dépôt. **Pour Nexa** · le droit porte sur le code tel qu’écrit, pas sur l’idée du service ni sur ses fonctionnalités.',
   ),
 );
@@ -253,8 +253,8 @@ add(
 add(
   {
     blockType: 'table',
-    eyebrow: '01 · Ce qui est protégé',
-    title: 'Le droit d’auteur protège l’expression, pas l’idée',
+    eyebrow: '01 · Les éléments protégés',
+    title: 'Le périmètre de la protection du logiciel',
     lead: '**Règle** · la protection naît de la création d’une forme originale[^1]. Elle couvre le programme et son matériel de conception préparatoire[^2].',
     columns: [
       { header: 'Élément du logiciel' },
@@ -306,8 +306,8 @@ add(
 
 add(
   grid(
-    '01 · Ce qui est protégé',
-    'Copier le service sans copier le code reste licite',
+    '01 · Les éléments protégés',
+    'Les fonctionnalités, l’interface et le code n’ont pas le même régime',
     [
       [
         'Les fonctionnalités',
@@ -333,8 +333,8 @@ add(
 
 add(
   split(
-    '01 · Ce qui est protégé',
-    'Ce que l’utilisateur légitime peut faire sans votre accord',
+    '01 · Les éléments protégés',
+    'Les actes autorisés à l’utilisateur légitime',
     '**La règle.** La loi réserve à l’utilisateur autorisé des actes que le contrat ne peut pas lui retirer entièrement : corriger les erreurs, faire une copie de sauvegarde, observer et tester le programme, et décompiler pour obtenir l’interopérabilité[^1].\n\n**La limite.** La CJUE admet la décompilation pour corriger une erreur qui affecte le fonctionnement, mais le résultat ne peut servir à d’autres fins[^2].',
     [
       [
@@ -357,15 +357,15 @@ add(
 add(
   section(
     '02',
-    'Qui est titulaire',
+    'La titularité des droits',
     '**Fait nouveau** · la data room révèle que le prototype du freelance représente encore 30 % du code en production, et que le cofondateur parti a écrit le moteur de facturation sans être salarié. Aucun des deux n’a signé de cession.',
   ),
 );
 
 add(
   split(
-    '02 · Qui est titulaire',
-    'Le code du freelance reste au freelance tant qu’il n’a pas cédé par écrit',
+    '02 · La titularité des droits',
+    'La cession des droits du freelance',
     '**La règle.** L’auteur est titulaire dès la création[^1]. Une société ne peut pas être auteur : elle ne détient des droits que par dévolution légale, cession écrite ou œuvre collective. Payer la facture achète la prestation, pas les droits.\n\n**Le formalisme.** Le contrat de transmission est constaté par écrit (L. 131-2) ; la cession précise les droits cédés, leur étendue, leur destination, le lieu et la durée.',
     [
       [
@@ -388,8 +388,8 @@ add(
 
 add(
   grid(
-    '02 · Qui est titulaire',
-    'Salarié, stagiaire, associé : trois statuts, trois réponses',
+    '02 · La titularité des droits',
+    'La titularité selon le statut du contributeur',
     [
       [
         'Le salarié',
@@ -411,8 +411,8 @@ add(
 
 add(
   grid(
-    '02 · Qui est titulaire',
-    'Ce que l’investisseur vérifie dans la data room',
+    '02 · La titularité des droits',
+    'Les pièces de la data room sur la titularité',
     [
       [
         'La liste des auteurs',
@@ -441,15 +441,15 @@ add(
 add(
   section(
     '03',
-    'Ce que change l’IA',
+    'Le code produit avec une IA',
     '**Fait nouveau** · l’audit technique estime que 40 % du code écrit cette année l’a été avec un assistant IA, sur des comptes personnels. Le CTO affirme : « c’est notre modèle, nous l’avons affiné sur nos données ».',
   ),
 );
 
 add(
   split(
-    '03 · Ce que change l’IA',
-    'Générer n’est pas créer : sans apport humain, pas de droit d’auteur',
+    '03 · Le code produit avec une IA',
+    'La part humaine dans le code produit avec une IA',
     '**La règle.** Le droit d’auteur protège une création intellectuelle propre à son auteur, personne physique[^1] ; une société ne peut pas être auteur[^2]. Une sortie entièrement automatique, sans choix créatifs humains, n’est protégée par personne.\n\n**La conséquence.** Un composant généré sans intervention documentée est librement copiable. Le code assisté, relu, restructuré et intégré par un développeur reste protégeable au titre de sa contribution.',
     [
       [
@@ -465,7 +465,7 @@ add(
         'Un assistant peut reproduire du code sous licence copyleft ou propriétaire. Filtres de correspondance, revue de licence et SBOM incluant les extraits générés.',
       ],
     ],
-    '**Réflexe Nexa** · documenter l’apport humain : prompts, revues, commits distinguant le code généré du code écrit. L’IA ne change pas la règle, elle déplace la preuve.',
+    '**Réflexe Nexa** · documenter l’apport humain : prompts, revues, commits distinguant le code généré du code écrit. La règle de titularité reste la même ; la preuve porte sur la contribution humaine.',
   ),
   [S.L111_1, S.TRIDIM],
 );
@@ -473,9 +473,9 @@ add(
 add(
   {
     blockType: 'table',
-    eyebrow: '03 · Ce que change l’IA',
-    title: 'Un « modèle d’IA » n’est pas un actif, c’est une pile d’actifs',
-    lead: '**Règle** · quand un dirigeant dit « notre modèle », demander lequel de ces objets il vise.',
+    eyebrow: '03 · Le code produit avec une IA',
+    title: 'Les droits applicables aux éléments d’un système d’IA',
+    lead: '**Règle** · quand un dirigeant dit « notre modèle », identifier précisément l’objet concerné.',
     columns: [
       { header: 'Objet' },
       { header: 'Droit d’auteur' },
@@ -522,7 +522,9 @@ add(
             value:
               'Secret des affaires, licence, contrôle d’accès. La licence du modèle de base suit les dérivés.',
           },
-          { value: 'L’actif le plus coûteux est le moins protégé par la PI.' },
+          {
+            value: 'Valeur économique élevée, protection par la PI incertaine.',
+          },
         ],
       },
       {
@@ -540,8 +542,8 @@ add(
 
 add(
   grid(
-    '03 · Ce que change l’IA',
-    'Vos données, votre code et le cadre européen',
+    '03 · Le code produit avec une IA',
+    'Les données, les licences et les obligations du projet IA',
     [
       [
         'Le risque en entrée',
@@ -566,15 +568,15 @@ add(
 add(
   section(
     '04',
-    'Ce que le client obtient',
+    'Les droits du client',
     '**Fait nouveau** · un grand compte exige « la propriété du logiciel » dans le contrat SaaS, et l’auditeur open source signale que le composant GPL est modifié et exposé aux utilisateurs via l’API.',
   ),
 );
 
 add({
   blockType: 'table',
-  eyebrow: '04 · Ce que le client obtient',
-  title: 'On-premise, SaaS, PaaS, IaaS : le client n’achète jamais le code',
+  eyebrow: '04 · Les droits du client',
+  title: 'Les droits du client selon le mode de fourniture',
   lead: '**Règle** · le modèle commercial change la question juridique. L’on-premise concède une copie ; le SaaS concède un accès.',
   columns: [
     { header: 'Modèle' },
@@ -635,8 +637,8 @@ add({
 
 add(
   split(
-    '04 · Ce que le client obtient',
-    'Le Data Act facilite le changement de fournisseur, pas la cession du code',
+    '04 · Les droits du client',
+    'La réversibilité et la cession du code sont deux sujets distincts',
     '**La règle.** Depuis le 12 septembre 2025, le fournisseur de services de traitement de données doit permettre le changement : préavis de deux mois au plus, transition de trente jours, prolongeable en cas d’impossibilité technique motivée, et au moins trente jours pour récupérer les données exportables[^1].\n\n**La limite.** Le règlement porte sur les données et les actifs numériques du client. Il ne transforme pas un abonnement en cession du code source.',
     [
       [
@@ -659,8 +661,8 @@ add(
 
 add(
   grid(
-    '04 · Ce que le client obtient',
-    'L’open source oblige à publier le code selon la licence et le mode de distribution',
+    '04 · Les droits du client',
+    'Les obligations open source selon la licence et la distribution',
     [
       [
         'Permissive',
@@ -679,7 +681,7 @@ add(
         'AGPL : offrir l’accès au code source correspondant aux utilisateurs qui interagissent à distance avec une version modifiée[^1]. C’est le cas visé par le SaaS.',
       ],
     ],
-    '**Le prix de l’oubli** · la violation d’une licence libre relève de la contrefaçon, pas seulement du contrat[^2]. La cour d’appel de Paris a condamné Orange pour non-respect de la GPL v2 : 500 000 euros de pertes, 150 000 euros de bénéfices et 150 000 euros de préjudice moral, d’après le compte rendu Legalis[^3].',
+    '**La sanction** · la violation d’une licence libre relève de la contrefaçon, pas seulement du contrat[^2]. La cour d’appel de Paris a condamné Orange pour non-respect de la GPL v2 : 500 000 euros de pertes, 150 000 euros de bénéfices et 150 000 euros de préjudice moral, d’après le compte rendu Legalis[^3].',
   ),
   [S.AGPL, S.FREE, S.ORANGE],
 );
@@ -689,15 +691,15 @@ add(
 add(
   section(
     '05',
-    'Comment le prouver',
+    'Les moyens de preuve',
     '**Fait nouveau** · un ancien prestataire affirme avoir écrit le moteur de recherche de Nexa avant la version déposée par les salariés. Nexa n’a aucune version datée antérieure à son serveur Git, administré par ce même prestataire.',
   ),
 );
 
 add(
   grid(
-    '05 · Comment le prouver',
-    'Donner date certaine à l’auteur, à la version et au contenu',
+    '05 · Les moyens de preuve',
+    'Les preuves de l’auteur, de la version et du contenu',
     [
       [
         'Dépôt chez un tiers',
@@ -723,8 +725,8 @@ add(
 
 add({
   blockType: 'timeline',
-  eyebrow: '05 · Comment le prouver',
-  title: 'La méthode en dix étapes, avant une levée, un audit ou une cession',
+  eyebrow: '05 · Les moyens de preuve',
+  title: 'Les dix vérifications avant une levée, un audit ou une cession',
   steps: [
     {
       label: '1 · Cartographier',
@@ -757,8 +759,8 @@ add({
 
 add(
   grid(
-    'Retour à votre première décision',
-    'Signer la garantie de titularité ? Pas en l’état. Les diligences des trente jours',
+    'Cas Nexa · Conclusion',
+    'La garantie de titularité et le plan d’action sur trente jours',
     [
       [
         'Semaine 1',
@@ -777,7 +779,7 @@ add(
         'Déposer la version courante à l’APP avec hash, SBOM et liste des auteurs. Rédiger la garantie de titularité avec des exceptions déclarées plutôt qu’une affirmation générale.',
       ],
     ],
-    '**Ce qui justifierait de signer sans réserve** · une cession de chaque contributeur externe, des contrats de travail couvrant les fonctions, une SBOM sans copyleft non traité, et une version datée. Nexa n’en a aucun aujourd’hui ; elle peut les avoir en trente jours.',
+    '**Conditions d’une garantie sans réserve** · une cession de chaque contributeur externe, des contrats de travail couvrant les fonctions, une SBOM sans copyleft non traité, et une version datée. Nexa n’en a aucun aujourd’hui ; elle peut les avoir en trente jours.',
   ),
 );
 
@@ -916,7 +918,7 @@ if (values.check) {
         documentTemplate: 'presentation' as const,
         language: 'fr' as const,
         agentBrief:
-          'Webinaire panorama en droit français et européen pour dirigeants et fondateurs de startups. Cinq parties : ce qui est protégé, qui est titulaire, ce que change l’IA, ce que le client obtient, comment le prouver. Cas fictif startup Nexa en levée de fonds, avec un fait nouveau à chaque section. Chaque slide énonce une règle, un piège et un réflexe. Sources Légifrance, EUR-Lex et commentaires professionnels vérifiés le 27 octobre 2026.',
+          'Webinaire panorama en droit français et européen pour dirigeants et fondateurs de startups. Cinq parties : les éléments protégés, la titularité des droits, le code produit avec une IA, les droits du client, les moyens de preuve. Cas fictif startup Nexa en levée de fonds, avec un fait nouveau à chaque section. Chaque slide porte un sujet juridique explicite et énonce une règle, un risque et une action. Sources Légifrance, EUR-Lex et commentaires professionnels vérifiés le 27 octobre 2026.',
         slides: richSlides as Presentation['slides'],
       };
       presentation = presentation
