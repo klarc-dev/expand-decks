@@ -34,6 +34,27 @@ Pushing application code to `main` runs verification and live evaluation, syncs
 the environment, then requests the exact verified revision through Coolify's API.
 Database migrations run before the web process starts.
 
+## Transactional email
+
+Payload uses the version-matched first-party `@payloadcms/email-nodemailer` adapter
+for native password reset and other transactional mail. Configure all six
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_ADDRESS`, and
+`SMTP_FROM_NAME` secrets in the GitHub `production` environment before deployment.
+Use Brevo `smtp-relay.brevo.com:587`, the Brevo SMTP login and **SMTP key**
+(not its API key), and an authorized sender on the authenticated `klarc.com` domain.
+All Payload web/worker services receive the same settings. Production refuses
+incomplete SMTP configuration; only fully unconfigured development uses console mail.
+
+STARTTLS is required and TLS certificates are validated (TLS 1.2 minimum).
+Build-time placeholders do not send or connect to SMTP; adapter startup verification
+is skipped because config is compiled by Next and migrations too. Actual sends
+still authenticate and require validated TLS. Do not treat build success as mail proof.
+
+After authorized deployment, request a password reset from `/admin/forgot` for
+a known internal user (native REST: `POST /api/users/forgot-password`). Verify
+the message in the recipient mailbox and Brevo delivery events, and follow the
+reset link to the real application. Never log reset tokens or SMTP credentials.
+
 ## Verification
 
 1. `GET /api/health` returns `200` with `{ "status": "ok" }`.

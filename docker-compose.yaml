@@ -55,6 +55,12 @@ services:
       TZ: Europe/Paris
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST must be set and non-empty}
+      SMTP_PORT: ${SMTP_PORT:?SMTP_PORT must be set and non-empty}
+      SMTP_USER: ${SMTP_USER:?SMTP_USER must be set and non-empty}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD must be set and non-empty}
+      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS:?SMTP_FROM_ADDRESS must be set and non-empty}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:?SMTP_FROM_NAME must be set and non-empty}
       # Reachable CloudCLIProxy address from inside the container (the tailnet
       # hostname is not routable from the Docker network — use the host bridge).
       CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL}
@@ -113,6 +119,12 @@ services:
       PAYLOAD_WORKER: "1"
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST must be set and non-empty}
+      SMTP_PORT: ${SMTP_PORT:?SMTP_PORT must be set and non-empty}
+      SMTP_USER: ${SMTP_USER:?SMTP_USER must be set and non-empty}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD must be set and non-empty}
+      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS:?SMTP_FROM_ADDRESS must be set and non-empty}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:?SMTP_FROM_NAME must be set and non-empty}
       # Agent jobs are claimed by workers as well as the web process. Keep the
       # provider configuration identical on every queue consumer.
       CLIPROXYAPI_BASE_URL: ${CLIPROXYAPI_BASE_URL}

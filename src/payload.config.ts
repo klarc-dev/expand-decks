@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import { buildConfig, type Plugin } from 'payload';
 import { postgresAdapter } from '@payloadcms/db-postgres';
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer';
+import { smtpConfig } from './lib/smtp';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { fr } from '@payloadcms/translations/languages/fr';
 import { authPlugin } from 'payload-auth-plugin';
@@ -57,7 +59,10 @@ const withoutPluginAPIKeys =
     };
   };
 
+const emailConfig = smtpConfig();
+
 export default buildConfig({
+  email: emailConfig ? nodemailerAdapter(emailConfig) : undefined,
   admin: {
     user: Users.slug,
     importMap: {

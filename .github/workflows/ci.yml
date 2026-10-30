@@ -48,6 +48,12 @@ jobs:
       GOOGLE_CLIENT_ID: ci-placeholder
       GOOGLE_CLIENT_SECRET: ci-placeholder
       GOOGLE_FONTS_API_KEY: ci-placeholder
+      SMTP_HOST: smtp.invalid
+      SMTP_PORT: '587'
+      SMTP_USER: ci-placeholder
+      SMTP_PASSWORD: ci-placeholder
+      SMTP_FROM_ADDRESS: ci@example.invalid
+      SMTP_FROM_NAME: CI
 
     steps:
       - name: Checkout

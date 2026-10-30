@@ -60,6 +60,7 @@
     "@mastra/pg": "^1.25.0",
     "@mastra/rag": "2.6.3",
     "@payloadcms/db-postgres": "3.89.0",
+    "@payloadcms/email-nodemailer": "3.89.0",
     "@payloadcms/next": "3.89.0",
     "@payloadcms/richtext-lexical": "3.89.0",
     "@payloadcms/translations": "3.89.0",

@@ -29,6 +29,9 @@ ENV PAYLOAD_SECRET=build-time-secret-not-used-at-runtime
 ENV GOOGLE_FONTS_API_KEY=build-time-key-not-used-at-runtime
 ENV CLIPROXYAPI_BASE_URL=http://localhost:1/v1
 ENV CLIPROXYAPI_KEY=build-time-key-not-used-at-runtime
+# Build-only placeholders: SMTP is validated but never contacted during compilation.
+ENV SMTP_HOST=smtp.invalid SMTP_PORT=587 SMTP_USER=build-only SMTP_PASSWORD=build-only
+ENV SMTP_FROM_ADDRESS=build@example.invalid SMTP_FROM_NAME=Build
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm generate:types \
     && test -f src/payload-types.ts \
