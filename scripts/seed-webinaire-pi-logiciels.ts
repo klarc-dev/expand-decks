@@ -77,14 +77,6 @@ const S = {
     'CJUE, 6 oct. 2021, Top System, C-13/20',
     'https://juricaf.org/arret/CJUE-COURDEJUSTICEDELUNIONEUROPEENNE-20211006-C1320',
   ),
-  FREE: ref(
-    'CJUE, 18 déc. 2019, IT Development c/ Free Mobile, C-666/18',
-    'https://eur-lex.europa.eu/legal-content/FR/SUM/?uri=CELEX:62018CJ0666',
-  ),
-  TRIDIM: ref(
-    'Cass. 1re civ., 15 janv. 2015, n° 13-23.566, Tridim',
-    'https://www.courdecassation.fr/decision/6079813a9ba5988459c4a386',
-  ),
   C2026: ref(
     'Cass. 1re civ., 28 janv. 2026, n° 24-11.394, Optima Brand Design c/ Maison Villevert',
     'https://www.courdecassation.fr/decision/6979b341cdc6046d47f27159',
@@ -125,8 +117,20 @@ const S = {
     'https://eur-lex.europa.eu/legal-content/FR/TXT/PDF/?uri=CELEX:32014R0910',
   ),
   AIACT53: ref(
-    'AI Act, art. 53 · Modèles à usage général',
-    'https://artificialintelligenceact.eu/article/53/',
+    'Règlement (UE) 2024/1689, AI Act, art. 53 et 113',
+    'https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX:32024R1689',
+  ),
+  L122_5_3: ref(
+    'CPI, art. L. 122-5-3 · Fouille de textes et de données, opposition',
+    `${LF}LEGIARTI000044363192`,
+  ),
+  GH_COPILOT: ref(
+    'GitHub Copilot Business · Filtre de code public, non-entraînement',
+    'https://github.com/features/copilot/copilot-business',
+  ),
+  ANTHROPIC_CT: ref(
+    'Anthropic, Commercial Terms of Service · Sections B et K',
+    'https://www.anthropic.com/legal/commercial-terms',
   ),
   GETTY: ref(
     'High Court (UK), 4 nov. 2025, Getty Images v Stability AI, EWHC 2863 (Ch)',
@@ -503,25 +507,25 @@ add(
 add(
   split(
     '03 · Code produit avec une IA',
-    'Part humaine dans le code produit avec une IA',
-    '**La règle.** Le droit d’auteur protège une création intellectuelle propre à son auteur, personne physique[^1] ; une société ne peut pas être auteur[^2]. Une sortie entièrement automatique, sans choix créatifs humains, n’est protégée par personne.\n\n**La conséquence.** Un composant généré sans intervention documentée est librement copiable. Le code assisté, relu, restructuré et intégré par un développeur reste protégeable au titre de sa contribution.',
+    'Utiliser un assistant de code : compte, filtres, revue',
+    '**La règle.** Le droit d’auteur protège une création propre à une personne physique[^1]. Position dominante, non jugée en France pour du code : la sortie entièrement automatique n’est protégée par personne ; la part relue et intégrée par un développeur l’est.\n\n**La conséquence.** Le risque pratique n’est pas la paternité, mais ce qui sort (extrait sous licence repris) et ce qui entre (code confidentiel envoyé au service).',
     [
       [
-        'Qui est titulaire du code assisté',
-        'Le développeur humain qui apporte la contribution originale ; donc retour aux règles de la partie 02 : salarié, freelance, associé.',
+        'Compte professionnel',
+        'Non-entraînement et défense en cas de plainte sont réservés aux offres entreprise : Copilot Business, API et offres entreprise OpenAI, Commercial Terms Anthropic[^2]. Un compte personnel n’y donne pas droit.',
       ],
       [
-        'Ce que disent les conditions des fournisseurs',
-        'Elles attribuent en général les sorties à l’utilisateur. Un contrat ne crée pas un droit d’auteur que la loi refuse ; il règle seulement les rapports entre les parties.',
+        'Filtre de code public',
+        'Activer le blocage des suggestions qui reproduisent du code public ; si une source est signalée, contrôler sa licence. Le filtre ne détecte pas toutes les reprises[^3].',
       ],
       [
-        'Risque en sortie',
-        'Un assistant peut reproduire du code sous licence copyleft ou propriétaire. Filtres de correspondance, revue de licence et SBOM incluant les extraits générés.',
+        'Indemnisation sous conditions',
+        'Les éditeurs défendent le client contre une plainte de tiers seulement pour un usage payant, sans modification de la sortie, sans contournement des filtres. Ce n’est pas une garantie que le code est libre de droits.',
       ],
     ],
-    '**Réflexe Nexa** · documenter l’apport humain : prompts, revues, commits distinguant le code généré du code écrit. La règle de titularité reste la même ; la preuve porte sur la contribution humaine.',
+    '**Réflexe Nexa** · sortir des comptes personnels avant d’y envoyer le code de la startup, centraliser les licences, activer les filtres, et marquer dans Git les commits assistés pour prouver la revue humaine.',
   ),
-  [S.L111_1, S.TRIDIM],
+  [S.L111_1, S.ANTHROPIC_CT, S.GH_COPILOT],
 );
 
 add(
@@ -597,24 +601,28 @@ add(
 add(
   grid(
     '03 · Code produit avec une IA',
-    'Données, licences et obligations du projet IA',
+    'Données, licences et livrables du projet IA',
     [
       [
-        'Risque en entrée',
-        'Un code source soumis à un assistant grand public sans garantie contractuelle peut perdre la protection du secret des affaires. Vérifier les clauses d’entraînement, le mode entreprise et l’opt-out.',
+        'Code confidentiel',
+        'Le secret des affaires exige des mesures de protection raisonnables[^1]. Envoyer du code à un service sans contrat adapté fragilise cette preuve. Vérifier usage pour l’entraînement, conservation et accès avant d’envoyer.',
       ],
       [
-        'Obligations du fournisseur de modèle',
-        'Depuis le 2 août 2025, le fournisseur d’un modèle à usage général tient une politique de respect du droit d’auteur, respecte l’opt-out de la fouille de textes et publie un résumé des données d’entraînement[^1]. Exemption partielle pour les modèles libres.',
+        'Garanties à demander au fournisseur',
+        'Depuis le 2 août 2025, le fournisseur d’un modèle à usage général doit publier un résumé des données d’entraînement et tenir une politique de droit d’auteur, même pour un modèle libre[^2]. Les exiger dans l’appel d’offres.',
       ],
       [
-        'Livrables d’un projet IA',
-        'Écrire ligne par ligne : code applicatif, données du client, données tierces, poids résultants, modèle de base, prompts et jeux de tests, savoir-faire. « Le client est propriétaire du modèle » sans ce détail ne protège personne.',
+        'Vos contenus en ligne',
+        'Pour vos documentations, textes et données publiés, exprimer l’opposition à la fouille par un procédé lisible par machine[^3]. Sans cette réserve, l’exception de fouille s’applique.',
+      ],
+      [
+        'Livrables du projet',
+        'Lister code applicatif, données du client et de tiers, modèle de base, poids ajustés s’il y en a, prompts, jeux de tests, savoir-faire. Préciser pour chacun : remis, accessible, ou seulement utilisable.',
       ],
     ],
-    '**Piège Nexa** · aucune juridiction française n’a tranché le statut des poids en droit d’auteur. Le contrat et le secret sont les seuls leviers certains : les poids se licencient, ils ne se cèdent pas comme une œuvre.',
+    '**Piège Nexa** · « le client est propriétaire du modèle » ne protège personne tant que la clause ne dit pas quel objet est remis et avec quels droits. Le statut des poids en droit d’auteur reste incertain : le contrat et le secret sont les leviers sûrs.',
   ),
-  [S.AIACT53],
+  [S.L151_1, S.AIACT53, S.L122_5_3],
 );
 
 /* ───────────────────────── 04 · Ce que le client obtient ───────────────────────── */
