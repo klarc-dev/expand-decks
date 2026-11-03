@@ -38,8 +38,12 @@ const S = {
   ),
   L113_9: ref('CPI, art. L. 113-9 · Logiciel créé par un salarié', `${LF}LEGIARTI000039279818`),
   L113_9_1: ref(
-    'CPI, art. L. 113-9-1 · Stagiaires, commentaire Village de la Justice',
-    'https://www.village-justice.com/articles/regime-des-inventions-des-logiciels-stagiaires-apports-ordonnance-decembre-2021,41551.html',
+    'CPI, art. L. 113-9-1 · Logiciel créé par un stagiaire ou un doctorant accueilli',
+    `${LF}LEGIARTI000044502241`,
+  ),
+  L131_1: ref(
+    'CPI, art. L. 131-1 · Nullité de la cession globale des œuvres futures',
+    `${LF}LEGIARTI000006278955`,
   ),
   L113_5: ref('CPI, art. L. 113-2 et L. 113-5 · Œuvre collective', `${LF}LEGIARTI000006278885`),
   L121_7: ref('CPI, art. L. 121-7 · Droit moral sur le logiciel', `${LF}LEGIARTI000006278899/`),
@@ -49,6 +53,10 @@ const S = {
   ),
   L131_2: ref('CPI, art. L. 131-2 · Écrit exigé', `${LF}LEGIARTI000032042977`),
   L151_1: ref('C. com., art. L. 151-1 · Secret des affaires', `${LF}LEGIARTI000037266553/`),
+  L341_1: ref(
+    'CPI, art. L. 341-1 · Droit sui generis du producteur de bases de données',
+    `${LF}LEGIARTI000006279245`,
+  ),
   L611_10: ref(
     'CPI, art. L. 611-10 · Programmes d’ordinateur en tant que tels',
     `${LF}LEGIARTI000019298703`,
@@ -78,18 +86,28 @@ const S = {
     'https://www.courdecassation.fr/decision/6079813a9ba5988459c4a386',
   ),
   C2026: ref(
-    'Cass. 1re civ., 28 janv. 2026, n° 24-11.394 · Commentaire Solvoxia',
-    'https://www.solvoxia-avocats.com/irrecevabilite-de-laction-en-contrefacon-en-raison-dune-cession-implicite/',
+    'Cass. 1re civ., 28 janv. 2026, n° 24-11.394, Optima Brand Design c/ Maison Villevert',
+    'https://www.courdecassation.fr/decision/6979b341cdc6046d47f27159',
   ),
   COLMAR: ref(
-    'CA Colmar, 9 avr. 2025, n° 24/01625 · Commentaire Derriennic',
-    'https://derriennic.com/titularite-droits-logiciel-codeveloppe-prestataire-client/',
+    'CA Colmar, 9 avr. 2025, n° 24/01625, Plus Que Pro Digital c/ Qwesta',
+    'https://www.courdecassation.fr/decision/67f9f6fb190d73a10ce27db6',
   ),
   ORANGE: ref(
-    'CA Paris, 14 févr. 2024, Entr’Ouvert c/ Orange · Compte rendu Legalis',
-    'https://www.legalis.net/actualite/orange-condamne-a-650-000-e-pour-non-respect-de-la-licence-gpl/',
+    'CA Paris, pôle 5 ch. 1, 14 févr. 2024, n° 22/18071, Entr’Ouvert c/ Orange',
+    'https://www.courdecassation.fr/decision/65cdbcdf2425a70008258563',
   ),
   AGPL: ref('GNU AGPL v3, section 13', 'https://www.gnu.org/licenses/agpl-3.0.txt'),
+  GPL3: ref('GNU GPL v3, sections 0, 5 et 6', 'https://www.gnu.org/licenses/gpl-3.0.txt'),
+  SSPL: ref(
+    'Server Side Public License v1, section 13',
+    'https://www.mongodb.com/licensing/server-side-public-license',
+  ),
+  BSL: ref('Business Source License 1.1', 'https://mariadb.com/bsl11/'),
+  LLAMA: ref(
+    'Meta Llama 3 Community License, art. 1 et 2',
+    'https://github.com/meta-llama/llama3/blob/main/LICENSE',
+  ),
   DATAACT: ref(
     'Règlement (UE) 2023/2854, Data Act, chap. VI',
     'https://eur-lex.europa.eu/eli/reg/2023/2854/oj',
@@ -281,7 +299,7 @@ add(
       {
         cells: [
           { value: '**Fonctionnalités, algorithmes, langage, formats**' },
-          { value: 'Non : ce sont des idées et des principes[^3].' },
+          { value: 'Non : ce sont des idées et des principes[^2].' },
           {
             value:
               'Brevet seulement si l’invention produit un effet technique ; secret ; concurrence déloyale.',
@@ -299,34 +317,47 @@ add(
           },
         ],
       },
+      {
+        cells: [
+          { value: '**Bases de données**' },
+          {
+            value:
+              'Non pour le contenu ; oui pour la structure si le choix ou la disposition des données est original.',
+          },
+          {
+            value:
+              'Droit sui generis du producteur : protection du contenu si l’investissement est substantiel, 15 ans par version[^3].',
+          },
+        ],
+      },
     ],
   },
-  [S.L111_1, S.DIR2009, S.SAS],
+  [S.L111_1, S.DIR2009, S.L341_1],
 );
 
 add(
   grid(
     '01 · Éléments protégés',
-    'Fonctionnalités, interface et code : régimes distincts',
+    'Recours contre un concurrent qui copie le service sans copier le code',
     [
       [
-        'Fonctionnalités',
-        'Un concurrent qui observe votre logiciel et réécrit un programme offrant les mêmes fonctions ne contrefait pas votre code[^1]. Le droit d’auteur ne réserve pas le résultat obtenu.',
+        'Contrefaçon : non',
+        'Réécrire un programme qui offre les mêmes fonctions, après observation, ne contrefait pas le code[^1]. Agir en contrefaçon suppose une reprise du code, de sa structure ou de la documentation.',
       ],
       [
-        'Interface',
-        'La CJUE juge que l’interface utilisateur graphique n’est pas une forme d’expression du programme[^2]. Elle peut être protégée comme œuvre ordinaire si elle est originale, ou déposée comme dessin ou modèle.',
+        'Interface et marque',
+        'L’interface n’est pas une expression du programme[^2], mais une interface originale reste protégeable comme œuvre ordinaire ou dessin et modèle. Le nom et le logo se défendent par la marque.',
       ],
       [
-        'Brevet',
-        'Les programmes d’ordinateur « en tant que tels » sont exclus[^3]. Une invention mise en œuvre par logiciel est brevetable si elle apporte une contribution technique : procédé industriel, traitement de signal, pas une méthode d’affaires.',
+        'Concurrence déloyale et parasitisme',
+        'Action distincte de la contrefaçon : reprise de l’apparence globale, confusion, captation du travail et des investissements. Preuve à constituer : captures datées, chronologie, investissements.',
       ],
       [
-        'Secret',
-        'Le code non divulgué, l’architecture et les paramétrages sont des secrets d’affaires si des mesures de protection raisonnables existent. Le SaaS protège le code en ne le livrant jamais.',
+        'Brevet et secret',
+        'Les programmes « en tant que tels » sont exclus du brevet[^3] ; une invention mise en œuvre par logiciel à effet technique reste brevetable. Le reste relève du secret, à condition de le protéger.',
       ],
     ],
-    '**Piège Nexa** · « notre algorithme est protégé » est faux dans la plupart des cas. Ce qui est protégé est le code tel qu’écrit ; ce qui est défendable contre un concurrent est le secret, la marque, l’interface originale et la loyauté commerciale.',
+    '**Piège Nexa** · « notre algorithme est protégé » est faux dans la plupart des cas. Face à un clone, les fondements utiles sont la marque, l’interface originale, le parasitisme et le secret, pas le droit d’auteur sur le code.',
   ),
   [S.SAS, S.BSA, S.L611_10],
 );
@@ -366,22 +397,22 @@ add(
   split(
     '02 · Titularité des droits',
     'Cession des droits du freelance',
-    '**La règle.** L’auteur est titulaire dès la création[^1]. Une société ne peut pas être auteur : elle ne détient des droits que par dévolution légale, cession écrite ou œuvre collective. Payer la facture achète la prestation, pas les droits.\n\n**Le formalisme.** Le contrat de transmission est constaté par écrit (L. 131-2) ; la cession précise les droits cédés, leur étendue, leur destination, le lieu et la durée.',
+    '**La règle.** L’auteur est titulaire dès la création[^1]. Une société ne détient des droits que par dévolution légale, cession écrite ou œuvre collective. Payer la facture achète la prestation, pas les droits.\n\n**Le formalisme.** Cession écrite, précisant les droits cédés, leur étendue, leur destination, le lieu et la durée. Une clause générale sur « toute la propriété intellectuelle future » est fragile : la cession globale des œuvres futures est nulle.',
     [
       [
         'Cession implicite : incertitudes',
-        'La Cour de cassation a laissé passer en 2026 une cession implicite retenue par les juges du fond, dans une affaire de packaging, par un rejet non spécialement motivé[^2]. Rien ne garantit la même issue pour un logiciel.',
+        'En 2026, la Cour de cassation a approuvé une cour d’appel d’avoir déclaré irrecevable l’action de l’agence qui avait implicitement cédé ses droits sur des créations graphiques[^2]. Une cession implicite se plaide dans les deux sens : ne pas compter dessus.',
       ],
       [
         'Preuve par le dépôt Git',
-        'La CA Colmar a réparti les droits sur un logiciel codéveloppé d’après l’historique GitLab : 76 % des commits pour le prestataire, qui a été jugé titulaire de l’essentiel[^3].',
+        'La cour d’appel de Colmar a examiné l’historique GitLab d’un logiciel codéveloppé : 76 % du travail pour le prestataire, 21 % pour le client, limité à l’interface. Le prestataire a été jugé titulaire des codes sources[^3].',
       ],
       [
         'Sous-traitant du prestataire',
         'Si l’agence a elle-même fait appel à un indépendant, la chaîne se rompt à ce maillon : exiger la garantie et les cessions amont.',
       ],
     ],
-    '**Réflexe Nexa** · faire signer au freelance un acte de cession confirmatif, daté, listant les dépôts et versions, avant l’ouverture de la data room.',
+    '**Réflexe Nexa** · faire signer au freelance un acte de cession confirmatif, daté, listant les dépôts et versions déjà livrés, avant l’ouverture de la data room.',
   ),
   [S.L111_1, S.C2026, S.COLMAR],
 );
@@ -407,6 +438,29 @@ add(
     '**Le droit moral reste.** Même après cession, l’auteur de logiciel garde un droit moral réduit : il ne peut s’opposer aux modifications non préjudiciables à son honneur ni exercer un droit de retrait[^3]. Il conserve la paternité.',
   ),
   [S.L113_9, S.L113_9_1, S.L121_7],
+);
+
+add(
+  grid(
+    '02 · Titularité des droits',
+    'Code des fondateurs : deux trous fréquents dans la chaîne de droits',
+    [
+      [
+        'Code écrit avant l’immatriculation',
+        'Le prototype codé par les fondateurs avant la création de la société leur appartient à titre personnel. L’immatriculation ne transfère rien : il faut un apport en nature ou une cession écrite à la société.',
+      ],
+      [
+        'Président ou directeur général qui code',
+        'Le mandataire social n’est pas un salarié : la dévolution légale au profit de l’employeur[^1] ne joue pas pour lui. Le CTO président qui écrit le produit reste titulaire tant qu’il n’a pas cédé.',
+      ],
+      [
+        'Pièces à produire',
+        'Acte d’apport ou de cession visant les dépôts et versions existants, pacte d’associés organisant la cession des développements au fil de l’eau (une cession globale des œuvres futures est nulle[^2]), contrat de travail distinct du mandat.',
+      ],
+    ],
+    '**Fait Nexa** · le cofondateur parti avait écrit le moteur de facturation sans contrat de travail. Rien ne l’oblige à céder après son départ : la négociation se fait contre solde, et elle aurait dû être réglée dans le pacte.',
+  ),
+  [S.L113_9, S.L131_1],
 );
 
 add(
@@ -609,26 +663,28 @@ add({
     },
     {
       cells: [
-        { value: '**PaaS et IaaS**' },
+        { value: '**Développements spécifiques**' },
         {
-          value: 'Une plateforme ou une infrastructure pour exécuter son propre logiciel.',
+          value: 'Ce que le contrat dit : licence élargie, cession limitée au spécifique, ou rien.',
         },
-        { value: 'La plateforme ; le client garde son code et ses données.' },
         {
-          value: 'Portabilité, formats d’export, sous-traitance, localisation.',
+          value: 'Le socle et tout ce qui est réutilisable, sauf cession écrite.',
+        },
+        {
+          value:
+            'Périmètre précis du spécifique, prix distinct, droit de réutiliser le savoir-faire.',
         },
       ],
     },
     {
       cells: [
-        { value: '**Données et spécifiques**' },
+        { value: '**Marque blanche et revente**' },
         {
-          value: 'Les données restent au client ; les spécifiques se négocient.',
+          value: 'Un droit de sous-licencier ou de distribuer sous sa marque.',
         },
-        { value: 'Les développements réutilisables, sauf cession.' },
+        { value: 'Le code, la marque de l’éditeur sur le produit d’origine.' },
         {
-          value:
-            'Qui possède le paramétrage, les connecteurs, les modèles entraînés sur les données client.',
+          value: 'Territoire, exclusivité, redevances, responsabilité envers les clients finaux.',
         },
       ],
     },
@@ -643,7 +699,7 @@ add(
     [
       [
         'Frais de changement',
-        'Supprimés à compter du 12 janvier 2027 ; en France, la loi SREN plafonne déjà à zéro les frais de transfert de données couverts.',
+        'Réduits pendant la période transitoire, puis supprimés à compter du 12 janvier 2027 pour le changement de fournisseur[^1].',
       ],
       [
         'Contrats antérieurs',
@@ -662,28 +718,51 @@ add(
 add(
   grid(
     '04 · Droits du client',
-    'Obligations open source selon la licence et la distribution',
+    'Obligations open source selon la licence et le mode de fourniture',
     [
       [
-        'Permissive',
-        'MIT, BSD, Apache : réutilisation libre, y compris dans un logiciel propriétaire, à condition de conserver les notices et, pour Apache, la clause brevet.',
+        'Permissives',
+        'MIT, BSD, Apache 2.0 : usage propriétaire possible. À la distribution, conserver avis et licence ; Apache exige aussi le signalement des fichiers modifiés et le fichier NOTICE, et encadre les brevets.',
       ],
       [
-        'Copyleft faible',
-        'LGPL, MPL : les modifications du composant doivent être publiées, pas le reste du programme, si l’intégration respecte les frontières prévues.',
+        'Copyleft limité',
+        'LGPL : à la livraison d’un logiciel lié, permettre le remplacement de la bibliothèque et fournir les éléments requis. MPL : publier le source des fichiers couverts distribués, pas des fichiers indépendants.',
       ],
       [
         'Copyleft fort',
-        'GPL : distribuer un programme qui intègre le composant oblige à fournir le code source de l’ensemble sous GPL. Le SaaS sans distribution de copie n’est pas une distribution.',
+        'GPL : si l’ensemble distribué dérive du code GPL, il passe sous GPL avec son source. Un service en ligne sans copie transmise n’est pas une distribution[^1] : le SaaS pur n’active pas l’obligation.',
       ],
       [
         'Copyleft réseau',
-        'AGPL : offrir l’accès au code source correspondant aux utilisateurs qui interagissent à distance avec une version modifiée[^1]. C’est le cas visé par le SaaS.',
+        'AGPL : si vous modifiez le composant et l’exposez en ligne, offrir à tout utilisateur distant le source correspondant[^2]. Un composant AGPL non modifié n’impose pas la publication de votre code.',
       ],
     ],
-    '**La sanction** · la violation d’une licence libre relève de la contrefaçon, pas seulement du contrat[^2]. La cour d’appel de Paris a condamné Orange pour non-respect de la GPL v2 : 500 000 euros de pertes, 150 000 euros de bénéfices et 150 000 euros de préjudice moral, d’après le compte rendu Legalis[^3].',
+    '**La sanction** · le non-respect d’une licence libre expose à la contrefaçon, pas seulement au contrat. La cour d’appel de Paris a condamné Orange pour violation de la GPL v2 : 500 000 euros de pertes, 150 000 euros de préjudice moral, 150 000 euros de bénéfices[^3].',
   ),
-  [S.AGPL, S.FREE, S.ORANGE],
+  [S.GPL3, S.AGPL, S.ORANGE],
+);
+
+add(
+  grid(
+    '04 · Droits du client',
+    'Licences « source available » et « open weights » : pas open source',
+    [
+      [
+        'BSL (MariaDB, Terraform)',
+        'Usage en production interdit par défaut, sauf autorisation complémentaire propre au logiciel, souvent limitée aux offres qui ne concurrencent pas l’éditeur. Bascule vers une licence libre après quatre ans[^1].',
+      ],
+      [
+        'SSPL (MongoDB) et Elastic 2.0',
+        'SSPL : fournir le logiciel comme service, même non modifié, oblige à publier le code de tout le service, bien au delà de l’AGPL[^2]. Elastic 2.0 : interdiction de l’offrir en service hébergé ou géré.',
+      ],
+      [
+        'Llama 3 et Gemma',
+        'Llama 3 : mention « Built with Meta Llama 3 », politique d’usage acceptable, interdiction d’entraîner un modèle concurrent avec ses sorties, licence spéciale au delà de 700 M d’utilisateurs[^3]. Gemma 1 à 3 : usages interdits à répercuter dans vos contrats.',
+      ],
+    ],
+    '**Réflexe Nexa** · le mot « open » sur la page d’accueil ne dit rien du droit d’usage. Pour chaque composant et chaque modèle de la SBOM : version exacte de la licence, usage en production autorisé, hébergement en service autorisé, obligations de mention.',
+  ),
+  [S.BSL, S.SSPL, S.LLAMA],
 );
 
 /* ───────────────────────── 05 · Comment le prouver ───────────────────────── */
@@ -699,26 +778,26 @@ add(
 add(
   grid(
     '05 · Moyens de preuve',
-    'Preuves de l’auteur, de la version et du contenu',
+    'Dispositif de preuve recommandé pour un éditeur de logiciel',
     [
       [
-        'Dépôt chez un tiers',
-        'L’APP conserve le code source sous scellés et délivre une attestation de dépôt ; le séquestre organise sa remise au client en cas de défaillance de l’éditeur[^1].',
+        'Socle : Git signé chez un tiers',
+        'Commits signés, dépôt hébergé chez un tiers que le prestataire n’administre pas, archives de chaque version taguée. C’est la preuve quotidienne, gratuite, de qui a écrit quoi et quand.',
       ],
       [
-        'e-Soleau ou entiercement INPI',
-        'Preuve de création à une date précise, sans examen du contenu ni création d’un droit[^2].',
+        'Versions majeures : dépôt APP',
+        'Le code source est conservé sous scellés avec attestation de dépôt ; le séquestre organise la remise au client si l’éditeur défaille[^1]. Un dépôt par version majeure suffit.',
       ],
       [
-        'Horodatage qualifié',
-        'L’horodatage électronique qualifié bénéficie d’une présomption d’exactitude de la date et d’intégrité des données[^3].',
+        'Horodatage qualifié des archives',
+        'L’horodatage électronique qualifié bénéficie d’une présomption d’exactitude de la date et d’intégrité[^3]. À appliquer au hash de chaque archive de version.',
       ],
       [
-        'Dépôt Git signé et blockchain',
-        'Commits signés, archives de versions, ancrage blockchain : le TJ de Marseille a admis en 2025 la valeur probante d’un horodatage blockchain, sans qu’il prouve la titularité.',
+        'Peu adaptés au code',
+        'e-Soleau INPI : date certaine sur un contenu limité, utile pour un cahier des charges, pas pour un dépôt entier[^2]. Ancrage blockchain : preuve de date sans présomption légale, laissée à l’appréciation du juge.',
       ],
     ],
-    '**Règle** · aucun dépôt ne crée le droit ; il en fixe la date et le contenu. La chaîne de preuve minimale par version majeure : hash, code source, documentation, manifeste de dépendances, liste des contributeurs, part du code générée par IA.',
+    '**Règle** · aucun dépôt ne crée le droit ; il fixe la date et le contenu. Par version majeure : hash, code source, documentation, SBOM, liste des contributeurs, part du code produite avec un assistant.',
   ),
   [S.APP, S.SOLEAU, S.EIDAS],
 );
