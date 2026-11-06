@@ -110,6 +110,25 @@ describe('buildThemeCss', () => {
       await browser.close();
     }
   }, 30000);
+
+  it('does not flatten an opaque JPEG logo to a black square on a bright primary', async () => {
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage();
+      await page.setContent(`<style>${readFileSync('src/export/style.css', 'utf8')}
+        ${buildThemeCss({ ...brand, primary: '#e68a00', ink: '#28231e' })}</style>
+        <div class="slidev-page"><div class="slidev-layout k-dark"><div class="k-cta-title">Next step</div></div>
+        <img class="k-slide-logo" src="/media/logo.jpg?v=1" /></div>`);
+      expect(
+        await page.locator('.k-slide-logo').evaluate((el) => getComputedStyle(el).filter),
+      ).toBe('none');
+      expect(await page.locator('.k-cta-title').evaluate((el) => getComputedStyle(el).color)).toBe(
+        'rgb(40, 35, 30)',
+      );
+    } finally {
+      await browser.close();
+    }
+  });
 });
 
 describe('buildHeadmatter', () => {

@@ -2588,6 +2588,14 @@
 .slidev-page:has(.k-dark) > .k-slide-logo-link .k-slide-logo {
   filter: var(--k-primary-logo-filter);
 }
+/* Opaque JPEG logos have a baked-in background: brightness(0) turns the whole
+   image into a black square. Give those assets a neutral tile instead. */
+.slidev-page:has(.k-dark) > .k-slide-logo:is([src*=".jpg"], [src*=".jpeg"]),
+.slidev-page:has(.k-dark) > .k-slide-logo-link .k-slide-logo:is([src*=".jpg"], [src*=".jpeg"]) {
+  filter: none;
+  background: #fff;
+  border-radius: 0.3rem;
+}
 .k-slide-footer a {
   color: inherit;
   pointer-events: auto;
@@ -2609,7 +2617,7 @@
   max-width: 64rem;
 }
 .k-cta-title {
-  color: #fff;
+  color: var(--fg);
   font-size: var(--t-display);
   line-height: 0.95;
   margin: 0;
