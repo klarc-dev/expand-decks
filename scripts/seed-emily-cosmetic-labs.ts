@@ -186,7 +186,7 @@ const pages: DraftSlide[] = [
     primaryAction: 'Explore Cosmetic Labs',
     primaryActionUrl: DIRECTORY,
     footerNote: 'cosmetic-labs.com · Company directory, project requests and direct messaging',
-    footnotes: [source('Cosmetic Labs', SITE)],
+    footnotes: [],
   },
 ];
 
