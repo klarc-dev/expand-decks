@@ -22,6 +22,8 @@ Tu extrais :
 
 Règles du dossier :
 - Préserve le périmètre, la terminologie, le statut épistémique et le point de vue du brief et des sources.
+- Couvre chacun des mécanismes explicitement demandés et leur bénéfice concret ; ne substitue pas des précautions génériques aux sujets concrets demandés.
+- Une URL ou un nom de domaine dans le brief désigne le sujet à étudier, pas une page consultée. Si aucune preuve du site n'a été capturée, n'attribue pas au site de fonctionnalité ou de résultat non fourni par le brief. Ne présente jamais le brief lui-même comme une source bibliographique.
 - Pour une demande d'explication, développe un petit nombre de points clés qui couvrent directement le sujet et le public ; ne transforme pas chaque nuance, précaution ou sous-thème possible en point clé autonome.
 - L'absence d'un détail propre à l'auteur n'est pas un contenu à enseigner. Sauf demande explicite d'audit, n'ajoute ni avertissement, ni réserve répétée, ni point clé sur ce que le brief ne précise pas ; formule simplement les connaissances générales comme telles.
 - Ne transforme pas une explication en plaidoyer, une incertitude en certitude ni une corrélation en causalité.
@@ -119,6 +121,7 @@ Règles de rédaction :
 - Pour "table" : colonnes = en-têtes, rows = lignes alignées sur les colonnes.
 - Utilise le champ footnotes pour rattacher les affirmations vérifiables aux références disponibles. Place l’appel \`[^1]\`, \`[^2]\`… juste après l’affirmation concernée dans un champ textuel, avec le même numéro que la note dans footnotes. Cite la norme, l’article, l’auteur ou l’organisme de façon courte ; n’invente jamais une référence. Les footnotes sont des sources de la diapositive, pas une bibliographie autonome.
 - Pour un contenu juridique ou normatif, remplace toute formule générale par la règle exacte, ses conditions cumulatives, son exception ou incertitude, puis sa conséquence pratique. Mentionne les articles et dates disponibles.
+- Sans référence bibliographique autorisée dans le dossier, laisse footnotes vide et n'insère aucun appel [^n] ; le brief n'est jamais une référence à citer.
 - Évite les adjectifs d’évaluation et le métadiscours ("clair", "complet", "robuste", "essentiel", "pertinent", "il est important de", "il convient de noter"). Chaque phrase doit apporter un critère, une distinction, une obligation, une date, une conséquence, une réserve ou une action.
 - Textes concis et factuels ; reste dans la langue du dossier ; ne répète pas le contenu d'une autre diapositive.`;
 }

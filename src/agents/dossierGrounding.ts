@@ -5,6 +5,7 @@ import type { Evidence } from '../lib/sources/types';
 import { generateStructured } from './model';
 import { withDeckLanguage } from './requestContext';
 import { DeckDossierSchema, type DeckDossier } from './schemas';
+import { referencesFromBrief } from './briefReferences';
 
 const DossierGroundingVerdict = z.object({
   supported: z.boolean(),
@@ -62,7 +63,7 @@ export async function groundDossier(
   });
   if (verdict.supported) return dossier;
 
-  return generateStructured({
+  const repaired = await generateStructured({
     name: 'gather:grounding-repair',
     instructions: DOSSIER_REPAIR_INSTRUCTIONS,
     schema: DeckDossierSchema,
@@ -73,4 +74,14 @@ export async function groundDossier(
     requestContext: context,
     abortSignal,
   });
+  return {
+    ...repaired,
+    ...(repaired.references
+      ? {
+          references: evidence.length
+            ? repaired.references
+            : referencesFromBrief(repaired.references, dossier.rawBrief),
+        }
+      : {}),
+  };
 }

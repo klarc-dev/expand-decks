@@ -55,6 +55,21 @@ describe('groundDossier', () => {
     expect(repairCall.instructions).toContain('connaissances générales établies');
   });
 
+  it('discards a fake brief citation reintroduced by a grounding repair', async () => {
+    mockedGenerateStructured
+      .mockResolvedValueOnce({
+        supported: false,
+        unsupportedClaims: ['Citation'],
+        reason: 'Invented',
+      })
+      .mockResolvedValueOnce({
+        ...dossier,
+        references: ['User-provided brief'],
+      });
+    const result = await groundDossier(dossier, []);
+    expect(result.references).toEqual([]);
+  });
+
   it('treats established explanatory knowledge as authorized while protecting case-specific facts', async () => {
     mockedGenerateStructured.mockResolvedValueOnce({
       supported: true,

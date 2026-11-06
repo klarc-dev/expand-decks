@@ -174,6 +174,25 @@ describe('writeSlide invariants', () => {
     expect(instructions).not.toContain('Les sources servent seulement à vérifier les faits');
   });
 
+  it('rejects fabricated footnotes and markers when the dossier has no references', async () => {
+    mocked.mockResolvedValue({
+      blockType: 'statement',
+      title: stub.title,
+    } as never);
+    await writeSlide(stub, { ...dossier, references: [] }, []);
+    const validate = mocked.mock.calls[0]![0].validate!;
+    expect(
+      validate({
+        title: stub.title,
+        body: 'Claim [^1]',
+        footnotes: [{ text: 'User-provided brief' }],
+      } as never),
+    ).toEqual(
+      expect.arrayContaining([expect.stringContaining('aucune référence bibliographique')]),
+    );
+    expect(validate({ title: stub.title, body: 'Claim', footnotes: [] } as never)).toEqual([]);
+  });
+
   it('never exposes connected source ids as footnote references', async () => {
     mocked.mockResolvedValue({
       blockType: 'statement',

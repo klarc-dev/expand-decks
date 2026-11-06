@@ -102,24 +102,24 @@ Manual slide work can use these contracts as a review checklist, but it does not
 
 | Layout | Runtime job | Prompt fingerprint |
 | --- | --- | --- |
-| `cover` | `writer:cover` | `a879a78dae8e` |
-| `section` | `writer:section` | `fdf201cf4a74` |
-| `statement` | `writer:statement` | `602c2cb91c03` |
-| `twoCols` | `writer:twoCols` | `add88949b93c` |
-| `cardGrid` | `writer:cardGrid` | `f2e78f8f4dc3` |
-| `stats` | `writer:stats` | `5553d9c36f7b` |
-| `quotes` | `writer:quotes` | `62b1b3748590` |
-| `cta` | `writer:cta` | `5d1803e0729a` |
-| `table` | `writer:table` | `c0b420a333cd` |
-| `timeline` | `writer:timeline` | `adeb1f27df37` |
-| `mermaid` | `writer:mermaid` | `94d6c7d31537` |
-| `agenda` | `writer:agenda` | `ed67ab8ba9d2` |
+| `cover` | `writer:cover` | `a12ae34e678d` |
+| `section` | `writer:section` | `5d47c23360c1` |
+| `statement` | `writer:statement` | `b27cb1211a1e` |
+| `twoCols` | `writer:twoCols` | `63726f6cdd7d` |
+| `cardGrid` | `writer:cardGrid` | `4d78a8837d32` |
+| `stats` | `writer:stats` | `36302a12d4c2` |
+| `quotes` | `writer:quotes` | `280fead6d80e` |
+| `cta` | `writer:cta` | `6b581b3ec9ff` |
+| `table` | `writer:table` | `dd5185e2045a` |
+| `timeline` | `writer:timeline` | `4176967b36b9` |
+| `mermaid` | `writer:mermaid` | `f7c12f5d842c` |
+| `agenda` | `writer:agenda` | `76051b052b17` |
 
 ## Prompt drift fingerprints
 
 These fingerprints make changes to the underlying prompts visible without copying large prompt bodies into the skill:
 
-- Gather: `741552a99c84`
+- Gather: `0955bc0159c9`
 - Research: `2fb6e9a98e3f`
 - Structure: `dfe20db5d00c`
 - Visual: `19de27c19f78`

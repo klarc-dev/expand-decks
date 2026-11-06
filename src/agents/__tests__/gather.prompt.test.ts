@@ -37,4 +37,35 @@ describe('gather prompt scope', () => {
     expect(instructions).not.toContain('Required output language');
     expect(call.requestContext?.get('language')).toBe('en');
   });
+
+  it('does not convert a brief or an unvisited domain into a bibliographic reference', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      coreIdea: 'Plateforme',
+      audience: 'Laboratoires',
+      soWhat: 'Partenaires',
+      keyPoints: ['Annuaire', 'Requêtes', 'Messagerie'],
+      data: [],
+      sources: [],
+      references: ['User-provided presentation brief', 'cosmetic-labs.com'],
+    });
+    const result = await gather('Présente cosmetic-labs.com et sa messagerie');
+    expect(result.dossier.references).toEqual([]);
+    expect(mockedGenerateStructured.mock.calls[0]![0].instructions).toContain(
+      'mécanismes explicitement demandés',
+    );
+  });
+
+  it('retains an explicitly supplied bibliographic reference', async () => {
+    mockedGenerateStructured.mockResolvedValue({
+      coreIdea: 'Idée',
+      audience: 'Public',
+      soWhat: 'Intérêt',
+      keyPoints: ['Point'],
+      data: [],
+      sources: [],
+      references: ['Author, Article (2024)'],
+    });
+    const result = await gather('Explique ce sujet. Source : Author, Article (2024)');
+    expect(result.dossier.references).toEqual(['Author, Article (2024)']);
+  });
 });

@@ -8,6 +8,7 @@ import { userIsAdminOrAuthor, userIsOrganisationMember } from '@/access/roles';
 import { AGENT_DRAFT_TASK } from '@/jobs/agentDraft';
 import { resolveDocumentTemplate } from '@/documents/templates';
 import { agentDraftStartSchema } from '@/lib/agentDraftContract';
+import { requiresWebsiteResearch } from '@/lib/briefResearch';
 import { DEFAULT_AGENT_MODEL, verifyAgentModel } from '@/lib/agentModel';
 import { COLLECTIONS } from '@/lib/collections';
 import { CTX } from '@/lib/context';
@@ -46,6 +47,15 @@ export async function POST(req: NextRequest) {
     );
   }
   const { presentationId, brief, mode, visual, approvalRequired, slideCountRange } = parsed.data;
+  if (requiresWebsiteResearch(brief)) {
+    return NextResponse.json(
+      {
+        error:
+          'Ce workflow ne peut pas consulter directement un site web. Ajoutez ses pages à une base de connaissances indexée, sélectionnez-la comme source, puis relancez la demande sans instruction de navigation web.',
+      },
+      { status: 422 },
+    );
+  }
   const model = parsed.data.model || DEFAULT_AGENT_MODEL;
   let sourceIds: string[];
   let sourcePolicy: 'none' | 'exclusive' | 'multiple';
@@ -120,7 +130,9 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Template de document invalide' },
+      {
+        error: error instanceof Error ? error.message : 'Template de document invalide',
+      },
       { status: 422 },
     );
   }
@@ -144,7 +156,9 @@ export async function POST(req: NextRequest) {
       await verifyAgentModel(model);
     } catch (error) {
       return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Modèle indisponible' },
+        {
+          error: error instanceof Error ? error.message : 'Modèle indisponible',
+        },
         { status: 422 },
       );
     }

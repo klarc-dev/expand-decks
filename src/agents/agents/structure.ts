@@ -57,6 +57,7 @@ function dossierPrompt(dossier: DeckDossier): string {
     `PUBLIC : ${dossier.audience}`,
     `POURQUOI ÇA COMPTE : ${dossier.soWhat}`,
     `POINTS CLÉS (chacun doit être couvert) :\n${dossier.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`,
+    `DEMANDE ORIGINALE (périmètre et mécanismes à préserver, pas une source) : ${dossier.rawBrief}`,
     dossier.data.length ? `DONNÉES :\n${dossier.data.map((d) => `- ${d}`).join('\n')}` : '',
     dossier.references?.length
       ? `RÉFÉRENCES DISPONIBLES :\n${dossier.references.map((reference) => `- ${reference}`).join('\n')}`
@@ -258,7 +259,11 @@ export async function structureWithProvenance(
   if (revisionContext && !revisionChangesStructure(dossier.rawBrief)) {
     const preserved = parseRevisionContext(revisionContext, dossier.rawBrief, template);
     if (preserved && (!slideCountRange || schema.safeParse({ slides: preserved }).success)) {
-      return { stubs: finalizeOutline(preserved, template), evidence: [], sourceFailures: [] };
+      return {
+        stubs: finalizeOutline(preserved, template),
+        evidence: [],
+        sourceFailures: [],
+      };
     }
   }
   const explicit = parseSlideBySlideBrief(dossier.rawBrief);

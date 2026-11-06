@@ -20,6 +20,7 @@ import { GATHER_INSTRUCTIONS, RESEARCH_INSTRUCTIONS } from '../prompts/phases';
 import { findInformationalStyleViolations } from '../prompts/style';
 import { DeckDossierSchema, type DeckDossier } from '../schemas';
 import { researchSources } from './research';
+import { referencesFromBrief } from '../briefReferences';
 
 const LLM_SCHEMA = DeckDossierSchema.omit({ rawBrief: true, language: true });
 
@@ -67,7 +68,12 @@ export async function gather(
   return {
     dossier: {
       ...dossier,
-      references: dossier.references ?? [],
+      // A brief is task input, not a bibliographic source. In brief-only runs,
+      // retain only citations actually written in the brief, never model-made
+      // labels such as "User-provided brief" or an inferred site URL.
+      references: evidence.length
+        ? (dossier.references ?? [])
+        : referencesFromBrief(dossier.references, brief),
       // A model may only name external source ids when the corresponding MCP
       // call produced captured provenance. Brief-only drafting stays unsourced.
       sources: evidence.length > 0 ? dossier.sources : [],

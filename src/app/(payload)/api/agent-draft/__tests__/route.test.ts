@@ -48,6 +48,18 @@ beforeEach(() => {
 });
 
 describe('agent draft source policy API', () => {
+  it('refuses explicit website research before creating a misleading unsourced run', async () => {
+    const response = await POST(
+      request({
+        ...base,
+        brief: 'Présentation du site cosmetic-labs.com sur lequel tu dois te renseigner',
+      }),
+    );
+    expect(response.status).toBe(422);
+    expect((await response.json()).error).toContain('base de connaissances');
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.queue).not.toHaveBeenCalled();
+  });
   it.each([
     { min: 2, max: 10 },
     { min: 3, max: 41 },
@@ -149,10 +161,15 @@ describe('agent draft source policy API', () => {
   });
 
   it('refuses a knowledge base that is not indexed before the run row exists', async () => {
-    mocks.find.mockResolvedValue({ docs: [{ id: 42, name: 'Contrats', readiness: 'empty' }] });
+    mocks.find.mockResolvedValue({
+      docs: [{ id: 42, name: 'Contrats', readiness: 'empty' }],
+    });
 
     const response = await POST(
-      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_42'] } }),
+      request({
+        ...base,
+        sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_42'] },
+      }),
     );
 
     expect(response.status).toBe(400);
@@ -169,7 +186,10 @@ describe('agent draft source policy API', () => {
     );
 
     const response = await POST(
-      request({ ...base, sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_42'] } }),
+      request({
+        ...base,
+        sourcePolicy: { mode: 'exclusive', sourceIds: ['knowledge_42'] },
+      }),
     );
 
     expect(response.status).toBe(202);
@@ -189,7 +209,10 @@ describe('agent draft source policy API', () => {
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({
         collection: 'agent-runs',
-        data: expect.objectContaining({ status: 'failed', errorSummary: 'Error: ValidationError' }),
+        data: expect.objectContaining({
+          status: 'failed',
+          errorSummary: 'Error: ValidationError',
+        }),
       }),
     );
   });
@@ -233,8 +256,14 @@ describe('agent draft source policy API', () => {
           : [],
     }));
     expect(
-      (await POST(request({ ...base, sourceIds: ['knowledge_1', 'knowledge_2', 'knowledge_1'] })))
-        .status,
+      (
+        await POST(
+          request({
+            ...base,
+            sourceIds: ['knowledge_1', 'knowledge_2', 'knowledge_1'],
+          }),
+        )
+      ).status,
     ).toBe(202);
     expect(mocks.create).toHaveBeenLastCalledWith(
       expect.objectContaining({

@@ -137,7 +137,17 @@ export async function writeSlide(
     }`,
     schema: aiSchemaOf(spec) as never,
     prompt,
-    validate: findFinalSlideViolations,
+    validate: (value) => [
+      ...findFinalSlideViolations(value),
+      ...(!revisionContext &&
+      !dossier.references?.length &&
+      ((Array.isArray(value.footnotes) && value.footnotes.length > 0) ||
+        /\[\^\d+\]/.test(JSON.stringify(value)))
+        ? [
+            'footnotes : aucune référence bibliographique autorisée ; retire les notes et appels de note',
+          ]
+        : []),
+    ],
     maxValidationRepairs: 3,
     requestContext: withDeckLanguage(requestContext, dossier.language),
     abortSignal,
