@@ -70,7 +70,7 @@ it('wraps title pills on both surfaces with loaded IBM Plex Mono and shared prev
           expect(metric.right).toBeLessThanOrEqual(1280);
           expect(metric.bottom).toBeLessThanOrEqual(720);
           expect(metric.font).toContain('IBM Plex Mono');
-          expect(metric.color).toBe('rgb(247, 246, 242)');
+          expect(metric.color).toBe('rgb(255, 255, 255)');
           expect(metric.background).toBe('rgb(3, 74, 78)');
         }
         expect(await page.evaluate(() => document.fonts.check('600 16px IBM Plex Mono'))).toBe(
