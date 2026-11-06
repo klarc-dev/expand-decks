@@ -1,7 +1,7 @@
 /** Referenced staged media, including JSON-valued chrome headmatter. */
 export function referencedMediaFiles(markdown: string): string[] {
   const filenames = Array.from(
-    markdown.matchAll(/(?:["']|image:\s*)(?:\.\/|\/)media\/([^"'\s]+)/g),
+    markdown.matchAll(/(?:["']|image:\s*)(?:\.\/|\/)media\/([^"'\r\n]+?)(?=["'\r\n]|\s*$)/gm),
     (match) => match[1]!,
   );
   return [...new Set(filenames)];

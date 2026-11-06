@@ -7,6 +7,13 @@ it('stages both JSON headmatter logos and bound image sources', () => {
     ),
   ).toEqual(['logo.svg', 'white.svg', 'diagram.webp']);
 });
+it('preserves spaces in a referenced logo filename', () => {
+  expect(
+    referencedMediaFiles(
+      `klarcLogo: {"light":"/media/Cosmetic labs file-05.jpg","dark":null}\n<img src="./media/Project image 1.png">`,
+    ),
+  ).toEqual(['Cosmetic labs file-05.jpg', 'Project image 1.png']);
+});
 it.each(['../private', '/absolute', 'nested/file', 'nested\\file', '..', '.', '', 'bad\0name'])(
   'rejects unsafe staged path %s',
   (filename) =>
