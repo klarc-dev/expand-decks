@@ -85,6 +85,7 @@ export type NativeExportTargets = {
   cover?: string;
   pageImages?: string;
   settleWaitMs?: number;
+  spaBase?: string;
 };
 
 async function validateSlideLayout(
@@ -98,6 +99,7 @@ async function validateSlideLayout(
   if (targets.cover) args.push('--cover', targets.cover);
   if (targets.pageImages) args.push('--png', targets.pageImages);
   if (targets.settleWaitMs) args.push('--wait', String(targets.settleWaitMs));
+  if (targets.spaBase) args.push('--base', targets.spaBase);
   try {
     await execFile(process.execPath, args, {
       cwd: workdir,
@@ -449,7 +451,8 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
     // pass; kPage/kTotal footer data is baked per slide). An empty
     // presentation (allowed by the 16:9 template) has nothing to validate;
     // its required PDF stays the one-page blank Slidev prints for it.
-    await runSlidev(['build', '--base', './'], workdir);
+    const spaBase = `/spa/${slug}/`;
+    await runSlidev(['build', '--base', spaBase], workdir);
     if (slides.length === 0) {
       await runSlidev(buildSlidevExportArgs({ output: ARTIFACTS.pdf, hasMermaid: false }), workdir);
     }
@@ -458,6 +461,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       cover: needsCoverImage ? COVER_DIR : undefined,
       pageImages: needsPageImages ? PAGE_IMAGES_DIR : undefined,
       settleWaitMs: nativeSettleWaitMs({ hasMermaid, hasImages }),
+      spaBase,
     });
     if (slides.length > 0 && needsPageImages) {
       await assertPageImages(pngPaths(join(workdir, PAGE_IMAGES_DIR)), {

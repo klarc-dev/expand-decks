@@ -67,6 +67,21 @@ fonts:
     await expect(validate()).resolves.toMatchObject({
       stdout: expect.stringContaining('"valid":true'),
     });
+
+    // A deck hosted below /spa/<slug>/ must keep its hash routes and assets
+    // within that prefix, including during the DOM layout gate.
+    await execFile(join(workspace, 'node_modules/.bin/slidev'), ['build', '--base', '/spa/deck/'], {
+      cwd: dir,
+      env,
+      timeout: 120_000,
+    });
+    await expect(
+      execFile(
+        process.execPath,
+        [join(workspace, 'validate-layout.mjs'), join(dir, 'dist'), '2', '--base', '/spa/deck/'],
+        { cwd: workspace, env, timeout: 120_000, maxBuffer: 8 * 1024 * 1024 },
+      ),
+    ).resolves.toMatchObject({ stdout: expect.stringContaining('"valid":true') });
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

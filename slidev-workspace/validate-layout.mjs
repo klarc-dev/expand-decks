@@ -34,11 +34,17 @@ const exportTargets = {
   cover: flags.cover ? resolve(flags.cover) : null,
 };
 const settleWaitMs = Number(flags.wait ?? 0);
+const spaBase = flags.base ?? '/';
 const wantsExport = Boolean(exportTargets.pdf || exportTargets.png || exportTargets.cover);
 
-if (!distDir || !Number.isInteger(slideCount) || slideCount < 0) {
+if (
+  !distDir ||
+  !Number.isInteger(slideCount) ||
+  slideCount < 0 ||
+  !/^\/(?:[a-z0-9-]+\/)*$/.test(spaBase)
+) {
   throw new Error(
-    'Usage: node validate-layout.mjs <dist-dir> <slide-count> [safety-gap-px] [--pdf f] [--png d] [--cover d] [--wait ms]',
+    'Usage: node validate-layout.mjs <dist-dir> <slide-count> [safety-gap-px] [--base /spa/slug/] [--pdf f] [--png d] [--cover d] [--wait ms]',
   );
 }
 
@@ -59,8 +65,15 @@ const mimeTypes = {
 const server = createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url ?? '/', 'http://localhost').pathname);
-    const relativePath =
-      pathname === '/' || /^\/\d+$/.test(pathname) ? 'index.html' : pathname.replace(/^\/+/, '');
+    const nested = spaBase !== '/';
+    if (nested && !pathname.startsWith(spaBase) && pathname !== spaBase.slice(0, -1)) {
+      response.writeHead(404).end('Not found');
+      return;
+    }
+    const servedPath = nested
+      ? pathname.slice(spaBase.length).replace(/^\/+/, '')
+      : pathname.replace(/^\/+/, '');
+    const relativePath = !servedPath || /^\d+$/.test(servedPath) ? 'index.html' : servedPath;
     const fileUrl = new URL(relativePath, `${pathToFileURL(`${distDir}/`).href}`);
     if (!fileUrl.pathname.startsWith(pathToFileURL(`${distDir}/`).pathname)) {
       response.writeHead(403).end('Forbidden');
@@ -161,11 +174,14 @@ function inspectTextClipping({ print = false, slideIndex } = {}) {
 try {
   for (let index = 1; index <= slideCount; index += 1) {
     await page.goto(
-      `http://127.0.0.1:${address.port}/${options.data.config.routerMode === 'hash' ? '#/' : ''}${index}`,
+      `http://127.0.0.1:${address.port}${spaBase}${options.data.config.routerMode === 'hash' ? '#/' : ''}${index}`,
       {
         waitUntil: 'networkidle',
       },
     );
+    if (!new URL(page.url()).pathname.startsWith(spaBase)) {
+      throw new Error(`Slidev router escaped SPA base ${spaBase}: ${page.url()}`);
+    }
     await page.evaluate(async () => {
       await document.fonts.ready;
       await Promise.all(
