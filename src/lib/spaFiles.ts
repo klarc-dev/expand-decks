@@ -4,6 +4,7 @@ import { resolve, relative, isAbsolute, extname } from 'node:path';
 import { NextResponse } from 'next/server';
 
 import { spaDir, INDEX_HTML } from '@/lib/paths';
+import { SLUG_RE } from '@/lib/slug';
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -35,6 +36,7 @@ const MIME_TYPES: Record<string, string> = {
  * index.html. Returns 403 on traversal attempts, 404 when the file is absent.
  */
 export async function serveSpaFile(slug: string, pathSegments: string[]): Promise<NextResponse> {
+  if (!SLUG_RE.test(slug)) return new NextResponse('Not found', { status: 404 });
   const filePath = pathSegments.length > 0 ? pathSegments.join('/') : INDEX_HTML;
 
   // Prevent path traversal — reject '..' and absolute segments
@@ -55,12 +57,19 @@ export async function serveSpaFile(slug: string, pathSegments: string[]): Promis
     const content = await readFile(absolutePath);
     const ext = extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    // Next normalizes /spa/<slug>/ to /spa/<slug>. Without a base, Slidev's
+    // ./assets links resolve to /spa/assets and leave an authenticated SPA blank.
+    // The slug is constrained by SLUG_RE above.
+    const body =
+      ext === '.html' && filePath === INDEX_HTML
+        ? content.toString('utf-8').replace('<head>', `<head><base href="/spa/${slug}/">`)
+        : content;
 
     // index.html must revalidate so rebuilds show up immediately; the
     // hash-named assets it references are safe to cache aggressively.
     const cacheControl = ext === '.html' ? 'no-cache' : 'public, max-age=3600, immutable';
 
-    return new NextResponse(content, {
+    return new NextResponse(body, {
       status: 200,
       headers: {
         'Content-Type': contentType,
