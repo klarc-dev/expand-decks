@@ -44,6 +44,32 @@ function mix(base: string, pct: number, towards: 'black' | 'white' | 'transparen
   return `color-mix(in srgb, ${base} ${p}%, ${towards})`;
 }
 
+function rgb(hex: string): number[] {
+  return [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
+}
+
+function luminance(hex: string): number {
+  const channels = rgb(hex).map((channel) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+}
+
+function contrast(a: string, b: string): number {
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (lighter! + 0.05) / (darker! + 0.05);
+}
+
+/** Use the brand ink on bright primary fields rather than assuming white always reads. */
+function onPrimary(primary: string, ink: string): string {
+  return contrast(primary, '#ffffff') >= 4.5
+    ? '#ffffff'
+    : contrast(primary, ink) >= 4.5
+      ? ink
+      : '#000000';
+}
+
 /**
  * Build the `:root { … }` override for an organisation's brand. Returns '' when
  * the brand is null or colors are invalid, so the base CSS stays authoritative.
@@ -56,8 +82,15 @@ export function buildThemeCss(
   const { primary, secondary, ink, paper } = brand;
   if (!isHex(primary) || !isHex(secondary) || !isHex(ink) || !isHex(paper)) return '';
 
+  const foreground = onPrimary(primary, ink);
+  const lightForeground = foreground === '#ffffff';
+  const muted = lightForeground && contrast(primary, '#c7d6d6') >= 4.5 ? '#c7d6d6' : foreground;
+
   return `${selector} {
   --k-teal: ${primary};
+  --k-on-primary: ${foreground};
+  --k-on-primary-muted: ${muted};
+  --k-primary-logo-filter: ${lightForeground ? 'none' : 'brightness(0)'};
   --k-teal-600: ${mix(primary, 88, 'black')};
   --k-teal-700: ${mix(primary, 75, 'black')};
   --k-teal-900: ${mix(primary, 40, 'black')};

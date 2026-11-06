@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { chromium } from '@playwright/test';
 
 import { buildHeadmatter, buildThemeCss } from '../theme';
 
@@ -42,6 +44,72 @@ describe('buildThemeCss', () => {
     expect(css).toContain('--k-ink-soft: color-mix(in srgb, #111111 70%, white);');
     expect(css).toContain('--k-line: color-mix(in srgb, #123456 12%, transparent);');
   });
+
+  it('keeps bright-primary cover text and white logo legible without changing dark brands', async () => {
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage();
+      const baseCss = readFileSync('src/export/style.css', 'utf8');
+      for (const [primary, expectedForeground, expectedFilter] of [
+        ['#e68a00', 'rgb(40, 35, 30)', 'brightness(0)'],
+        ['#02585c', 'rgb(255, 255, 255)', 'none'],
+      ]) {
+        const theme = buildThemeCss({
+          ...brand,
+          primary,
+          ink: '#28231e',
+          paper: '#FAFBFB',
+        });
+        await page.setContent(`<style>${baseCss}\n${theme}</style>
+          <div class="slidev-page"><div class="slidev-layout k-dark" style="width:1280px;height:720px">
+          <div class="k-cover"><h1 class="k-cover-title">Title</h1><p class="k-hero-sub">Subtitle</p>
+          <div class="k-eyebrow k-eyebrow--primary">Label</div></div></div>
+          <img class="k-slide-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" />
+          </div>`);
+        const measured = await page.evaluate(() => {
+          const background = getComputedStyle(document.querySelector('.k-dark')!).backgroundColor;
+          const color = (selector: string) =>
+            getComputedStyle(document.querySelector(selector)!).color;
+          const contrast = (a: string, b: string) => {
+            const luminance = (rgb: string) => {
+              const ctx = document.createElement('canvas').getContext('2d')!;
+              ctx.fillStyle = rgb;
+              ctx.fillRect(0, 0, 1, 1);
+              const channels = [...ctx.getImageData(0, 0, 1, 1).data]
+                .slice(0, 3)
+                .map((v) => v / 255);
+              return channels
+                .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+                .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+            };
+            const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+            return (light! + 0.05) / (dark! + 0.05);
+          };
+          return {
+            title: color('h1'),
+            subtitle: color('.k-hero-sub'),
+            logoFilter: getComputedStyle(document.querySelector('.k-slide-logo')!).filter,
+            ratios: ['h1', '.k-hero-sub', '.k-eyebrow'].map((selector) =>
+              contrast(
+                color(selector),
+                selector === '.k-eyebrow'
+                  ? getComputedStyle(document.querySelector(selector)!).backgroundColor
+                  : background,
+              ),
+            ),
+          };
+        });
+        expect(measured.title).toBe(expectedForeground);
+        if (expectedForeground !== 'rgb(255, 255, 255)') {
+          expect(measured.subtitle).toBe(expectedForeground);
+        }
+        expect(measured.logoFilter).toBe(expectedFilter);
+        for (const ratio of measured.ratios) expect(ratio).toBeGreaterThanOrEqual(4.5);
+      }
+    } finally {
+      await browser.close();
+    }
+  }, 30000);
 });
 
 describe('buildHeadmatter', () => {

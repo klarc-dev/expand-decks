@@ -123,6 +123,9 @@
 
 :root {
   --k-teal: #02585c;
+  --k-on-primary: #fff;
+  --k-on-primary-muted: #c7d6d6;
+  --k-primary-logo-filter: none;
   --k-teal-600: #034a4e;
   --k-teal-700: #023c3f;
   --k-teal-900: #021a1b;
@@ -153,10 +156,8 @@
   --bg: var(--k-paper);
   --fg: var(--k-ink);
 
-  /* Muted text — SOLID colours (no opacity/rgba) so contrast is predictable.
-     Light-ground #5A6B6B on #FAFBFB ≈ 5.6:1; dark-ground #C7D6D6 on the teal
-     gradient (darkest stop #023C3F) ≈ 8:1. --fg-muted flips with .k-dark so a
-     single rule can replace the scattered opacity rules in U3. */
+  /* Muted text is solid so contrast stays predictable on the default palette.
+     Per-organisation primary fields override the dark token in theme.ts. */
   --fg-light-muted: #5a6b6b;
   --fg-dark-muted: #c7d6d6;
   --fg-muted: var(--fg-light-muted);
@@ -235,9 +236,9 @@
    per-ground branching. */
 .k-dark {
   --bg: var(--k-teal);
-  --fg: #fff;
-  --fg-muted: var(--fg-dark-muted);
-  --fg-footer: #eaf2f2;
+  --fg: var(--k-on-primary);
+  --fg-muted: var(--k-on-primary-muted);
+  --fg-footer: var(--k-on-primary);
   --pill-bg: #1f5e61;
   --pill-fg: #fff;
   --pill-border: #6f989a;
@@ -391,7 +392,7 @@
 /* Dark variant for cover / section -------------- */
 .k-dark {
   background: var(--k-teal) !important;
-  color: #fff !important;
+  color: var(--fg) !important;
 }
 
 .k-gradient {
@@ -401,12 +402,12 @@
 .k-dark h1,
 .k-dark h2,
 .k-dark h3 {
-  color: #fff;
+  color: var(--fg);
 }
 
 .k-dark p,
 .k-dark li {
-  color: var(--fg-muted); /* solid #C7D6D6 ≈ 8:1 — was rgba .72 (AA fail) */
+  color: var(--fg-muted); /* solid contrast-aware foreground on the primary field */
 }
 
 /* Links ---------------------------------------- */
@@ -512,7 +513,7 @@
 }
 /* Explicit palette roles retain identical pill geometry in either surface. */
 .k-eyebrow.k-eyebrow--primary {
-  color: var(--k-paper);
+  color: var(--k-on-primary);
   background: var(--k-teal);
   border-color: var(--k-teal);
 }
@@ -521,7 +522,7 @@
    instead of dissolving into the title-slide background. */
 .k-cover .k-eyebrow.k-eyebrow--primary {
   background: var(--k-teal-600);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: currentColor;
 }
 .k-eyebrow.k-eyebrow--secondary {
   color: var(--k-ink);
@@ -2532,11 +2533,11 @@
 }
 .k-dark .k-slide-footer,
 .k-slide-footer--dark {
-  color: #eaf2f2;
+  color: var(--k-on-primary);
 }
 .k-dark .k-slide-footer .page,
 .k-slide-footer--dark .page {
-  color: #fff;
+  color: var(--k-on-primary);
 }
 
 .k-slide-logo {
@@ -2580,6 +2581,12 @@
 }
 .slidev-page:has(.k-cover) > .k-slide-logo-link .k-slide-logo {
   max-width: 100%;
+}
+/* The dark-variant logo is often white; recolor its silhouette on bright brand
+   fields so it cannot disappear against a light primary. */
+.slidev-page:has(.k-dark) > .k-slide-logo,
+.slidev-page:has(.k-dark) > .k-slide-logo-link .k-slide-logo {
+  filter: var(--k-primary-logo-filter);
 }
 .k-slide-footer a {
   color: inherit;
