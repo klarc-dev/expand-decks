@@ -66,8 +66,13 @@ export interface LogoUrls {
 
 function mediaUrl(rel: unknown): string | null {
   if (!rel || typeof rel !== 'object') return null;
-  const filename = (rel as { filename?: unknown }).filename;
-  return typeof filename === 'string' && filename ? `/media/${filename}` : null;
+  const media = rel as { filename?: unknown; updatedAt?: unknown };
+  const filename = media.filename;
+  if (typeof filename !== 'string' || !filename) return null;
+  // Asset names are reused by Slidev builds. A stable media revision avoids
+  // stale cached 404s when a missing SPA asset is restored after publication.
+  const revision = typeof media.updatedAt === 'string' ? Date.parse(media.updatedAt) : NaN;
+  return `/media/${filename}${Number.isFinite(revision) ? `?v=${revision}` : ''}`;
 }
 
 /**

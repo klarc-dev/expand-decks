@@ -2,7 +2,7 @@
 export function referencedMediaFiles(markdown: string): string[] {
   const filenames = Array.from(
     markdown.matchAll(/(?:["']|image:\s*)(?:\.\/|\/)media\/([^"'\r\n]+?)(?=["'\r\n]|\s*$)/gm),
-    (match) => match[1]!,
+    (match) => match[1]!.split('?')[0]!,
   );
   return [...new Set(filenames)];
 }

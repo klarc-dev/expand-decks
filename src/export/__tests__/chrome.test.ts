@@ -42,6 +42,17 @@ describe('resolveLogoUrls', () => {
     });
   });
 
+  it('versions a logo URL by its media revision without changing its staged filename', () => {
+    expect(
+      resolveLogoUrls({
+        logo: { filename: 'Cosmetic labs file-05.jpg', updatedAt: '2026-11-06T13:08:00.000Z' },
+      }),
+    ).toEqual({
+      light: '/media/Cosmetic labs file-05.jpg?v=1793970480000',
+      dark: '/media/Cosmetic labs file-05.jpg?v=1793970480000',
+    });
+  });
+
   it('never puts a black logo on a dark surface or a white logo on paper', () => {
     expect(resolveLogoUrls({ logoBlack: { filename: 'black.svg' } })).toEqual({
       light: '/media/black.svg',
