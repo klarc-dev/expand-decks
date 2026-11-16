@@ -62,3 +62,27 @@ reset link to the real application. Never log reset tokens or SMTP credentials.
 3. `/admin` loads and an administrator can authenticate.
 4. Building a presentation produces both the PDF and SPA under the shared media
    mount, and the public SPA route serves the result.
+
+## Incident: proxy network loss (2026-11-16)
+
+The public site timed out while all four application containers were healthy.
+The web container's `traefik.docker.network` label selected
+`cwarktiocfrejvca0mvdfjar`, but `coolify-proxy` was not attached to that network.
+Sharing the separate `coolify` network did not help because of that explicit label.
+
+Recovery connected the existing proxy to the selected network without restarting
+any service. The network was also declared as external and attached to `traefik`
+in the host's `/data/coolify/proxy/docker-compose.yml`, with a dated backup and
+successful Compose config validation. Coolify may regenerate this host file, so
+recheck network membership after proxy recreation or configuration regeneration.
+
+Verified after recovery: public `/api/health` returned JSON `status: ok` with
+HTTP 200, `/admin` returned the login page with HTTP 200, `/` redirected with
+HTTP 307, and `/api/users/me` returned an anonymous user response. Authenticated
+navigation was not verified. No application restart, deployment, or data change
+was needed.
+
+Monitoring gap: the host proxy watchdog only checks container health, not backend
+network reachability. Slides was absent from the critical-app watchdog allowlist.
+An off-host monitor for this domain was not established during this repair.
+These checks must not be treated as complete end-to-end availability monitoring.
