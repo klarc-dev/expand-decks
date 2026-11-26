@@ -7,7 +7,7 @@ This reference is generated from `src/blocks/spec/`, `src/documents/templates.ts
 
 - Block fields, Payload metadata, AI draftability, visible-text limits, prompt prose, semantic roles, and layout capacities come from the block-spec DSL.
 - Use the exact `blockType` values below. Do not invent use-case-specific layouts or fields.
-- Fields marked **not AI-draftable** may still be required when authoring a saved/rendered block.
+- Fields marked **Payload only** may still be required when authoring a saved/rendered block.
 - `footnotes` are generated as shared fields only for specs with citations enabled.
 - Use `pnpm deck:seed <name>` and the typed seed data, not raw SQL or one-off tooling.
 
@@ -90,33 +90,29 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Required semantic roles: `heading.title`
 - Prompt summary: Diapositive d'ouverture
 **Fields:**
-- `pills` (raw)
-  - Payload type: `array`
+- `pills` (array, draft + Payload)
   - Rows: 0–4
   - Admin guidance: Libellés indépendants au-dessus du titre. Une ligne par pastille.
-- `pills[].text` (raw)
-  - Payload type: `text`
+- `pills[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 40
-- `title` (title)
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `subtitle` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre principal de la diapositive de couverture · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `subtitle` (richText, draft + Payload)
   - Maximum visible length: 320
   - Admin guidance: Paragraphe descriptif sous le titre
-- `intervenants` (raw, not AI-draftable)
-  - Payload type: `array`
+- `intervenants` (array, Payload only)
   - Rows: 0–4
   - Admin guidance: Personnes affichées sur la diapositive de couverture
-- `intervenants[].user` (raw, not AI-draftable)
-  - Payload type: `relationship`
+- `intervenants[].user` (relationship, Payload only)
   - Required in Payload
+  - Target collection: `users`
   - Admin guidance: Utilisateur affiché comme intervenant
-- `intervenants[].description` (raw, not AI-draftable)
-  - Payload type: `textarea`
+- `intervenants[].description` (textarea, Payload only)
   - Maximum visible length: 240
   - Admin guidance: Expertise ou sujets suivis, affichés sous la fonction
-- `preview` (preview, not AI-draftable)
 
 ### `section`
 - AI draftable: **yes**
@@ -127,30 +123,28 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Media: 1/1; placements: left, right
 - Prompt summary: Intercalaire de section
 **Fields:**
-- `number` (raw)
-  - Payload type: `text`
+- `number` (text, draft + Payload)
   - Maximum visible length: 8
   - Admin guidance: Numéro de section affiché (ex. "02")
-- `title` (title)
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `subtitle` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre de la section · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `subtitle` (richText, draft + Payload)
   - Maximum visible length: 280
   - Admin guidance: Description complémentaire sous le titre
-- `image` (image, not AI-draftable)
-- `imagePosition` (raw, not AI-draftable)
-  - Payload type: `select`
-  - Options: `right`, `left`
+- `image` (upload, Payload only)
+  - Target collection: `media`
+  - Admin guidance: Image illustrant la diapositive (optionnelle ; affichée en colonne via layout Slidev image-right/image-left)
+- `imagePosition` (select, Payload only)
+  - Options: right, left
   - Admin guidance: Côté où l’image s’affiche quand une image est renseignée
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `statement`
 - AI draftable: **yes**
@@ -160,31 +154,28 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Affirmation ou citation mise en avant
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `body` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Citation ou affirmation principale · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `body` (richText, draft + Payload)
   - Maximum visible length: 560
   - Admin guidance: Texte développant l’affirmation
-- `footer` (raw)
-  - Payload type: `richText`
+- `footer` (richText, draft + Payload)
   - Maximum visible length: 220
   - Admin guidance: Message clé mis en avant dans un encadré en bas de la diapositive. Un début « Enjeu : … » devient le cartouche de l’encadré.
-- `variant` (raw)
-  - Payload type: `select`
-  - Options: `centered-hero`, `pull-quote`, `big-statement`, `split`
+- `variant` (select, draft + Payload)
+  - Options: centered-hero, pull-quote, big-statement, split
   - Admin guidance: Disposition : centered-hero (centré), pull-quote (citation), big-statement (énoncé large), split (titre/texte). Laisser vide pour une alternance automatique.
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `twoCols`
 - AI draftable: **yes**
@@ -196,47 +187,47 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Media: 1/1; placements: left, right
 - Prompt summary: Deux colonnes avec cartes à droite
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre (ex. "01 · Conseil financier")
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre principal de la diapositive · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `intro` (raw)
-  - Payload type: `richText`
+- `intro` (richText, draft + Payload)
   - Maximum visible length: 480
   - Admin guidance: Paragraphe d’introduction dans la colonne gauche
-- `leftFooter` (raw)
-  - Payload type: `richText`
+- `leftFooter` (richText, draft + Payload)
   - Maximum visible length: 220
   - Admin guidance: Texte ou statistique en bas de la colonne gauche
-- `collectionSide` (raw, not AI-draftable)
-  - Payload type: `select`
-  - Options: `left`, `right`
+- `collectionSide` (select, Payload only)
+  - Options: left, right
   - Admin guidance: Place les cartes à gauche ou à droite lorsque les deux compositions sont valides
-- `rightCards` (raw)
-  - Payload type: `array`
+- `rightCards` (array, draft + Payload)
   - Rows: 0–5
   - Admin guidance: Liste de cartes affichées dans la colonne droite
-- `rightCards[].cardTitleDesc` (cardTitleDesc, not AI-draftable)
-  - Item title maximum: 120
-  - Item description maximum: 280
-- `image` (image, not AI-draftable)
-- `imagePosition` (raw, not AI-draftable)
-  - Payload type: `select`
-  - Options: `right`, `left`
+- `rightCards[].title` (text, draft + Payload)
+  - Required in Payload
+  - Maximum visible length: 120
+  - Admin guidance: Titre de la carte
+- `rightCards[].description` (richText, draft + Payload)
+  - Maximum visible length: 280
+  - Admin guidance: Contenu descriptif de la carte
+- `image` (upload, Payload only)
+  - Target collection: `media`
+  - Admin guidance: Image illustrant la diapositive (optionnelle ; affichée en colonne à droite ou à gauche). Les cartes restent affichées dans la colonne de contenu.
+- `imagePosition` (select, Payload only)
+  - Options: right, left
   - Admin guidance: Côté où l’image s’affiche quand une image est renseignée
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `cardGrid`
 - AI draftable: **yes**
@@ -247,38 +238,38 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Grille de cartes numérotées
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `sidebarText` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre principal de la grille · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `sidebarText` (richText, draft + Payload)
   - Maximum visible length: 320
   - Admin guidance: Phrase d’introduction affichée sous le titre, dans l’en-tête commun
-- `columns` (raw)
-  - Payload type: `select`
-  - Options: `2`, `3`, `4`
+- `columns` (select, draft + Payload)
+  - Options: 2, 3, 4
   - Admin guidance: Nombre maximal de colonnes dans la grille
-- `cards` (raw)
-  - Payload type: `array`
+- `cards` (array, draft + Payload)
   - Rows: 2–8
   - Admin guidance: Liste des cartes à afficher dans la grille
-- `cards[].number` (raw)
-  - Payload type: `text`
+- `cards[].number` (text, draft + Payload)
   - Maximum visible length: 12
   - Admin guidance: Numéro ou identifiant de la carte (ex. "01")
-- `cards[].cardTitleDesc` (cardTitleDesc, not AI-draftable)
-  - Item title maximum: 120
-  - Item description maximum: 260
-- `footnotes` (raw)
-  - Payload type: `array`
+- `cards[].title` (text, draft + Payload)
+  - Required in Payload
+  - Maximum visible length: 120
+  - Admin guidance: Titre de la carte
+- `cards[].description` (richText, draft + Payload)
+  - Maximum visible length: 260
+  - Admin guidance: Contenu descriptif de la carte
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `stats`
 - AI draftable: **yes**
@@ -289,37 +280,33 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Chiffres clés en grille
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre principal de la diapositive · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `stats` (raw)
-  - Payload type: `array`
+- `stats` (array, draft + Payload)
   - Rows: 2–4
   - Admin guidance: Paires valeur/libellé affichées en ligne
-- `stats[].value` (raw)
-  - Payload type: `text`
+- `stats[].value` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 24
   - Admin guidance: Chiffre ou donnée (ex. "360°", "4")
-- `stats[].label` (raw)
-  - Payload type: `text`
+- `stats[].label` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 140
   - Admin guidance: Description courte de la valeur
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `quotes`
 - AI draftable: **yes**
@@ -330,53 +317,45 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Grille de citations
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre de la diapositive · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `quotes` (raw)
-  - Payload type: `array`
+- `quotes` (array, draft + Payload)
   - Rows: 1–4
   - Admin guidance: Liste des citations à afficher en grille
-- `quotes[].quote` (raw)
-  - Payload type: `richText`
+- `quotes[].quote` (richText, draft + Payload)
   - Required in Payload
   - Maximum visible length: 380
   - Admin guidance: Texte de la citation
-- `quotes[].authorName` (raw)
-  - Payload type: `text`
+- `quotes[].authorName` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 80
   - Admin guidance: Nom de l’auteur cité
-- `quotes[].authorRole` (raw)
-  - Payload type: `text`
+- `quotes[].authorRole` (text, draft + Payload)
   - Maximum visible length: 100
   - Admin guidance: Fonction ou contexte (optionnel)
-- `quotes[].authorCompany` (raw)
-  - Payload type: `text`
+- `quotes[].authorCompany` (text, draft + Payload)
   - Maximum visible length: 80
   - Admin guidance: Nom de l’organisation (optionnel)
-- `linkLabel` (raw)
-  - Payload type: `text`
+- `linkLabel` (text, draft + Payload)
   - Maximum visible length: 50
   - Admin guidance: Texte du lien ; renseigner aussi l’URL correspondante
-- `linkUrl` (raw)
-  - Payload type: `text`
+- `linkUrl` (text, draft + Payload)
   - Maximum visible length: 300
   - Admin guidance: URL https du lien ; renseigner aussi son libellé
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `cta`
 - AI draftable: **yes**
@@ -386,35 +365,31 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Diapositive centrée pour appel à l'action OU clôture (merci, contact, etc.)
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `subtitle` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre principal centré (ex. "Merci", "Et maintenant ?") · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `subtitle` (richText, draft + Payload)
   - Maximum visible length: 280
   - Admin guidance: Phrase d’accroche sous le titre
-- `primaryAction` (raw)
-  - Payload type: `text`
+- `primaryAction` (text, draft + Payload)
   - Maximum visible length: 50
   - Admin guidance: Texte de l’unique bouton (optionnel)
-- `primaryActionUrl` (raw)
-  - Payload type: `text`
+- `primaryActionUrl` (text, draft + Payload)
   - Maximum visible length: 300
   - Admin guidance: URL https, mailto: ou tel: ; exige le libellé principal et rend le bouton cliquable dans le PDF (ex. {org.bookingUrl})
-- `footerNote` (raw)
-  - Payload type: `richText`
+- `footerNote` (richText, draft + Payload)
   - Maximum visible length: 220
   - Admin guidance: Texte en bas de la diapositive (optionnel)
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `table`
 - AI draftable: **yes**
@@ -424,46 +399,33 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Tableau / matrice — en-têtes de colonnes + lignes de cellules (pour comparaisons, matrices, échelles)
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre du tableau · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `tableVariant` (raw)
-  - Payload type: `select`
-  - Options: `reference`, `matrix`
+- `tableVariant` (select, draft + Payload)
+  - Options: reference, matrix
   - Admin guidance: reference : tableau standard. matrix : cellules de statut (ok / attention / bloqué) rendues en pastilles.
-- `columns` (raw)
-  - Payload type: `array`
-  - Rows: 2–5
-  - Admin guidance: En-têtes de colonnes
-- `columns[].header` (raw)
-  - Payload type: `text`
-  - Required in Payload
-  - Maximum visible length: 80
-  - Admin guidance: Libellé de la colonne
-- `rows` (raw)
-  - Payload type: `array`
+- `rows` (array, draft + Payload)
   - Rows: 1–8
   - Admin guidance: Lignes du tableau ; chaque cellule correspond à une colonne, dans l’ordre
-- `rows[].cells` (raw)
-  - Payload type: `array`
+- `rows[].cells` (array, draft + Payload)
+  - Rows: 0–∞
   - Admin guidance: Une cellule par colonne, dans l’ordre des colonnes
-- `rows[].cells[].value` (raw)
-  - Payload type: `richText`
+- `rows[].cells[].value` (richText, draft + Payload)
   - Maximum visible length: 420
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `timeline`
 - AI draftable: **yes**
@@ -474,40 +436,35 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Frise d’étapes ordonnées reliées par une ligne de progression (cycle de vie, processus, parcours chronologique)
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre de la frise · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `steps` (raw)
-  - Payload type: `array`
+- `steps` (array, draft + Payload)
   - Rows: 2–6
   - Admin guidance: Étapes ordonnées, reliées par une ligne de progression (2 à 6)
-- `steps[].label` (raw)
-  - Payload type: `text`
+- `steps[].label` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 70
   - Admin guidance: Nom court de l’étape
-- `steps[].description` (raw)
-  - Payload type: `textarea`
+- `steps[].description` (textarea, draft + Payload)
   - Maximum visible length: 220
   - Admin guidance: Texte court sous l’étape
-- `footer` (raw)
-  - Payload type: `text`
+- `footer` (text, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Bandeau transverse sous la frise (optionnel)
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `mermaid`
 - AI draftable: **yes**
@@ -517,32 +474,29 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Diagramme de flux / workflow rendu à partir de code Mermaid (flowchart, séquence, états)
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre du diagramme · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `source` (raw)
-  - Payload type: `code`
+- `source` (code, draft + Payload)
   - Required in Payload
   - Maximum visible length: 5000
   - Admin guidance: Code Mermaid brut (flowchart, sequenceDiagram, etc.), sans la clôture ```
-- `caption` (raw)
-  - Payload type: `text`
+- `caption` (text, draft + Payload)
   - Maximum visible length: 180
   - Admin guidance: Courte légende sous le diagramme (optionnelle)
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)
 
 ### `agenda`
 - AI draftable: **yes**
@@ -553,39 +507,33 @@ CONTRAT STRUCTUREL DU TEMPLATE (obligatoire, sans réordonner ni paginer automat
 - Supports citations: yes
 - Prompt summary: Plan / sommaire de la présentation — liste verticale numérotée des sections pour situer et guider l’auditoire
 **Fields:**
-- `eyebrow` (eyebrow)
+- `eyebrow` (text, draft + Payload)
   - Maximum visible length: 80
-- `title` (title)
+  - Admin guidance: Texte court au-dessus du titre
+- `title` (text, draft + Payload)
+  - Required in Payload
   - Maximum visible length: 180
-- `lead` (raw)
-  - Payload type: `richText`
+  - Admin guidance: Titre du programme (ex. "Au programme") · Entourez un terme de crochets pour le mettre en valeur : [Klarc]
+- `lead` (richText, draft + Payload)
   - Maximum visible length: 160
   - Admin guidance: Phrase d’introduction affichée sous le titre, limitée à deux lignes (environ 160 caractères)
-- `items` (raw)
-  - Payload type: `array`
+- `items` (array, draft + Payload)
   - Rows: 0–8
   - Admin guidance: Laissez vide pour reprendre automatiquement les titres des blocs « Section » du plan. Remplissez pour personnaliser (2 à 8), numérotées automatiquement.
-- `items[].label` (raw)
-  - Payload type: `text`
+- `items[].label` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 70
   - Admin guidance: Nom court de la section
-- `items[].description` (raw)
-  - Payload type: `textarea`
+- `items[].description` (textarea, draft + Payload)
   - Maximum visible length: 180
   - Admin guidance: Texte court sous la section (optionnel)
-- `items[].slideId` (raw, not AI-draftable)
-  - Payload type: `text`
+- `items[].slideId` (text, Payload only)
   - Admin guidance: Rend la ligne cliquable : le titre renvoie à la diapositive choisie, dans la version web comme dans le PDF. Vide = pas de lien.
-- `active` (raw)
-  - Payload type: `number`
+- `active` (number, draft + Payload)
   - Admin guidance: Position (1, 2, 3…) de la section en cours : elle est mise en avant, les autres atténuées. Vide = vue d’ensemble neutre. Dupliquez la slide entre les sections pour guider l’auditoire.
-- `footnotes` (raw)
-  - Payload type: `array`
+- `footnotes` (array, draft + Payload)
   - Rows: 0–3
   - Admin guidance: Notes numérotées affichées en bas de diapositive. Insérez [^1], [^2]… dans le contenu pour placer les appels en exposant. Lien possible : [texte](https://…).
-- `footnotes[].text` (raw)
-  - Payload type: `text`
+- `footnotes[].text` (text, draft + Payload)
   - Required in Payload
   - Maximum visible length: 220
-- `preview` (preview, not AI-draftable)

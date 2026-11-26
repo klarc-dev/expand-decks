@@ -7,9 +7,10 @@ description: Use for authoring, reviewing, revising, and building slides in the 
 
 Use this skill for manual slide creation, review, revision, seed scripts, and build verification.
 
-## Mandatory references
+## Start with the task
 
-- [Schema and template reference](references/schema.md)
+- Choose a layout or find a native field (people, media, navigation, actions): start with the [capability finder](references/capabilities.md). Follow the layout link for exact fields.
+- Check template eligibility, field constraints and relationships: [schema](references/schema.md).
 - [Layout prompt catalogue](references/layout-prompts.md)
 - [Mastra workflow prompts](references/mastra-prompts.md)
 - [Local, production, REST, and MCP operations](references/operations.md)
@@ -27,12 +28,12 @@ The generated references are projections of the runtime SSOT:
 
 ## Authoring and review workflow
 
-1. Choose a document template and an allowed layout from the generated reference.
+1. Use the capability finder before writing slide text. Bind people, media and navigation to native fields when appropriate. Do not simulate these in prose or CSS.
 2. Write content as visual structure, not a domain-specific template. Keep each slide self-explanatory and put the decision-maker outcome before the mechanism.
 3. Keep every field within the generated limits. Respect required fields, nested array limits, citation rules, and layout capacities.
 4. Author or update a generic `scripts/seed-<name>.ts` file. Do not create per-case CLI commands or leave `tmp-*` scripts behind.
 5. Run `NODE_ENV=development pnpm deck:seed <name>`, then `NODE_ENV=development pnpm deck:build <id>`.
-6. Inspect the exported PDF, not only the browser preview. Check truncation, overflow, collisions, links, footnotes, diagrams, and footer behavior on every page.
+6. Inspect the exported PDF, not only the browser preview. For relationships, verify the intended profile and actual image in the export. For navigation, verify the destination page, not just the presence of a link. Check truncation, footnotes and footer behavior.
 7. For review or revision, apply the Mastra prompt references as a quality rubric, then inspect the actual rendered PDF.
 
 ## Production workflow

@@ -87,6 +87,9 @@ jobs:
           pnpm generate:types
           pnpm generate:importmap
 
+      - name: Check generated slide skill references
+        run: pnpm generate:agent-skills:check
+
       - name: Deploy env drift gate
         run: python3 scripts/check-coolify-env-sync.py
 

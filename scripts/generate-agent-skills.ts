@@ -4,7 +4,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ALL_SPECS } from '../src/blocks/spec';
-import { fieldsOf, type BlockSpec, type FieldSpec } from '../src/blocks/spec/dsl';
+import type { Field } from 'payload';
+import { z } from 'zod';
+import { emitPayloadBlock } from '../src/blocks/spec/emit/emitPayloadBlock';
+import { aiSchemaOf, type BlockSpec } from '../src/blocks/spec/dsl';
 import { emitPromptSection, promptMetaOf } from '../src/blocks/spec/emit/emitPromptSection';
 import {
   DOCUMENT_TEMPLATES,
@@ -26,39 +29,94 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUTPUTS = {
   skill: path.join(ROOT, '.agents/skills/slides/SKILL.md'),
   schema: path.join(ROOT, '.agents/skills/slides/references/schema.md'),
+  capabilities: path.join(ROOT, '.agents/skills/slides/references/capabilities.md'),
   catalogue: path.join(ROOT, '.agents/skills/slides/references/layout-prompts.md'),
   mastra: path.join(ROOT, '.agents/skills/slides/references/mastra-prompts.md'),
   operations: path.join(ROOT, '.agents/skills/slides/references/operations.md'),
 };
 
-function fieldLines(field: FieldSpec, prefix = ''): string[] {
-  const pathName = `${prefix}${field.name}`;
-  const payload = field.payload;
-  const args = field.factoryArgs ?? payload?.factoryArgs;
-  const lines = [
-    `- \`${pathName}\` (${field.factory}${field.ai === false ? ', not AI-draftable' : ''})`,
-  ];
-  if (payload?.type) lines.push(`  - Payload type: \`${payload.type}\``);
-  if (payload?.required) lines.push('  - Required in Payload');
-  if (payload?.minRows !== undefined || payload?.maxRows !== undefined) {
-    lines.push(`  - Rows: ${payload.minRows ?? 0}–${payload.maxRows ?? '∞'}`);
+// Read the emitted admin fields (factories may expand) and the actual draft schema
+// independently: nested Payload-only selections must not be advertised as AI input.
+type DraftShape = {
+  properties?: Record<string, DraftShape>;
+  items?: DraftShape;
+  maxLength?: number;
+};
+function authorFields(spec: BlockSpec) {
+  const draft: DraftShape = spec.aiDraftable
+    ? (z.toJSONSchema(aiSchemaOf(spec), { io: 'input' }) as DraftShape)
+    : {};
+  function walk(
+    fields: Field[],
+    shape: DraftShape | undefined,
+    prefix = '',
+  ): Array<{ path: string; field: Field; ai: boolean; maxLength?: number }> {
+    return fields.flatMap((field) => {
+      if (!('name' in field) || field.type === 'ui' || field.admin?.hidden) return [];
+      const path = prefix + field.name;
+      const input = shape?.properties?.[field.name];
+      return [
+        { path, field, ai: Boolean(input), maxLength: input?.maxLength },
+        ...('fields' in field
+          ? walk(
+              field.fields,
+              field.type === 'array' ? input?.items : input,
+              path + (field.type === 'array' ? '[].' : '.'),
+            )
+          : []),
+      ];
+    });
   }
-  if (payload?.maxLength !== undefined)
-    lines.push(`  - Maximum visible length: ${payload.maxLength}`);
-  if (args?.maxLength !== undefined) lines.push(`  - Maximum visible length: ${args.maxLength}`);
-  if (args?.titleMaxLength !== undefined)
-    lines.push(`  - Item title maximum: ${args.titleMaxLength}`);
-  if (args?.descriptionMaxLength !== undefined) {
-    lines.push(`  - Item description maximum: ${args.descriptionMaxLength}`);
-  }
-  if (payload?.options?.length) {
-    lines.push(`  - Options: ${payload.options.map((option) => `\`${option.value}\``).join(', ')}`);
-  }
-  if (payload?.description) lines.push(`  - Admin guidance: ${payload.description}`);
-  if (payload?.fields?.length) {
-    lines.push(...payload.fields.flatMap((child) => fieldLines(child, `${pathName}[].`)));
-  }
-  return lines;
+  return walk(emitPayloadBlock(spec).fields, draft);
+}
+
+function fieldLines({
+  path,
+  field,
+  ai,
+  maxLength,
+}: ReturnType<typeof authorFields>[number]): string[] {
+  const description =
+    field.admin && 'description' in field.admin ? field.admin.description : undefined;
+  const length = 'maxLength' in field ? (field.maxLength ?? maxLength) : maxLength;
+  return [
+    '- `' + path + '` (' + field.type + (ai ? ', draft + Payload)' : ', Payload only)'),
+    'required' in field && field.required && '  - Required in Payload',
+    'relationTo' in field && '  - Target collection: `' + String(field.relationTo) + '`',
+    field.type === 'array' && '  - Rows: ' + (field.minRows ?? 0) + '–' + (field.maxRows ?? '∞'),
+    length && '  - Maximum visible length: ' + length,
+    'options' in field &&
+      '  - Options: ' + field.options.map((o) => (typeof o === 'string' ? o : o.value)).join(', '),
+    typeof description === 'string' && '  - Admin guidance: ' + description,
+  ].filter((line): line is string => typeof line === 'string');
+}
+
+function renderCapabilities(): string {
+  const rows = ALL_SPECS.map((spec) => {
+    const roles = Object.entries(spec.layout?.fields ?? {})
+      .filter(([, role]) => !role.startsWith('heading.'))
+      .map(([field, role]) => field + ' (' + role + ')');
+    const manual = authorFields(spec)
+      .filter((f) => !f.ai)
+      .map(({ path, field }) => path + ('relationTo' in field ? ' → ' + field.relationTo : ''));
+    const label = promptMetaOf(spec)?.summary ?? spec.labels.singular;
+    const link = `[${spec.blockType}](schema.md#${spec.blockType.toLowerCase()})`;
+    const native = [...roles, ...(spec.footnotes ? ['footnotes (citations)'] : [])];
+    return `| ${link} | ${label} | ${native.join(', ')} | ${manual.join(', ') || 'None'} |`;
+  });
+  return [
+    '<!-- GENERATED FILE. Run pnpm generate:agent-skills. Do not edit manually. -->',
+    '# Layout capability finder',
+    '',
+    'Choose by intent, then follow the layout link for field paths, options, limits, relationship targets and admin guidance. Check the template allowlist in [schema](schema.md#document-templates).',
+    '',
+    '| Layout | Use for | Native field (semantic role) | Set outside the AI draft |',
+    '| --- | --- | --- | --- |',
+    ...rows,
+    '',
+    'Payload-only means the draft schema does not supply that path. Resolve real records or slide IDs after parsing the draft, preserve existing selections on edits, then validate the saved/rendered shape. A name or page number pasted into prose is not a relationship.',
+    '',
+  ].join('\n');
 }
 
 function blockSection(spec: BlockSpec): string {
@@ -84,7 +142,7 @@ function blockSection(spec: BlockSpec): string {
     meta ? `- Prompt summary: ${meta.summary}` : '',
     '',
     '**Fields:**',
-    ...fieldsOf(spec).flatMap((field) => fieldLines(field)),
+    ...authorFields(spec).flatMap(fieldLines),
   ]
     .filter(Boolean)
     .join('\n');
@@ -116,7 +174,7 @@ This reference is generated from \`src/blocks/spec/\`, \`src/documents/templates
 
 - Block fields, Payload metadata, AI draftability, visible-text limits, prompt prose, semantic roles, and layout capacities come from the block-spec DSL.
 - Use the exact \`blockType\` values below. Do not invent use-case-specific layouts or fields.
-- Fields marked **not AI-draftable** may still be required when authoring a saved/rendered block.
+- Fields marked **Payload only** may still be required when authoring a saved/rendered block.
 - \`footnotes\` are generated as shared fields only for specs with citations enabled.
 - Use \`pnpm deck:seed <name>\` and the typed seed data, not raw SQL or one-off tooling.
 
@@ -253,9 +311,10 @@ description: Use for authoring, reviewing, revising, and building slides in the 
 
 Use this skill for manual slide creation, review, revision, seed scripts, and build verification.
 
-## Mandatory references
+## Start with the task
 
-- [Schema and template reference](references/schema.md)
+- Choose a layout or find a native field (people, media, navigation, actions): start with the [capability finder](references/capabilities.md). Follow the layout link for exact fields.
+- Check template eligibility, field constraints and relationships: [schema](references/schema.md).
 - [Layout prompt catalogue](references/layout-prompts.md)
 - [Mastra workflow prompts](references/mastra-prompts.md)
 - [Local, production, REST, and MCP operations](references/operations.md)
@@ -273,12 +332,12 @@ The generated references are projections of the runtime SSOT:
 
 ## Authoring and review workflow
 
-1. Choose a document template and an allowed layout from the generated reference.
+1. Use the capability finder before writing slide text. Bind people, media and navigation to native fields when appropriate. Do not simulate these in prose or CSS.
 2. Write content as visual structure, not a domain-specific template. Keep each slide self-explanatory and put the decision-maker outcome before the mechanism.
 3. Keep every field within the generated limits. Respect required fields, nested array limits, citation rules, and layout capacities.
 4. Author or update a generic \`scripts/seed-<name>.ts\` file. Do not create per-case CLI commands or leave \`tmp-*\` scripts behind.
 5. Run \`NODE_ENV=development pnpm deck:seed <name>\`, then \`NODE_ENV=development pnpm deck:build <id>\`.
-6. Inspect the exported PDF, not only the browser preview. Check truncation, overflow, collisions, links, footnotes, diagrams, and footer behavior on every page.
+6. Inspect the exported PDF, not only the browser preview. For relationships, verify the intended profile and actual image in the export. For navigation, verify the destination page, not just the presence of a link. Check truncation, footnotes and footer behavior.
 7. For review or revision, apply the Mastra prompt references as a quality rubric, then inspect the actual rendered PDF.
 
 ## Production workflow
@@ -307,6 +366,7 @@ Run \`pnpm typecheck\` and \`pnpm exec eslint <touched files>\`. For a built dec
 export const GENERATED_FILES: Record<string, string> = {
   [OUTPUTS.skill]: renderSlidesSkill(),
   [OUTPUTS.schema]: renderSchemaReference(),
+  [OUTPUTS.capabilities]: renderCapabilities(),
   [OUTPUTS.catalogue]: renderPromptCatalogue(),
   [OUTPUTS.mastra]: renderMastraPrompts(),
   [OUTPUTS.operations]: renderOperationsReference(),
