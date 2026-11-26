@@ -24,6 +24,24 @@ function cards(
 function scene(number: string, title: string, subtitle: string): Page {
   return { blockType: 'section', number, title, subtitle };
 }
+function table(
+  eyebrow: string,
+  title: string,
+  lead: string,
+  headers: string[],
+  rows: string[][],
+  sources: string[],
+): Page {
+  return {
+    blockType: 'table',
+    eyebrow,
+    title,
+    lead,
+    columns: headers.map((header) => ({ header })),
+    rows: rows.map((cells) => ({ cells: cells.map((value) => ({ value })) })),
+    footnotes: sources.map((text) => ({ text })),
+  };
+}
 export const pages: Page[] = [
   {
     blockType: 'cover',
@@ -51,29 +69,36 @@ export const pages: Page[] = [
       ],
       [
         'Le pacte',
-        'Ce contrat ne lie que ses signataires. Y détailler les engagements personnels : information, négociation en cas de blocage, promesses de vente. Faire adhérer chaque entrant.',
+        'Le pacte ne lie que ses parties. Faire adhérer l’entrant avant la réalisation de l’opération. En cas de manquement : réparation du préjudice ou exécution en nature si ses conditions sont réunies.',
       ],
     ],
-    ['C. com., art. L. 227-5, L. 227-9 et L. 227-14 · C. civ., art. 1199'],
+    ['C. com., art. L. 227-5, L. 227-9 et L. 227-14 · C. civ., art. 1199, 1217 et 1221'],
   ),
-  cards(
-    '1 · En cas de violation',
-    'Une vente irrégulière n’est pas toujours annulée',
+  table(
+    '1 · Sanctions en SAS',
+    'La sanction dépend de l’acte que l’on conteste',
+    'Avant de demander la nullité, identifier l’acte, la règle violée et la personne contre laquelle agir.',
+    ['Acte contesté', 'Règle méconnue', 'Recours à envisager'],
     [
       [
-        'Cession interdite',
-        'Dans une SAS, une cession en violation d’une clause statutaire encadrant les transferts est nulle. Ne pas généraliser cette sanction à toute décision irrégulière.',
+        'Cession d’actions',
+        'Agrément imposé par les statuts',
+        'Cession nulle si elle intervient en violation de la clause statutaire (L. 227-15).',
       ],
       [
-        'Promesse non tenue',
-        'Pour un pacte : demander réparation du préjudice ou, si les conditions sont réunies, l’exécution en nature. La vente au tiers n’est pas automatiquement annulée.',
+        'Décision collective',
+        'Majorité prévue par les statuts',
+        'Depuis le 1er octobre 2025, les statuts peuvent prévoir la nullité pour violation de leurs règles. Elle n’est pas automatique.',
       ],
       [
-        'Priorité ignorée',
-        'Pour faire annuler la vente ou se substituer à l’acheteur, le bénéficiaire doit prouver que celui-ci connaissait le pacte de préférence ET son intention de s’en prévaloir.',
+        'Vente à un tiers',
+        'Préemption inscrite au pacte',
+        'Réparation du préjudice. Nullité ou substitution si le tiers connaissait le pacte ET l’intention du bénéficiaire de l’invoquer.',
       ],
     ],
-    ['C. com., art. L. 227-15 · C. civ., art. 1123, 1217 et 1221'],
+    [
+      'C. com., art. L. 227-15 et [L. 227-20-1](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051318161) · C. civ., art. 1123 et 1844-12-1',
+    ],
   ),
   cards(
     '1 · Gouvernance',
@@ -81,11 +106,11 @@ export const pages: Page[] = [
     [
       [
         'Au quotidien',
-        'Lina négocie les ventes, Noé pilote le produit. Écrire qui peut engager la société et pour quel budget. Une limite interne ne protège pas toujours vis-à-vis des tiers.',
+        'Lina préside la SAS. Un plafond statutaire exige un accord préalable pour ses achats. Si elle signe seule au-delà du plafond, cette limite de pouvoir est inopposable au fournisseur. Le recours est interne.',
       ],
       [
         'Pour une décision majeure',
-        'Réserver, par exemple, la vente du brevet aux associés. Fixer majorité et délai. Si les voix restent partagées : seconde réunion, puis médiation.',
+        'Réserver la vente du brevet aux deux fondateurs, pas chaque dépense courante. Après deux votes infructueux, ouvrir une médiation limitée dans le temps. Sans accord, le brevet reste dans la société.',
       ],
       [
         'Pour ouvrir le capital',
@@ -113,21 +138,37 @@ export const pages: Page[] = [
       ],
       [
         'Industrie : un travail futur',
-        'Préciser mission, durée et droits attachés. En SAS, cet apport peut donner des actions inaliénables mais ne forme pas le capital. Six mois de travail promis ne sont pas six mois de trésorerie.',
+        'Évaluer le temps et le coût d’une prestation équivalente. Fixer mission, durée et droits dans les statuts. En SAS, cet apport peut donner des actions inaliénables mais ne forme pas le capital. Six mois de travail promis ne sont pas six mois de trésorerie.',
       ],
     ],
     ['C. civ., art. 1843-2 et 1843-3 · C. com., art. L. 227-1'],
   ),
-  cards('2 · Cas pratique', '50 000 € de capital, mais 30 000 € en banque', [
+  table(
+    '2 · Constitution de la SAS',
+    'Qui répond de la valeur du prototype',
+    'Lina verse 30 000 €. Noé apporte des droits estimés à 20 000 €. Sans prime : 100 actions de 500 €, dont 60 pour Lina et 40 pour Noé.',
+    ['Test à la constitution', 'Application au cas', 'Décision'],
     [
-      'Hypothèse négociée',
-      'Lina verse 30 000 €. Noé apporte les droits sur le prototype, évalués à 20 000 €. À la création, sans prime ni autre apport au capital : 50 000 € de capital.',
+      [
+        'Chaque apport en nature ≤ 30 000 €',
+        'Un seul apport en nature : 20 000 €.',
+        'Premier seuil respecté.',
+      ],
+      [
+        'Total des apports non expertisés ≤ ½ du capital',
+        '20 000 € sur 50 000 €, soit 40 %.',
+        'Second seuil respecté. Les fondateurs peuvent écarter le commissaire à l’unanimité.',
+      ],
+      [
+        'Qui supporte le risque de surévaluation ?',
+        'Sans commissaire, les associés répondent solidairement de la valeur envers les tiers pendant cinq ans.',
+        'Si les droits du laboratoire restent incertains, revoir le périmètre et la valeur avant de signer.',
+      ],
     ],
     [
-      'Résultat',
-      'À droits identiques : Lina 60 %, Noé 40 %. La banque n’a reçu que 30 000 €. Négocier séparément les pouvoirs de Noé et sa rémunération pour les prochaines versions.',
+      'C. com., art. L. 227-1 et [D. 227-3](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000034494298)',
     ],
-  ]),
+  ),
   scene(
     '03',
     'Noé doit prouver ce qu’il peut apporter',
@@ -139,11 +180,11 @@ export const pages: Page[] = [
     [
       [
         'Logiciel : la chaîne des droits',
-        'Lister auteurs, prestataires et composants tiers. Décrire la version livrée et les droits cédés : reproduction, adaptation, distribution, périmètre, durée et territoire. Livrer aussi le dépôt de code.',
+        'Le mandat de dirigeant ne transfère pas, à lui seul, les droits de Noé à la SAS. Annexer la version du code, distinguer son code des composants tiers et délimiter chaque droit cédé, sa destination, sa durée et son territoire.',
       ],
       [
         'Brevet : le titre et le registre',
-        'Vérifier titulaire, copropriétaires, pays, annuités et licences. Formaliser la cession par écrit et l’inscrire au registre pour la rendre opposable aux tiers.',
+        'Vérifier le titulaire inscrit, les copropriétés, les licences et les annuités. La cession doit être écrite à peine de nullité. L’inscription au registre répond à une autre question : l’opposabilité aux tiers.',
       ],
       [
         'Savoir-faire : le contenu secret',
@@ -154,12 +195,12 @@ export const pages: Page[] = [
   ),
   cards('3 · Le laboratoire partenaire', 'Le laboratoire détient une brique indispensable', [
     [
-      'Ne pas promettre sa propriété',
-      'Noé ne peut pas apporter ce qui appartient au laboratoire. Isoler la brique, identifier le titulaire habilité à signer et revoir la valeur des seuls droits effectivement apportés.',
+      'Condition de réalisation',
+      'Noé apporte le code qu’il détient. Le laboratoire conserve son moteur de calcul. Subordonner la réalisation de l’apport à une licence signée par le titulaire habilité, plutôt qu’à une simple lettre de soutien.',
     ],
     [
-      'Négocier le droit utile',
-      'Une licence autorise des usages sans transférer la propriété. Couvre-t-elle les ventes prévues, les territoires, les sous-licences clients et la durée du projet ? Que devient-elle si Noé part ?',
+      'Test commercial',
+      'La licence autorise la recherche interne. Or le client industriel exige une distribution embarquée. Négocier reproduction, distribution et sous-licence pour ce marché. À défaut, exclure ces ventes de la valorisation.',
     ],
   ]),
   scene(
@@ -177,7 +218,7 @@ export const pages: Page[] = [
       ],
       [
         'Qui peut aussi compter ?',
-        'Notamment certaines sociétés répondant aux conditions du texte, certains fonds sous condition d’indépendance, des établissements publics de recherche ou leurs filiales. Documenter la catégorie exacte.',
+        'Voie du 4° b : la société interposée doit elle-même répondre aux mêmes conditions ET être détenue à 50 % au moins par des personnes physiques. Examiner séparément les fonds et organismes des c à e.',
       ],
       [
         'Ce que le test ne dit pas',
@@ -186,18 +227,15 @@ export const pages: Page[] = [
     ],
     [jei],
   ),
-  cards(
-    '4 · Simulation après émission',
-    'Une seule action peut faire basculer le résultat',
+  table(
+    '4 · Simulation de détention',
+    'À 50 %, une action de plus change le diagnostic JEI',
+    'L’industriel souscrit seul. Hypothèses : il ne relève d’aucune catégorie admise et toutes les actions ont la même valeur nominale.',
+    ['Détenteur', 'Avant', '100 actions émises', '101 actions émises'],
     [
-      [
-        '100 actions nouvelles',
-        'Lina et Noé conservent leurs 100 actions. L’industriel, supposé non admis, en reçoit 100. Les fondateurs détiennent 100/200 = 50 %. Le seuil de détention reste atteint.',
-      ],
-      [
-        '101 actions nouvelles',
-        'Avec une action supplémentaire pour l’industriel : 100/201 ≈ 49,75 %. Le seuil n’est plus atteint. Reconstituer les dates : une correction ultérieure n’efface pas la rupture de continuité.',
-      ],
+      ['Lina + Noé (admis)', '60 + 40', '100 sur 200', '100 sur 201'],
+      ['Industriel (non admis)', '0', '100 sur 200', '101 sur 201'],
+      ['Fraction du capital admise', '100 %', '50 % : seuil atteint', '49,75 % : seuil rompu'],
     ],
     [jei],
   ),
@@ -207,18 +245,18 @@ export const pages: Page[] = [
     [
       [
         'Bourse French Tech Émergence',
-        'Cette bourse vise les petites entreprises deeptech de moins d’un an. Examiner les liens avec l’industriel pour déterminer la taille européenne. Déposer avant d’engager les dépenses concernées.',
+        'Petite entreprise immatriculée en France depuis moins d’un an, projet qualifié deeptech. Vérifier si les données du groupe industriel changent la catégorie de taille. Les dépenses antérieures au dépôt sont exclues.',
       ],
       [
         'Prêt Innovation R&D classique',
-        'La fiche vise les PME et certaines ETI. Le montant est notamment limité au double des fonds propres et quasi-fonds propres : 80 000 € retenus donnent un plafond de 160 000 €, pas un droit au prêt.',
+        'PME ou ETI dans la limite de 2 000 ETP. Prêt plafonné à 3 M€ et au double des fonds propres et quasi-fonds propres. Avec 80 000 € retenus, le plafond est de 160 000 €, sans garantie d’octroi.',
       ],
     ],
     [bourse, pret],
   ),
   cards(
     '4 · Dossier de financement',
-    'Les trois pièces que le financeur voudra comprendre',
+    'Comptes, organigramme et licences à joindre au dossier',
     [
       [
         'L’argent disponible',
@@ -226,7 +264,7 @@ export const pages: Page[] = [
       ],
       [
         'Le contrôle réel',
-        'Joindre la table du capital avant/après, les droits de vote, les accords de contrôle et les titres donnant accès au capital. Identifier entreprises partenaires ou liées pour le test de taille.',
+        'Taille européenne : hors exceptions, une participation de 30 % sans contrôle conduit à agréger 30 % des données du partenaire (si votes et capital coïncident). Avec contrôle, retenir 100 % des données de l’entreprise liée.',
       ],
       [
         'La capacité à vendre',
@@ -246,33 +284,43 @@ export const pages: Page[] = [
     [
       [
         'Quelle quantité ?',
-        'Exemple de reverse vesting : Noé possède déjà 400 actions. Une promesse permet de racheter la fraction non consolidée. Avec 100 actions consolidées par année entière, un départ après deux ans laisse 200 actions sous promesse.',
+        'Noé détient ses 40 actions dès la constitution. Une promesse de vente porte sur la fraction non consolidée : 10 actions se libèrent par année entière. Après deux ans, 20 restent rachetables. Rien n’est transféré sans exercice de l’option.',
       ],
       [
         'À quel prix ?',
-        'Leaver : distinguer par exemple incapacité durable (good) et manquement grave établi (bad). Dire qui constate le motif, comment le contester et quelle formule de prix vaut pour chaque lot.',
+        'Exemple négocié pour les 20 titres : valeur de marché en cas d’incapacité durable ; décote convenue en cas de manquement grave établi. Définir date de valeur, méthode et procédure contradictoire. La décote n’est pas de droit.',
       ],
       [
         'Qui achète ?',
-        'Nommer le bénéficiaire de la promesse, fixer notification, délai d’option et paiement. Sans acheteur en mesure de payer, même un prix clair ne règle pas le départ.',
+        'Lina dispose de 30 jours après notification pour lever l’option. Chiffrer le paiement avant de signer. Si elle ne lève pas l’option dans le délai, Noé conserve ses titres dans cet exemple.',
       ],
     ],
     ['Illustration contractuelle, pas un barème légal · C. civ., art. 1124'],
   ),
-  cards('5 · Vente à un tiers', 'Trois réponses possibles à une offre de rachat', [
+  table(
+    '5 · Vente à un tiers',
+    'Une offre pour 60 actions, trois issues possibles',
+    'Variante avant l’entrée de l’industriel : Lina reçoit une offre ferme pour ses 60 actions. Noé en détient 40. Les seuils ci-dessous sont négociés, pas légaux.',
+    ['Clause', 'Qui a la main ?', 'Effet sur cette offre'],
     [
-      'Préemption : acheter d’abord',
-      'Lina veut céder ses titres. Avant la vente, Noé reçoit les conditions de l’offre et peut acheter en priorité dans le délai convenu.',
+      [
+        'Préemption',
+        'Noé a priorité pour acheter aux conditions notifiées.',
+        'Il doit pouvoir financer les 60 actions dans le délai convenu.',
+      ],
+      [
+        'Sortie conjointe intégrale',
+        'Noé peut demander à vendre ses 40 actions au même prix par action.',
+        'Si l’acheteur refuse de prendre les 100, Lina ne peut conclure seule si le pacte le prévoit.',
+      ],
+      [
+        'Sortie forcée au seuil de 75 %',
+        'Les signataires réunissant 75 % peuvent entraîner les autres sur une offre visant 100 %.',
+        'Ni l’offre sur 60 titres ni les 60 % de Lina ne suffisent. Aucune vente forcée sur ces faits.',
+      ],
     ],
-    [
-      'Sortie conjointe : suivre',
-      'Si Lina vend le contrôle, Noé peut demander que l’acquéreur achète aussi ses titres, selon la proportion et les conditions prévues. C’est un droit, pas une obligation.',
-    ],
-    [
-      'Sortie forcée : vendre aussi',
-      'Un acheteur exige 100 %. Si le seuil et les conditions prévus au pacte sont réunis, les signataires concernés doivent céder. Vérifier prix, garanties et articulation avec la préemption.',
-    ],
-  ]),
+    ['Exemples de stipulations contractuelles · C. civ., art. 1103, 1123 et 1124'],
+  ),
   cards('À emporter', 'Trois vérifications avant de vous engager', [
     [
       'Avant de signer',

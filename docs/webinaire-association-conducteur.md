@@ -5,11 +5,11 @@
 | Heure | Pages | Animation |
 |---|---:|---|
 | 11 h 00 | 1–2 | Ouvrir sur le souhait des fondateurs de décider à deux. Demander dans le chat : « Si vous êtes à 50/50 et qu’un industriel veut entrer, qui tranche ? » |
-| 11 h 03 | 3–5 | Faire choisir entre statuts et pacte pour deux règles : l’agrément d’un acquéreur et l’obligation d’informer un investisseur. En cas de violation, séparer sanction contre le signataire et sort de la vente. |
-| 11 h 12 | 6–8 | Donner les deux montants avant de révéler la page 8. Faire annoncer le capital puis le solde en banque. Demander ce que chacun attend en échange du travail des douze prochains mois. |
+| 11 h 03 | 3–5 | Faire voter sur deux actes : un associé cède sans agrément ; la présidente signe sans autorisation interne. Pourquoi le premier acte peut-il être annulé alors que le second engage la SAS ? Distinguer aussi la décision collective du contrat conclu ensuite. |
+| 11 h 12 | 6–8 | Donner 30 000 € en numéraire et 20 000 € de droits. Faire calculer le capital, la trésorerie et les deux seuils de dispense. Relance : si les droits valent 28 000 € et le numéraire seulement 22 000 €, le seuil individuel passe mais le plafond global de 25 000 € est dépassé. |
 | 11 h 20 | 9–11 | Révéler que le prototype dépend d’une brique du laboratoire. Faire nommer la première pièce à réclamer. Revenir à la valeur de l’apport si la licence manque. |
 | 11 h 28 | 12–16 | Faire voter sur 100 actions nouvelles, puis sur 101. Conserver l’hypothèse d’un industriel non admis. Pour Bpifrance, partir du nom du produit et non du statut JEI. Comparer une entreprise qui reçoit l’investissement et une entreprise dont seul un associé vend ses titres. |
-| 11 h 40 | 17–19 | Repartir d’une hypothèse autonome de 400 actions. Faire calculer la fraction sous promesse. Distinguer deux événements : Noé quitte ses fonctions, puis un tiers offre de racheter la société. |
+| 11 h 40 | 17–19 | Repartir de la SAS initiale (60/40). Après deux ans, 20 des 40 actions de Noé restent sous promesse. Simuler la notification, le calcul du prix et le financement. Dans une variante indépendante, Lina reçoit une offre sur ses 60 titres : qui peut acheter, qui peut suivre, qui peut contraindre ? |
 | 11 h 49 | 20 | Faire choisir à chacun une pièce manquante à rechercher dès demain. |
 | 11 h 51 | 21 | Questions jusqu’à midi. Pour une demande individuelle, demander de ne pas publier de pacte ou d’information confidentielle dans le chat. |
 
