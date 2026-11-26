@@ -1,5 +1,12 @@
+/* Chromium resolves absolutely positioned anchors against the wrong PDF
+   page. Keep the zero-size targets in flow for this webinar's print layout. */
+.print-slide-container .k-page-anchor {
+  position: static;
+}
+
 /* Local webinar projection on a 1280 × 720 canvas. Give the worked calculations
    the available space rather than shrinking them to a desk-reference strip. */
+
 .slidev-layout {
   --header-top: 3rem;
   --t-body: 1.24rem;
@@ -56,4 +63,13 @@
 }
 .slidev-layout .k-content .k-stat-grid .k-stat .val {
   font-size: 3.4rem;
+}
+
+/* Chromium can place zero-size absolute destinations on the wrong PDF page.
+   Keep the anchors in flow on Slidev’s print route, without shifting content. */
+.print-slide-container .k-page-anchor {
+  position: static;
+  width: 1px;
+  height: 1px;
+  margin-block-end: -1px;
 }

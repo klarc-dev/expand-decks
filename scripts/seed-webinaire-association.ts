@@ -7,7 +7,7 @@ import { parseDocumentRenderPages, resolveDocumentTemplate } from '../src/docume
 import type { Presentation } from '../src/payload-types';
 import { slugFromTitle } from '../src/lib/slug';
 
-import { pages, TITLE } from './seed-assets/association';
+import { pages, questions, slideId, TITLE } from './seed-assets/association';
 const ORGANISATION = 'Klarc';
 const TEMPLATE = resolveDocumentTemplate('presentation');
 
@@ -20,7 +20,7 @@ function validatedSlides() {
         `Slide ${index + 1} « ${slide.title} » : ${JSON.stringify(parsed.error.issues)}`,
       );
     }
-    const id = `association-${slugFromTitle(slide.title)}`;
+    const id = slideId(slide.title);
     if (ids.has(id)) throw new Error(`Identifiant de diapositive en doublon : ${id}`);
     ids.add(id);
     const spec = SPEC_BY_TYPE.get(slide.blockType)!;
@@ -35,6 +35,14 @@ function validatedSlides() {
     return {
       ...defaults,
       ...parsed.data,
+      ...(slide.blockType === 'agenda'
+        ? {
+            items: questions.map(({ label, description, target }) => {
+              if (!pages.includes(target)) throw new Error(`Destination absente : ${label}`);
+              return { label, description, slideId: slideId(target.title) };
+            }),
+          }
+        : {}),
       blockType: slide.blockType,
       layoutContent: null,
       id,
@@ -108,16 +116,39 @@ if (values.check) {
       throw new Error('Plusieurs présentations portent ce titre dans cette organisation');
     let presentation = existing.docs[0];
     if (!values.inspect) {
-      // Keep the cover speakers configured in the admin: they are not authored here.
-      const previousCover = presentation?.slides?.find((slide) => slide.blockType === 'cover') as
-        | { intervenants?: unknown }
-        | undefined;
+      const previousCover = presentation?.slides?.find((slide) => slide.blockType === 'cover');
+      const speakers = await Promise.all(
+        ['Joachim Brindeau', 'Benjamin Visser'].map(async (name) => {
+          const members = await payload.find({
+            collection: 'users',
+            depth: 0,
+            limit: 2,
+            select: { name: true },
+            where: {
+              and: [{ name: { equals: name } }, { organisations: { contains: organisation.id } }],
+            },
+            overrideAccess: true,
+          });
+          if (members.totalDocs !== 1)
+            throw new Error(`Intervenant Klarc absent ou ambigu : ${name}`);
+          const user = members.docs[0]!.id;
+          const prior = previousCover?.intervenants?.find((row) => row.user === user);
+          return {
+            ...prior,
+            user,
+            description:
+              prior?.description ??
+              (name === 'Benjamin Visser' ? 'Fiscalité de l’innovation' : null),
+          };
+        }),
+      );
       const { convertSlidesMarkdownToLexical } = await import('../src/lib/richTextWrite');
       const richSlides = await convertSlidesMarkdownToLexical(structuredClone(authored), payload);
       const cover = richSlides.find((slide) => slide.blockType === 'cover') as
         | { intervenants?: unknown }
         | undefined;
-      if (cover && previousCover?.intervenants) cover.intervenants = previousCover.intervenants;
+      if (!cover) throw new Error('Couverture absente');
+      cover.intervenants = speakers;
       parseDocumentRenderPages(TEMPLATE, richSlides);
       const data = {
         title: TITLE,

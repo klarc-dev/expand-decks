@@ -1,4 +1,4 @@
-# S’associer dans un projet innovant : conducteur V6
+# S’associer dans un projet innovant : conducteur V7
 
 **Mardi 1er décembre 2026, 11 h à 12 h (Paris)** · [Crowdcast](https://www.crowdcast.io/c/039hilyxnmym) · Joachim Brindeau et Benjamin Visser. Répartition de la parole libre. Les cinq questions promises se traitent au fil d’une seule négociation, sans lire les tableaux ligne par ligne. Les montants sont des hypothèses pédagogiques.
 
@@ -12,7 +12,7 @@
 | 11 h 32–11 h 39 | 13–14 | Conserver la même offre : rechercher les droits de contrôle avant de décider quelles données du groupe agréger. Demander si les dépenses peuvent déjà être engagées et si le plafond théorique du prêt correspond au financement effectivement accordé. |
 | 11 h 39–11 h 45 | 15–16 | Remettre les compteurs à 60/40, sans industriel. Faire annoncer séparément le nombre de titres que Noé détient, ceux qui sont sous option et ce que Lina doit pouvoir payer. Ne révéler le calcul de prix qu’après les réponses. |
 | 11 h 45–11 h 50 | 17–18 | Repartir de nouveau de 60/40, sans rachat préalable. Tester l’offre sur 60 titres, puis la contre-offre sur 100 : qui doit financer, qui choisit et qui peut refuser ? Faire comparer le montant certain à la signature et le complément conditionnel. |
-| 11 h 50–11 h 51 | 19 | « Quelle pièce réclamez-vous demain ? Quelle hypothèse vous ferait renégocier ? » Laisser le dernier écran affiché. |
-| 11 h 51–12 h 00 | Questions | Reprendre la page pertinente selon la question. Ne pas inviter un participant à publier son pacte ou des informations confidentielles. |
+| 11 h 50–11 h 51 | 19 | « Quelle pièce réclamez-vous demain ? Quelle hypothèse vous ferait renégocier ? » Afficher les cinq questions. Chaque intitulé renvoie au cas correspondant dans le PDF et dans la présentation web. |
+| 11 h 51–12 h 00 | Questions | Depuis la page 19, choisir un thème pour revenir aux pages 2, 5, 8, 12 ou 15. Ne pas inviter un participant à publier son pacte ou des informations confidentielles. |
 
 En cas de retard : ne pas sacrifier les simulations. Choisir une seule variante de valorisation à commenter à voix haute et laisser le public consulter l’autre dans le PDF. Dernier contrôle avant diffusion : version applicable du CGI et conditions des deux offres Bpifrance.
