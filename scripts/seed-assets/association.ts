@@ -56,76 +56,30 @@ export const pages: Page[] = [
   },
   scene(
     '01',
-    'Lina et Noé veulent décider à deux',
-    'Cas fictif : Lina finance le démarrage. Noé a écrit le prototype. Ils veulent créer une SAS à parts égales. Un industriel veut déjà entrer au capital. Qui pourra lui dire oui ?',
+    'Avant de signer, choisir ce que l’on décide à deux',
+    'Lina finance le lancement. Noé apporte le prototype. Ils veulent décider ensemble de son avenir. Faut-il pour autant partager le capital à parts égales ?',
   ),
   cards(
-    '1 · Statuts ou pacte',
-    'Deux outils selon les personnes à engager',
+    'Le pacte fondateur',
+    'Décider ensemble ne suppose pas de tout décider à deux',
     [
       [
-        'Les statuts',
-        'Tous les associés y sont soumis, même ceux qui arrivent plus tard. Y organiser les pouvoirs, les décisions collectives et, si nécessaire, l’agrément des cessions.',
+        'Qui peut décider seul ?',
+        'Lina, présidente, signe les achats courants. Les statuts réservent aux associés la vente du logiciel, à une majorité qui exige leurs deux voix. En cas de désaccord, la vente attend.',
       ],
       [
-        'Le pacte',
-        'Le pacte ne lie que ses parties. Faire adhérer l’entrant avant la réalisation de l’opération. En cas de manquement : réparation du préjudice ou exécution en nature si ses conditions sont réunies.',
+        'Qui peut devenir associé ?',
+        'Si chacun veut choisir son futur partenaire, prévoir un agrément dans les statuts de la SAS. Il s’impose aussi aux entrants. La cession faite en violation de cette clause est nulle.',
+      ],
+      [
+        'Que se promet-on ?',
+        'Dans le pacte, convenir d’une seconde réunion puis d’une médiation en cas de blocage. Seuls les signataires sont engagés. Un manquement peut ouvrir droit à réparation, pas à l’annulation automatique du vote.',
       ],
     ],
-    ['C. com., art. L. 227-5, L. 227-9 et L. 227-14 · C. civ., art. 1199, 1217 et 1221'],
-  ),
-  table(
-    '1 · Sanctions en SAS',
-    'La sanction dépend de l’acte que l’on conteste',
-    'Avant de demander la nullité, identifier l’acte, la règle violée et la personne contre laquelle agir.',
-    ['Acte contesté', 'Règle méconnue', 'Recours à envisager'],
-    [
-      [
-        'Cession d’actions',
-        'Agrément imposé par les statuts',
-        'Cession nulle si elle intervient en violation de la clause statutaire (L. 227-15).',
-      ],
-      [
-        'Décision collective',
-        'Majorité prévue par les statuts',
-        'Depuis le 1er octobre 2025, les statuts peuvent prévoir la nullité pour violation de leurs règles. Elle n’est pas automatique.',
-      ],
-      [
-        'Vente à un tiers',
-        'Préemption inscrite au pacte',
-        'Réparation du préjudice. Nullité ou substitution si le tiers connaissait le pacte ET l’intention du bénéficiaire de l’invoquer.',
-      ],
-    ],
-    [
-      'C. com., art. L. 227-15 et [L. 227-20-1](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051318161) · C. civ., art. 1123 et 1844-12-1',
-    ],
+    ['C. com., art. L. 227-5, L. 227-9, L. 227-14 et L. 227-15 · C. civ., art. 1199 et 1217'],
   ),
   cards(
-    '1 · Gouvernance',
-    'À 50/50, un désaccord peut suffire à bloquer la décision',
-    [
-      [
-        'Au quotidien',
-        'Lina préside la SAS. Un plafond statutaire exige un accord préalable pour ses achats. Si elle signe seule au-delà du plafond, cette limite de pouvoir est inopposable au fournisseur. Le recours est interne.',
-      ],
-      [
-        'Pour une décision majeure',
-        'Réserver la vente du brevet aux deux fondateurs, pas chaque dépense courante. Après deux votes infructueux, ouvrir une médiation limitée dans le temps. Sans accord, le brevet reste dans la société.',
-      ],
-      [
-        'Pour ouvrir le capital',
-        'Une vente de titres paie le vendeur. Une émission de titres finance la société et dilue les associés. Vérifier la procédure propre à l’opération et signer l’adhésion au pacte.',
-      ],
-    ],
-    ['C. com., art. L. 227-6 et L. 227-9'],
-  ),
-  scene(
-    '02',
-    '30 000 € contre un prototype',
-    'Avant de choisir un pourcentage, distinguer l’argent versé, les droits déjà créés et le travail qui reste à faire.',
-  ),
-  cards(
-    '2 · Les apports',
+    'Les apports',
     'Trois contributions, trois façons de les évaluer',
     [
       [
@@ -144,38 +98,27 @@ export const pages: Page[] = [
     ['C. civ., art. 1843-2 et 1843-3 · C. com., art. L. 227-1'],
   ),
   table(
-    '2 · Constitution de la SAS',
-    'Qui répond de la valeur du prototype',
-    'Lina verse 30 000 €. Noé apporte des droits estimés à 20 000 €. Sans prime : 100 actions de 500 €, dont 60 pour Lina et 40 pour Noé.',
-    ['Test à la constitution', 'Application au cas', 'Décision'],
+    'La répartition proposée',
+    '60 % pour Lina, 40 % pour Noé : à quelles conditions',
+    'À la création de la SAS, sans prime, les fondateurs envisagent 100 actions de 500 €. Ils réservent la cession du logiciel à leur accord commun.',
+    ['Contribution', 'Ce que reçoit la SAS', 'Ce que reçoit l’associé'],
     [
+      ['Lina : 30 000 € versés', '30 000 € de trésorerie', '60 actions'],
       [
-        'Chaque apport en nature ≤ 30 000 €',
-        'Un seul apport en nature : 20 000 €.',
-        'Premier seuil respecté.',
+        'Noé : droits sur le prototype estimés à 20 000 €',
+        'Des droits exploitables, pas de trésorerie',
+        '40 actions, si les droits et leur valeur sont confirmés',
       ],
       [
-        'Total des apports non expertisés ≤ ½ du capital',
-        '20 000 € sur 50 000 €, soit 40 %.',
-        'Second seuil respecté. Les fondateurs peuvent écarter le commissaire à l’unanimité.',
-      ],
-      [
-        'Qui supporte le risque de surévaluation ?',
-        'Sans commissaire, les associés répondent solidairement de la valeur envers les tiers pendant cinq ans.',
-        'Si les droits du laboratoire restent incertains, revoir le périmètre et la valeur avant de signer.',
+        'Développements à venir',
+        'Un engagement distinct, à décrire et à rémunérer',
+        'Aucune action de capital supplémentaire du seul fait du travail promis',
       ],
     ],
-    [
-      'C. com., art. L. 227-1 et [D. 227-3](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000034494298)',
-    ],
-  ),
-  scene(
-    '03',
-    'Noé doit prouver ce qu’il peut apporter',
-    'Une démonstration convaincante prouve que le produit fonctionne. Elle ne prouve pas que Noé peut céder tous les droits nécessaires à la société.',
+    ['C. civ., art. 1843-2 · C. com., art. L. 227-1'],
   ),
   cards(
-    '3 · Logiciel, brevet, savoir-faire',
+    'Logiciel, brevet, savoir-faire',
     'Pour chaque actif, demander une pièce différente',
     [
       [
@@ -193,7 +136,7 @@ export const pages: Page[] = [
     ],
     ['CPI, art. L. 131-3, L. 613-8 et L. 613-9 · C. com., art. L. 151-1'],
   ),
-  cards('3 · Le laboratoire partenaire', 'Le laboratoire détient une brique indispensable', [
+  cards('Le laboratoire partenaire', 'Le laboratoire détient une brique indispensable', [
     [
       'Condition de réalisation',
       'Noé apporte le code qu’il détient. Le laboratoire conserve son moteur de calcul. Subordonner la réalisation de l’apport à une licence signée par le titulaire habilité, plutôt qu’à une simple lettre de soutien.',
@@ -204,12 +147,12 @@ export const pages: Page[] = [
     ],
   ]),
   scene(
-    '04',
-    'L’entrée de l’industriel peut changer le financement',
-    'Il faut faire deux vérifications distinctes : la composition du capital pour la jeune entreprise innovante (JEI), puis les conditions de l’aide réellement demandée.',
+    '02',
+    'Avant d’accepter l’offre de l’industriel',
+    'La licence commerciale est signée. Les fondateurs ont créé la SAS à 60/40. Un industriel propose maintenant de souscrire 100 actions nouvelles. La société recevra les fonds. Que change cette entrée pour son financement ?',
   ),
   cards(
-    '4 · JEI',
+    'JEI',
     'Le seuil porte sur les détenteurs admis, pas sur toute société',
     [
       [
@@ -228,7 +171,7 @@ export const pages: Page[] = [
     [jei],
   ),
   table(
-    '4 · Simulation de détention',
+    'Simulation de détention',
     'À 50 %, une action de plus change le diagnostic JEI',
     'L’industriel souscrit seul. Hypothèses : il ne relève d’aucune catégorie admise et toutes les actions ont la même valeur nominale.',
     ['Détenteur', 'Avant', '100 actions émises', '101 actions émises'],
@@ -240,7 +183,7 @@ export const pages: Page[] = [
     [jei],
   ),
   cards(
-    '4 · Bpifrance',
+    'Bpifrance',
     'Pas de seuil JEI à transposer à toutes les aides',
     [
       [
@@ -255,7 +198,7 @@ export const pages: Page[] = [
     [bourse, pret],
   ),
   cards(
-    '4 · Dossier de financement',
+    'Dossier de financement',
     'Comptes, organigramme et licences à joindre au dossier',
     [
       [
@@ -274,12 +217,12 @@ export const pages: Page[] = [
     ['Recommandation 2003/361/CE, annexe, art. 3 et 6 · Fiche du dispositif sollicité'],
   ),
   scene(
-    '05',
-    'Noé quitte le projet, mais reste actionnaire',
-    'Quitter ses fonctions ne vaut pas cession de ses titres. Pour savoir qui peut racheter quoi, à quel prix et quand, il faut revenir aux engagements signés.',
+    '03',
+    'Avant de signer une clause de sortie',
+    'Revenons au pacte initial, avant toute levée. Deux événements à tester séparément : Noé cesse de travailler ; un tiers propose de racheter les actions de Lina. Les mêmes clauses ne répondent pas aux deux situations.',
   ),
   cards(
-    '5 · Départ individuel',
+    'Départ individuel',
     'Vesting et leaver répondent à deux questions différentes',
     [
       [
@@ -298,7 +241,7 @@ export const pages: Page[] = [
     ['Illustration contractuelle, pas un barème légal · C. civ., art. 1124'],
   ),
   table(
-    '5 · Vente à un tiers',
+    'Vente à un tiers',
     'Une offre pour 60 actions, trois issues possibles',
     'Variante avant l’entrée de l’industriel : Lina reçoit une offre ferme pour ses 60 actions. Noé en détient 40. Les seuils ci-dessous sont négociés, pas légaux.',
     ['Clause', 'Qui a la main ?', 'Effet sur cette offre'],
@@ -321,23 +264,18 @@ export const pages: Page[] = [
     ],
     ['Exemples de stipulations contractuelles · C. civ., art. 1103, 1123 et 1124'],
   ),
-  cards('À emporter', 'Trois vérifications avant de vous engager', [
+  cards('Synthèse · Questions', 'Trois pièces à mettre sur la table avant de signer', [
     [
-      'Avant de signer',
-      'Chacun écrit ce qu’il livre, quand et en échange de quoi. Confrontez les réponses. Testez une décision à 50/50 et le départ de l’un de vous au bout d’un an.',
+      'L’accord des fondateurs',
+      'À côté des pourcentages, écrire qui décide d’une vente du logiciel, qui peut refuser un entrant et ce qui se passe en cas de désaccord.',
     ],
     [
-      'Avant une entrée au capital',
-      'Simulez les titres et les votes après l’opération. Relisez statuts, pacte et contrats de propriété intellectuelle. Faites signer les accords et adhésions nécessaires.',
+      'La table de capitalisation datée',
+      'Pour chaque apport : valeur, droits transmis et preuve. Pour chaque émission : répartition après opération, test JEI et conditions propres à l’aide demandée.',
     ],
     [
-      'Avant le dossier de financement',
-      'Datez la table du capital, qualifiez chaque détenteur pour la JEI, relisez la fiche Bpifrance et rapprochez les fonds propres des dépenses à financer.',
+      'Deux simulations de sortie',
+      'Faire jouer le départ de Noé, puis l’offre faite à Lina. Dans chaque cas, désigner l’acheteur, les titres concernés, le prix ou sa formule et le délai de paiement.',
     ],
   ]),
-  scene(
-    '11/11',
-    'Vos questions',
-    'Si votre associé quittait le projet demain, quel document vous dirait qui conserve les titres, qui peut exploiter le produit et qui décide de la suite ?',
-  ),
 ];
