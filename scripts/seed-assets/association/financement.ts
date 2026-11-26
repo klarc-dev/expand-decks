@@ -1,4 +1,4 @@
-import { cards, table } from './layout';
+import { compare, table } from './layout';
 
 const jei =
   '[CGI, art. 44 sexies-0 A](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000053543750/2026-12-01/)';
@@ -64,35 +64,35 @@ export const financement = [
     ],
     [jei],
   ),
-  table(
-    'Négociation · Seul le critère de détention JEI est testé',
-    'Une action de plus suffit à passer sous les 50 %',
-    'Les fondateurs gardent leurs 100 actions à nominal égal. L’industriel souscrit seul et, par hypothèse, ne compte pas comme détenteur admis.',
-    ['Offre', 'Encaissement par la SAS', 'Part admise après émission'],
-    [
-      [
-        '**100 titres à 1 000 €**',
-        '100 000 € (dont 50 000 € de prime).',
-        '**100 / 200 = 50 %** : seuil atteint sans marge.',
-      ],
-      [
-        '**101 titres à 1 000 €**',
-        '101 000 € (dont 50 500 € de prime).',
-        '**100 / 201 ≈ 49,75 %** : seuil manqué.',
-      ],
-      [
-        '**Contre-offre : 100 à 1 010 €**',
-        '101 000 € (dont 51 000 € de prime).',
-        '**50 %** : même financement, pas de titre en plus. Faire accepter le nouveau prix.',
-      ],
-      [
-        '**Avant de signer**',
-        'Modifier l’offre et la décision d’émission.',
-        'Dater la table de capitalisation et prévoir une alerte avant toute nouvelle émission ou cession.',
-      ],
+  {
+    blockType: 'stats',
+    eyebrow: 'Négociation · Seul le critère de détention JEI est testé',
+    title: 'Une action de plus suffit à passer sous les 50 %',
+    lead: 'Les fondateurs gardent 100 actions à nominal égal. L’industriel souscrit seul et ne compte pas, par hypothèse, parmi les détenteurs admis.',
+    stats: [
+      {
+        value: '50 %',
+        label:
+          '100 / 200. À 1 000 € par titre nouveau, la SAS reçoit 100 000 €, dont 50 000 € de prime. Seuil atteint sans marge.',
+      },
+      {
+        value: '49,75 %',
+        label:
+          '100 / 201. Avec un titre de plus au même prix, la SAS reçoit 101 000 €, dont 50 500 € de prime. Seuil manqué.',
+      },
+      {
+        value: '50 %',
+        label:
+          '100 / 200. Proposer 100 titres à 1 010 € : mêmes 101 000 €, dont 51 000 € de prime. Il faut faire accepter le nouveau prix.',
+      },
     ],
-    [jei],
-  ),
+    footnotes: [
+      { text: jei },
+      {
+        text: 'Modifier l’offre et la décision d’émission. Dater la table de capitalisation et prévoir une alerte avant la prochaine émission ou cession.',
+      },
+    ],
+  },
   table(
     'Taille UE · Même émission de 100 actions',
     'À 50 % du capital, les droits de contrôle changent le résultat',
@@ -122,7 +122,7 @@ export const financement = [
     ],
     [taille],
   ),
-  cards(
+  compare(
     'Bpifrance · Deux dossiers à instruire',
     'La bourse finance la maturation deeptech, le prêt se rembourse',
     [

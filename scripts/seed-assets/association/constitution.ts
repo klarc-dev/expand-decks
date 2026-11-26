@@ -1,7 +1,7 @@
-import { cards, table } from './layout';
+import { compare, table } from './layout';
 
 export const constitution = [
-  cards(
+  compare(
     'Constitution · Statuts et pacte',
     'Les statuts fixent les pouvoirs, le pacte lie ses signataires',
     [
@@ -85,7 +85,7 @@ export const constitution = [
     ],
     ['C. civ., art. 1843-2 et 1843-3', 'C. com., art. L. 227-1'],
   ),
-  cards(
+  compare(
     'Constitution · Simulation à 100 actions de 500 €, sans prime',
     '60/40 si les droits de Noé valent 20 000 €',
     [
@@ -101,7 +101,7 @@ export const constitution = [
     ['CPI, art. L. 131-3 · Chiffrage fictif, à documenter'],
     'Avant de fixer les parts : vérifier l’acte de cession[^1] et les usages autorisés. Recouper le coût par les revenus plausibles. Exclure le travail futur et le moteur du laboratoire.',
   ),
-  cards(
+  compare(
     'Constitution · Valeur de l’apport et commissaire aux apports',
     'La dispense ne valide pas les 20 000 €',
     [

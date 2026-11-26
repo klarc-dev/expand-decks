@@ -44,3 +44,25 @@
   font-size: 1.35rem;
   line-height: 1.2;
 }
+
+/* Options share a reading edge, whether they contain a clause or a number. */
+.slidev-layout .k-cardgrid-body .k-card,
+.slidev-layout .k-content .k-stat-grid .k-stat-card {
+  padding: 1.35rem 1.4rem;
+  border-top: 0.22rem solid var(--k-teal);
+}
+.slidev-layout .k-content .k-stat-grid {
+  width: 100%;
+  max-width: none;
+}
+.slidev-layout .k-content .k-stat-grid .k-stat .lbl {
+  max-width: none;
+  font-size: 1.22rem;
+  line-height: 1.32;
+}
+.slidev-layout .k-content .k-stat-grid .k-stat .val {
+  font-size: 3.4rem;
+}
+.slidev-layout .k-stat-card:nth-child(2) {
+  background: var(--k-surface-soft);
+}

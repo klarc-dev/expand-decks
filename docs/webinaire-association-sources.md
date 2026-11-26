@@ -1,4 +1,4 @@
-# S’associer dans un projet innovant : sources et corrigés V5
+# S’associer dans un projet innovant : sources et corrigés V6
 
 Webinaire du 1er décembre 2026 · Support de 19 pages. Les renvois numérotés dans chaque partie suivent l’ordre des pages de cette séquence. Les montants, votes, droits de contrôle et prix de sortie sont des hypothèses, pas des clauses types.
 

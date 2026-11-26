@@ -1,27 +1,32 @@
 export type Page = { blockType: string; title: string; [key: string]: unknown };
 
-export function cards(
+export function workedCase(
   eyebrow: string,
   title: string,
   rows: [string, string][],
   sources: string[] = [],
   sidebarText?: string,
 ): Page {
-  // A worked example deserves a reading order: facts and first proposition on the
-  // left, alternatives on the right. Avoid a lone low strip of tiny cards.
-  if (sidebarText && sidebarText.length <= 220 && rows.length >= 2 && rows.length <= 3) {
-    const [label, text] = rows[0]!;
-    const alternatives = rows.slice(1);
-    return {
-      blockType: 'twoCols',
-      eyebrow,
-      title,
-      intro: `**${label}**\n\n${text}`,
-      leftFooter: sidebarText,
-      rightCards: alternatives.map(([title, description]) => ({ title, description })),
-      footnotes: sources.map((text) => ({ text })),
-    };
-  }
+  const [label, text] = rows[0]!;
+  const alternatives = rows.slice(1);
+  return {
+    blockType: 'twoCols',
+    eyebrow,
+    title,
+    intro: `**${label}**\n\n${text}`,
+    leftFooter: sidebarText,
+    rightCards: alternatives.map(([title, description]) => ({ title, description })),
+    footnotes: sources.map((text) => ({ text })),
+  };
+}
+
+export function compare(
+  eyebrow: string,
+  title: string,
+  rows: [string, string][],
+  sources: string[] = [],
+  sidebarText?: string,
+): Page {
   return {
     blockType: 'cardGrid',
     eyebrow,

@@ -1,4 +1,4 @@
-import { cards, table } from './layout';
+import { compare, workedCase, table } from './layout';
 
 const promesse =
   '[C. civ., art. 1124](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032040818)';
@@ -8,26 +8,25 @@ const exclusion =
   '[C. com., art. L. 227-16](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006227180)';
 
 export const sortie = [
-  table(
+  compare(
     'Sortie · Retour avant la levée',
     'Quitter ses fonctions n’oblige pas à céder ses actions',
-    'Sans l’industriel : Lina a 60 actions, Noé 40. L’offre d’un tiers sera testée séparément, avec la même répartition.',
-    ['Situation et pièce à vérifier', 'Effet et point à négocier'],
     [
       [
-        '**Fin des fonctions** · mandat, contrat de travail ou contrat de prestation',
+        'Fin des fonctions · mandat, contrat de travail ou contrat de prestation',
         'Noé reste associé. Identifier le rôle qui prend fin et la preuve du départ qui déclenchera, ou non, une clause sur les titres.',
       ],
       [
-        '**Promesse de vente** · pacte signé et annexes',
+        'Promesse de vente · pacte signé et annexes',
         'Lina peut acheter si le départ entre dans la clause et si elle lève l’option. Fixer les motifs, les titres visés et la formule de prix.',
       ],
       [
-        '**Exclusion** · statuts et décision de l’organe compétent',
+        'Exclusion · statuts et décision de l’organe compétent',
         'Si les statuts le prévoient, Noé peut être tenu de céder. Écrire qui décide, pour quels motifs, selon quelle procédure et à quel prix.',
       ],
     ],
     [promesse, exclusion],
+    'Sans l’industriel : Lina a 60 actions, Noé 40. L’offre d’un tiers sera testée séparément, avec la même répartition.',
   ),
   table(
     'Cas 1 · Départ après deux ans',
@@ -54,28 +53,27 @@ export const sortie = [
     ],
     [`Exemple contractuel, pas un barème légal · ${promesse}`],
   ),
-  table(
+  compare(
     'Cas 2 · Offre sur 60 actions',
     'Le tiers offre 60 000 € comptant à Lina',
-    'Noé détient toujours 40 actions. À 1 000 € par action, que donne chaque clause si on la teste séparément ?',
-    ['Clause du pacte', 'Résultat sur l’offre notifiée'],
     [
       [
-        '**Préemption** · acheter en priorité',
-        'Noé peut acheter les 60 titres aux conditions notifiées, s’il réunit **60 000 €** et exerce dans le délai convenu.',
+        'Préemption · acheter en priorité',
+        'Noé peut acheter les 60 titres aux conditions notifiées, s’il réunit 60 000 € et exerce dans le délai convenu.',
       ],
       [
-        '**Sortie conjointe intégrale (tag)** · vendre avec Lina',
-        'Si Noé exerce, il demande **40 000 €** pour ses titres. Si le tiers refuse d’acheter les 100 pour 100 000 €, Lina ne peut pas vendre seule sans violer le pacte.',
+        'Sortie conjointe intégrale (tag) · vendre avec Lina',
+        'Si Noé exerce, il demande 40 000 € pour ses titres. Si le tiers refuse d’acheter les 100 pour 100 000 €, Lina ne peut pas vendre seule sans violer le pacte.',
       ],
       [
-        '**Sortie forcée (drag)** · obliger à vendre',
-        '**Impossible** : Lina a 60 %, en deçà des 75 % requis, et l’offre ne porte que sur 60 des 100 actions.',
+        'Sortie forcée (drag) · obliger à vendre',
+        'Impossible : Lina a 60 %, en deçà des 75 % requis, et l’offre ne porte que sur 60 des 100 actions.',
       ],
     ],
     [`Seuil et modalités propres au pacte fictif · ${preference}`],
+    'Noé détient toujours 40 actions. À 1 000 € par action, que donne chaque clause si on la teste séparément ?',
   ),
-  cards(
+  workedCase(
     'Cas 2 · Contre-offre sur 100 actions',
     '120 000 € au maximum, 80 000 € à la cession',
     [

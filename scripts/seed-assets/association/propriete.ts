@@ -1,7 +1,7 @@
-import { cards, table } from './layout';
+import { workedCase, table } from './layout';
 
 export const propriete = [
-  cards(
+  workedCase(
     'Apport de Noé · Chaîne des droits',
     'Noé ne peut apporter que les droits qu’il détient',
     [
@@ -21,7 +21,7 @@ export const propriete = [
     ['CPI, art. L. 111-1, L. 113-9, L. 131-2 et L. 131-3'],
     'Le statut de Noé au moment de l’écriture n’est pas précisé. Un dépôt Git aide à dater les contributions, mais ne prouve pas leur cession.',
   ),
-  cards(
+  workedCase(
     'Moteur du laboratoire · Négociation',
     'La licence de recherche ne couvre pas la livraison au client',
     [
