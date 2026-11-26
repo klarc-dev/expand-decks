@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual, parseArgs } from 'node:util';
 
 import { AI_SLIDE_SCHEMA, SPEC_BY_TYPE } from '../src/blocks/spec';
@@ -172,6 +173,10 @@ if (values.check) {
       if (values.build) {
         const { runBuildSlidesTask } = await import('../src/jobs/buildSlidesRunner');
         const result = await runBuildSlidesTask({
+          projectionStyles: readFileSync(
+            new URL('./seed-assets/association/projection.css', import.meta.url),
+            'utf8',
+          ),
           input: { presentationId: String(presentation.id) },
           req: { payload },
         });

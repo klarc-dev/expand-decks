@@ -322,11 +322,13 @@ export async function preflightPresentationLayout(
  */
 export type BuildSlidesTaskArgs = {
   input: unknown;
+  /** Trusted repo-authored stylesheet for a local, seed-driven projection export. Never read from job input. */
+  projectionStyles?: string;
   req: Pick<TaskHandlerArgs<'buildSlides'>['req'], 'payload'>;
 };
 
 // fallow-ignore-next-line complexity
-export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
+export async function runBuildSlidesTask({ input, req, projectionStyles }: BuildSlidesTaskArgs) {
   const { presentationId, buildToken } = input as {
     presentationId: string;
     buildToken?: string;
@@ -425,7 +427,7 @@ export async function runBuildSlidesTask({ input, req }: BuildSlidesTaskArgs) {
       template,
     });
 
-    const themeCss = buildThemeCss(brand);
+    const themeCss = [buildThemeCss(brand), projectionStyles].filter(Boolean).join('\n');
     const mermaidConfigSource = buildMermaidConfigSource(brand);
     const mediaFilenames = referencedMediaFiles(slidesMd);
     workdir = stageBuildDir({

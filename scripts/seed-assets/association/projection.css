@@ -1,0 +1,46 @@
+/* Local webinar projection on a 1280 × 720 canvas. Give the worked calculations
+   the available space rather than shrinking them to a desk-reference strip. */
+.slidev-layout {
+  --header-top: 3rem;
+  --t-body: 1.24rem;
+  --t-heading-subtext: 1.38rem;
+}
+.k-content-header :is(h1, h2),
+.k-content-header .k-header-lead {
+  max-inline-size: 94%;
+}
+.k-table.k-density-dense,
+.k-table.k-density-compact {
+  font-size: 1.14rem;
+}
+.k-table.k-table--fit :is(th, td) {
+  padding: 0.46rem 0.75rem;
+  line-height: 1.28;
+}
+.k-table.k-table--fit td p {
+  line-height: inherit;
+}
+.k-table--cols-3 col:nth-child(2) {
+  width: 38%;
+}
+.k-table--cols-3 col:nth-child(3) {
+  width: 38%;
+}
+.k-table--cols-4 col:nth-child(3) {
+  width: 26%;
+}
+.k-table--cols-4 col:nth-child(4) {
+  width: 32%;
+}
+.slidev-layout .k-content .k-card-stack .k-card p,
+.slidev-layout .k-content .k-copy-column .k-copy-stack p,
+.slidev-layout .k-content .k-takeaway-text,
+.slidev-layout .k-content .k-timeline .k-tl-desc {
+  font-size: 1.22rem;
+  line-height: 1.32;
+}
+.slidev-layout .k-content .k-timeline .k-tl-label,
+.slidev-layout .k-content .k-card-stack .k-card h3 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
