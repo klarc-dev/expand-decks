@@ -41,6 +41,21 @@ describe('/spa/[slug] access boundary', () => {
     );
   });
 
+  it('redirects an anonymous viewer to login with the deck as return destination', async () => {
+    auth.mockResolvedValue({ user: null });
+    const response = await GET(
+      new Request('https://slides.example/spa/deck/index.html', {
+        headers: { Accept: 'text/html' },
+      }),
+      { params: params('deck') },
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      '/admin/login?redirect=%2Fspa%2Fdeck%2Findex.html',
+    );
+    expect(count).not.toHaveBeenCalled();
+  });
+
   it('returns 403 for anonymous requests before reading any file', async () => {
     auth.mockResolvedValue({ user: null });
 
