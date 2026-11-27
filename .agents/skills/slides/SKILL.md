@@ -13,7 +13,8 @@ Use this skill for manual slide creation, review, revision, seed scripts, and bu
 - Check template eligibility, field constraints and relationships: [schema](references/schema.md).
 - [Layout prompt catalogue](references/layout-prompts.md)
 - [Mastra workflow prompts](references/mastra-prompts.md)
-- [Local, production, REST, and MCP operations](references/operations.md)
+- [Local, production, and REST operations](references/operations.md)
+- [Generated LobeHub tools](references/lobehub-tools.md), available when the personal connector is configured.
 
 Regenerate these references with `pnpm generate:agent-skills` after block-spec, template, or Mastra prompt changes. Check freshness with `pnpm generate:agent-skills:check`.
 
@@ -43,7 +44,7 @@ The generated references are projections of the runtime SSOT:
 3. Use `pnpm prod pull` when production data should be inspected or reproduced locally; it never writes to production.
 4. Use `pnpm prod run` only for a committed, narrowly scoped top-level script. Read-only inspection is preferred.
 5. Treat `seed-*` and `set-*` scripts as production mutations. They require explicit user authorization and the CLI's `--yes` confirmation.
-6. Do not recreate a deck MCP server. Use the authenticated canonical REST boundary for external layout integrations.
+6. Do not recreate the retired in-app MCP server. For LobeHub use only the separately deployed generated connector backed by authenticated canonical REST.
 
 ## Content rules
 
