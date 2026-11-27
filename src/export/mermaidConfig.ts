@@ -130,8 +130,23 @@ export function buildMermaidConfig(brand?: Partial<OrgBrand> | null): MermaidCon
       .edgeLabel span,
       .edgeLabel p {
         font-family: var(--k-font-body, ${palette.bodyFont}) !important;
-        color: var(--k-ink-soft, ${palette.ink}) !important;
+        color: var(--k-teal-700, ${palette.primary}) !important;
         background-color: var(--k-surface-raised, ${KLARC.white}) !important;
+      }
+      /* Edge labels are secondary to the nodes: one step smaller, tinted from the
+         line they annotate rather than gray. A same-color halo (box-shadow, so
+         Mermaid's label measurement and layout stay untouched) opens a clean gap
+         where the line meets the words instead of running through them. */
+      .edgeLabel foreignObject {
+        overflow: visible !important;
+      }
+      .edgeLabel p {
+        font-size: 0.9em !important;
+        font-weight: 500;
+        line-height: 1.25 !important;
+        letter-spacing: 0.01em;
+        border-radius: 4px;
+        box-shadow: 0 0 0 4px var(--k-surface-raised, ${KLARC.white});
       }
     `,
     themeVariables: {
