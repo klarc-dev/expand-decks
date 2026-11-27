@@ -19,7 +19,7 @@ import type { Presentation } from '../src/payload-types';
 
 const PRESENTATION_ID = 35;
 const ORGANISATION_ID = 9;
-const TITLE = 'Presentation Cosmetic labs';
+const TITLE = 'Cosmetic Labs : presentation';
 const SITE = 'https://cosmetic-labs.com';
 const DIRECTORY = `${SITE}/companies`;
 const PROVIDER = `${SITE}/world/europe/france/laboratoire-naturae`;
