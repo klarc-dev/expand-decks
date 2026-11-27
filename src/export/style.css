@@ -1659,6 +1659,7 @@
 .k-takeaway {
   --takeaway-pad-block: 1.1rem;
   --takeaway-pad-inline: 1.4rem;
+  --takeaway-chip-pad: 0.72rem;
   position: relative;
   display: block;
   max-width: 54rem;
@@ -1685,12 +1686,13 @@
 .k-takeaway-label {
   position: absolute;
   top: 0;
-  left: calc(var(--takeaway-pad-inline) - 0.15rem);
+  /* The chip's left edge starts on the same vertical as the message below it. */
+  left: var(--takeaway-pad-inline);
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   max-width: calc(100% - 2 * var(--takeaway-pad-inline));
-  padding: 0.34rem 0.72rem;
+  padding: 0.34rem var(--takeaway-chip-pad);
   border-radius: 999px;
   background: var(--k-teal);
   color: var(--k-on-primary);
@@ -1703,10 +1705,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.k-hero--center .k-takeaway-label {
-  left: 50%;
-  transform: translate(-50%, -50%);
 }
 .k-takeaway-text {
   min-width: 0;
@@ -1902,6 +1900,11 @@
 }
 .k-content-main--center {
   justify-content: center;
+}
+/* Stacked siblings (copy column, takeaway, card stack) never touch: they keep
+   the same rhythm as the cards themselves. */
+.k-content-main {
+  row-gap: var(--card-gap);
 }
 .k-content-main--start {
   justify-content: flex-start;
