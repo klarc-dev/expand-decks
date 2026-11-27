@@ -27,8 +27,16 @@ describe('Mermaid organisation theme', () => {
     expect(config.themeCSS).toContain('width: 100% !important');
     expect(config.themeCSS).toContain('height: 100% !important');
     expect(config.themeCSS).toContain('.edgeLabel rect');
-    expect(config.themeCSS).toContain('fill: #ffffff !important');
-    expect(config.themeCSS).toContain('background-color: #ffffff !important');
+    expect(config.themeCSS).toContain('var(--k-surface-raised');
+    expect(config.themeCSS).toContain('var(--k-hairline');
+    expect(config.themeCSS).toContain('var(--k-font-body');
+    expect(config.themeVariables?.fontFamily).toContain('"IBM Plex Sans"');
+  });
+
+  it('measures labels in the organisation body font', () => {
+    const config = buildMermaidConfig({ ...brand, bodyFont: 'Inter' });
+    expect(config.themeVariables?.fontFamily).toMatch(/^"Inter"/);
+    expect(config.themeCSS).toContain('"Inter"');
   });
 
   it('serializes the same palette for the staged Slidev setup', () => {

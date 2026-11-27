@@ -14,7 +14,15 @@ const KLARC = {
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
-type MermaidBrand = Pick<OrgBrand, 'primary' | 'secondary' | 'ink' | 'paper'>;
+type MermaidBrand = Pick<OrgBrand, 'primary' | 'secondary' | 'ink' | 'paper'> & {
+  bodyFont: string;
+};
+
+/** Same sanitising as the deck font stack, so Mermaid measures labels in the deck font. */
+function bodyFontStack(value: unknown): string {
+  const clean = typeof value === 'string' ? value.replace(/[\r\n"'\\;{}]/g, '').trim() : '';
+  return `"${clean || 'IBM Plex Sans'}", ui-sans-serif, system-ui, sans-serif`;
+}
 
 function resolvePalette(brand: Partial<OrgBrand> | null | undefined): MermaidBrand {
   const valid =
@@ -34,6 +42,7 @@ function resolvePalette(brand: Partial<OrgBrand> | null | undefined): MermaidBra
       secondary: KLARC.rose,
       ink: KLARC.ink,
       paper: KLARC.teal50,
+      bodyFont: bodyFontStack(brand?.bodyFont),
     };
   }
 
@@ -42,6 +51,7 @@ function resolvePalette(brand: Partial<OrgBrand> | null | undefined): MermaidBra
     secondary: brand.secondary!,
     ink: brand.ink!,
     paper: brand.paper!,
+    bodyFont: bodyFontStack(brand.bodyFont),
   };
 }
 
@@ -63,7 +73,11 @@ export function buildMermaidConfig(brand?: Partial<OrgBrand> | null): MermaidCon
     // Slidev mounts Mermaid output in a ShadowRoot, so deck-level style.css
     // cannot reach the generated SVG. Mermaid injects themeCSS inside that
     // shadow tree, making this the authoritative fixed-canvas containment rule
-    // for both the built SPA and Chromium PDF/PNG exports.
+    // for both the built SPA and Chromium PDF/PNG exports. Custom properties do
+    // inherit across the shadow boundary, so nodes reuse the deck's card tokens
+    // (raised surface, hairline border, card radius, body font) and read as the
+    // same component family as the surrounding slides. Literal brand values are
+    // the fallback for the admin preview, where the deck tokens are absent.
     themeCSS: `
       svg {
         display: block;
@@ -75,22 +89,53 @@ export function buildMermaidConfig(brand?: Partial<OrgBrand> | null): MermaidCon
         min-height: 0 !important;
         overflow: hidden !important;
       }
+      .node rect,
+      .node polygon,
+      .node circle,
+      .node ellipse,
+      .node path {
+        fill: var(--k-surface-raised, ${KLARC.white}) !important;
+        stroke: var(--k-hairline, ${palette.primary}) !important;
+        stroke-width: 1px !important;
+      }
+      .node rect {
+        rx: 10px;
+        ry: 10px;
+      }
+      .nodeLabel,
+      .nodeLabel p,
+      .label foreignObject div {
+        font-family: var(--k-font-body, ${palette.bodyFont}) !important;
+        color: var(--k-ink, ${palette.ink}) !important;
+        font-weight: 500;
+      }
+      .flowchart-link,
+      .edgePath .path {
+        stroke: var(--k-teal, ${palette.primary}) !important;
+        stroke-width: 1.5px !important;
+      }
+      .marker,
+      marker path {
+        fill: var(--k-teal, ${palette.primary}) !important;
+        stroke: var(--k-teal, ${palette.primary}) !important;
+      }
       .edgeLabel rect,
       .labelBkg {
-        fill: ${KLARC.white} !important;
+        fill: transparent !important;
+        stroke: none !important;
         opacity: 1 !important;
-        stroke: ${palette.primary} !important;
-        stroke-width: 1px !important;
+        background-color: transparent !important;
       }
       .edgeLabel,
       .edgeLabel span,
       .edgeLabel p {
-        color: ${palette.ink} !important;
-        background-color: ${KLARC.white} !important;
+        font-family: var(--k-font-body, ${palette.bodyFont}) !important;
+        color: var(--k-ink-soft, ${palette.ink}) !important;
+        background-color: var(--k-surface-raised, ${KLARC.white}) !important;
       }
     `,
     themeVariables: {
-      fontFamily: 'Roboto, ui-sans-serif, system-ui, sans-serif',
+      fontFamily: palette.bodyFont,
       primaryColor: palette.paper,
       primaryBorderColor: palette.primary,
       primaryTextColor: palette.ink,

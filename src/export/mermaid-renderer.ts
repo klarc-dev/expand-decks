@@ -15,7 +15,14 @@ let sequence = 0;
  * SVG and clipping its top and bottom.
  */
 export default async () => async (code: string, options: Record<string, unknown>) => {
-  mermaid.initialize({ ...buildMermaidConfig(), ...options, startOnLoad: false });
+  // Slidev's <Mermaid> always passes `theme` (undefined outside dark mode). Spreading
+  // it verbatim replaced the organisation's `base` theme with Mermaid's lavender
+  // default, so brand colors never reached exported diagrams. The brand config owns
+  // the theme; only defined, non-theme per-diagram options may override it.
+  const overrides = Object.fromEntries(
+    Object.entries(options ?? {}).filter(([key, value]) => key !== 'theme' && value !== undefined),
+  );
+  mermaid.initialize({ ...buildMermaidConfig(), ...overrides, startOnLoad: false });
   const { svg } = await mermaid.render(`k-mermaid-${sequence++}`, code);
 
   return svg.replace(/<svg\b([^>]*)>/, (_match: string, attributes: string) => {
