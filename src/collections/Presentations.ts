@@ -1,24 +1,15 @@
 import { createHash } from 'node:crypto';
 
-import {
-  Forbidden,
-  type CollectionBeforeDeleteHook,
-  type CollectionConfig,
-  type PayloadRequest,
-} from 'payload';
+import type { CollectionBeforeDeleteHook, CollectionConfig, PayloadRequest } from 'payload';
 
 import {
+  isAdmin,
   isAdminOrAuthor,
   isOrganisationAuthor,
   isOrganisationMember,
   relationshipId,
   userIsOrganisationMember,
 } from '../access/roles';
-import {
-  canDeletePresentation,
-  changesPresentationVisibilityOrRemovesSlides,
-  isNativePresentationInteraction,
-} from '../access/presentationDestructiveAccess';
 import { MAX_SELECTED_SOURCES, MAX_SLIDES, MIN_BRIEF_CHARS, MIN_SLIDES } from '../lib/draftConfig';
 import { DEFAULT_AGENT_MODEL, agentModelSchema } from '../lib/agentModel';
 import { requestPresentationBuild } from '../jobs/requestPresentationBuild';
@@ -156,7 +147,7 @@ export const Presentations: CollectionConfig = {
     create: isAdminOrAuthor,
     read: isOrganisationMember,
     update: isOrganisationAuthor,
-    delete: canDeletePresentation,
+    delete: isAdmin,
   },
   endpoints: [
     {
@@ -216,17 +207,9 @@ export const Presentations: CollectionConfig = {
   hooks: {
     beforeDelete: [beforePresentationDelete],
     beforeValidate: [
-      ({ data, originalDoc, operation, req }) => {
+      ({ data, originalDoc }) => {
         if (!data || typeof data !== 'object') return data;
         const record = data as Record<string, unknown>;
-        if (
-          operation === 'update' &&
-          originalDoc &&
-          !isNativePresentationInteraction(req) &&
-          changesPresentationVisibilityOrRemovesSlides(record, originalDoc)
-        ) {
-          throw new Forbidden(req.t);
-        }
         const previous = originalDoc as
           | { documentTemplate?: unknown; slides?: unknown }
           | undefined;

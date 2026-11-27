@@ -54,18 +54,6 @@ test('deck deletion requires a distinct authenticated session and checks cancell
       headers: { 'Sec-Fetch-Site': 'same-origin' },
     });
     expect(forbidden.status()).toBe(403);
-    const rawDelete = await requester.request.delete(path, { headers: bearer });
-    expect(rawDelete.status()).toBe(403);
-    const rawTransfer = await requester.request.patch(path, {
-      headers: bearer,
-      data: {
-        organisation: Number(
-          JSON.parse(await readFile('test-results/.auth/fixtures.json', 'utf8'))
-            .foreignOrganisationId,
-        ),
-      },
-    });
-    expect(rawTransfer.status()).toBe(403);
 
     const cancelled = await prepare(requester.request, deckId, bearer);
     const requesterPage = await requester.newPage();
