@@ -17,8 +17,16 @@ const payload = {
   secret: 'test-secret',
   config: { serverURL: 'https://slides.example' },
 } as Payload;
-const user = (id: number, sid: string) =>
-  ({ id, _sid: sid, membershipStatus: 'active' }) as TypedUser;
+const user = (id: number, sid: string): TypedUser & { _sid: string } => ({
+  id,
+  _sid: sid,
+  membershipStatus: 'active',
+  role: 'admin',
+  collection: 'users',
+  email: 'admin@example.test',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+});
 const actor = user(5, 'connector-session');
 const browserActor = user(5, 'browser-session');
 const target = {
