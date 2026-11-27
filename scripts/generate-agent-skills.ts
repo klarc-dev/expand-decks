@@ -23,6 +23,7 @@ import {
   buildStructureInstructions,
   buildWriterInstructions,
 } from '../src/agents/prompts/phases';
+import { generateAuthoringContract, renderAuthoringTools } from './generate-authoring-contract';
 import { SLIDES_OPERATIONS } from './slides-operations.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,6 +33,8 @@ const OUTPUTS = {
   capabilities: path.join(ROOT, '.agents/skills/slides/references/capabilities.md'),
   catalogue: path.join(ROOT, '.agents/skills/slides/references/layout-prompts.md'),
   mastra: path.join(ROOT, '.agents/skills/slides/references/mastra-prompts.md'),
+  tools: path.join(ROOT, '.agents/skills/slides/references/lobehub-tools.md'),
+  openapi: path.join(ROOT, 'mcp-adapter/openapi.json'),
   operations: path.join(ROOT, '.agents/skills/slides/references/operations.md'),
 };
 
@@ -317,7 +320,8 @@ Use this skill for manual slide creation, review, revision, seed scripts, and bu
 - Check template eligibility, field constraints and relationships: [schema](references/schema.md).
 - [Layout prompt catalogue](references/layout-prompts.md)
 - [Mastra workflow prompts](references/mastra-prompts.md)
-- [Local, production, REST, and MCP operations](references/operations.md)
+- [Local, production, and REST operations](references/operations.md)
+- [Generated LobeHub tools](references/lobehub-tools.md), available when the personal connector is configured.
 
 Regenerate these references with \`pnpm generate:agent-skills\` after block-spec, template, or Mastra prompt changes. Check freshness with \`pnpm generate:agent-skills:check\`.
 
@@ -347,7 +351,7 @@ The generated references are projections of the runtime SSOT:
 3. Use \`pnpm prod pull\` when production data should be inspected or reproduced locally; it never writes to production.
 4. Use \`pnpm prod run\` only for a committed, narrowly scoped top-level script. Read-only inspection is preferred.
 5. Treat \`seed-*\` and \`set-*\` scripts as production mutations. They require explicit user authorization and the CLI's \`--yes\` confirmation.
-6. Do not recreate a deck MCP server. Use the authenticated canonical REST boundary for external layout integrations.
+6. Do not recreate the retired in-app MCP server. For LobeHub use only the separately deployed generated connector backed by authenticated canonical REST.
 
 ## Content rules
 
@@ -369,6 +373,8 @@ export const GENERATED_FILES: Record<string, string> = {
   [OUTPUTS.capabilities]: renderCapabilities(),
   [OUTPUTS.catalogue]: renderPromptCatalogue(),
   [OUTPUTS.mastra]: renderMastraPrompts(),
+  [OUTPUTS.tools]: renderAuthoringTools(),
+  [OUTPUTS.openapi]: `${JSON.stringify(generateAuthoringContract(), null, 2)}\n`,
   [OUTPUTS.operations]: renderOperationsReference(),
 };
 
@@ -380,17 +386,17 @@ async function main() {
       try {
         current = await readFile(filePath, 'utf8');
       } catch {
-        throw new Error(`Missing generated skill: ${path.relative(ROOT, filePath)}`);
+        throw new Error(`Missing generated output: ${path.relative(ROOT, filePath)}`);
       }
       if (current !== content)
-        throw new Error(`Generated skill is stale: ${path.relative(ROOT, filePath)}`);
+        throw new Error(`Generated output is stale: ${path.relative(ROOT, filePath)}`);
       continue;
     }
     await mkdir(path.dirname(filePath), { recursive: true });
     await writeFile(filePath, content);
   }
   console.log(
-    `${check ? 'Checked' : 'Generated'} ${Object.keys(GENERATED_FILES).length} deck skill files.`,
+    `${check ? 'Checked' : 'Generated'} ${Object.keys(GENERATED_FILES).length} deck authoring outputs.`,
   );
 }
 
