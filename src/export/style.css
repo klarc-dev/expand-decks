@@ -1651,16 +1651,23 @@
   margin-top: 2.4rem;
 }
 
-/* Takeaway — one quiet surface, with a plain label beside the key message.
-   Type and spacing provide hierarchy without nesting a second colour fill.
+/* Takeaway — a framed note whose label sits on the top border, like a legend.
+   The frame (hairline on a quiet tint) carries the surface; the filled primary
+   chip straddling the border names it, so the message keeps the full width
+   instead of sharing a row with its label. Elevation is the border alone.
    Overrides .k-caption so the closing note remains readable on both grounds. */
 .k-takeaway {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.1rem;
+  --takeaway-pad-block: 1.1rem;
+  --takeaway-pad-inline: 1.4rem;
+  position: relative;
+  display: block;
   max-width: 54rem;
-  padding: 1.1rem 1.4rem;
-  border-radius: var(--k-radius-chip);
+  /* No margin here: the hero (2.4rem) and side (1.4rem) placements already leave
+     room for the half of the chip that rides above the border. */
+  padding: calc(var(--takeaway-pad-block) + 0.35rem) var(--takeaway-pad-inline)
+    var(--takeaway-pad-block);
+  border: 1px solid color-mix(in srgb, var(--k-teal) 24%, transparent);
+  border-radius: 12px;
   background: var(--k-teal-50);
   /* The key message speaks in the brand voice: primary ink on its tint, not
      body black. The dark tone keeps white below. */
@@ -1676,23 +1683,39 @@
   margin-right: auto;
 }
 .k-takeaway-label {
-  flex: 0 0 auto;
-  align-self: center;
-  color: inherit;
-  font-size: var(--t-small);
-  font-weight: 650;
-  letter-spacing: 0.09em;
+  position: absolute;
+  top: 0;
+  left: calc(var(--takeaway-pad-inline) - 0.15rem);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100% - 2 * var(--takeaway-pad-inline));
+  padding: 0.34rem 0.72rem;
+  border-radius: 999px;
+  background: var(--k-teal);
+  color: var(--k-on-primary);
+  font-family: var(--k-font-technical);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.k-hero--center .k-takeaway-label {
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 .k-takeaway-text {
-  flex: 1 1 auto;
   min-width: 0;
 }
 .k-hero.k-density-compact .k-takeaway,
 .k-hero.k-density-dense .k-takeaway {
+  --takeaway-pad-block: calc(1.1rem * var(--density-space));
+  --takeaway-pad-inline: calc(1.4rem * var(--density-space));
   margin-top: calc(2.4rem * var(--density-space));
-  padding: calc(1.1rem * var(--density-space)) calc(1.4rem * var(--density-space));
   font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
   line-height: calc(1.45 * var(--density-leading));
 }
@@ -1703,14 +1726,20 @@
 }
 .k-content.k-density-compact .k-takeaway--side,
 .k-content.k-density-dense .k-takeaway--side {
+  --takeaway-pad-block: calc(1.1rem * var(--density-space));
+  --takeaway-pad-inline: calc(1.4rem * var(--density-space));
   margin-top: calc(1.4rem * var(--density-space));
-  padding: calc(1.1rem * var(--density-space)) calc(1.4rem * var(--density-space));
   font-size: calc(var(--t-lead) * 0.92 * var(--density-scale));
   line-height: calc(1.45 * var(--density-leading));
 }
 .k-dark .k-takeaway {
   background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
   color: #fff;
+}
+.k-dark .k-takeaway-label {
+  background: #fff;
+  color: var(--k-teal);
 }
 
 /* Status pill (U10) — matrix-table status cells; replaces inline emoji. */
