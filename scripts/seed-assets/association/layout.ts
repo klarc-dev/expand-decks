@@ -20,6 +20,11 @@ export function workedCase(
   };
 }
 
+/** Module opener: a native `section` slide so the agenda and numbering follow the course. */
+export function section(number: string, title: string, subtitle: string): Page {
+  return { blockType: 'section', number, title, subtitle };
+}
+
 export function compare(
   eyebrow: string,
   title: string,

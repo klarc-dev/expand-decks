@@ -1,5 +1,5 @@
 import { slugFromTitle } from '../../src/lib/slug';
-import { constitution } from './association/constitution';
+import { apports, gouvernance } from './association/constitution';
 import { financement } from './association/financement';
 import type { Page } from './association/layout';
 import { propriete } from './association/propriete';
@@ -7,59 +7,117 @@ import { sortie } from './association/sortie';
 
 export const TITLE = 'S’associer dans un projet innovant';
 export const slideId = (title: string) => 'association-' + slugFromTitle(title);
-export const questions = [
+
+/** One entry per training module. `target` is resolved to a native agenda link at seed time. */
+const modules = [
   {
     label: 'Statuts ou pacte ?',
-    description:
-      'Noé refuse de vendre le logiciel. Qui peut signer et quelle décision reste bloquée ?',
-    target: constitution[0]!,
+    objective: 'Savoir quel document fixe une règle et à qui elle s’impose.',
+    takeaway:
+      'Les statuts s’imposent à tous. Le pacte n’oblige que ses signataires : faites-le signer à chaque nouvel associé.',
+    target: gouvernance[0]!,
   },
   {
     label: 'Quels apports ?',
-    description:
-      'Si les droits de Noé valent moins de 20 000 €, combien de titres peut-on encore justifier ?',
-    target: constitution[3]!,
+    objective: 'Distinguer capital et trésorerie, justifier un apport en nature.',
+    takeaway:
+      'Le capital n’est pas la trésorerie. Un apport en nature se justifie par une valeur documentée.',
+    target: apports[0]!,
   },
   {
     label: 'À qui appartient le prototype ?',
-    description:
-      'Si le laboratoire refuse la distribution, que peut livrer la SAS avec les droits dont elle dispose ?',
-    target: propriete[1]!,
+    objective: 'Vérifier que la SAS détient les droits sur ce qu’elle vend.',
+    takeaway:
+      'On n’apporte que les droits qu’on détient. Une licence de recherche ne permet pas de vendre.',
+    target: propriete[0]!,
   },
   {
     label: 'JEI et Bpifrance ?',
-    description:
-      'Une action de plus ou un droit de contrôle : faut-il recalculer la détention, la taille du groupe ou les deux ?',
-    target: financement[2]!,
+    objective: 'Lever des fonds sans perdre la JEI ni les aides.',
+    takeaway:
+      'Négociez le prix par action, pas le nombre d’actions. Le contrôle d’un investisseur peut fermer l’accès aux aides.',
+    target: financement[0]!,
   },
   {
     label: 'Départ ou vente ?',
-    description:
-      'Qui doit acheter, qui peut refuser et quelles sommes sont payables à la cession ?',
+    objective: 'Prévoir dans le pacte le départ d’un associé et l’arrivée d’un acheteur.',
+    takeaway:
+      'Partir ne fait pas perdre ses actions. Préemption, tag et drag se négocient avant le premier acheteur.',
     target: sortie[0]!,
   },
 ];
+
+const agenda = (
+  eyebrow: string,
+  title: string,
+  lead: string,
+  description: (module: (typeof modules)[number]) => string,
+): Page => ({
+  blockType: 'agenda',
+  eyebrow,
+  title,
+  lead,
+  items: modules.map((module) => ({
+    label: module.label,
+    description: description(module),
+    target: module.target,
+  })),
+});
+
 export const pages: Page[] = [
   {
     blockType: 'cover',
     title: TITLE,
     pills: [
-      { text: 'Cycle Klarc · 11/11' },
+      { text: 'Formation · Cycle Klarc 11/11' },
       { text: '1er décembre 2026' },
       { text: '11 h à 12 h · Paris' },
     ],
     subtitle:
-      'Encadrer les relations pour assurer l’équilibre\n\nLina apporte 30 000 €. Noé apporte le code. Qui pourra décider de vendre le logiciel et à quel prix chacun pourra-t-il sortir ?',
+      'Encadrer les relations entre associés pour assurer l’équilibre, de la création à la sortie.',
   },
-  ...constitution,
+  agenda(
+    'Programme',
+    'Au programme : cinq questions, un cas',
+    'À la fin de cette heure, vous saurez répondre à ces cinq questions pour votre propre projet.',
+    (module) => module.objective,
+  ),
+  {
+    blockType: 'cardGrid',
+    eyebrow: 'Le cas fil rouge',
+    title: 'Lina et Noé créent une SAS pour vendre un logiciel',
+    sidebarText:
+      'Tous les chiffres sont fictifs. Ils servent à appliquer chaque règle au même cas, du premier jour à la sortie.',
+    columns: '2',
+    cards: [
+      {
+        title: 'Lina · 30 000 €',
+        description: 'Elle apporte l’argent du lancement et devient présidente.',
+      },
+      {
+        title: 'Noé · le code',
+        description: 'Il apporte le prototype qu’il a développé, estimé à 20 000 €.',
+      },
+      {
+        title: 'Le laboratoire · le moteur',
+        description:
+          'Il fournit le moteur de calcul intégré au logiciel, sous licence de recherche.',
+      },
+      {
+        title: 'L’industriel · 100 000 €',
+        description: 'Il propose plus tard d’investir dans la SAS.',
+      },
+    ],
+  },
+  ...gouvernance,
+  ...apports,
   ...propriete,
   ...financement,
   ...sortie,
-  {
-    blockType: 'agenda',
-    eyebrow: 'Questions · Revenir au cas',
-    title: 'Les cinq questions à trancher avant de signer',
-    lead: 'Choisissez une question pour revenir au cas de Lina et Noé. Quelle hypothèse vous ferait renégocier ?',
-    items: questions.map(({ label, description }) => ({ label, description })),
-  },
+  agenda(
+    'À retenir',
+    'Ce qu’il faut retenir',
+    'Cliquez sur une question pour revenir au module. Place à vos questions.',
+    (module) => module.takeaway,
+  ),
 ];

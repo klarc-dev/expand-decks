@@ -1,4 +1,4 @@
-import { compare, table } from './layout';
+import { compare, section, table } from './layout';
 
 const jei =
   '[CGI, art. 44 sexies-0 A](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000053543750/2026-12-01/)';
@@ -10,132 +10,103 @@ const pret =
   '[Bpifrance · Prêt Innovation R&D classique](https://www.bpifrance.fr/catalogue-offres/pret-innovation-rd-classique-0)';
 
 export const financement = [
-  table(
-    'Offre indicative · À vérifier avant signature',
-    'Dans cette offre, l’émission apporte 100 000 € à la SAS, la cession 0 €',
-    'On suppose la licence commerciale obtenue et la valeur de l’apport de Noé confirmée (20 000 €). Lina a 60 actions, Noé 40, de nominal 500 €.',
-    ['Modalité', 'Qui reçoit les 100 000 € ?', 'Effet sur la SAS'],
+  section(
+    '04',
+    'Lever des fonds : JEI et Bpifrance',
+    '**JEI et Bpifrance ?** Objectif : faire entrer un investisseur sans perdre le statut JEI ni l’accès aux aides Bpifrance.',
+  ),
+  compare(
+    'JEI et Bpifrance · L’offre de l’industriel',
+    'Un industriel propose 100 000 € : à qui va l’argent',
     [
       [
-        '**Émission de 100 actions**',
-        'La SAS : 100 × 1 000 €, versés intégralement à la réalisation. 50 000 € de nominal + 50 000 € de prime.',
-        'Capital libéré : 50 000 → 100 000 €. Trésorerie : +100 000 € hors frais. Lina / Noé / industriel : 30 / 20 / 50 %.',
+        'Augmentation de capital · la SAS reçoit',
+        'La SAS crée 100 actions nouvelles à 1 000 €. **+100 000 € en banque.** Lina 30 %, Noé 20 %, industriel 50 %.',
       ],
       [
-        '**Cession des 100 titres existants**',
-        'À 1 000 € par titre, Lina reçoit 60 000 € et Noé 40 000 €, hors frais. Pas de prime d’émission.',
-        'Capital inchangé : 50 000 €. Trésorerie : +0 €. L’industriel détient 100 %.',
-      ],
-      [
-        '**Avant de signer**',
-        'Vérifier le projet de décision et le bulletin de souscription, ou l’acte de cession.',
-        'Retenir l’émission si l’objectif est de financer la SAS. Vérifier que sa licence survit à l’opération.',
+        'Achat d’actions · les fondateurs reçoivent',
+        'L’industriel rachète les 100 actions existantes. Lina touche 60 000 €, Noé 40 000 €. **La SAS ne reçoit rien.**',
       ],
     ],
-    ['C. com., art. L. 227-1, L. 227-9, L. 225-128, L. 225-131 et L. 225-144'],
+    ['C. com., art. L. 225-128 et L. 225-144'],
+    'Pour financer le projet, c’est l’augmentation de capital qui convient. Hypothèse : licence commerciale obtenue et apport de Noé confirmé.',
   ),
   table(
-    'Jeune entreprise innovante · Cas ordinaire de R&D',
-    'La JEI se vérifie sur cinq conditions cumulatives',
-    'À la clôture de l’exercice 2026. Le seuil de détention doit être respecté en continu. Le prototype et sa licence ne prouvent pas le ratio de R&D.',
-    ['Test', 'Seuil ou règle applicable', 'Pièce à demander'],
+    'JEI · Jeune entreprise innovante',
+    'Cinq conditions à remplir en même temps',
+    'Appréciées à la clôture de l’exercice. La détention doit être respectée en continu.',
+    ['Condition', 'Seuil', 'Preuve'],
     [
       [
         '**Taille**',
-        '< 250 salariés en moyenne et (CA < 50 M€ ou bilan < 43 M€).',
-        'Comptes, effectif moyen.',
+        'Moins de 250 salariés, et CA < 50 M€ ou bilan < 43 M€',
+        'Comptes, effectif moyen',
       ],
-      ['**Âge**', 'Créée depuis moins de 8 ans.', 'Justificatif de création.'],
-      [
-        '**Recherche**',
-        'Dépenses de recherche éligibles ≥ 20 % des charges déductibles retraitées.',
-        'Dossier R&D et rapprochement comptable du ratio.',
-      ],
+      ['**Âge**', 'Moins de 8 ans', 'Extrait Kbis'],
+      ['**Recherche**', 'Dépenses de R&D ≥ 20 % des charges', 'Dossier R&D rapproché des comptes'],
       [
         '**Détention**',
-        '≥ 50 % en continu par des détenteurs admis. Lina et Noé comptent en direct. Une holding (4° b) doit aussi remplir les conditions JEI et être détenue à ≥ 50 % par des personnes physiques.',
-        'Registre des titres, historique des mouvements, organigramme.',
+        '≥ 50 % par des personnes physiques ou détenteurs admis',
+        'Registre des mouvements de titres',
       ],
       [
-        '**Création d’activité**',
-        'Ni concentration, ni restructuration, ni extension ou reprise d’une activité préexistante.',
-        'Historique de l’activité et de l’apport du code.',
+        '**Activité nouvelle**',
+        'Pas une reprise ni une restructuration',
+        'Historique de l’activité',
       ],
     ],
     [jei],
   ),
   {
     blockType: 'stats',
-    eyebrow: 'Négociation · Seul le critère de détention JEI est testé',
-    title: 'Une action de plus suffit à passer sous les 50 %',
-    lead: 'Les fondateurs gardent 100 actions à nominal égal. L’industriel souscrit seul et ne compte pas, par hypothèse, parmi les détenteurs admis.',
+    eyebrow: 'JEI · Le piège de la détention',
+    title: 'Une action de trop et la SAS perd la JEI',
+    lead: 'Lina et Noé gardent 100 actions. L’industriel n’est pas un détenteur admis (hypothèse).',
     stats: [
       {
         value: '50 %',
-        label:
-          '100 / 200. À 1 000 € par titre nouveau, la SAS reçoit 100 000 €, dont 50 000 € de prime. Seuil atteint sans marge.',
+        label: '100 actions nouvelles à 1 000 € : 100 000 € levés. Seuil atteint, sans marge.',
       },
-      {
-        value: '49,75 %',
-        label:
-          '100 / 201. Avec un titre de plus au même prix, la SAS reçoit 101 000 €, dont 50 500 € de prime. Seuil manqué.',
-      },
-      {
-        value: '50 %',
-        label:
-          '100 / 200. Proposer 100 titres à 1 010 € : mêmes 101 000 €, dont 51 000 € de prime. Il faut faire accepter le nouveau prix.',
-      },
+      { value: '49,75 %', label: '101 actions au même prix : 101 000 € levés. Seuil manqué.' },
+      { value: '50 %', label: '100 actions à 1 010 € : mêmes 101 000 € levés. Seuil préservé.' },
     ],
     footnotes: [
       { text: jei },
       {
-        text: 'Modifier l’offre et la décision d’émission. Dater la table de capitalisation et prévoir une alerte avant la prochaine émission ou cession.',
+        text: 'Bon réflexe : négocier le prix par action plutôt que le nombre d’actions, et tenir à jour la table de capitalisation.',
       },
     ],
   },
   table(
-    'Taille UE · Même émission de 100 actions',
-    'À 50 % du capital, les droits de contrôle changent le résultat',
-    'Simulation à l’entrée : 50 % des voix dans les deux cas. Petite entreprise : moins de 50 UTA et CA ou bilan ≤ 10 M€. UTA : unités de travail annuel.',
-    ['Cas et droits convenus', 'UTA / CA / bilan', 'Qualification'],
+    'Bpifrance · Taille de l’entreprise',
+    'Si l’industriel contrôle la SAS, ses effectifs comptent aussi',
+    'La bourse est réservée aux petites entreprises : moins de 50 salariés et CA ou bilan ≤ 10 M€.',
+    ['Situation', 'Effectifs retenus', 'Petite entreprise ?'],
     [
+      ['**SAS seule**', '8 salariés', 'Oui'],
+      ['**Industriel partenaire** · 50 % du capital, sans contrôle', '8 + 50 % de 60 = 38', 'Oui'],
       [
-        '**Données de départ**',
-        'SAS : 8 / 1 M€ / 0,5 M€.\nIndustriel : 60 / 12 M€ / 8 M€.',
-        'Chiffres fictifs. Aucun autre lien à agréger.',
-      ],
-      [
-        '**Partenaire** · Aucun droit de contrôle',
-        'SAS + 50 % de l’industriel : **38 / 7 M€ / 4,5 M€**.',
-        '**Petite entreprise** dans ce calcul.',
-      ],
-      [
-        '**Lié** · Nomme la majorité de l’organe de direction',
-        'SAS + 100 % de l’industriel : **68 / 13 M€ / 8,5 M€**.',
-        '**Non petite** : le seuil d’effectif bloque la bourse si cette taille est retenue.',
-      ],
-      [
-        '**Pièces :** statuts, pacte, organigramme',
-        'Comptes et effectifs du groupe.',
-        'Vérifier le contrôle et recalculer la taille avant de compter sur la bourse.',
+        '**Industriel lié** · nomme la majorité des dirigeants',
+        '8 + 60 = 68',
+        '**Non : bourse perdue**',
       ],
     ],
-    [taille],
+    [`${taille} · Chiffres fictifs`],
   ),
   compare(
-    'Bpifrance · Deux dossiers à instruire',
-    'La bourse finance la maturation deeptech, le prêt se rembourse',
+    'Bpifrance · Deux aides à ne pas confondre',
+    'La bourse ne se rembourse pas, le prêt oui',
     [
       [
-        'Bourse French Tech Émergence',
-        '**Subvention.** Petite entreprise immatriculée en France depuis moins d’un an. Projet qualifié deeptech.\n\n**Exemple :** 120 000 € éligibles à 50 % → 60 000 € (plafond du dispositif : 90 000 €).\n\n**Pièces :** budget de maturation et preuve de taille.',
+        'Bourse French Tech Émergence · subvention',
+        'Petite entreprise de moins d’un an, projet deeptech. Jusqu’à 50 % des dépenses, plafond 90 000 €. Exemple : 120 000 € de dépenses → 60 000 €.',
       ],
       [
-        'Prêt Innovation R&D classique',
-        '**Dette à rembourser.** PME ou ETI (≤ 2 000 ETP), immatriculée en France. R&D avant lancement.\n\n**Exemple :** assiette retenue de 80 000 € → plafond de 160 000 € (≤ 3 M€).\n\n**Pièces :** comptes et plan de remboursement.',
+        'Prêt Innovation R&D · dette',
+        'PME ou ETI, projet de R&D avant lancement. Montant plafonné à deux fois les fonds propres. Exemple : 80 000 € de fonds propres → 160 000 € au plus.',
       ],
     ],
     [bourse, pret],
-    'L’assiette du prêt (fonds propres et quasi-fonds propres) est une hypothèse indépendante des 100 000 € versés dans l’offre. Aucun montant n’est acquis. Pour les deux dispositifs, déposer avant d’engager les dépenses à financer.',
+    '**Règle commune :** déposer le dossier avant d’engager les dépenses. Aucun montant n’est acquis d’avance.',
   ),
 ];

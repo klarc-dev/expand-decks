@@ -7,14 +7,22 @@ import { parseDocumentRenderPages, resolveDocumentTemplate } from '../src/docume
 import type { Presentation } from '../src/payload-types';
 import { slugFromTitle } from '../src/lib/slug';
 
-import { pages, questions, slideId, TITLE } from './seed-assets/association';
+import { pages, slideId, TITLE } from './seed-assets/association';
 const ORGANISATION = 'Klarc';
 const TEMPLATE = resolveDocumentTemplate('presentation');
+
+type AgendaItem = { label: string; description?: string; target?: { title: string } };
+const agendaItems = (slide: (typeof pages)[number]) =>
+  slide.blockType === 'agenda' ? ((slide.items ?? []) as AgendaItem[]) : null;
 
 function validatedSlides() {
   const ids = new Set<string>();
   return pages.map((slide, index) => {
-    const parsed = AI_SLIDE_SCHEMA.safeParse(slide);
+    const items = agendaItems(slide);
+    const draft = items
+      ? { ...slide, items: items.map(({ label, description }) => ({ label, description })) }
+      : slide;
+    const parsed = AI_SLIDE_SCHEMA.safeParse(draft);
     if (!parsed.success) {
       throw new Error(
         `Slide ${index + 1} « ${slide.title} » : ${JSON.stringify(parsed.error.issues)}`,
@@ -35,10 +43,11 @@ function validatedSlides() {
     return {
       ...defaults,
       ...parsed.data,
-      ...(slide.blockType === 'agenda'
+      ...(items
         ? {
-            items: questions.map(({ label, description, target }) => {
-              if (!pages.includes(target)) throw new Error(`Destination absente : ${label}`);
+            items: items.map(({ label, description, target }) => {
+              if (!target || !pages.includes(target as (typeof pages)[number]))
+                throw new Error(`Destination absente : ${label}`);
               return { label, description, slideId: slideId(target.title) };
             }),
           }

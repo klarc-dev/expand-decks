@@ -1,12 +1,12 @@
-# S’associer dans un projet innovant : sources et corrigés V7
+# S’associer dans un projet innovant : sources et corrigés V8
 
-Webinaire du 1er décembre 2026 · Support de 19 pages. Les renvois numérotés dans chaque partie suivent l’ordre des pages de cette séquence. Les montants, votes, droits de contrôle et prix de sortie sont des hypothèses, pas des clauses types.
+Webinaire du 1er décembre 2026 · Support de formation de 26 pages : programme, cas fil rouge, cinq modules, récapitulatif. Les notes ci-dessous approfondissent chaque module pour l’intervenant ; le support projeté n’en reprend que l’essentiel. Les numéros de notes renvoient à l’ordre des développements dans chaque partie, pas aux appels de bas de page du support. Les montants, votes, droits de contrôle et prix de sortie sont des hypothèses, pas des clauses types.
 
 **Fil du cas.** À la constitution, les 20 000 € attribués aux droits de Noé sont provisoires. Pour la levée, supposer la chaîne de droits prouvée, la licence commerciale effective et la valeur confirmée séparément. Pour chacune des deux sorties, repartir de Lina 60 / Noé 40 sans industriel.
 
 **Actualité.** Sources consultées le 26 novembre 2026. Avant diffusion, rouvrir la version du CGI applicable et les fiches des deux offres Bpifrance. L’accord du financeur et les clauses signées ne se déduisent pas des calculs projetés.
 
-## Pages 2 à 6 · Donner un effet aux règles de gouvernance et aux apports
+## Modules 1 et 2 (pages 4 à 10) · Statuts, pacte et apports
 
 ### Notes et sources
 
@@ -20,7 +20,7 @@ Webinaire du 1er décembre 2026 · Support de 19 pages. Les renvois numérotés 
 
 Sources contrôlées le 26 novembre 2026. Les cas chiffrés n’illustrent que la constitution de cette SAS avant la levée, pas les règles d’une augmentation ultérieure de capital.
 
-## Pages 7 à 9 · Établir les droits nécessaires à la livraison
+## Module 3 (pages 11 à 14) · Propriété du prototype
 
 ### Notes pour l’intervenant
 
@@ -59,7 +59,7 @@ Textes Légifrance vérifiés le 26 novembre 2026. Les choix de prix, de périm�
 | [CPI, L. 613-8](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006279475) et [L. 613-9](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000019298708)          | Écrit à peine de nullité et inscription pour l’opposabilité, avec l’exception tenant à la connaissance du tiers.                                                                                                                         |
 | [C. com., L. 151-1](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037266553) et [L. 151-3](https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037266559)      | Conditions cumulatives du secret des affaires et obtention licite par découverte ou création indépendante.                                                                                                                               |
 
-## Pages 10 à 14 · Négocier l’entrée de l’industriel
+## Module 4 (pages 15 à 20) · JEI et Bpifrance
 
 ### 1. Émission, cession et prix
 
@@ -97,7 +97,7 @@ Pages produit Bpifrance vérifiées sans cache le 26 novembre 2026. Dans les deu
 - [Bourse French Tech Émergence](https://www.bpifrance.fr/catalogue-offres/bourse-french-tech-emergence) : maturation et validation technico-économique d’un projet qualifié deeptech. Petite entreprise immatriculée en France depuis moins d’un an. Subvention couvrant jusqu’à 50 % de dépenses internes et externes éligibles, jusqu’à 70 % selon la catégorie, sous plafond de 90 000 €. Exemple : 120 000 € reconnus à 50 % donnent 60 000 €. Versement en deux tranches, solde après rapport final et état des dépenses acquittées. Demander pièce d’immatriculation, déclaration de taille et données du groupe, note de qualification et budget daté du programme.
 - [Prêt Innovation R&D classique](https://www.bpifrance.fr/catalogue-offres/pret-innovation-rd-classique-0) : innovation technologique incrémentale ou de nouvelle génération (fiche hors « sciences dures »), avant le lancement industriel ou commercial. Ni lancement industriel, ni production, ni commercialisation. PME au sens européen, ou ETI dans la limite de 2 000 ETP, immatriculée en France. Exemple **indépendant de l’offre** : si Bpifrance retient 80 000 € de fonds propres et quasi-fonds propres, le plafond est min(3 M€, 2 × 80 000 €) = 160 000 €. Les 80 000 € ne sont ni le capital social, ni le cash souscrit, ni le besoin à financer ; ne pas les ajouter aux 100 000 € du tour. Le décaissement est unique, avec remboursement trimestriel, taux applicable et durée de 5 à 8 ans dont 12 à 36 mois de différé d’amortissement. Demander les derniers comptes, l’impact des pertes et apports récents, le plan de financement et la capacité de remboursement. La décision peut être inférieure au plafond, ou négative.
 
-## Pages 15 à 18 · Distinguer départ et offre de vente
+## Module 5 (pages 21 à 25) · Départ et vente
 
 ### Points à garder en réserve
 
