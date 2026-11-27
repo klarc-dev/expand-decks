@@ -33,6 +33,13 @@ export function payloadBlockSchema(block: Block, partial = false) {
   });
 }
 
+function boundedNumber({ min, max }: { min?: number; max?: number }) {
+  let schema = z.number();
+  if (min !== undefined) schema = schema.min(min);
+  if (max !== undefined) schema = schema.max(max);
+  return schema;
+}
+
 function fieldSchema(field: Field): z.ZodType {
   switch (field.type) {
     case 'text':
@@ -45,12 +52,8 @@ function fieldSchema(field: Field): z.ZodType {
     }
     case 'checkbox':
       return z.boolean();
-    case 'number': {
-      let schema = z.number();
-      if (field.min !== undefined) schema = schema.min(field.min);
-      if (field.max !== undefined) schema = schema.max(field.max);
-      return schema;
-    }
+    case 'number':
+      return boundedNumber(field);
     case 'select':
     case 'radio':
       return z.enum(
