@@ -1,7 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { expect, test, type APIRequestContext } from '@playwright/test';
+
 import { BUILD_COOLDOWN_MS } from '../../src/lib/draftConfig';
+
+type BuildOutput = { status: string; error: string | null; links: { key: string; href: string }[] };
 
 async function connectorHeaders(request: APIRequestContext, role: 'author' | 'viewer') {
   const login = await request.post('/api/users/login', {
@@ -67,11 +70,7 @@ test('author creates and rebuilds a typed deck, then opens its native protected 
     const outputs = `/api/deck-outputs/${id}`;
     expect((await request.get(outputs)).status()).toBe(401);
     async function waitForNativeBuild() {
-      let result = {
-        status: '',
-        error: null as string | null,
-        links: [] as { key: string; href: string }[],
-      };
+      let result: BuildOutput = { status: '', error: null, links: [] };
       await expect
         .poll(
           async () => {
@@ -87,8 +86,8 @@ test('author creates and rebuilds a typed deck, then opens its native protected 
       return result;
     }
     const result = await waitForNativeBuild();
-    const pdf = result?.links.find(({ key }) => key === 'pdf')?.href;
-    const web = result?.links.find(({ key }) => key === 'web-presentation')?.href;
+    const pdf = result.links.find(({ key }) => key === 'pdf')?.href;
+    const web = result.links.find(({ key }) => key === 'web-presentation')?.href;
     expect(pdf).toBeTruthy();
     expect(web).toBeTruthy();
     if (!pdf || !web) throw new Error('Native export links missing');
