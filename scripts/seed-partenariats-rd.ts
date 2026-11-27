@@ -12,7 +12,7 @@ import type { Presentation } from '../src/payload-types';
 const courseTitle = 'Optimiser et sécuriser ses partenariats R&D';
 // `--short` builds the 30-minute version: same content and wording, fewer detail pages.
 const short = process.argv.includes('--short');
-const title = short ? `${courseTitle} · 30 minutes` : courseTitle;
+const title = short ? `${courseTitle} (French Tech, 30 min)` : courseTitle;
 const template = resolveDocumentTemplate('presentation');
 const [intro, pi, exchanges, scope, talks, specifics, questions] = [
   'Introduction',
@@ -43,20 +43,32 @@ const grid = (title: string, sidebarText: string, items: Pair[]) => ({
   title,
   sidebarText,
   columns: items.length === 3 || items.length === 6 ? '3' : '2',
-  cards: items.map(([title, description]) => ({ title, description })),
+  cards: items.map(([title, description], index) => ({
+    number: String(index + 1).padStart(2, '0'),
+    title,
+    description,
+  })),
 });
 const split = (title: string, intro: string, leftFooter: string, items: Pair[]) => ({
   blockType: 'twoCols',
   title,
   intro,
   leftFooter,
-  rightCards: items.map(([title, description]) => ({ title, description })),
+  ...(items.length
+    ? { rightCards: items.map(([title, description]) => ({ title, description })) }
+    : {}),
 });
-const table = (title: string, lead: string, headers: string[], data: string[][]) => ({
+const table = (
+  title: string,
+  lead: string,
+  headers: string[],
+  data: string[][],
+  tableVariant: 'reference' | 'matrix' = 'reference',
+) => ({
   blockType: 'table',
   title,
   lead,
-  tableVariant: 'reference',
+  tableVariant,
   columns: headers.map((header) => ({ header })),
   rows: data.map((row) => ({ cells: row.map((value) => ({ value })) })),
 });
@@ -75,10 +87,10 @@ const notes = <T extends Record<string, unknown>>(slide: T, ...sources: string[]
 const pages = [
   {
     blockType: 'cover',
-    pills: [{ text: 'Formation' }, { text: 'Source : 4 septembre 2024' }],
+    pills: [{ text: 'Formation' }, { text: '27 novembre 2026' }],
     title,
     subtitle:
-      'Joachim Brindeau, avocat. De la première divulgation à l’exploitation des résultats, comment organiser un projet de recherche et développement à plusieurs ?',
+      'De la première divulgation à l’exploitation des résultats, comment organiser un projet de recherche et développement à plusieurs ?',
   },
   {
     blockType: 'agenda',
@@ -115,9 +127,9 @@ const pages = [
     title: 'Chronologie d’un partenariat',
     lead: 'Avant tout échange d’informations ou de matériel, horodatez les connaissances propres de chaque partenaire.',
     source:
-      'flowchart LR\n A["Échanges<br/>protégés"] -->|préparent| B["Cadrage<br/>technique"]\n B -->|ouvre la| C["Négociation"]\n C -->|aboutit au| D["Contrat signé"]\n C -->|peut mener à| E["Arrêt des<br/>pourparlers"]\n D -->|encadre les| F["Travaux de R&D"]\n F -->|livrent les résultats pour| G["Exploitation"]',
+      'flowchart LR\n  A["Échanges<br/>protégés"] -->|préparent| B["Cadrage<br/>technique"]\n  B -->|ouvre la| C["Négociation"]\n  C -->|aboutit au| D["Contrat<br/>signé"]\n  D -->|encadre les| F["Travaux<br/>de R&D"]\n  F -->|livrent les résultats| G["Exploitation"]\n  R1["Avenant<br/>aux travaux"] -->|modifie les| F\n  R2["Avenant aux conditions<br/>d’exploitation"] -->|ajuste l’| G\n  C -->|ou| X1["Arrêt des<br/>pourparlers"]\n  F -->|ou| X2["Arrêt des<br/>travaux"]\n  G -->|ou| X3["Arrêt de<br/>l’exploitation"]\n  X2 -->|règle| S["Sort des résultats acquis<br/>et sommes dues"]\n  classDef step fill:#ffffff,stroke:#02585c,stroke-width:2px,color:#0f2425\n  classDef stop fill:#fff7f8,stroke:#d99aa6,stroke-width:2px,color:#0f2425\n  classDef loop fill:#f1f6f6,stroke:#02585c,stroke-width:2px,stroke-dasharray:5 4,color:#0f2425\n  class A,B,C,D,F,G step\n  class X1,X2,X3,S stop\n  class R1,R2 loop\n  linkStyle 0,1,2,3,4,5,6 stroke:#02585c,stroke-width:2px\n  linkStyle 7,8,9,10 stroke:#d99aa6,stroke-width:2px',
     caption:
-      'En cours d’exécution, les partenaires peuvent réviser le projet. Après les travaux, ils peuvent améliorer les livrables en continu ou abandonner le projet.',
+      'Un partenariat bien préparé identifie chaque phase du projet et assure la flexibilité indispensable aux activités de R&D (confidentialité, incertitude, obsolescence…).',
   },
   grid(
     'Sécuriser et optimiser',
@@ -148,25 +160,55 @@ const pages = [
     pi,
     'Distinguer ce qui est apporté, ce qui est produit et les droits nécessaires pour utiliser les résultats.',
   ),
-  grid(
-    'Notions à maîtriser',
-    'Sauf accord contraire, posséder un résultat ne donne pas le droit d’utiliser les connaissances propres d’un partenaire dont ce résultat dépend.',
+  notes(
+    grid(
+      'Notions à maîtriser',
+      'Sauf accord contraire, posséder un résultat ne donne pas le droit d’utiliser les connaissances propres d’un partenaire dont ce résultat dépend.',
+      [
+        [
+          'Connaissances propres',
+          'Actifs détenus avant le contrat, ou développés indépendamment du projet.',
+        ],
+        [
+          'Connaissances nouvelles',
+          'Actifs issus des travaux du projet. Séparez les résultats propres à une partie des résultats conjoints.',
+        ],
+        [
+          'Droits sur les actifs',
+          'Propriété entière ou quote-part[^1] ? Pour la licence : gratuité ou prix, exclusivité, durée, territoire, secteur et sous-licence.',
+        ],
+        [
+          'Dépendance',
+          'Un résultat est dépendant s’il ne peut être exploité sans les connaissances propres d’un partenaire. Prévoyez une licence d’accès à ces connaissances pour l’exploitation.',
+        ],
+      ],
+    ),
+    'Code de la propriété intellectuelle, art. L. 613-29 (copropriété d’un brevet).',
+  ),
+  {
+    blockType: 'twoCols',
+    imageAsset: 'definitions',
+    imagePosition: 'left',
+    title: 'Articulation des définitions',
+    intro:
+      'La propriété industrielle d’un partenariat se répartit entre connaissances propres et connaissances nouvelles. Les connaissances propres préexistent au projet ou sont développées en dehors. Les connaissances nouvelles en sont issues : ce sont les résultats, propres à une partie ou conjoints. Un livrable peut combiner des connaissances propres et des résultats ; chaque composant garde son propre régime.',
+  },
+  split(
+    'Exemple : le rapport d’essais',
+    'A réalise pour B des essais sur son modèle d’étude du microbiome cutané, puis lui remet un rapport d’essais. Ce livrable relève de trois définitions à la fois.',
+    'À prévoir : les droits de B sur le rapport ne lui donnent pas le droit d’utiliser le protocole de A hors du projet.',
     [
       [
-        'Connaissances propres',
-        'Actifs détenus ou contrôlés avant le contrat, ou acquis ou développés indépendamment du projet selon les définitions convenues.',
+        'Un résultat',
+        'Les mesures et conclusions du rapport sont issues des travaux. Elles suivent le régime convenu pour les résultats propres ou conjoints.',
       ],
       [
-        'Connaissances nouvelles',
-        'Actifs issus des travaux du projet. Séparez les résultats propres à une partie des résultats conjoints.',
+        'Des connaissances propres',
+        'Le rapport décrit le modèle et le protocole préexistants de A. Ils restent à A ; B ne peut les utiliser que dans la mesure prévue pour exploiter le rapport.',
       ],
       [
-        'Droits sur les actifs',
-        'Propriété entière ou quote-part ? Pour la licence : gratuité ou prix, exclusivité, durée, territoire, secteur et sous-licence.',
-      ],
-      [
-        'Dépendance et inventeurs',
-        'Prévoyez l’accès aux apports indispensables à l’exploitation. Nommer les inventeurs reconnaît leur contribution ; examinez séparément la rémunération des salariés.',
+        'Une information confidentielle',
+        'Le rapport est remis sous confidentialité. B ne peut le transmettre à un tiers ni le publier que dans les conditions convenues.',
       ],
     ],
   ),
@@ -215,25 +257,28 @@ const pages = [
     'Fixer les règles de confidentialité et d’usage avant de communiquer une information confidentielle ou d’envoyer du matériel propriétaire.',
   ),
   notes(
-    split(
-      'Mettre en place un accord de confidentialité',
-      'Le droit commun engage la responsabilité de celui qui utilise ou divulgue sans autorisation une information confidentielle obtenue pendant les négociations[^1]. Un accord précise quelles informations sont concernées et comment elles peuvent être utilisées.',
-      'Question à trancher : le destinataire peut-il utiliser l’information pour ses propres travaux ou pour déposer un brevet ?',
-      [
+    {
+      ...split(
+        'Mettre en place un accord de confidentialité',
+        'Le droit commun engage la responsabilité de celui qui utilise ou divulgue sans autorisation une information confidentielle obtenue pendant les négociations[^1]. Un accord précise quelles informations sont concernées et comment elles peuvent être utilisées.',
+        'Question à trancher : le destinataire peut-il utiliser l’information pour ses propres travaux ou pour déposer un brevet ?',
         [
-          'Périmètre',
-          'Gardez la trace des informations transmises et précisez lesquelles sont confidentielles. Un sous-traitant peut les recevoir sans en divulguer lui-même.',
+          [
+            'Périmètre',
+            'Gardez la trace des informations transmises et précisez lesquelles sont confidentielles. Un sous-traitant peut les recevoir sans en divulguer lui-même.',
+          ],
+          [
+            'Deux durées',
+            '**Période d’échange** : les informations transmises pendant un an sont couvertes, à compter si besoin d’une date antérieure à la signature. **Durée de confidentialité** : elles restent secrètes, par exemple cinq ans après la fin de cette période.',
+          ],
+          [
+            'Usage autorisé',
+            'Limiter l’usage à l’évaluation convenue. Traiter les divulgations à des tiers et les dépôts fondés sur les informations reçues.',
+          ],
         ],
-        [
-          'Deux durées',
-          'Exemple : échanger pendant un an. Fixer séparément la durée de confidentialité et la date de départ si des échanges ont déjà eu lieu.',
-        ],
-        [
-          'Usage autorisé',
-          'Limiter l’usage à l’évaluation convenue. Traiter les divulgations à des tiers et les dépôts fondés sur les informations reçues.',
-        ],
-      ],
-    ),
+      ),
+      collectionSide: 'left',
+    },
     'Code civil, art. 1112-2.',
   ),
   {
@@ -250,7 +295,7 @@ const pages = [
       },
       {
         quote:
-          'Discuter d’essais visant à évaluer les performances du nouveau modèle d’étude du microbiome cutané développé par A sur sa plateforme propriétaire et tenu confidentiel.',
+          'Discuter d’essais visant à évaluer les performances du nouveau modèle confidentiel d’étude du microbiome cutané, développé par A sur sa plateforme propriétaire.',
         authorName: 'À retenir',
         authorRole: 'Le modèle, son origine et l’objectif des essais sont identifiés.',
       },
@@ -361,33 +406,37 @@ const pages = [
         ],
         [
           'Justifier',
-          'Exemples du support de 2024 : documenter une demande EIC, PIA ou BFT, ou étayer un dossier CICo, CIR, CII ou IP Box.',
+          'Par exemple : documenter une demande EIC, PIA ou BFT, ou étayer un dossier CICo, CIR, CII ou IP Box.',
         ],
       ],
     ),
     'Code civil, art. 1195.',
   ),
-  grid(
-    'Définir les parties',
-    'Identifier les filiales et sous-traitants à déclarer aux financeurs ; vérifier le statut du partenaire pour le CICo.',
-    [
+  notes(
+    grid(
+      'Définir les parties',
+      'Identifier les filiales et sous-traitants à déclarer aux financeurs ; vérifier le statut du partenaire pour le CICo[^1].',
       [
-        'Identifier le signataire',
-        'Relever le SIREN, pas seulement le nom commercial. Préciser le statut : ORDC, fondation, société privée ou porteur de projet.',
+        [
+          'Identifier le signataire',
+          'Relever le SIREN, pas seulement le nom commercial. Préciser le statut : ORDC, fondation, société privée ou porteur de projet.',
+        ],
+        [
+          'Cartographier les exécutants',
+          'Le signataire est-il la société mère d’un concurrent ? Peut-il sous-traiter à ce concurrent ?',
+        ],
+        [
+          'Attribuer les responsabilités',
+          'Qui répond d’une divulgation de l’invention avant le dépôt du brevet ? Vérifier les recours contre le signataire.',
+        ],
+        [
+          'Vérifier les agréments',
+          'Contrôler le titulaire et la validité des agréments CIR/CII[^2]. Un agrément expiré expose à un manque à gagner de 30 %.',
+        ],
       ],
-      [
-        'Cartographier les exécutants',
-        'Le signataire est-il la société mère d’un concurrent ? Peut-il sous-traiter à ce concurrent ?',
-      ],
-      [
-        'Attribuer les responsabilités',
-        'Qui répond d’une divulgation de l’invention avant le dépôt du brevet ? Vérifier les recours contre le signataire.',
-      ],
-      [
-        'Vérifier les agréments',
-        'Contrôler le titulaire et la validité des agréments CIR/CII. Dans l’exemple de 2024, un agrément expiré expose à un manque à gagner de 30 %.',
-      ],
-    ],
+    ),
+    'Code général des impôts, art. 244 quater B bis.',
+    'Code général des impôts, art. 244 quater B.',
   ),
   split(
     'Définir les tâches',
@@ -456,16 +505,9 @@ const pages = [
     imagePosition: 'right',
     ...split(
       'Établir une term sheet',
-      'La term sheet résume les conditions envisagées, souvent en tableau. Dans le spécimen ALPHA/BETA, elle sert à discuter, sans constituer un accord contraignant.',
+      'La term sheet résume, souvent en tableau, les conditions envisagées pour le futur contrat. Non contraignante, elle sert de base de discussion et suit le plan du contrat : parties, définitions, objet, projet collaboratif et partenariat d’exploitation. Chaque ligne indique la position des parties et les points ouverts.',
       'Repérer tôt les points de blocage accélère la négociation et facilite la rédaction du contrat principal.',
-      [
-        ['Projet', 'Objet, parties, définitions, contributions, pilotage et livrables.'],
-        [
-          'Propriété et exploitation',
-          'Connaissances propres, résultats nouveaux, améliorations, licences et exclusivité.',
-        ],
-        ['Économie et suite', 'Financement, paiements et conditions d’arrêt.'],
-      ],
+      [],
     ),
   },
   table(
@@ -514,27 +556,32 @@ const pages = [
     table(
       'Autres outils de négociation',
       'Lisez les obligations réelles plutôt que l’intitulé du document.',
-      ['Outil', 'Effet recherché'],
+      ['Outil', 'Engage sur le contrat final', 'Effet recherché'],
       [
         [
           'Pacte de préférence',
+          '**NON**',
           'Offrir en priorité au bénéficiaire de traiter si l’on décide de contracter[^1].',
         ],
         [
           'Lettre d’intention (LoI) ou mémorandum d’entente (MoU)',
-          'Dans l’exemple, les parties s’engagent à entrer en négociation, pas à conclure le contrat.',
+          '**NON**',
+          'Les parties s’engagent à entrer en négociation[^2].',
         ],
         [
           'Accord partiel ou provisoire',
+          '**PARTIELLEMENT**',
           'Fixer certains points avant l’accord complet ; préciser lesquels obligent déjà les parties.',
         ],
         [
           'Promesse unilatérale',
-          'Le bénéficiaire peut opter, dans le délai convenu, pour un contrat dont les éléments essentiels sont fixés[^2].',
+          '**OUI**',
+          'Le promettant est engagé ; le bénéficiaire peut opter, dans le délai convenu, pour un contrat dont les éléments essentiels sont fixés[^3].',
         ],
       ],
     ),
     'Code civil, art. 1123.',
+    'Code civil, art. 1112.',
     'Code civil, art. 1124.',
   ),
   grid(
@@ -566,81 +613,54 @@ const pages = [
     specifics,
     'Rendre les résultats exploitables, le pilotage opérationnel et les flux financiers cohérents avec ce qui est réellement livré.',
   ),
-  {
-    imageAsset: 'definitions',
-    imagePosition: 'left',
-    ...split(
-      'Gestion des résultats',
-      'Ce schéma illustre les définitions d’un contrat, non une classification légale universelle.',
-      'Confidentialité : elle peut couvrir aussi bien un apport antérieur qu’un résultat.',
+  notes(
+    split(
+      'Cession des résultats et code source',
+      'Nommez les résultats commandés et les droits cédés[^1]. Si A développe aussi un outil hors commande, précisez qui le conserve : un outil nouveau ne devient pas une antériorité du seul fait que B ne le demande pas.',
+      'Point de vigilance : distinguez la remise d’un livrable, le transfert des droits et l’accès aux sources.',
       [
         [
-          'Connaissances propres',
-          'Une partie apporte un actif préexistant ou développé indépendamment du projet.',
+          'Déclenchement',
+          'Si la cession dépend du paiement, indiquez quel règlement transfère quels droits. Pour un bien livré, examinez séparément l’intérêt d’une réserve de propriété[^2].',
         ],
         [
-          'Résultats du projet',
-          'Distinguez les résultats propres à une partie et les résultats conjoints ; fixez pour chacun les droits d’exploitation.',
+          'Code source',
+          'Si sa remise est prévue après paiement, distinguer l’échéance de remise du code source et la date de transfert des droits.',
+        ],
+        [
+          'Dépendances',
+          'Organiser une licence sur les éléments propres nécessaires pour exploiter le résultat.',
         ],
       ],
     ),
-  },
-  split(
-    'Exemple : le rapport d’essais',
-    'A réalise pour B des essais sur son modèle d’étude du microbiome cutané, puis lui remet un rapport d’essais. Ce livrable relève de trois définitions à la fois.',
-    'À prévoir : les droits de B sur le rapport ne lui donnent pas le droit d’utiliser le protocole de A hors du projet.',
-    [
-      [
-        'Un résultat',
-        'Les mesures et conclusions du rapport sont issues des travaux. Elles suivent le régime convenu pour les résultats propres ou conjoints.',
-      ],
-      [
-        'Des connaissances propres',
-        'Le rapport décrit le modèle et le protocole préexistants de A. Ils restent à A ; B ne peut les utiliser que dans la mesure prévue pour exploiter le rapport.',
-      ],
-      [
-        'Une information confidentielle',
-        'Le rapport est remis sous confidentialité. B ne peut le transmettre à un tiers ni le publier que dans les conditions convenues.',
-      ],
-    ],
+    'Code de la propriété intellectuelle, art. L. 131-3.',
+    'Code civil, art. 2367.',
   ),
-  split(
-    'Cession des résultats et code source',
-    'Nommez les résultats commandés et les droits cédés. Si A développe aussi un outil hors commande, précisez qui le conserve : un outil nouveau ne devient pas une antériorité du seul fait que B ne le demande pas.',
-    'Point de vigilance : distinguez la remise d’un livrable, le transfert des droits et l’accès aux sources.',
-    [
+  notes(
+    grid(
+      'Pilotage',
+      'Distinguez les réunions de suivi et les décisions qui engagent les parties.',
       [
-        'Déclenchement',
-        'Si la cession dépend du paiement, indiquez quel règlement transfère quels droits. Pour un bien livré, examinez séparément l’intérêt d’une réserve de propriété.',
+        [
+          'Composition et rythme',
+          'Membres, convocation, réunions ordinaires ou exceptionnelles, ordre du jour.',
+        ],
+        [
+          'Pouvoirs et votes',
+          'Compétence de chaque comité, quorum, majorité ou unanimité selon la décision.',
+        ],
+        [
+          'Blocage et preuve',
+          'Prévoir l’escalade, les délais et la notification. Tenir un relevé des décisions.',
+        ],
+        [
+          'Mandat',
+          'Avec un organisme public, vérifier si un mandataire unique doit gérer les titres communs (décret de décembre 2023)[^1].',
+        ],
       ],
-      [
-        'Code source',
-        'Si sa remise est prévue après paiement, distinguer l’échéance de remise du code source et la date de transfert des droits.',
-      ],
-      [
-        'Dépendances',
-        'Organiser une licence sur les éléments propres nécessaires pour exploiter le résultat.',
-      ],
-    ],
+    ),
+    'Code de la recherche, art. L. 533-1.',
   ),
-  grid('Pilotage', 'Distinguez les réunions de suivi et les décisions qui engagent les parties.', [
-    [
-      'Composition et rythme',
-      'Membres, convocation, réunions ordinaires ou exceptionnelles, ordre du jour.',
-    ],
-    [
-      'Pouvoirs et votes',
-      'Compétence de chaque comité, quorum, majorité ou unanimité selon la décision.',
-    ],
-    [
-      'Blocage et preuve',
-      'Prévoir l’escalade, les délais et la notification. Tenir un relevé des décisions.',
-    ],
-    [
-      'Mandat',
-      'Avec un organisme public, vérifier si un mandataire unique doit gérer les titres communs (décret de décembre 2023).',
-    ],
-  ]),
   table(
     'Résultats non brevetables',
     'La disponibilité de chaque option dépend de la nature de l’actif et des droits effectivement détenus.',
@@ -662,51 +682,27 @@ const pages = [
     ],
   ),
   notes(
-    {
-      blockType: 'stats',
-      eyebrow: 'Cas fiscal · scénario 1 sur 2 · septembre 2024',
-      title: 'Flux financiers facturés par A à B : scénario classique',
-      lead: 'A dispose de l’agrément CIR et facture une prestation unique. Les montants ci-dessous illustrent le calcul du support de 2024[^1].',
-      stats: [
-        { value: '10 000 € HT', label: 'Recherche sur l’état de l’art réalisée par A.' },
-        { value: '30 000 € HT', label: 'Essais de R&D réalisés par A sur son propre modèle.' },
-        {
-          value: '12 000 €',
-          label: 'CIR de B dans l’exemple : 30 % de la facture totale de 40 000 € HT.',
-        },
-      ],
-    },
-    'A comptabilise 40 000 € de prestations et exclut de sa propre assiette CIR tous les coûts de R&D correspondants. Références citées en 2024 : BOFiP et décision Takima. Ne pas transposer sans vérification.',
-  ),
-  table(
-    'Flux financiers facturés par A à B : nouveau scénario',
-    'A distingue les travaux des droits réellement accordés à B. Quatre lignes de 10 000 € HT donnent un total inchangé de 40 000 € HT.',
-    ['Ligne facturée à B', 'Contrepartie', 'Montant HT'],
-    [
-      ['Veille technologique', 'Recherche dans l’état de l’art.', '10 000 €'],
+    grid(
+      'Exemples de points d’attention fiscaux',
+      'Trois réflexes pour que les flux du partenariat produisent l’effet fiscal attendu.',
       [
-        'Licence sur les connaissances propres',
-        'Droit d’utiliser le modèle préexistant de A.',
-        '10 000 €',
+        [
+          'Vérifier l’agrément',
+          'Vérifiez l’agrément CIR / CII de votre prestataire[^1] et sa date de validité.',
+        ],
+        [
+          'À défaut, immobiliser',
+          'Sans agrément, immobilisez correctement les prototypes et les droits acquis. Les dotations aux amortissements sont alors intégrées dans votre CIR / CII[^2].',
+        ],
+        [
+          'Qualifier les cessions',
+          'Si vous cédez des droits, vérifiez la nature des flux. **Cession de prototype** : IS au taux normal. **Cession de résultats** : IS à 10 % (IP Box)[^3].',
+        ],
       ],
-      ['Prestation de R&D', 'Travaux de recherche confiés à A.', '10 000 €'],
-      ['Droits sur les résultats', 'Cession des résultats ou licence consentie à B.', '10 000 €'],
-    ],
-  ),
-  split(
-    'Flux financiers facturés par A à B : effets',
-    'Pour B, le support retient le même CIR de 12 000 €, sous réserve du plafond de veille alors cité (60 000 € HT par an et par entité). Si les frais de propriété industrielle sont immobilisés, leur prise en compte suit les amortissements.',
-    'Limite : ces chiffres illustrent les hypothèses de 2024. Un libellé de facture ne suffit pas : vérifier les opérations, les justificatifs et les règles de l’exercice concerné.',
-    [
-      [
-        'A : distinguer R&D confiée et interne',
-        'Dans le calcul illustré, A retranche les coûts liés aux 10 000 € de prestation et réintègre les coûts de R&D correspondant aux 30 000 € restants, non les recettes elles-mêmes.',
-      ],
-      [
-        'A : isoler les revenus de droits',
-        'Le cas identifie 20 000 € de revenus de propriété industrielle potentiellement éligibles à l’IP Box. Ce montant n’est ni une économie d’impôt ni un bénéfice net imposable.',
-      ],
-    ],
+    ),
+    'Code général des impôts, art. 244 quater B.',
+    'Code général des impôts, art. 244 quater B, II, a.',
+    'Code général des impôts, art. 238.',
   ),
 
   // 37–38 · Échanges et contact
@@ -721,14 +717,13 @@ const pages = [
   },
   {
     blockType: 'cta',
-    eyebrow: 'Klarc',
-    title: 'Contact',
+    eyebrow: 'Un premier échange',
+    title: 'Parlons de votre situation',
     subtitle:
-      'Vous préparez un partenariat ? Échangez avec Klarc sur les résultats à protéger et les droits à négocier.',
-    primaryAction: 'Prendre rendez-vous',
+      'Nous vous offrons un premier échange de 30 minutes pour faire le point sur vos besoins.',
+    primaryAction: 'Prendre rendez-vous · klarc.com/meeting',
     primaryActionUrl: '{org.bookingUrl}',
-    footerNote:
-      'Coordonnées du support de 2024 : Joachim Brindeau, avocat · +33 7 87 87 60 83 · 19 rue Job, 31000 Toulouse.',
+    footerNote: 'Toulouse · Lyon',
   },
 ];
 
@@ -739,6 +734,8 @@ const shortTitles = new Set<string>([
   'Sécuriser et optimiser',
   pi,
   'Notions à maîtriser',
+  'Articulation des définitions',
+  'Exemple : le rapport d’essais',
   exchanges,
   'Mettre en place un accord de confidentialité',
   'Définir l’objet des discussions',
@@ -749,13 +746,8 @@ const shortTitles = new Set<string>([
   'Autres outils de négociation',
   'Principaux points de négociation',
   specifics,
-  'Gestion des résultats',
-  'Exemple : le rapport d’essais',
-  'Cession des résultats et code source',
-  'Flux financiers facturés par A à B : nouveau scénario',
-  'Flux financiers facturés par A à B : effets',
-  questions,
-  'Contact',
+  'Exemples de points d’attention fiscaux',
+  'Parlons de votre situation',
 ]);
 const deckPages = short
   ? pages
@@ -765,9 +757,11 @@ const deckPages = short
           ? {
               ...page,
               title: courseTitle,
-              pills: [{ text: 'Formation · 30 minutes' }, { text: 'Source : 4 septembre 2024' }],
+              pills: [{ text: 'French Tech Toulouse' }, { text: '27 novembre 2026' }],
             }
-          : page,
+          : 'items' in page && page.blockType === 'agenda'
+            ? { ...page, items: (page.items ?? []).filter((item) => item.label !== questions) }
+            : page,
       )
   : pages;
 if (short && deckPages.length !== shortTitles.size + 1)
@@ -775,8 +769,58 @@ if (short && deckPages.length !== shortTitles.size + 1)
     `Format court : ${shortTitles.size + 1 - deckPages.length} page(s) introuvable(s)`,
   );
 
-const slides = deckPages.map((page, index) => {
-  const parsed = AI_SLIDE_SCHEMA.safeParse(page);
+const marks: Record<string, string> = {
+  'Chronologie d’un partenariat': 'Chronologie d’un [partenariat]',
+  'Notions à maîtriser': 'Notions à [maîtriser]',
+  'Mettre en place un accord de confidentialité': 'Mettre en place un accord de [confidentialité]',
+  'Établir une term sheet': 'Établir une [term sheet]',
+  'Articulation des définitions': 'Articulation des [définitions]',
+  'Exemple : le rapport d’essais': 'Exemple : le [rapport d’essais]',
+};
+const sectionOf = new Map<number, string>();
+deckPages.reduce<string | undefined>((current, page, index) => {
+  const next = page.blockType === 'section' ? page.title : current;
+  if (next && !['section', 'cta', 'agenda', 'cover'].includes(page.blockType))
+    sectionOf.set(index, next);
+  return next;
+}, undefined);
+
+// One sentence per line: prose fields become one paragraph per sentence.
+const SENTENCE_BREAK = /(?<=[.?!](?:\[\^\d+\])?)\s+(?=(?:\*\*)?[A-ZÀ-ÖØ-Þ«])/g;
+const AMOUNT = /(\d{1,3}) (\d{3})( ?)(€|k€)/g;
+const keepAmounts = (value: string) => value.replace(AMOUNT, '$1\u202f$2\u00a0$4');
+const lines = (value: unknown) =>
+  typeof value === 'string' ? keepAmounts(value).replace(SENTENCE_BREAK, '\n\n') : value;
+const PROSE_FIELDS = ['intro', 'sidebarText', 'body', 'lead', 'leftFooter', 'footer'] as const;
+function breakSentences<T extends Record<string, unknown>>(page: T): T {
+  const next: Record<string, unknown> = { ...page };
+  for (const field of PROSE_FIELDS) if (field in next) next[field] = lines(next[field]);
+  if (next.blockType === 'section') next.subtitle = lines(next.subtitle);
+  if (Array.isArray(next.footnotes))
+    next.footnotes = (next.footnotes as { text: string }[]).map((note) => ({
+      text: keepAmounts(note.text),
+    }));
+  for (const list of ['cards', 'rightCards'] as const)
+    if (Array.isArray(next[list]))
+      next[list] = (next[list] as Record<string, unknown>[]).map((card) => ({
+        ...card,
+        description: lines(card.description),
+      }));
+  if (Array.isArray(next.rows))
+    next.rows = (next.rows as { cells: { value: string }[] }[]).map((row) => ({
+      cells: row.cells.map((cell) => ({ value: lines(cell.value) as string })),
+    }));
+  return next as T;
+}
+
+const slides = deckPages.map((authored, index) => {
+  const page = breakSentences(authored);
+  // An image split may stand without cards; the render schema (validated
+  // below by parseDocumentRenderPages) allows it, the AI draft schema does not.
+  const imageOnly = page.blockType === 'twoCols' && 'imageAsset' in page && !('rightCards' in page);
+  const parsed = AI_SLIDE_SCHEMA.safeParse(
+    imageOnly ? { ...page, rightCards: [{ title: 'image' }] } : page,
+  );
   if (!parsed.success)
     throw new Error(`Diapositive ${index + 1} : ${JSON.stringify(parsed.error.issues)}`);
   const spec = SPEC_BY_TYPE.get(page.blockType);
@@ -792,8 +836,14 @@ const slides = deckPages.map((page, index) => {
   return {
     ...defaults,
     ...parsed.data,
+    ...(imageOnly ? { rightCards: [] } : {}),
     id: slideId(page.title),
     blockType: page.blockType,
+    title: marks[page.title] ?? parsed.data.title,
+    ...('collectionSide' in page ? { collectionSide: page.collectionSide } : {}),
+    ...(sectionOf.has(index) && !('eyebrow' in page && page.eyebrow)
+      ? { eyebrow: sectionOf.get(index) }
+      : {}),
     ...(page.blockType === 'agenda' && 'items' in page && page.items
       ? {
           items: page.items.map((item) => {
@@ -850,7 +900,34 @@ if (values.check) {
     });
     if (docs.length !== 1 || !docs[0]) throw new Error('Organisation Klarc introuvable ou ambiguë');
     const organisation = docs[0].id;
+    const speaker = await payload.find({
+      collection: 'users',
+      where: {
+        and: [
+          { name: { equals: 'Joachim Brindeau' } },
+          { organisations: { contains: organisation } },
+        ],
+      },
+      limit: 2,
+      depth: 0,
+    });
+    if (speaker.totalDocs !== 1) throw new Error('Intervenant Joachim Brindeau absent ou ambigu');
     const richSlides = await convertSlidesMarkdownToLexical(slides, payload);
+    const cover = richSlides.find((slide) => slide.blockType === 'cover') as
+      | { intervenants?: unknown }
+      | undefined;
+    if (!cover) throw new Error('Couverture absente');
+    const closing = richSlides.find((slide) => slide.blockType === 'cta') as
+      | { footerNote?: unknown }
+      | undefined;
+    if (!closing) throw new Error('Diapositive de contact absente');
+    closing.footerNote = officesFooter();
+    cover.intervenants = [
+      {
+        user: speaker.docs[0]!.id,
+        description: 'Propriété industrielle, contentieux et contrats de R&D',
+      },
+    ];
     parseDocumentRenderPages(template, richSlides);
     const data = {
       title,
@@ -883,9 +960,9 @@ if (values.check) {
         );
       const alt: Record<string, string> = {
         'term-sheet':
-          'Sommaire adapté du spécimen ALPHA/BETA : projet collaboratif, pilotage et propriété industrielle ; partenariat d’exploitation, rôles et exclusivité.',
+          'Spécimen de term sheet ALPHA/BETA, non contraignante : parties, définitions, objet, projet collaboratif (pilotage, propriété industrielle, amélioration continue) et partenariat d’exploitation (rôles, exclusivité).',
         definitions:
-          'Les informations comprennent les informations confidentielles, les résultats et les connaissances propres. Les résultats correspondent aux connaissances nouvelles, réparties entre résultats propres et résultats conjoints.',
+          'La propriété industrielle comprend les connaissances propres et les connaissances nouvelles. Les connaissances nouvelles constituent les résultats, propres ou conjoints. Les livrables peuvent intégrer des connaissances propres et des résultats.',
       };
       const illustrations = deckPages.flatMap((page, index) =>
         'imageAsset' in page && typeof page.imageAsset === 'string'
@@ -1011,6 +1088,75 @@ function comparable(value: unknown): unknown {
           child != null &&
           (!Array.isArray(child) || child.length > 0),
       )
-      .map(([key, child]) => [key, comparable(child)]),
+      .map(([key, child]) => [
+        key,
+        key === 'user' && typeof child === 'object' && 'id' in child
+          ? (child as { id: unknown }).id
+          : comparable(child),
+      ]),
   );
+}
+
+/** Office footer of Klarc's general presentation, kept as rich text so each
+ * phone number and address carries its own PDF link. */
+function officesFooter() {
+  const text = (value: string, format = 0) => ({
+    mode: 'normal',
+    text: value,
+    type: 'text',
+    style: '',
+    detail: 0,
+    format,
+    version: 1,
+  });
+  const link = (label: string, url: string) => ({
+    type: 'link',
+    fields: { url, newTab: false, linkType: 'custom' },
+    format: '',
+    indent: 0,
+    version: 3,
+    children: [text(label)],
+    direction: null,
+  });
+  const office = (city: string, address: string, phone: string, tel: string, email: string) => ({
+    type: 'paragraph',
+    format: '',
+    indent: 0,
+    version: 1,
+    children: [
+      text(city, 1),
+      text(` · ${address} · `),
+      link(phone, `tel:${tel}`),
+      text(' · '),
+      link(email, `mailto:${email}`),
+    ],
+    direction: null,
+    textStyle: '',
+    textFormat: 1,
+  });
+  return {
+    root: {
+      type: 'root',
+      format: '',
+      indent: 0,
+      version: 1,
+      direction: null,
+      children: [
+        office(
+          'Toulouse',
+          '15 rue d’Alsace-Lorraine, 31000',
+          '+33 (0)5 61 38 53 52',
+          '+33561385352',
+          'toulouse@klarc.com',
+        ),
+        office(
+          'Lyon',
+          '3 rue de Genève, 69006',
+          '+33 (0)5 25 63 09 36',
+          '+33525630936',
+          'lyon@klarc.com',
+        ),
+      ],
+    },
+  };
 }
