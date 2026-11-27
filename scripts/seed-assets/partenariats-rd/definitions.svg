@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">Hiérarchie des informations et des résultats</title>
+  <desc id="desc">Les informations comprennent les informations confidentielles, les résultats et les connaissances propres. Les résultats correspondent aux connaissances nouvelles, réparties entre résultats propres et résultats conjoints.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 10 5 0 10Z" fill="#02585c"/>
+    </marker>
+    <style>
+      .box{fill:#ffffff;stroke:#02585c;stroke-width:2}
+      .root{fill:#02585c;stroke:#02585c;stroke-width:2}
+      .result{fill:#ffffff;stroke:#d99aa6;stroke-width:2.5}
+      .trunk{fill:none;stroke:#02585c;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+      .arrow{fill:none;stroke:#02585c;stroke-width:2.5;stroke-linecap:round;marker-end:url(#arrow)}
+      text{font-family:"IBM Plex Sans",Arial,Helvetica,sans-serif;font-size:26px;font-weight:600;fill:#0f2425;text-anchor:middle;dominant-baseline:middle}
+      .light{fill:#ffffff}
+    </style>
+  </defs>
+
+  <g class="links">
+    <path class="trunk" d="M600 108V150M220 150H980"/>
+    <path class="arrow" d="M220 150V198"/>
+    <path class="arrow" d="M600 150V198"/>
+    <path class="arrow" d="M980 150V198"/>
+    <path class="arrow" d="M600 278V378"/>
+    <path class="trunk" d="M600 458V500M390 500H810"/>
+    <path class="arrow" d="M390 500V550"/>
+    <path class="arrow" d="M810 500V550"/>
+  </g>
+
+  <g class="nodes">
+    <rect class="root" x="460" y="30" width="280" height="78" rx="14"/>
+    <text class="light" x="600" y="69">Informations</text>
+
+    <rect class="box" x="45" y="200" width="350" height="78" rx="14"/>
+    <text x="220" y="239">Informations confidentielles</text>
+
+    <rect class="result" x="470" y="200" width="260" height="78" rx="14"/>
+    <text x="600" y="239">Résultats</text>
+
+    <rect class="box" x="805" y="200" width="350" height="78" rx="14"/>
+    <text x="980" y="239">Connaissances propres</text>
+
+    <rect class="result" x="415" y="380" width="370" height="78" rx="14"/>
+    <text x="600" y="419">Connaissances nouvelles</text>
+
+    <rect class="result" x="220" y="552" width="340" height="78" rx="14"/>
+    <text x="390" y="591">Résultats propres</text>
+
+    <rect class="result" x="640" y="552" width="340" height="78" rx="14"/>
+    <text x="810" y="591">Résultats conjoints</text>
+  </g>
+</svg>

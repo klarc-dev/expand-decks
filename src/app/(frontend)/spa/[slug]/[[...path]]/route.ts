@@ -1,4 +1,4 @@
-import { headers as nextHeaders } from 'next/headers';
+import { documentLogin, isDocumentNavigation } from '@/lib/documentLogin';
 
 import { getPayload } from 'payload';
 import config from '@payload-config';
@@ -13,7 +13,7 @@ import { COLLECTIONS } from '@/lib/collections';
  * collection's read access (any logged-in user).
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string; path?: string[] }> },
 ) {
   const { slug, path: pathSegments = [] } = await params;
@@ -24,8 +24,9 @@ export async function GET(
 
   const payload = await getPayload({ config });
 
-  const { user } = await payload.auth({ headers: await nextHeaders() });
+  const { user } = await payload.auth({ headers: request.headers });
   if (!user) {
+    if (isDocumentNavigation(request)) return documentLogin(request);
     return new NextResponse('Forbidden', { status: 403 });
   }
 
