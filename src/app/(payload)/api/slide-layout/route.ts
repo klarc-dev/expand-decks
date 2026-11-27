@@ -1,11 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { authenticateRequest } from '@/lib/authenticateRequest';
-import {
-  executeSlideLayoutCommand,
-  slideLayoutCommandSchema,
-  SlideLayoutCommandError,
-} from '@/lib/slideLayoutChange';
+import { executeSlideLayoutCommand, SlideLayoutCommandError } from '@/lib/slideLayoutChange';
+import { slideLayoutCommandSchema } from '@/lib/slideLayoutContract';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

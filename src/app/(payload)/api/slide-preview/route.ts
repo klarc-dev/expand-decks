@@ -26,26 +26,11 @@ import {
   setPreviewResponse,
 } from '@/lib/previewResponseCache';
 import { slideLayoutFingerprint } from '@/blocks/spec/slideContent';
+import type { SlidePreviewRequest } from '@/lib/slidePreviewContract';
 import { createNativePreview, nativePreviewUrl, PreviewSupersededError } from './nativePreview';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-type PreviewRequestBody = {
-  block?: Record<string, unknown>;
-  fields?: Record<string, unknown>;
-  presentationId?: string | number;
-  previewFieldPath?: string;
-  blockTypes?: string[];
-  sections?: string[];
-  slideIndex?: number;
-  includeLayoutCandidates?: boolean;
-  slideRefs?: Array<{
-    id?: string | null;
-    blockType: string;
-    title?: string | null;
-  }>;
-};
 
 type AuthedUser = { id: string | number };
 
@@ -215,7 +200,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
   const authedUser = user as AuthedUser;
 
-  const body = (await req.json().catch(() => null)) as PreviewRequestBody | null;
+  // Preserve the legacy presence checks and field fallbacks. The published input shape
+  // describes supported requests, not every malformed input tolerated by this route.
+  const body = (await req.json().catch(() => null)) as Partial<SlidePreviewRequest> | null;
   if (!body?.presentationId) {
     return NextResponse.json({ error: 'Présentation requise' }, { status: 400 });
   }

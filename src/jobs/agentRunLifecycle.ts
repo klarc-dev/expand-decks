@@ -34,7 +34,7 @@ export function agentRunFingerprint(input: {
     .digest('hex');
 }
 
-export const AGENT_TIME_TRAVEL_STEPS = ['validate', 'visual'] as const;
+export { AGENT_TIME_TRAVEL_STEPS } from '../lib/agentDraftContract';
 // Heartbeats are written by the Payload job independently of model events.
 export const AGENT_RUN_HEARTBEAT_INTERVAL_MS = 15_000;
 export const AGENT_RUN_MAX_RUNTIME_MS = 20 * 60_000;

@@ -1,14 +1,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { z } from 'zod';
 
+import { agentModelSchema } from './agentModelContract';
 import { forceNonStreamFetch } from './ai';
 
-export const agentModelSchema = z
-  .string()
-  .trim()
-  .min(1, 'Le modèle est requis')
-  .max(128, 'Le nom du modèle est trop long')
-  .regex(/^[A-Za-z0-9._:/-]+$/, 'Le nom du modèle contient des caractères invalides');
+export { agentModelSchema } from './agentModelContract';
 
 export const DEFAULT_AGENT_MODEL = process.env.OPENAI_MODEL || 'high';
 

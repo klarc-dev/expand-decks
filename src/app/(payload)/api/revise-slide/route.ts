@@ -4,7 +4,7 @@ import { reviseSlide } from '@/agents/reviseSlide';
 import { authenticateRequest } from '@/lib/authenticateRequest';
 import { COLLECTIONS } from '@/lib/collections';
 import { currentSlideContext } from '@/lib/currentDeckContext';
-import { slideRevisionSchema } from '@/lib/deckCrudContract';
+import { slideRevisionSchema } from '@/lib/slideRevisionContract';
 import { replaceSlideAt } from '@/lib/replaceSlideAt';
 import { convertSlidesMarkdownToLexical } from '@/lib/richTextWrite';
 import { resolveDocumentTemplate } from '@/documents/templates';
