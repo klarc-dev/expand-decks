@@ -55,16 +55,18 @@ test.describe('manual presentation build requests', () => {
     await context.close();
   });
 
-  test('author queues one build, stamps metadata, and throttles an immediate retry', async ({
-    browser,
-  }) => {
+  test('two concurrent rebuild requests queue exactly one native build', async ({ browser }) => {
     const data = await fixtures();
     const { context, page } = await authenticatedPage(browser, E2E_AUTHOR_AUTH_FILE, baseURL);
-    const first = await page.evaluate(async (id) => {
-      const response = await fetch(`/api/presentations/${id}/build`, { method: 'POST' });
-      return { body: await response.json(), status: response.status };
+    const [first, concurrent] = await page.evaluate(async (id) => {
+      const request = async () => {
+        const response = await fetch(`/api/presentations/${id}/build`, { method: 'POST' });
+        return { body: await response.json(), status: response.status };
+      };
+      return (await Promise.all([request(), request()])).sort((a, b) => a.status - b.status);
     }, data.buildPresentationId);
     expect(first.status).toBe(200);
+    expect(concurrent.status).toBe(429);
     expect(first.body).toMatchObject({ queued: true, lastBuildStatus: 'building' });
     expect(first.body.buildToken).toMatch(/^[0-9a-f-]{36}$/i);
     expect(Number.isNaN(Date.parse(first.body.lastBuildRequestedAt))).toBe(false);

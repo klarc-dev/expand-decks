@@ -12,7 +12,7 @@ type BuildSlidesConcurrencyInput = {
   revisionSha256?: string;
 };
 
-function buildConcurrencyKey(input: BuildSlidesConcurrencyInput): string {
+export function buildConcurrencyKey(input: BuildSlidesConcurrencyInput): string {
   const producerBinding =
     input.mediaProductionRequestId ??
     input.mediaRequestId ??
