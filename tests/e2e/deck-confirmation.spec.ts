@@ -2,8 +2,11 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 
-const adminState = 'test-results/.auth/admin.json';
 const authorState = 'test-results/.auth/author.json';
+const adminCredentials = {
+  email: 'e2e-admin@expand.local',
+  password: 'E2e-admin-password-4317',
+};
 
 async function prepare(
   request: APIRequestContext,
@@ -31,14 +34,18 @@ test('deck deletion requires a distinct authenticated session and checks cancell
   browser,
   baseURL,
 }) => {
-  const browserAdmin = await browser.newContext({ baseURL, storageState: adminState });
+  const browserAdmin = await browser.newContext({ baseURL });
   const requester = await browser.newContext({ baseURL });
   const author = await browser.newContext({ baseURL, storageState: authorState });
   try {
     const login = await requester.request.post('/api/users/login', {
-      data: { email: 'e2e-admin@expand.local', password: 'E2e-admin-password-4317' },
+      data: adminCredentials,
     });
     expect(login.ok()).toBeTruthy();
+    const browserLogin = await browserAdmin.request.post('/api/users/login', {
+      data: adminCredentials,
+    });
+    expect(browserLogin.ok()).toBeTruthy();
     const bearer = { Authorization: `JWT ${(await login.json()).token}` };
     const { deckId, title } = await disposableDeck(requester.request, bearer);
     const path = `/api/presentations/${deckId}?depth=0`;
