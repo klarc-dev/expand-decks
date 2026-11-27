@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!contract.py
+!server.py
+!slides_api.py
+!openapi.json
+!test_adapter.py

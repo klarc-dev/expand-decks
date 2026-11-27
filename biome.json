@@ -19,6 +19,7 @@
       "!**/_reusable",
       "!**/dogfood-output",
       "!**/.agents/skills",
+      "!mcp-adapter/openapi.json",
       "!**/.claude",
       "!**/.hermes",
       "!src/migrations/20260915_124551.{ts,json}",

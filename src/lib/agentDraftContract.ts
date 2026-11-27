@@ -1,8 +1,8 @@
-import { AGENT_TIME_TRAVEL_STEPS } from '@/jobs/agentRunLifecycle';
-
 import { z } from 'zod';
+import { agentModelSchema } from './agentModelContract';
 import { MIN_BRIEF_CHARS, slideCountRangeSchema } from './draftConfig';
-import { agentModelSchema } from './agentModel';
+
+export const AGENT_TIME_TRAVEL_STEPS = ['validate', 'visual'] as const;
 
 export const agentDraftStartSchema = z.object({
   presentationId: z.union([z.string().min(1).max(128), z.number()]),
@@ -21,19 +21,15 @@ export const agentDraftStartSchema = z.object({
   approvalRequired: z.boolean().default(false),
 });
 
-export const agentDraftCommandSchema = z
-  .object({
-    action: z.enum(['cancel', 'restart', 'resume', 'time-travel']),
-    approved: z.boolean().optional(),
-    step: z.enum(AGENT_TIME_TRAVEL_STEPS).optional(),
-  })
-  .superRefine((command, context) => {
-    if (command.action === 'resume' && command.approved === undefined)
-      context.addIssue({
-        code: 'custom',
-        path: ['approved'],
-        message: 'Required',
-      });
-    if (command.action === 'time-travel' && command.step === undefined)
-      context.addIssue({ code: 'custom', path: ['step'], message: 'Required' });
-  });
+const approved = z.boolean();
+const step = z.enum(AGENT_TIME_TRAVEL_STEPS);
+
+// Validate optional command fields even when the selected action does not use them.
+const agentDraftCommandFields = z.object({ approved: approved.optional(), step: step.optional() });
+
+export const agentDraftCommandSchema = z.discriminatedUnion('action', [
+  agentDraftCommandFields.extend({ action: z.literal('cancel') }),
+  agentDraftCommandFields.extend({ action: z.literal('restart') }),
+  agentDraftCommandFields.extend({ action: z.literal('resume'), approved }),
+  agentDraftCommandFields.extend({ action: z.literal('time-travel'), step }),
+]);

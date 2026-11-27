@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 
 import type { CollectionBeforeDeleteHook, CollectionConfig, PayloadRequest } from 'payload';
 
@@ -8,19 +8,11 @@ import {
   isOrganisationAuthor,
   isOrganisationMember,
   relationshipId,
-  userIsAdminOrAuthor,
   userIsOrganisationMember,
 } from '../access/roles';
-import {
-  BUILD_COOLDOWN_MS,
-  MAX_SELECTED_SOURCES,
-  MAX_SLIDES,
-  MIN_BRIEF_CHARS,
-  MIN_SLIDES,
-} from '../lib/draftConfig';
+import { MAX_SELECTED_SOURCES, MAX_SLIDES, MIN_BRIEF_CHARS, MIN_SLIDES } from '../lib/draftConfig';
 import { DEFAULT_AGENT_MODEL, agentModelSchema } from '../lib/agentModel';
-import { BUILD_SLIDES_TASK } from '../jobs/buildSlides';
-import { patchPresentationBuildMetadata } from '../jobs/patchPresentationBuildMetadata';
+import { requestPresentationBuild } from '../jobs/requestPresentationBuild';
 import { isValidSlug, slugFromTitle } from '../lib/slug';
 import { COLLECTIONS } from '../lib/collections';
 import { flattenVars } from '../export/vars';
@@ -97,6 +89,7 @@ const agentOptionAccess = {
  * mid-run form submit would otherwise reset the pointer to the live run.
  */
 const runPointerAccess = { update: () => false };
+const buildMetadataAccess = { create: () => false, update: () => false };
 
 /**
  * Ready bases, plus whatever this document already stores. Payload enforces
@@ -158,118 +151,9 @@ export const Presentations: CollectionConfig = {
   },
   endpoints: [
     {
-      // Trigger a rebuild on demand. Unlike the publish-gated afterChange hook,
-      // this enqueues the same buildSlides job regardless of status. Owner or
-      // admin only; throttled per-presentation via an enqueue-time timestamp so
-      // rapid clicks can't spawn N concurrent Chromium/Slidev processes.
       path: '/:id/build',
       method: 'post',
-      handler: async (req: PayloadRequest) => {
-        const user = req.user;
-        if (!user) return Response.json({ error: 'Non authentifié' }, { status: 401 });
-
-        const id = req.routeParams?.id as string | undefined;
-        if (!id) return Response.json({ error: 'Identifiant manquant' }, { status: 400 });
-
-        // findByID with the user enforces read access; 404 lumps missing +
-        // forbidden, matching the draft route's convention.
-        let presentation;
-        try {
-          presentation = await req.payload.findByID({
-            collection: COLLECTIONS.presentations,
-            id,
-            depth: 0,
-            user,
-            overrideAccess: false,
-          });
-        } catch {
-          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
-        }
-        if (!presentation) {
-          return Response.json({ error: 'Présentation introuvable' }, { status: 404 });
-        }
-
-        // Authorize the write before spending a Chromium process.
-        if (!userIsOrganisationMember(user, presentation.organisation)) {
-          return Response.json({ error: 'Accès refusé' }, { status: 403 });
-        }
-        if (!userIsAdminOrAuthor(user)) {
-          return Response.json({ error: 'Accès refusé' }, { status: 403 });
-        }
-
-        // Throttle: reject if a build was requested within the cooldown. Read
-        // the enqueue-time timestamp, NOT lastBuildStatus (which the worker only
-        // flips to 'building' on the next cron tick — too late to gate a burst).
-        const last = presentation.lastBuildRequestedAt
-          ? Date.parse(presentation.lastBuildRequestedAt as string)
-          : 0;
-        if (last && Date.now() - last < BUILD_COOLDOWN_MS) {
-          return Response.json(
-            {
-              error:
-                'L’aperçu et le PDF sont déjà en cours de préparation. Réessayez dans un instant.',
-            },
-            { status: 429 },
-          );
-        }
-
-        const buildToken = randomUUID();
-
-        const requestedAt = new Date().toISOString();
-
-        // Stamp the request time + token before enqueuing, with the skipBuildQueue
-        // flag so this patch doesn't itself trigger the hook. Set the visible
-        // status immediately: the worker cron may not pick the job up for up to a
-        // minute, but authors need confirmation in the Sortie tab right away.
-        try {
-          await patchPresentationBuildMetadata(
-            req.payload,
-            id,
-            {
-              lastBuildRequestedAt: requestedAt,
-              lastBuildToken: buildToken,
-              lastBuildStatus: BUILD_STATUS.building,
-              lastBuildError: '',
-            },
-            req,
-          );
-
-          // Cast needed until `payload generate:types` adds buildSlides to TypedJobs.
-          await (req.payload.jobs.queue as (args: unknown) => Promise<unknown>)({
-            task: BUILD_SLIDES_TASK,
-            input: { presentationId: id, buildToken },
-            req,
-          });
-        } catch (error) {
-          req.payload.logger.error({
-            err: error,
-            msg: `Failed to queue presentation ${id} export`,
-          });
-
-          const message = 'Impossible de préparer l’aperçu et le PDF. Réessayez dans un instant.';
-          // Never leave the document stuck on "building" when no job exists, and
-          // clear the cooldown timestamp so the author can retry immediately.
-          await patchPresentationBuildMetadata(
-            req.payload,
-            id,
-            {
-              lastBuildStatus: BUILD_STATUS.failed,
-              lastBuildError: message,
-              lastBuildRequestedAt: null,
-            },
-            req,
-          );
-
-          return Response.json({ error: message }, { status: 500 });
-        }
-
-        return Response.json({
-          queued: true,
-          buildToken,
-          lastBuildStatus: BUILD_STATUS.building,
-          lastBuildRequestedAt: requestedAt,
-        });
-      },
+      handler: requestPresentationBuild,
     },
     {
       // Variable list for the `@`-mention editor menu. Exposes an explicit
@@ -612,6 +496,7 @@ export const Presentations: CollectionConfig = {
       defaultValue: BUILD_STATUS.idle,
       options: Object.values(BUILD_STATUS),
       admin: { readOnly: true, hidden: true },
+      access: buildMetadataAccess,
     },
     {
       name: 'artifacts',
@@ -635,16 +520,19 @@ export const Presentations: CollectionConfig = {
       name: 'lastBuildError',
       type: 'textarea',
       admin: { readOnly: true, hidden: true },
+      access: buildMetadataAccess,
     },
     {
       name: 'lastBuildRequestedAt',
       type: 'date',
       admin: { readOnly: true, hidden: true },
+      access: buildMetadataAccess,
     },
     {
       name: 'lastBuildToken',
       type: 'text',
       admin: { readOnly: true, hidden: true },
+      access: buildMetadataAccess,
     },
   ],
 };
