@@ -87,8 +87,11 @@ jobs:
           pnpm generate:types
           pnpm generate:importmap
 
-      - name: Check generated slide skill references
+      - name: Check generated slide skill and MCP contract
         run: pnpm generate:agent-skills:check
+
+      - name: Test the pinned MCP adapter
+        run: docker build --target test mcp-adapter
 
       - name: Deploy env drift gate
         run: python3 scripts/check-coolify-env-sync.py
