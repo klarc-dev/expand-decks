@@ -4,6 +4,16 @@ import { z } from 'zod';
 export const recordIdSchema = z.int().positive();
 const rowIdSchema = z.union([recordIdSchema, z.string().min(1).max(128)]);
 
+function boundedArray(
+  schema: z.ZodType,
+  { minRows, maxRows }: { minRows?: number; maxRows?: number },
+) {
+  let array = z.array(schema);
+  if (minRows !== undefined) array = array.min(minRows);
+  if (maxRows !== undefined) array = array.max(maxRows);
+  return array;
+}
+
 function flattenFields(fields: Field[]): Field[] {
   return fields.flatMap((field): Field[] => {
     if (field.type === 'tabs') {
@@ -61,17 +71,14 @@ function fieldSchema(field: Field): z.ZodType {
           }),
         })
         .describe('Payload Lexical editor state, not Markdown.');
-    case 'array': {
-      let schema = z.array(
+    case 'array':
+      return boundedArray(
         z.strictObject({
           ...payloadFieldShape(field.fields),
           id: rowIdSchema.optional(),
         }),
+        field,
       );
-      if (field.minRows !== undefined) schema = schema.min(field.minRows);
-      if (field.maxRows !== undefined) schema = schema.max(field.maxRows);
-      return schema;
-    }
     case 'group':
       return z.strictObject(payloadFieldShape(field.fields));
     case 'blocks': {
@@ -82,16 +89,27 @@ function fieldSchema(field: Field): z.ZodType {
         }),
       );
       if (!first) throw new Error(`No blocks available for ${field.name}`);
-      let schema = z.array(z.discriminatedUnion('blockType', [first, ...variants]));
-      if (field.minRows !== undefined) schema = schema.min(field.minRows);
-      if (field.maxRows !== undefined) schema = schema.max(field.maxRows);
-      return schema;
+      return boundedArray(z.discriminatedUnion('blockType', [first, ...variants]), field);
     }
     default:
       throw new Error(
         `Unsupported authoring field: ${'name' in field ? field.name : field.type} (${field.type})`,
       );
   }
+}
+
+function writableFieldSchema(field: Field, partial: boolean) {
+  let schema = fieldSchema(field);
+  if ('hasMany' in field && field.hasMany) {
+    schema = boundedArray(schema, {
+      minRows: 'minRows' in field ? field.minRows : undefined,
+      maxRows: 'maxRows' in field ? field.maxRows : undefined,
+    });
+  }
+  if (!('required' in field && field.required)) schema = schema.nullish();
+  else if (partial || 'defaultValue' in field) schema = schema.optional();
+  const label = field.admin && 'description' in field.admin && field.admin.description;
+  return typeof label === 'string' ? schema.describe(label) : schema;
 }
 
 /** Project writable transport fields only. Payload still owns access, hooks and semantic validation. */
@@ -105,17 +123,7 @@ export function payloadFieldShape(
     if (!('name' in field) || field.type === 'ui' || field.admin?.hidden || field.admin?.readOnly)
       continue;
     if (pick && !pick.delete(field.name)) continue;
-    let schema = fieldSchema(field);
-    if ('hasMany' in field && field.hasMany) {
-      let items = z.array(schema);
-      if ('minRows' in field && field.minRows !== undefined) items = items.min(field.minRows);
-      if ('maxRows' in field && field.maxRows !== undefined) items = items.max(field.maxRows);
-      schema = items;
-    }
-    if (!('required' in field && field.required)) schema = schema.nullish();
-    else if (options.partial || 'defaultValue' in field) schema = schema.optional();
-    const label = field.admin && 'description' in field.admin && field.admin.description;
-    shape[field.name] = typeof label === 'string' ? schema.describe(label) : schema;
+    shape[field.name] = writableFieldSchema(field, options.partial ?? false);
   }
   if (pick?.size) throw new Error(`Unknown or readonly Payload fields: ${[...pick].join(', ')}`);
   return shape;
